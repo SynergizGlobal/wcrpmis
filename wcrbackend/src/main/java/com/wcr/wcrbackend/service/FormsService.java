@@ -17,5 +17,10 @@ public class FormsService implements IFormsService{
 		// TODO Auto-generated method stub
 		return formsRepository.getUpdateForms();
 	}
+	@Override
+	public List<Forms> getReportForms() {
+		// TODO Auto-generated method stub
+		return formsRepository.getReportForms();
+	}
 
 }

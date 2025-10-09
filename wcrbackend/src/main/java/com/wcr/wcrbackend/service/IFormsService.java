@@ -6,4 +6,6 @@ import com.wcr.wcrbackend.DTO.Forms;
 
 public interface IFormsService {
 	List<Forms> getUpdateForms();
+
+	List<Forms> getReportForms();
 }

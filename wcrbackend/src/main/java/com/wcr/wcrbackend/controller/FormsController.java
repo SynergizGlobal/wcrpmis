@@ -19,4 +19,9 @@ public class FormsController {
     public List<Forms> getUpdateForms() {
         return formsService.getUpdateForms();
     }
+    
+    @GetMapping("/api/getReportForms")
+    public List<Forms> getReportForms() {
+        return formsService.getReportForms();
+    }
 }

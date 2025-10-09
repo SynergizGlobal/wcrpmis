@@ -157,4 +157,54 @@ public class FormsRepository implements IFormsRepository {
 				});
 			}
 
+	@Override
+	public List<Forms> getReportForms() {
+		String sql = """
+				SELECT DISTINCT
+				    form_id,
+				    module_name_fk,
+				    form_name,
+				    parent_form_id_sr_fk,
+				    web_form_url,
+				    mobile_form_url,
+				    priority,
+				    f.soft_delete_status_fk,
+				    f.display_in_mobile
+				FROM form f
+				LEFT JOIN user_module m ON f.module_name_fk = m.module_fk
+				WHERE m.executive_id_fk = ?
+				  AND m.soft_delete_status = ?
+				  AND parent_form_id_sr_fk = f.form_id
+				  AND f.soft_delete_status_fk = ?
+				  AND (
+				      (SELECT COUNT(*) FROM form_access
+				       WHERE form_id_fk = f.form_id
+				         AND (access_value = ? OR access_value = ? OR access_value = ?)) > 0
+				      OR web_form_url IS NULL
+				      OR web_form_url = ''
+				  )
+				  AND f.url_type = 'Reports'
+				ORDER BY priority ASC
+				""";
+		return jdbcTemplate.query(sql, new Object[] { "Pratik", "Active", "Active", "Pratik", "IT Admin", "" },
+				new RowMapper<Forms>() {
+					@Override
+					public Forms mapRow(ResultSet rs, int rowNum) throws SQLException {
+						Forms form = new Forms();
+						form.setFormId(rs.getString("form_id"));
+						/// form.setMo(rs.getString("module_name_fk"));
+						form.setFormName(rs.getString("form_name"));
+						form.setParentId(rs.getString("parent_form_id_sr_fk"));
+						form.setWebFormUrl(rs.getString("web_form_url"));
+						form.setMobileFormUrl(rs.getString("mobile_form_url"));
+						form.setPriority(rs.getString("priority"));
+						form.setStatusId(rs.getString("soft_delete_status_fk"));
+						form.setDisplayInMobile(rs.getString("display_in_mobile"));
+						String parentId = rs.getString("parent_form_id_sr_fk");
+						form.setFormsSubMenu(getSubMenuUpdateForms(parentId));
+						return form;
+					}
+				});
+	}
+
 }
