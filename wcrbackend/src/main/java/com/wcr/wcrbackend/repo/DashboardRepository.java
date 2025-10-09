@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import com.wcr.wcrbackend.DTO.Dashboard;
+import com.wcr.wcrbackend.entity.User;
 
 @Repository
 public class DashboardRepository implements IDashboardRepository {
@@ -18,7 +19,7 @@ public class DashboardRepository implements IDashboardRepository {
 	private JdbcTemplate jdbcTemplate;
 
 	@Override
-	public List<Dashboard> getDashboardsList(String dashboardType) {
+	public List<Dashboard> getDashboardsList(String dashboardType, User user) {
 		String sql = """
 				SELECT DISTINCT
 				    tum.dashboard_id,
@@ -46,7 +47,7 @@ public class DashboardRepository implements IDashboardRepository {
 				ORDER BY priority
 				""";
 		return jdbcTemplate.query(sql,
-				new Object[] { "Pratik", "Active", "Active", dashboardType, "Pratik", "IT Admin", "" },
+				new Object[] { user.getUserId(), "Active", "Active", dashboardType, user.getUserTypeFk(), user.getUserRoleNameFk(), user.getUserId() },
 				new RowMapper<Dashboard>() {
 					@Override
 					public Dashboard mapRow(ResultSet resultSet, int rowNum) throws SQLException {
@@ -57,7 +58,7 @@ public class DashboardRepository implements IDashboardRepository {
 						dashboard.setTableauUrl(resultSet.getString("dashboard_url"));
 						dashboard.setPriority(resultSet.getString("priority"));
 						dashboard.setImagePath(resultSet.getString("icon_path"));
-						List<Dashboard> tableauSubList = getTableauSubList(dashboard.getTableauDashboardId());
+						List<Dashboard> tableauSubList = getTableauSubList(dashboard.getTableauDashboardId(), user);
 						if (!tableauSubList.isEmpty() && tableauSubList.size() > 0) {
 							dashboard.setTableauSubList(tableauSubList);
 						}
@@ -67,7 +68,7 @@ public class DashboardRepository implements IDashboardRepository {
 				});
 	}
 
-	private List<Dashboard> getTableauSubList(String parentId) {
+	private List<Dashboard> getTableauSubList(String parentId, User user) {
 		String sql = """
 				SELECT DISTINCT
 				    tum.dashboard_id,
@@ -91,7 +92,7 @@ public class DashboardRepository implements IDashboardRepository {
 				  )
 				ORDER BY priority
 				""";
-		return jdbcTemplate.query(sql, new Object[] { parentId, "Active", "Pratik", "IT Admin", "" },
+		return jdbcTemplate.query(sql, new Object[] { parentId, "Active", user.getUserTypeFk(), user.getUserRoleNameFk(), user.getUserId() },
 				new RowMapper<Dashboard>() {
 					@Override
 					public Dashboard mapRow(ResultSet resultSet, int rowNum) throws SQLException {
@@ -102,7 +103,7 @@ public class DashboardRepository implements IDashboardRepository {
 						dashboard.setTableauUrl(resultSet.getString("dashboard_url"));
 						dashboard.setPriority(resultSet.getString("priority"));
 						dashboard.setImagePath(resultSet.getString("icon_path"));
-						List<Dashboard> tableauSubList = getTableauSubListLevel2(dashboard.getTableauDashboardId());
+						List<Dashboard> tableauSubList = getTableauSubListLevel2(dashboard.getTableauDashboardId(), user);
 						if (!tableauSubList.isEmpty() && tableauSubList.size() > 0) {
 							dashboard.setTableauSubList(tableauSubList);
 						}
@@ -112,7 +113,7 @@ public class DashboardRepository implements IDashboardRepository {
 				});
 	}
 
-	private List<Dashboard> getTableauSubListLevel2(String parentId) {
+	private List<Dashboard> getTableauSubListLevel2(String parentId, User user) {
 		String sql =  """
 			    SELECT DISTINCT 
 		        tum.dashboard_id,
@@ -131,7 +132,7 @@ public class DashboardRepository implements IDashboardRepository {
 		      ) > 0
 		    ORDER BY priority
 		    """;
-		return jdbcTemplate.query(sql, new Object[] { parentId, "Active", "Pratik", "IT Admin", "" },
+		return jdbcTemplate.query(sql, new Object[] { parentId, "Active", user.getUserId(), user.getUserRoleNameFk(), user.getUserTypeFk() },
 				new RowMapper<Dashboard>() {
 					@Override
 					public Dashboard mapRow(ResultSet resultSet, int rowNum) throws SQLException {

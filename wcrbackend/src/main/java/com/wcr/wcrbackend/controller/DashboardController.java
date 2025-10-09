@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wcr.wcrbackend.DTO.Dashboard;
+import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.service.IDashboardService;
+
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/dashboard")
@@ -17,12 +20,14 @@ public class DashboardController {
 	private IDashboardService dashboardService;
 	
 	@GetMapping("/api/getDashboardModules")
-	List<Dashboard> getDashboardModules() {
-		return dashboardService.getDashboardsList("Module");
+	List<Dashboard> getDashboardModules(HttpSession session) {
+		User user = (User) session.getAttribute("user");
+		return dashboardService.getDashboardsList("Module", user);
 	}
 	
 	@GetMapping("/api/getDashboardProjects")
-	List<Dashboard> getDashboardProjects() {
-		return dashboardService.getDashboardsList("Project");
+	List<Dashboard> getDashboardProjects(HttpSession session) {
+		User user = (User) session.getAttribute("user");
+		return dashboardService.getDashboardsList("Project", user);
 	}
 }
