@@ -1,33 +1,54 @@
+# === General ===
 HELP.md
+*.log
+.DS_Store
+Thumbs.db
+
+# === Spring Boot / Maven Build Output ===
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+# === Eclipse / STS ===
 .apt_generated
-.classpath
-.factorypath
-.project
-.settings
 .springBeans
 .sts4-cache
+# We want to include Eclipse project metadata, so:
+#!.classpath
+#!.factorypath
+#!.project
+#!.settings/
+# Above commented-out ignores mean these will be included if already tracked
 
-### IntelliJ IDEA ###
-.idea
+# === IntelliJ IDEA ===
+.idea/
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+# === NetBeans ===
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
+/build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+# === Visual Studio Code ===
 .vscode/
+
+# === Frontend (React / Node.js) ===
+wcrfrontend/node_modules/
+wcrfrontend/build/
+wcrfrontend/dist/
+wcrfrontend/.env.local
+wcrfrontend/.next/
+wcrfrontend/.vite/
+
+# === Logs / Temporary ===
+*.tmp
+*.bak
+*.swp
