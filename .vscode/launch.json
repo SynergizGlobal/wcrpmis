@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Start React + Spring Boot",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "cwd": "${workspaceFolder}/wcrpmis/wcrfrontend",
+      "console": "integratedTerminal",
+      "preLaunchTask": "Start Full Stack (React + Spring Boot)"
+    }
+  ]
+}
