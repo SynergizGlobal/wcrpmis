@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import com.wcr.wcrbackend.DTO.Forms;
+import com.wcr.wcrbackend.entity.User;
 
 @Repository
 public class FormsRepository implements IFormsRepository {
@@ -17,7 +18,7 @@ public class FormsRepository implements IFormsRepository {
 	private JdbcTemplate jdbcTemplate;
 
 	@Override
-	public List<Forms> getUpdateForms() {
+	public List<Forms> getUpdateForms(User user) {
 		String sql = """
 				SELECT DISTINCT
 				    form_id,
@@ -45,7 +46,7 @@ public class FormsRepository implements IFormsRepository {
 				  AND f.url_type = 'Update Forms'
 				ORDER BY priority ASC
 				""";
-		return jdbcTemplate.query(sql, new Object[] { "Pratik", "Active", "Active", "Pratik", "IT Admin", "" },
+		return jdbcTemplate.query(sql, new Object[] { user.getUserId(), "Active", "Active", user.getUserTypeFk(), user.getUserRoleNameFk(), user.getUserId() },
 				new RowMapper<Forms>() {
 					@Override
 					public Forms mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -60,13 +61,13 @@ public class FormsRepository implements IFormsRepository {
 						form.setStatusId(rs.getString("soft_delete_status_fk"));
 						form.setDisplayInMobile(rs.getString("display_in_mobile"));
 						String parentId = rs.getString("parent_form_id_sr_fk");
-						form.setFormsSubMenu(getSubMenuUpdateForms(parentId));
+						form.setFormsSubMenu(getSubMenuUpdateForms(parentId, user));
 						return form;
 					}
 				});
 	}
 
-	private List<Forms> getSubMenuUpdateForms(String parentId) {
+	private List<Forms> getSubMenuUpdateForms(String parentId, User user) {
 		String qry = """
 				SELECT DISTINCT
 				    form_id,
@@ -91,7 +92,7 @@ public class FormsRepository implements IFormsRepository {
 				  )
 				ORDER BY priority ASC
 				""";
-		return jdbcTemplate.query(qry, new Object[] { parentId, "Active", "Pratik", "IT Admin", "" },
+		return jdbcTemplate.query(qry, new Object[] { parentId, "Active", user.getUserTypeFk(), user.getUserRoleNameFk(), user.getUserId() },
 				new RowMapper<Forms>() {
 					@Override
 					public Forms mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -106,13 +107,13 @@ public class FormsRepository implements IFormsRepository {
 						form.setStatusId(rs.getString("soft_delete_status_fk"));
 						form.setDisplayInMobile(rs.getString("display_in_mobile"));
 						String parentIdLevel2 = rs.getString("form_id");
-						form.setFormsSubMenuLevel2(getSubMenuLevel2UpdateForms(parentIdLevel2));
+						form.setFormsSubMenuLevel2(getSubMenuLevel2UpdateForms(parentIdLevel2, user));
 						return form;
 					}
 				});
 	}
 
-	private List<Forms> getSubMenuLevel2UpdateForms(String parentIdLevel2) {
+	private List<Forms> getSubMenuLevel2UpdateForms(String parentIdLevel2, User user) {
 		String qry = """
 			    SELECT DISTINCT 
 			        form_id,
@@ -136,7 +137,7 @@ public class FormsRepository implements IFormsRepository {
 			      ) > 0
 			    ORDER BY priority ASC
 			    """;
-		return jdbcTemplate.query(qry, new Object[] { parentIdLevel2, "Active", "Pratik", "IT Admin", "" },
+		return jdbcTemplate.query(qry, new Object[] { parentIdLevel2, "Active", user.getUserTypeFk(), user.getUserRoleNameFk(), user.getUserId() },
 				new RowMapper<Forms>() {
 					@Override
 					public Forms mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -158,7 +159,7 @@ public class FormsRepository implements IFormsRepository {
 			}
 
 	@Override
-	public List<Forms> getReportForms() {
+	public List<Forms> getReportForms(User user) {
 		String sql = """
 				SELECT DISTINCT
 				    form_id,
@@ -186,7 +187,7 @@ public class FormsRepository implements IFormsRepository {
 				  AND f.url_type = 'Reports'
 				ORDER BY priority ASC
 				""";
-		return jdbcTemplate.query(sql, new Object[] { "Pratik", "Active", "Active", "Pratik", "IT Admin", "" },
+		return jdbcTemplate.query(sql, new Object[] { user.getUserId(), "Active", "Active", user.getUserTypeFk(), user.getUserRoleNameFk(), user.getUserId() },
 				new RowMapper<Forms>() {
 					@Override
 					public Forms mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -201,7 +202,7 @@ public class FormsRepository implements IFormsRepository {
 						form.setStatusId(rs.getString("soft_delete_status_fk"));
 						form.setDisplayInMobile(rs.getString("display_in_mobile"));
 						String parentId = rs.getString("parent_form_id_sr_fk");
-						form.setFormsSubMenu(getSubMenuUpdateForms(parentId));
+						form.setFormsSubMenu(getSubMenuUpdateForms(parentId, user));
 						return form;
 					}
 				});
