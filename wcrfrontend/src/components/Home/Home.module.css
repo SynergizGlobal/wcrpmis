@@ -1,0 +1,73 @@
+.home {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  gap: 50px;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.stats div {
+  background: white;
+  padding: 10px 20px;
+  text-align: center;
+  width: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stats h3 {
+  color: #000;
+  margin: 0;
+}
+
+.stats span {
+  font-size: 14px;
+  color: #000;
+}
+
+.buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.buttons button {
+  background: white;
+  border: 1px solid #ccc;
+  padding: 12px 30px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.buttons button:hover,
+.buttons .active {
+  background: #3c467b;
+  color: white;
+}
+.homeStatsCard{
+  border: 1px solid var(--primary-color);
+}
+@media(max-width: 767px){
+  .home{
+    gap: 10px;
+  }
+  .homeStatsCard{
+    padding: 10px !important;
+  }
+  .buttons button{
+    padding: 6px 15px;
+  }
+}

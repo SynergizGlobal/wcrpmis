@@ -1,0 +1,150 @@
+:root{
+  --primary-color: #50589C;
+  --primary-fade-color: #3C467B;
+  --secondary-blue: #46B1E1;
+  --ligh-blue: #CAEEFB;
+  --headings-blue: #156082;
+  --transparent-blue: #ACC0DC;
+}
+body{
+  font-size: 16px;
+  font-weight: 400;
+  margin: 0;
+  padding: 0;
+}
+h1, h2, h3, h4, h5, h6{
+  font-weight: 600;
+  margin: 6px 0 10px;
+}
+h1{
+  font-size: 30px;
+}
+h2{
+  font-size: 28px;
+}
+h3{
+  font-size: 25px;
+}
+h4{
+  font-size: 22.5px;
+}
+h5{
+  font-size: 19.5px;
+}
+h6{
+  font-size: 18px;
+}
+p{
+  margin: 8px 0 10px;
+}
+.fw-400{
+  font-weight: 400;
+}
+.fw-600{
+  font-weight: 600;
+}
+.fw-800{
+  font-weight: 800;
+}
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.formField{
+  display: flex;
+  flex-direction: column;
+  margin: 8px 0 12px;
+}
+.checkboxRow{
+  display: flex;
+  margin: 8px 0 10px;
+}
+.checkboxRow input{
+  min-width: 15px;
+  margin-right: 7px;
+}
+.btn{
+  outline: 0;
+  border: 0;
+  padding: 5px 30px;
+  background-color: transparent;
+  max-width: max-content ;
+}
+.btn-primary{
+  background-color: var(--primary-color);
+  color: #fff;
+  font-weight: 600;
+}
+label{
+  font-size: 16px;
+  font-weight: 600;
+  padding: 5px 0 8px;
+}
+input{
+  min-width: 300px;
+  padding: 5px 10px;
+  outline: 0;
+}
+.d-flex{
+  display: flex;
+}
+.align-center{
+  align-items: center;
+}
+.justify-content-center{
+  justify-content: center;
+}
+@media(max-width: 767px){
+  input{
+    min-width: 100%;
+  }
+  h1{
+    font-size: 28px;
+  }
+  h2{
+    font-size: 25px;
+  }
+  h3{
+    font-size: 23.5px;
+  }
+  h4{
+    font-size: 21px;
+  }
+  h5, h6{
+    font-size: 17px;
+  }
+}

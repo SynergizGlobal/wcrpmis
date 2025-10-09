@@ -1,0 +1,34 @@
+.container {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+.loginSection{
+  background: url("../../assets/images/wcr-bg.png");
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loginBox{
+  background-color: var(--transparent-blue);
+}
+.loginboxInner{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+.logo{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+@media(max-width: 767px){
+  .loginBox{
+    width: 80%;
+    margin: 0 auto;
+  }
+}
