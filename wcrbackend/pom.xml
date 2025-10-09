@@ -60,6 +60,11 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+    		<groupId>com.microsoft.sqlserver</groupId>
+    		<artifactId>mssql-jdbc</artifactId>
+    		<scope>runtime</scope> <!-- Use a version compatible with your Java version -->
+		</dependency>
 	</dependencies>
 
 	<build>
