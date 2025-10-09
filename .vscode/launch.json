@@ -2,14 +2,35 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Start React + Spring Boot",
+      "name": "Debug Spring Boot",
+      "type": "java",
+      "request": "launch",
+      "mainClass": "com.wcr.wcrbackend.WcrbackendApplication",
+      "projectName": "wcrbackend",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug React (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/wcrfrontend/src",
+      "sourceMaps": true
+    },
+    {
+      "name": "Start React Only",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start"],
-      "cwd": "${workspaceFolder}/wcrpmis/wcrfrontend",
-      "console": "integratedTerminal",
-      "preLaunchTask": "Start Full Stack (React + Spring Boot)"
+      "cwd": "${workspaceFolder}/wcrfrontend",
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Full Stack (React + Spring Boot)",
+      "configurations": ["Debug Spring Boot", "Start React Only"]
     }
   ]
 }
