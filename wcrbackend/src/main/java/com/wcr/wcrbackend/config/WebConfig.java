@@ -18,7 +18,7 @@ public class WebConfig {
                         .allowedOrigins(
                                 "http://localhost:3000", // React local dev
                                 "http://127.0.0.1:3000", // sometimes used by browsers
-                                "https://syntrackpro.com" // production URL
+                                "https://203.153.40.44:90/" // production URL
                 )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")

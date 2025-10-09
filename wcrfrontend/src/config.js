@@ -6,7 +6,7 @@ const getApiUrl = () => {
   }
 
   if (process.env.NODE_ENV === "production") {
-    return "https://syntrackpro.com/wcr";
+    return "http://203.153.40.44:90";
   } else {
     return "http://localhost:8080";
   }

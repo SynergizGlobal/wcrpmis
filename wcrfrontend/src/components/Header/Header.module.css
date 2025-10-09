@@ -28,6 +28,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 0 0 21%;
+  justify-content: flex-end;
 }
 
 .logo {
@@ -37,7 +39,6 @@
 
 .username {
   font-size: 16px;
-  min-width: 150px;
 }
 .profile{
   display: flex;
@@ -96,7 +97,6 @@
   }
   .username {
     font-size: 12px;
-    min-width: 70px;
   }
   .right{
     gap: 0;
