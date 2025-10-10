@@ -3,6 +3,7 @@ package com.wcr.wcrbackend.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,5 +53,17 @@ public class LoginController {
 					.body(new ErrorResponse("AUTHENTICATION_FAILED", e.getMessage()));
 
 		} 
+	}
+	@GetMapping("/logout")
+	public ResponseEntity<?> logout(HttpSession session) {
+		try {
+			String userName = (String) session.getAttribute("userName");
+			session.invalidate();
+			return ResponseEntity.ok(new LoginResponse(null, null,null,  null, null, null));
+
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new ErrorResponse("LOGOUT_ERROR", "Error occurred during logout"));
+		}
 	}
 }
