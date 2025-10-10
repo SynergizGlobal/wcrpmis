@@ -22,8 +22,8 @@ public class DocumentsController {
 	@Autowired
 	private IDocumentService documentService;
 	
-	@GetMapping("/api/getDocumentTypes")
+	/*@GetMapping("/api/getDocumentTypes")
 	List<WebDocuments> getDocumentTypes(HttpSession session) {
 		return documentService.getDocumentTypes();
-	}
+	}*/
 }

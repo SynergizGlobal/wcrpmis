@@ -16,8 +16,8 @@ public class AdminFormsController {
 	@Autowired
 	private IAdminFormsService adminFormsService;
 	
-	@GetMapping("/api/getAdminForms")
+	/*@GetMapping("/api/getAdminForms")
 	List<Admin> getAdminForms() {
 		return adminFormsService.getAdminForms();
-	}
+	}*/
 }

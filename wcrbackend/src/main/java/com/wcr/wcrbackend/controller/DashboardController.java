@@ -19,7 +19,7 @@ public class DashboardController {
 	@Autowired
 	private IDashboardService dashboardService;
 	
-	@GetMapping("/api/getDashboardModules")
+	/*@GetMapping("/api/getDashboardModules")
 	List<Dashboard> getDashboardModules(HttpSession session) {
 		User user = (User) session.getAttribute("user");
 		return dashboardService.getDashboardsList("Module", user);
@@ -29,5 +29,5 @@ public class DashboardController {
 	List<Dashboard> getDashboardProjects(HttpSession session) {
 		User user = (User) session.getAttribute("user");
 		return dashboardService.getDashboardsList("Project", user);
-	}
+	}*/
 }

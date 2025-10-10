@@ -16,8 +16,8 @@ public class WebLinksController {
 	@Autowired
 	private IWebLinkService weblinkService;
 	
-	@GetMapping("/api/getWebLinks")
+	/*@GetMapping("/api/getWebLinks")
 	List<WebLinks> getWebLinks() {
 		return weblinkService.getWebLinks();
-	}
+	}*/
 }

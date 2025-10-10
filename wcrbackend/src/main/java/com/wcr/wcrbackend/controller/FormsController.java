@@ -24,9 +24,9 @@ public class FormsController {
         return formsService.getUpdateForms(user);
     }
     
-    @GetMapping("/api/getReportForms")
+    /*@GetMapping("/api/getReportForms")
     public List<Forms> getReportForms(HttpSession session) {
     	User user = (User) session.getAttribute("user");
         return formsService.getReportForms(user);
-    }
+    }*/
 }

@@ -21,11 +21,11 @@ public class MessagesController {
 	@Autowired
 	private IMessageService messageService;
 	
-	@GetMapping("/api/getMessages")
+	/*@GetMapping("/api/getMessages")
 	List<Messages> getMessages(HttpSession session) throws Exception{
 		User user = (User) session.getAttribute("user");
 		Messages mObj = new Messages();
 		mObj.setUser_id_fk(user.getUserId());
 		return messageService.getMessages(mObj);
-	}
+	}*/
 }

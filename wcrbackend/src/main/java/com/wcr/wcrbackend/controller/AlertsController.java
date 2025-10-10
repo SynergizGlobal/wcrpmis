@@ -19,7 +19,7 @@ public class AlertsController {
 	@Autowired
 	private IAlertsService alertsService;
 	
-	@GetMapping("/api/getAlerts")
+	/*@GetMapping("/api/getAlerts")
 	List<Alerts> getAlerts(HttpSession session) throws Exception{
 		User user = (User) session.getAttribute("user");
 		Alerts aObj = new Alerts();
@@ -27,5 +27,5 @@ public class AlertsController {
 		aObj.setEmail_id(user.getEmailId());
 		aObj.setUser_role_name(user.getUserRoleNameFk());
 		return alertsService.getAdminForms(aObj);
-	}
+	}*/
 }
