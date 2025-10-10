@@ -71,3 +71,13 @@
     padding: 6px 15px;
   }
 }
+.table {
+  margin: 0 auto;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table td, .table th {
+  border: 1px solid #000;
+  padding: 4px 8px;
+}
