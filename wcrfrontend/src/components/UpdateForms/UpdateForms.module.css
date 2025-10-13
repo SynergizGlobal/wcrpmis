@@ -13,51 +13,66 @@
 }
 
 .formsGrid {
-  display: grid;
+  /* display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 25px;
+  justify-items: center; */
+
+  display: flex;
+  gap: 40px;
   justify-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
-.card {
+.card{
+  width: 100%;
+  flex: 0 0 22%;
+  position: relative;
+  text-align: center;
+}
+
+
+.cardHeader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
   background-color: white;
-  border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 15px;
-  width: 100%;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.card:hover {
+.cardHeader:hover {
   background-color: var(--primary-fade-color);
   color: white;
   transform: translateY(-3px);
 }
 
-.cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-}
-
 .subDropdown {
   background: #caeefb;
   border-radius: 5px;
-  margin-top: 10px;
-  padding: 5px;
+  /* padding: 5px; */
   text-align: left;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
 }
 
-.menuItem {
-  padding: 6px 10px;
-}
 
+.menuItem div{
+  display: flex;
+  align-items: center;
+}
 .menuItem a {
   text-decoration: none;
   color: #156082;
+  padding: 11px 15px;
+  width: 100%;
+  display: flex;
 }
 
 .menuItem a:hover {
@@ -67,6 +82,7 @@
 
 .arrow {
   transition: transform 0.3s ease;
+  margin-top: 5px;
 }
 
 .arrowOpen {
@@ -77,5 +93,8 @@
   .formsGrid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 15px;
+  }
+  .card{
+    flex: 100%;
   }
 }

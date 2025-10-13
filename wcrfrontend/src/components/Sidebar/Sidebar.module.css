@@ -43,7 +43,7 @@
 @media(max-width: 767px){
   .sidebar{
     position: fixed;
-    top: 94px;
+    top: 84px;
     left: -240px; /* hidden by default */
     width: 240px;
     height: 100vh;
