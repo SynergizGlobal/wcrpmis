@@ -1,11 +1,40 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Outlet } from "react-router-dom";   // ✅ Import Outlet
+import { Outlet, useLocation } from "react-router-dom";   // ✅ Import Outlet
 import Header from "../Header/Header";
 import Sidebar from "../Sidebar/Sidebar";
 import Footer from "../Footer/Footer";
 import styles from "./layout.module.css";
+import { usePageTitle } from "../../context/PageTitleContext";
 
 export default function Layout() {
+
+  const location = useLocation();
+
+  const { setPageTitle, routeTitles } = usePageTitle();
+
+  
+  useEffect(() => {
+    const staticRouteTitles = {
+      "/home": "Western Central Railways",
+      "/dashboard": "Dashboard",
+      "/updateforms": "Update Forms",
+      "/reports": "Reports",
+      "/modules": "Modules",
+      "/works": "Works",
+      "/documents": "Documents",
+      "/quicklinks": "Quick Links",
+      "/admin": "Admin Panel",
+    };
+
+    // 🧠 If this route has a saved title, use it; otherwise, fallback
+    const restoredTitle =
+      routeTitles[location.pathname] ||
+      staticRouteTitles[location.pathname] ||
+      "Western Central Railways";
+
+    setPageTitle(restoredTitle);
+  }, [location.pathname, routeTitles, setPageTitle]);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarRef = useRef(null);
 

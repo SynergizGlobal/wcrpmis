@@ -1,31 +1,33 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom"; 
+import React, { useState, useEffect, useRef } from "react"; 
 import styles from "./Header.module.css";
+import { usePageTitle } from "../../context/PageTitleContext";
 import logo from "../../assets/images/wcr-logo.png";
 
 export default function Header({ toggleSidebar }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-   const location = useLocation();
+  const { pageTitle } = usePageTitle();
+  const [userName, setUserName] = useState("");
 
    const dropdownRef = useRef();
 
-   const pageTitles = {
-    "/dashboard": "Dashboard",
-    "/updateforms": "Update Forms",
-    "/reports": "Reports",
-    "/modules": (
-                  <>
-                  <span className="fw-400">Project Name:</span>{" "} NS-1: DOUBLING
-                  </>
-                ),
-    "/works": "Works",
-    "/documents": "Documents",
-    "/quicklinks": "Quick Links",
-    "/admin": "Admin Panel",
-  };
+  //  const pageTitles = {
+  //   "/dashboard": "Dashboard",
+  //   "/updateforms": "Update Forms",
+  //   "/reports": "Reports",
+  //   "/modules": (
+  //                 <>
+  //                 <span className="fw-400">Project Name:</span>{" "} NS-1: DOUBLING
+  //                 </>
+  //               ),
+  //   "/works": "Works",
+  //   "/documents": "Documents",
+  //   "/quicklinks": "Quick Links",
+  //   "/admin": "Admin Panel",
+  // };
 
-  const pageTitle = pageTitles[location.pathname] || "Western Central Railways";
+  // const pageTitle = pageTitles[location.pathname] || "Western Central Railways";
+
+  
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
@@ -35,6 +37,18 @@ export default function Header({ toggleSidebar }) {
       localStorage.removeItem("token");
       window.location.href = "/wcrpmis/";
     };
+
+    useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUserName(parsedUser.userName || parsedUser.userId || "User"); 
+      } catch {
+        setUserName("User");
+      }
+    }
+  }, []);
 
     useEffect(() => {
   const handleClickOutside = (event) => {
@@ -58,7 +72,9 @@ export default function Header({ toggleSidebar }) {
       <div className={styles.right}>
         <div className={styles.profile} onClick={toggleDropdown}>
           <img src={logo} alt="Logo" className={styles.logo} />
-          <span className={styles.username}>Username ▼</span>
+          <span className={styles.username}>
+            {userName} ▼
+          </span>
         </div>
       <div ref={dropdownRef}>
         {dropdownOpen && (

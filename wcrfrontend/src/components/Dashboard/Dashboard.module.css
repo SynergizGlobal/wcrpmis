@@ -2,4 +2,125 @@
   padding: 20px;
   background-color: #f9f9f9;
   border-radius: 8px;
+  border: 2px solid var(--primary-color);
+  min-height: 90vh;
+}
+.dashboardMenu {
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  z-index: 10;
+  margin-bottom: 15px;
+}
+
+.menuList {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.menuItem {
+  position: relative;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-size: 14px;
+  border: 2px solid var(--primary-color);
+  border-radius: 5px;
+  color: #000;
+}
+
+.menuItem:hover {
+  background-color: var(--secondary-blue);
+  color: #fff;
+}
+
+.menuItem.active {
+  background-color: var(--secondary-blue);
+  color: #fff;
+}
+
+/* Dropdown Submenu */
+.subMenuList {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--secondary-blue);
+  color: #fff;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 0 0 4px 4px;
+  min-width: 220px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 20;
+}
+
+.subMenuItem {
+  padding: 10px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.subMenuItem:hover {
+  background-color: var(--primary-color);
+}
+.menuLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* arrow beside submenu item */
+.arrow {
+  font-size: 10px;
+  transition: transform 0.3s ease;
+  display: inline-block;
+  margin-left: 4px;
+}
+
+/* rotate arrow when open */
+.arrowOpen {
+  transform: rotate(180deg);
+}
+
+/* Optional: If using lucide-react ChevronDown */
+.arrowIcon {
+  transition: transform 0.3s ease;
+}
+
+.arrowIcon.arrowOpen {
+  transform: rotate(180deg);
+}
+
+/* Responsive View */
+@media (max-width: 767px) {
+  .subMenu {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menuList {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menuItem {
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .subMenuList {
+    position: relative;
+    box-shadow: none;
+    min-width: unset;
+  }
 }

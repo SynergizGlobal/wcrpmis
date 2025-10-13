@@ -31,11 +31,12 @@ export default function Login() {
         const response = await fetch(`${API_BASE_URL}/login`,{
           method: "POST",
           headers: {"Content-Type": "application/json"},
+          credentials: "include",
           body: JSON.stringify({
             userId: formData.username,
             password: formData.password,
-          }),
-          credentials: "include",
+          })
+          
         });
 
         if(!response.ok){

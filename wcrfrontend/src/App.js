@@ -10,6 +10,7 @@ import Sidebar from "./components/Sidebar/Sidebar";
 import Header from "./components/Header/Header";
 import About from "./components/About/About";
 import Dashboard from "./components/Dashboard/Dashboard";
+import { PageTitleProvider } from "./context/PageTitleContext";
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { API_BASE_URL } from "./config";
@@ -37,6 +38,7 @@ function App() {
   }, []);
 
   return (
+    <PageTitleProvider>
     <BrowserRouter basename="/wcrpmis">
       <Routes>
         {/* Public route */}
@@ -83,6 +85,7 @@ function App() {
          
       </Routes>
     </BrowserRouter>
+    </PageTitleProvider>
   );
 }
 
