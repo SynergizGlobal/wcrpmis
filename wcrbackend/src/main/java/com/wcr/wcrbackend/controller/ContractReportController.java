@@ -58,4 +58,36 @@ public class ContractReportController {
 		}
 		return ResponseEntity.ok(contractorsList);
 	}
+	
+	@PostMapping("/ajax/getStatsuListInContractReport")
+	public ResponseEntity<List<Contract>> getStatsuListInContractReport(@RequestBody Contract obj) {
+		List<Contract> contractorsList = null;
+		try {
+			contractorsList = contractReportService.getStatsuListInContractReport(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(contractorsList);
+	}
+	
+	@PostMapping("/ajax/getStatusofWorkItems")
+	public ResponseEntity<List<Contract>> getStatusofWorkItems(@RequestBody Contract obj) {
+		List<Contract> contractorsList = null;
+		try {
+			contractorsList = contractReportService.getStatusofWorkItems(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(contractorsList);
+	}
+	@PostMapping("/ajax/getContractListInContractReport")
+	public ResponseEntity<List<Contract>> getContractListInContractReport(@RequestBody Contract obj) {
+		List<Contract> contractorsList = null;
+		try {
+			contractorsList = contractReportService.getContractListInContractReport(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(contractorsList);
+	}
 }

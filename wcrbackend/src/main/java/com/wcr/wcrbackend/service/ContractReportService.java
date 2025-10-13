@@ -33,5 +33,20 @@ public class ContractReportService implements IContractReportService {
 		// TODO Auto-generated method stub
 		return contractReportRepository.getContractStatusListInContractReport(obj);
 	}
+	@Override
+	public List<Contract> getStatsuListInContractReport(Contract obj) throws Exception {
+		// TODO Auto-generated method stub
+		return contractReportRepository.getStatsuListInContractReport(obj);
+	}
+	@Override
+	public List<Contract> getStatusofWorkItems(Contract obj) throws Exception {
+		// TODO Auto-generated method stub
+		return contractReportRepository.getStatusofWorkItems(obj);
+	}
+	@Override
+	public List<Contract> getContractListInContractReport(Contract obj) throws Exception {
+		// TODO Auto-generated method stub
+		return contractReportRepository.getContractListInContractReport(obj);
+	}
 
 }

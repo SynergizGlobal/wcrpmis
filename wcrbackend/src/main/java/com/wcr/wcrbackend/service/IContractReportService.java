@@ -14,4 +14,10 @@ public interface IContractReportService {
 
 	List<Contract> getContractStatusListInContractReport(Contract obj) throws Exception;
 
+	List<Contract> getStatsuListInContractReport(Contract obj) throws Exception;
+
+	List<Contract> getStatusofWorkItems(Contract obj) throws Exception;
+
+	List<Contract> getContractListInContractReport(Contract obj) throws Exception;
+
 }
