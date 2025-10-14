@@ -47,4 +47,18 @@ public interface ILandAquisitionRepo {
 
 	LandAcquisition getLandAcquisitionForm(LandAcquisition obj) throws Exception;
 
+	List<LandAcquisition> getRailwayList(String la_id) throws Exception;
+
+	List<LandAcquisition> getForestList(String la_id) throws Exception;
+
+	List<LandAcquisition> getGovList(String la_id) throws Exception;
+
+	List<LandAcquisition> getPrivateLandList(String la_id) throws Exception;
+
+	List<LandAcquisition> getPrivateValList(String la_id) throws Exception;
+
+	List<LandAcquisition> geprivateIRAList(String la_id) throws Exception;
+
+	List<LandAcquisition> getLandAcquisitionList(LandAcquisition dObj) throws Exception;
+
 }

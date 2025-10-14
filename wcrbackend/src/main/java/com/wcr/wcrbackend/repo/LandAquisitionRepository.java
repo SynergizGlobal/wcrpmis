@@ -860,4 +860,221 @@ public class LandAquisitionRepository implements ILandAquisitionRepo {
 		return LADetails;
 	}
 
+	@Override
+	public List<LandAcquisition> getRailwayList(String la_id) throws Exception {
+		List<LandAcquisition> objList = null;
+		try {
+			String qry = "select la_id_fk,lr.demanded_amount_units,lr.payment_amount_units as payment_amount_units_railway,FORMAT(lr.online_submission,'dd-MM-yyyy') AS railway_online_submission," + 
+					"FORMAT(lr.submission_date_to_DyCFO,'dd-MM-yyyy') AS railway_submission_date_to_DyCFO, FORMAT(lr.submission_date_to_CCF_Thane,'dd-MM-yyyy') AS railway_submission_date_to_CCF_Thane, FORMAT(lr.[submission_date_to_nodal_officer/CCF Nagpur],'dd-MM-yyyy') AS railway_submission_date_to_nodal_officer_CCF_Nagpur, " + 
+					" FORMAT(lr.submission_date_to_revenue_secretary_mantralaya,'dd-MM-yyyy') AS railway_submission_date_to_revenue_secretary_mantralaya, FORMAT(lr.submission_date_to_regional_office_nagpur,'dd-MM-yyyy') AS railway_submission_date_to_regional_office_nagpur, FORMAT( lr.date_of_approval_by_Rregional_Office_agpur,'dd-MM-yyyy') AS railway_date_of_approval_by_Rregional_Office_agpur," + 
+					"FORMAT(cast(lr.valuation_by_DyCFO as date) ,'dd-MM-yyyy') AS railway_valuation_by_DyCFO, lr.demanded_amount as railway_demanded_amount, FORMAT(cast(lr.approval_for_payment as date),'dd-MM-yyyy') AS railway_approval_for_payment, FORMAT(lr.payment_date,'dd-MM-yyyy') AS railway_payment_date,lr.payment_amount as railway_payment_amount, lr.payment_status as railway_payment_status, FORMAT(lr.possession_date,'dd-MM-yyyy') AS railway_possession_date, lr.possession_status as railway_possession_status" + 
+					" from la_railway_land_acquisition lr " + 
+					"left join la_land_identification li on lr.la_id_fk = li.la_id  " + 
+					"where la_id_fk = ? ";
+			
+			objList = jdbcTemplate.query( qry, new Object[] {la_id}, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+			
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objList;
+	}
+
+	@Override
+	public List<LandAcquisition> getForestList(String la_id) throws Exception {
+		List<LandAcquisition> objList = null;
+		try {
+			String qry = "select la_id_fk, FORMAT(lf.on_line_submission,'dd-MM-yyyy') AS forest_online_submission, FORMAT(lf.submission_date_to_dycfo,'dd-MM-yyyy') AS forest_submission_date_to_dycfo, FORMAT(lf.submission_date_to_ccf_thane,'dd-MM-yyyy') AS forest_submission_date_to_ccf_thane, " + 
+					"FORMAT(lf.submission_date_to_nodal_officer,'dd-MM-yyyy') AS forest_submission_date_to_nodal_officer, FORMAT(lf.submission_date_to_revenue_secretary_mantralaya,'dd-MM-yyyy') AS forest_submission_date_to_revenue_secretary_mantralaya, FORMAT(lf.submission_date_to_regional_office_nagpur,'dd-MM-yyyy') AS forest_submission_date_to_regional_office_nagpur," + 
+					" FORMAT(lf.date_of_approval_by_regional_office_nagpur,'dd-MM-yyyy') AS forest_date_of_approval_by_regional_office_nagpur, FORMAT(lf.valuation_by_dycfo,'dd-MM-yyyy') AS forest_valuation_by_dycfo,cast(lf.demanded_amount as CHAR) as forest_demanded_amount,cast(lf.payment_amount  as CHAR) as forest_payment_amount, FORMAT(lf.approval_for_payment,'dd-MM-yyyy') AS forest_approval_for_payment" + 
+					", FORMAT(lf.payment_date,'dd-MM-yyyy') AS forest_payment_date,FORMAT(lf.possession_date,'dd-MM-yyyy') AS forest_possession_date,lf.possession_status_fk as forest_possession_status_fk," + 
+					"lf.payment_status_fk as forest_payment_status_fk" + 
+					" from la_forest_land_acquisition lf " + 
+					"left join la_land_identification li on lf.la_id_fk = li.la_id  " + 
+					"where la_id_fk = ? ";
+			
+			objList = jdbcTemplate.query( qry, new Object[] {la_id}, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+			
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objList;
+	}
+
+	@Override
+	public List<LandAcquisition> getGovList(String la_id) throws Exception {
+		List<LandAcquisition> objList = null;
+		try {
+			String qry = "select la_id_fk,lg.id, lg.la_id_fk,FORMAT(lg.proposal_submission,'dd-MM-yyyy') AS proposal_submission, lg.proposal_submission_status_fk, FORMAT(lg.valuation_date,'dd-MM-yyyy') AS valuation_date, FORMAT(lg.letter_for_payment,'dd-MM-yyyy') AS letter_for_payment," + 
+					"lg.amount_demanded,cast(lg.lfp_status_fk as CHAR) as lfp_status_fk,FORMAT(lg.approval_for_payment,'dd-MM-yyyy') AS approval_for_payment,FORMAT(lg.payment_date,'dd-MM-yyyy') AS payment_date, lg.amount_paid, lg.payment_status_fk, FORMAT(lg.possession_date,'dd-MM-yyyy') AS possession_date," + 
+					"lg.possession_status_fk,FORMAT(lg.planned_date_of_possession ,'dd-MM-yyyy') as planned_date_of_possession " + 
+					" from la_government_land_acquisition lg " + 
+					"left join la_land_identification li on lg.la_id_fk = li.la_id  " + 
+					"where la_id_fk = ? ";
+			
+			objList = jdbcTemplate.query( qry, new Object[] {la_id}, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+			
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objList;
+	}
+
+	@Override
+	public List<LandAcquisition> getPrivateLandList(String la_id) throws Exception {
+		List<LandAcquisition> objList = null;
+		try {
+			String qry = "select la_id_fk,lpa.basic_rate_units,lpa.agriculture_tree_rate_units,lpa.forest_tree_rate_units, lpa.name_of_the_owner, lpa.basic_rate, isnull(lpa.agriculture_tree_nos,0) as agriculture_tree_nos, lpa.agriculture_tree_rate, isnull(lpa.forest_tree_nos,0) as forest_tree_nos," + 
+					"lpa.forest_tree_rate,FORMAT(lpa.consent_from_owner,'dd-MM-yyyy') AS consent_from_owner, FORMAT(lpa.legal_search_report,'dd-MM-yyyy') AS legal_search_report, FORMAT(lpa.date_of_registration,'dd-MM-yyyy') AS date_of_registration, FORMAT(lpa.date_of_possession,'dd-MM-yyyy') AS date_of_possession, lpa.possession_status_fk as private_possession_status_fk," + 
+					"lpa.hundred_percent_Solatium,lpa.extra_25_percent, lpa.total_rate_divide_m2,lpa.land_compensation," + 
+					"lpa.agriculture_tree_compensation,lpa.forest_tree_compensation,lpa.structure_compensation,lpa.borewell_compensation,lpa.total_compensation" + 
+					" from la_private_land_acquisition lpa " + 
+					"left join la_land_identification li on lpa.la_id_fk = li.la_id  " + 
+					"where la_id_fk = ? ";
+			
+			objList = jdbcTemplate.query( qry, new Object[] {la_id}, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+			
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objList;
+	}
+
+	@Override
+	public List<LandAcquisition> getPrivateValList(String la_id) throws Exception {
+		List<LandAcquisition> objList = null;
+		try {
+			String qry = "select la_id_fk,lpv.payment_amount_units,FORMAT(lpv.forest_tree_survey ,'dd-MM-yyyy') AS forest_tree_survey,FORMAT(lpv.forest_tree_valuation ,'dd-MM-yyyy') AS forest_tree_valuation, lpv.forest_tree_valuation_status_fk,FORMAT(lpv.horticulture_tree_survey ,'dd-MM-yyyy') AS horticulture_tree_survey,FORMAT(lpv.horticulture_tree_valuation ,'dd-MM-yyyy') AS horticulture_tree_valuation," + 
+					"FORMAT(lpv.structure_survey ,'dd-MM-yyyy') AS structure_survey,FORMAT(lpv.structure_valuation ,'dd-MM-yyyy') AS structure_valuation,FORMAT(lpv.borewell_survey ,'dd-MM-yyyy') AS borewell_survey,FORMAT(lpv.borewell_valuation ,'dd-MM-yyyy') AS borewell_valuation, lpv.horticulture_tree_valuation_status_fk, lpv.structure_valuation_status_fk," + 
+					"lpv.borewell_valuation_status_fk, lpv.rfp_to_adtp_status_fk, FORMAT(lpv.date_of_rfp_to_adtp ,'dd-MM-yyyy') AS date_of_rfp_to_adtp,FORMAT(lpv.date_of_rate_fixation_of_land ,'dd-MM-yyyy') AS date_of_rate_fixation_of_land, FORMAT(lpv.sdo_demand_for_payment ,'dd-MM-yyyy') AS sdo_demand_for_payment,FORMAT(lpv.date_of_approval_for_payment ,'dd-MM-yyyy') AS date_of_approval_for_payment," + 
+					"cast(lpv.payment_amount as CHAR) as payment_amount, FORMAT(lpv.payment_date ,'dd-MM-yyyy') AS private_payment_date  " + 
+					" from la_private_land_valuation lpv " + 
+					"left join la_land_identification li on lpv.la_id_fk = li.la_id  " + 
+					"where la_id_fk = ? ";
+			
+			objList = jdbcTemplate.query( qry, new Object[] {la_id}, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+			
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objList;
+	}
+
+	@Override
+	public List<LandAcquisition> geprivateIRAList(String la_id) throws Exception {
+		List<LandAcquisition> objList = null;
+		try {
+			String qry = "select la_id_fk,ira.collector as private_ira_collector, FORMAT(submission_of_proposal_to_GM ,'dd-MM-yyyy') AS submission_of_proposal_to_GM,FORMAT(approval_of_GM ,'dd-MM-yyyy') AS  approval_of_GM,FORMAT(draft_letter_to_con_for_approval_rp ,'dd-MM-yyyy') AS draft_letter_to_con_for_approval_rp,FORMAT(date_of_approval_of_construction_rp ,'dd-MM-yyyy') AS  date_of_approval_of_construction_rp,FORMAT(date_of_uploading_of_gazette_notification_rp ,'dd-MM-yyyy') AS date_of_uploading_of_gazette_notification_rp," + 
+					"FORMAT(publication_in_gazette_rp ,'dd-MM-yyyy') AS publication_in_gazette_rp,FORMAT(date_of_proposal_to_DC_for_nomination ,'dd-MM-yyyy') AS  date_of_proposal_to_DC_for_nomination, FORMAT(date_of_nomination_of_competenta_authority ,'dd-MM-yyyy') AS date_of_nomination_of_competenta_authority, FORMAT(draft_letter_to_con_for_approval_ca ,'dd-MM-yyyy') AS draft_letter_to_con_for_approval_ca, FORMAT(date_of_approval_of_construction_ca ,'dd-MM-yyyy') AS date_of_approval_of_construction_ca, " + 
+					"FORMAT(date_of_uploading_of_gazette_notification_ca ,'dd-MM-yyyy') AS date_of_uploading_of_gazette_notification_ca, FORMAT(publication_in_gazette_ca ,'dd-MM-yyyy') AS publication_in_gazette_ca, FORMAT(date_of_submission_of_draft_notification_to_CALA ,'dd-MM-yyyy') AS date_of_submission_of_draft_notification_to_CALA,FORMAT(approval_of_CALA_20a ,'dd-MM-yyyy') AS approval_of_CALA_20a,FORMAT(draft_letter_to_con_for_approval_20a ,'dd-MM-yyyy') AS draft_letter_to_con_for_approval_20a," + 
+					"FORMAT(date_of_approval_of_construction_20a ,'dd-MM-yyyy') AS date_of_approval_of_construction_20a,FORMAT(date_of_uploading_of_gazette_notification_20a ,'dd-MM-yyyy') AS date_of_uploading_of_gazette_notification_20a,FORMAT(publication_in_gazette_20a ,'dd-MM-yyyy') AS publication_in_gazette_20a,FORMAT(publication_in_2_local_news_papers_20a ,'dd-MM-yyyy') AS publication_in_2_local_news_papers_20a,FORMAT(pasting_of_notification_in_villages_20a ,'dd-MM-yyyy') AS pasting_of_notification_in_villages_20a," + 
+					"FORMAT(receipt_of_grievances ,'dd-MM-yyyy') AS  receipt_of_grievances, FORMAT(disposal_of_grievances ,'dd-MM-yyyy') AS disposal_of_grievances, FORMAT(date_of_submission_of_draft_notification_to_CALA_20e ,'dd-MM-yyyy') AS date_of_submission_of_draft_notification_to_CALA_20e, FORMAT(approval_of_CALA_20e ,'dd-MM-yyyy') AS  approval_of_CALA_20e,FORMAT(draft_letter_to_con_for_approval_20e ,'dd-MM-yyyy') AS  draft_letter_to_con_for_approval_20e,"
+					+ "FORMAT(date_of_approval_of_construction_20e ,'dd-MM-yyyy') AS  date_of_approval_of_construction_20e,FORMAT(date_of_uploading_of_gazette_notification_20e ,'dd-MM-yyyy') AS date_of_uploading_of_gazette_notification_20e,FORMAT(publication_in_gazette_20e ,'dd-MM-yyyy') AS  publication_in_gazette_20e,FORMAT(publication_of_notice_in_2_local_news_papers_20e ,'dd-MM-yyyy') AS publication_of_notice_in_2_local_news_papers_20e,FORMAT(date_of_submission_of_draft_notification_to_CALA_20f ,'dd-MM-yyyy') AS date_of_submission_of_draft_notification_to_CALA_20f," + 
+					"FORMAT(approval_of_CALA_20f ,'dd-MM-yyyy') AS approval_of_CALA_20f,FORMAT(draft_letter_to_con_for_approval_20f ,'dd-MM-yyyy') AS draft_letter_to_con_for_approval_20f,FORMAT(date_of_approval_of_construction_20f ,'dd-MM-yyyy') AS date_of_approval_of_construction_20f,FORMAT(date_of_uploading_of_gazette_notification_20f ,'dd-MM-yyyy') AS date_of_uploading_of_gazette_notification_20f,FORMAT(publication_in_gazette_20f ,'dd-MM-yyyy') AS publication_in_gazette_20f," + 
+					"FORMAT(publication_of_notice_in_2_local_news_papers_20f ,'dd-MM-yyyy') AS publication_of_notice_in_2_local_news_papers_20f " + 
+					"from la_private_ira ira " + 
+					"left join la_land_identification li on ira.la_id_fk = li.la_id  " + 
+					"where la_id_fk = ? ";
+			
+			objList = jdbcTemplate.query( qry, new Object[] {la_id}, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+			
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objList;
+	}
+
+	@Override
+	public List<LandAcquisition> getLandAcquisitionList(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry ="select distinct la_id,li.remarks,cast(li.area_to_be_acquired as CHAR) as area_to_be_acquired,ISNULL(li.category_fk,c.la_category) as type_of_land,li.la_land_status_fk, li.project_id_fk,li.project_id_fk,p.project_name,sc.la_sub_category as sub_category_of_land, li.survey_number, li.village_id, li.village, taluka, dy_slr, sdo, li.collector, FORMAT(proposal_submission_date_to_collector,'dd-MM-yyyy') AS proposal_submission_date_to_collector, cast(area_of_plot as CHAR) as area_of_plot, jm_fee_amount,jm_fee_amount_units, " + 
+					"li.special_feature,latitude,longitude,cast(li.area_acquired as CHAR) as area_acquired,li.private_land_process,cast(chainage_from as CHAR) as chainage_from,cast(chainage_to as CHAR) as chainage_to, FORMAT(jm_fee_letter_received_date,'dd-MM-yyyy') AS jm_fee_letter_received_date,FORMAT(jm_fee_paid_date,'dd-MM-yyyy') AS jm_fee_paid_date,FORMAT(jm_start_date,'dd-MM-yyyy') AS  jm_start_date,FORMAT(jm_completion_date,'dd-MM-yyyy') AS jm_completion_date, FORMAT(jm_sheet_date_to_sdo,'dd-MM-yyyy') AS jm_sheet_date_to_sdo, jm_remarks, jm_approval, li.issues " + 
+					" from la_land_identification li " +
+					"left join land_executives le on li.project_id_fk = le.project_id_fk  "+
+					"left join project p on li.project_id_fk = p.project_id "
+					+"left join la_sub_category sc on li.la_sub_category_fk = sc.id "
+					+"left join la_category c on sc.la_category_fk = c.la_category "
+					+"where la_id is not null  ";
+			int arrSize = 0;
+			
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getLa_land_status_fk())) {
+				qry = qry + " and la_land_status_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and li.project_id_fk = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getVillage())) {
+				qry = qry + " and village = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				qry = qry + " and c.la_category = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				qry = qry + " and sc.la_sub_category = ? ";
+				arrSize++;
+			}	
+ 			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+ 				qry = qry + " and le.executive_user_id_fk = ? ";
+ 				arrSize++;
+			}
+ 			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSearchStr())) {
+				qry = qry + " and (li.project_id_fk like ? or survey_number like ? or village like ?"
+						+ " or c.la_category like ? or sc.la_sub_category like ? or area_of_plot like ?)";
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+			}			
+ 			
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getLa_land_status_fk())) {
+				pValues[i++] = obj.getLa_land_status_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getVillage())) {
+				pValues[i++] = obj.getVillage();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				pValues[i++] = obj.getType_of_land();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				pValues[i++] = obj.getSub_category_of_land();
+			}
+			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				pValues[i++] = obj.getUser_id();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSearchStr())) {
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+			}			
+		    objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
 }

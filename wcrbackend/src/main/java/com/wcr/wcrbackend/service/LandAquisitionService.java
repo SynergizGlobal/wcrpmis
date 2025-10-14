@@ -136,4 +136,46 @@ public class LandAquisitionService implements ILandAquisitionService {
 		return landAquisitionRepository.getLandAcquisitionForm(obj);
 	}
 
+	@Override
+	public List<LandAcquisition> getRailwayList(String la_id) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getRailwayList(la_id);
+	}
+
+	@Override
+	public List<LandAcquisition> getForestList(String la_id) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getForestList(la_id);
+	}
+
+	@Override
+	public List<LandAcquisition> getGovList(String la_id) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getGovList(la_id);
+	}
+
+	@Override
+	public List<LandAcquisition> getPrivateLandList(String la_id) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getPrivateLandList(la_id);
+	}
+
+	@Override
+	public List<LandAcquisition> getPrivateValList(String la_id) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getPrivateValList(la_id);
+	}
+
+	@Override
+	public List<LandAcquisition> geprivateIRAList(String la_id) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.geprivateIRAList(la_id);
+	}
+
+	@Override
+	public List<LandAcquisition> getLandAcquisitionList(LandAcquisition dObj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getLandAcquisitionList(dObj);
+	}
+
 }
