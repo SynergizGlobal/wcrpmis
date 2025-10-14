@@ -64,4 +64,22 @@ public class LandAquisitionService implements ILandAquisitionService {
 		return landAquisitionRepository.getSubCategoryList(obj);
 	}
 
+	@Override
+	public List<LandAcquisition> getLandsList(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getLandsList(obj);
+	}
+
+	@Override
+	public boolean checkSurveyNumber(String survey_number, String village_id, String la_id) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.checkSurveyNumber(survey_number, village_id, la_id);
+	}
+
+	@Override
+	public List<LandAcquisition> getLADetails(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getLADetails(obj);
+	}
+
 }

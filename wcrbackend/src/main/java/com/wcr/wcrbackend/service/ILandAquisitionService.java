@@ -23,4 +23,10 @@ public interface ILandAquisitionService {
 
 	List<LandAcquisition> getSubCategoryList(LandAcquisition obj) throws Exception;
 
+	List<LandAcquisition> getLandsList(LandAcquisition obj) throws Exception;
+
+	boolean checkSurveyNumber(String survey_number, String village_id, String la_id) throws Exception;
+
+	List<LandAcquisition> getLADetails(LandAcquisition obj) throws Exception;
+
 }

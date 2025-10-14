@@ -1,5 +1,8 @@
 package com.wcr.wcrbackend.repo;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,6 +15,7 @@ import org.springframework.util.StringUtils;
 
 import com.wcr.wcrbackend.DTO.LandAcquisition;
 import com.wcr.wcrbackend.common.CommonConstants;
+import com.wcr.wcrbackend.common.DBConnectionHandler;
 
 @Repository
 public class LandAquisitionRepository implements ILandAquisitionRepo {
@@ -524,6 +528,94 @@ public class LandAquisitionRepository implements ILandAquisitionRepo {
 			throw new Exception(e);
 		}
 		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getLandsList(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objsList = new ArrayList<LandAcquisition>();
+		try {
+			String sub_category_of_land = getSubCategoryLand(obj.getSub_category_of_land());
+			obj.setSub_category_of_land(sub_category_of_land);
+			String qry = "select id as category_id,la_category as type_of_land, ls.la_sub_category as sub_category_of_land from la_category lc "
+					+ "LEFT OUTER JOIN la_sub_category ls ON la_category  = la_category_fk ";
+					
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				qry = qry + " where la_sub_category  = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				qry = qry + " where la_category = ? ";
+				arrSize++;
+			}
+			qry = qry + " group by id,la_category,ls.la_sub_category";
+			Object[] pValues = new Object[arrSize];
+			
+			int i = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				pValues[i++] = obj.getSub_category_of_land();
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				pValues[i++] = obj.getType_of_land();
+			}	
+			
+			objsList = jdbcTemplate.query( qry, pValues, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+	
+	private String getSubCategoryLand(String id) throws Exception {
+		Connection con = null;
+		PreparedStatement stmt = null;
+		ResultSet rs = null;
+		String sub_category_of_land = null;;
+		try{
+			con = jdbcTemplate.getDataSource().getConnection();
+			String qry = "SELECT  la_sub_category  FROM la_sub_category where id = ?";
+			stmt = con.prepareStatement(qry);
+			stmt.setString(1, id);
+			rs = stmt.executeQuery();
+			if(rs.next()) {
+				sub_category_of_land = rs.getString("la_sub_category");
+			}
+		}catch(Exception e){ 		
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		finally {
+			DBConnectionHandler.closeJDBCResoucrs(con, stmt, rs);
+		}
+		return sub_category_of_land;
+	}
+
+	@Override
+	public boolean checkSurveyNumber(String survey_number, String village_id, String la_id) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public List<LandAcquisition> getLADetails(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objList = null;
+		try {
+			String qry ="select distinct la_id,survey_number,li.remarks,li.area_to_be_acquired,c1.contract_id as contract_id_fk,li.area_acquired,li.category_fk as type_of_land,li.la_land_status_fk,li.project_id_fk,p.project_name,ISNULL(li.category_fk,c.la_category) as type_of_land ,sc.la_sub_category as sub_category_of_land,village_id,la_sub_category_fk,village " + 
+					" from la_land_identification li " + 
+					"left join contract c1 on c1.project_id_fk = li.project_id_fk "
+					+ "left join land_executives le on li.project_id_fk = le.project_id_fk  "+
+					"left join project p on li.project_id_fk = p.project_id "
+					+"left join la_sub_category sc on li.la_sub_category_fk = sc.id "
+					+"left join la_category c on sc.la_category_fk = c.la_category "
+					+"where la_id is not null  and la_id=? ";			
+			objList = jdbcTemplate.query( qry, new Object[] {obj.getLa_id()}, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+			
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objList;
 	}
 
 }

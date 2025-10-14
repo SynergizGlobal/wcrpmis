@@ -219,4 +219,42 @@ public class LandAquisitionController {
 		}
 		return objList;
 	}
+	
+	@PostMapping("/ajax/getLandsList")
+	public List<LandAcquisition> getLandsList(@RequestBody LandAcquisition obj){
+		List<LandAcquisition> objList = null;
+		try{
+			objList = landAquisitionService.getLandsList(obj);			
+		}catch(Exception e){
+			e.printStackTrace();
+			logger.error("getLandsList() : "+e.getMessage());
+		}
+		return objList;
+	}
+	@PostMapping("/ajax/checkSurveyNumber")
+	public boolean checkSurveyNumber(String survey_number,String village_id,String la_id) throws Exception {
+		boolean flag = false;
+		try {
+			flag = landAquisitionService.checkSurveyNumber(survey_number,village_id,la_id);
+		} catch (Exception e) {
+			logger.error("checkSurveyNumber : " + e.getMessage());
+		}
+		return flag;
+	}
+	
+	@PostMapping("/ajax/getLADetails")
+	public List<LandAcquisition> getLADetails(@RequestBody LandAcquisition obj,HttpSession session) {
+		List<LandAcquisition> LADetails = null;
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_type_fk(uObj.getUserTypeFk());
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			obj.setUser_id(uObj.getUserId());
+			LADetails = landAquisitionService.getLADetails(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getLADetails : " + e.getMessage());
+		}
+		return LADetails;
+	}
 }
