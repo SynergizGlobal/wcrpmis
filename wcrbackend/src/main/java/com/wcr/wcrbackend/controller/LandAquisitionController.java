@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -257,4 +258,54 @@ public class LandAquisitionController {
 		}
 		return LADetails;
 	}
+	@GetMapping("form/ajax/getStatusList")
+	public List<LandAcquisition> getStatusList() throws Exception{
+		return landAquisitionService.getStatusList();
+	}
+	
+	@PostMapping("form/ajax/getProjectsList")
+	public List<LandAcquisition> getProjectsList0(@RequestBody LandAcquisition obj,HttpSession session) throws Exception{
+		User uObj = (User) session.getAttribute("user");
+		obj.setUser_type_fk(uObj.getUserTypeFk());
+		obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+		obj.setUser_id(uObj.getUserId());
+		return landAquisitionService.getProjectsList(obj);
+	}
+	@PostMapping("form/ajax/getLandsListForLAForm")
+	public List<LandAcquisition> getLandsListForLAForm(@RequestBody LandAcquisition obj,HttpSession session) throws Exception{
+		User uObj = (User) session.getAttribute("user");
+		obj.setUser_type_fk(uObj.getUserTypeFk());
+		obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+		obj.setUser_id(uObj.getUserId());
+		return landAquisitionService.getLandsListForLAForm(obj);
+	}
+	@GetMapping("form/ajax/getIssueCatogoriesList")
+	public List<LandAcquisition> getIssueCatogoriesList() throws Exception{
+		return landAquisitionService.getIssueCatogoriesList();
+	}
+	
+	@PostMapping("form/ajax/getSubCategorysListForLAForm")
+	public List<LandAcquisition> getSubCategorysListForLAForm(@RequestBody LandAcquisition obj,HttpSession session) throws Exception{
+		User uObj = (User) session.getAttribute("user");
+		obj.setUser_type_fk(uObj.getUserTypeFk());
+		obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+		obj.setUser_id(uObj.getUserId());
+		return landAquisitionService.getSubCategorysListForLAForm(obj);
+	}
+	@GetMapping("form/ajax/getUnitsList")
+	public List<LandAcquisition> getUnitsList() throws Exception{
+		return landAquisitionService.getUnitsList();
+	}
+	@GetMapping("form/ajax/getLaFileType")
+	public List<LandAcquisition> getLaFileType() throws Exception{
+		return landAquisitionService.getLaFileType();
+	}
+	@GetMapping("form/ajax/getLaLandStatus")
+	public List<LandAcquisition> getLaLandStatus() throws Exception{
+		return landAquisitionService.getLaLandStatus();
+	}
+	
+	
+	
+	
 }

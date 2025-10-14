@@ -618,4 +618,129 @@ public class LandAquisitionRepository implements ILandAquisitionRepo {
 		return objList;
 	}
 
+	@Override
+	public List<LandAcquisition> getStatusList() throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry ="select status from la_status ";
+			objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));	
+		}catch(Exception e){ 
+		throw new Exception(e); 
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getProjectsList(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objsList = new ArrayList<LandAcquisition>();
+		try {
+			String qry = "select distinct project_id,project_name "
+					+ "from project p "
+					+ "left join land_executives us on p.project_id = us.project_id_fk   "
+					+ "where project_id is not null ";
+			
+					
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + "and project_id_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				qry = qry + " and us.executive_user_id_fk = ? ";
+				arrSize++;
+			}			
+			
+			
+			
+			Object[] pValues = new Object[arrSize];
+			
+			int i = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}	
+			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				pValues[i++] = obj.getUser_id();
+			}			
+			
+			objsList = jdbcTemplate.query( qry, pValues, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+			
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getLandsListForLAForm(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry = "select la_category as type_of_land from la_category";
+			objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));			
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getIssueCatogoriesList() throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry ="select category from issue_category";
+				objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getSubCategorysListForLAForm(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry = "select id,la_sub_category as sub_category_of_land,la_category_fk from la_sub_category";
+			objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));			
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getUnitsList() throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry = "select id, unit, value from money_unit";			
+			objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));			
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getLaFileType() throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry = "select la_file_type from la_file_type ";			
+			objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));			
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getLaLandStatus() throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry ="select la_land_status from la_land_status";
+				objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objsList;
+	}
+
 }

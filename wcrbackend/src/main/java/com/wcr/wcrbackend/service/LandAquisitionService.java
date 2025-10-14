@@ -82,4 +82,52 @@ public class LandAquisitionService implements ILandAquisitionService {
 		return landAquisitionRepository.getLADetails(obj);
 	}
 
+	@Override
+	public List<LandAcquisition> getStatusList() throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getStatusList();
+	}
+
+	@Override
+	public List<LandAcquisition> getProjectsList(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getProjectsList(obj);
+	}
+
+	@Override
+	public List<LandAcquisition> getLandsListForLAForm(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getLandsListForLAForm(obj);
+	}
+
+	@Override
+	public List<LandAcquisition> getIssueCatogoriesList() throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getIssueCatogoriesList();
+	}
+
+	@Override
+	public List<LandAcquisition> getSubCategorysListForLAForm(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getSubCategorysListForLAForm(obj);
+	}
+
+	@Override
+	public List<LandAcquisition> getUnitsList() throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getUnitsList();
+	}
+
+	@Override
+	public List<LandAcquisition> getLaFileType() throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getLaFileType();
+	}
+
+	@Override
+	public List<LandAcquisition> getLaLandStatus() throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getLaLandStatus();
+	}
+
 }

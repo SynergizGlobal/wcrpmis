@@ -29,4 +29,20 @@ public interface ILandAquisitionService {
 
 	List<LandAcquisition> getLADetails(LandAcquisition obj) throws Exception;
 
+	List<LandAcquisition> getStatusList() throws Exception;
+
+	List<LandAcquisition> getProjectsList(LandAcquisition obj) throws Exception;
+
+	List<LandAcquisition> getLandsListForLAForm(LandAcquisition obj) throws Exception;
+
+	List<LandAcquisition> getIssueCatogoriesList() throws Exception;
+
+	List<LandAcquisition> getSubCategorysListForLAForm(LandAcquisition obj) throws Exception;
+
+	List<LandAcquisition> getUnitsList() throws Exception;
+
+	List<LandAcquisition> getLaFileType() throws Exception;
+
+	List<LandAcquisition> getLaLandStatus() throws Exception;
+
 }
