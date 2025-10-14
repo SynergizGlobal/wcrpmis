@@ -28,4 +28,16 @@ public class LandAquisitionService implements ILandAquisitionService {
 				searchParameter);
 	}
 
+	@Override
+	public List<LandAcquisition> getLandAcquisitionStatusList(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getLandAcquisitionStatusList(obj);
+	}
+
+	@Override
+	public List<LandAcquisition> getLandAcquisitionVillagesList(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getLandAcquisitionVillagesList(obj);
+	}
+
 }

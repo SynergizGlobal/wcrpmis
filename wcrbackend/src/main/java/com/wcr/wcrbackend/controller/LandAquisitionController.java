@@ -130,4 +130,35 @@ public class LandAquisitionController {
 		return earthWorkList;
 	}	
 	
+	@PostMapping("/ajax/getStatussFilterListInLandAcquisition")
+	public List<LandAcquisition> getProjectsList(@RequestBody LandAcquisition obj,HttpSession session) {
+		List<LandAcquisition> projectsList = null;
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_type_fk(uObj.getUserTypeFk());
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			obj.setUser_id(uObj.getUserId());
+			projectsList = landAquisitionService.getLandAcquisitionStatusList(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getProjectsList : " + e.getMessage());
+		}
+		return projectsList;
+	}
+	
+	@PostMapping("/ajax/getVillagesFilterListInLandAcquisition")
+	public List<LandAcquisition> getVillagesList(@RequestBody LandAcquisition obj,HttpSession session) {
+		List<LandAcquisition> villagesList = null;
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_type_fk(uObj.getUserTypeFk());
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			obj.setUser_id(uObj.getUserId());
+			villagesList = landAquisitionService.getLandAcquisitionVillagesList(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getVillagesList : " + e.getMessage());
+		}
+		return villagesList;
+	}
 }
