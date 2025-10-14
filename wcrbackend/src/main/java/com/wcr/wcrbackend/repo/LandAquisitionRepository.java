@@ -330,4 +330,130 @@ public class LandAquisitionRepository implements ILandAquisitionRepo {
 		return objsList;
 	}
 
+	@Override
+	public List<LandAcquisition> getLandAcquisitionTypesOfLandsList(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry = "SELECT c.la_category as type_of_land from la_land_identification li " + 
+					 "left join land_executives le on li.project_id_fk = le.project_id_fk  "+
+					"left join project p on li.project_id_fk = p.project_id "+
+					"left join la_sub_category sc on li.la_sub_category_fk = sc.id "
+					+"left join la_category c on sc.la_category_fk = c.la_category "+
+					"where c.la_category is not null and c.la_category <> '' ";
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getLa_land_status_fk())) {
+				qry = qry + " and la_land_status_fk = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and li.project_id_fk = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getVillage())) {
+				qry = qry + " and village = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				qry = qry + " and la_category = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				qry = qry + " and la_sub_category = ? ";
+				arrSize++;
+			}		
+			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				qry = qry + " and le.executive_user_id_fk = ? ";
+				arrSize++;
+			}
+			qry = qry + " GROUP BY la_category ";
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getLa_land_status_fk())) {
+				pValues[i++] = obj.getLa_land_status_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getVillage())) {
+				pValues[i++] = obj.getVillage();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				pValues[i++] = obj.getType_of_land();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				pValues[i++] = obj.getSub_category_of_land();
+			}
+			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				pValues[i++] = obj.getUser_id();
+			}
+		    objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getLandAcquisitionSubCategoryList(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objsList = null;
+		try {
+			String qry = "SELECT distinct sc.la_sub_category as sub_category_of_land from la_land_identification li " + 
+					 "left join land_executives le on li.project_id_fk = le.project_id_fk  "+
+					"left join project p on li.project_id_fk = p.project_id "+
+					"left join la_sub_category sc on li.la_sub_category_fk = sc.id "
+					+"left join la_category c on sc.la_category_fk = c.la_category "+
+					"where la_sub_category is not null and la_sub_category <> '' ";
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getLa_land_status_fk())) {
+				qry = qry + " and la_land_status_fk = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and li.project_id_fk = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getVillage())) {
+				qry = qry + " and village = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				qry = qry + " and la_category = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				qry = qry + " and la_sub_category = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				qry = qry + " and le.executive_user_id_fk = ? ";
+				arrSize++;
+			}
+			qry = qry + " GROUP BY la_sub_category ";
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getLa_land_status_fk())) {
+				pValues[i++] = obj.getLa_land_status_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getVillage())) {
+				pValues[i++] = obj.getVillage();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				pValues[i++] = obj.getType_of_land();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				pValues[i++] = obj.getSub_category_of_land();
+			}
+			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				pValues[i++] = obj.getUser_id();
+			}
+		    objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
 }

@@ -15,4 +15,8 @@ public interface ILandAquisitionRepo {
 
 	List<LandAcquisition> getLandAcquisitionVillagesList(LandAcquisition obj) throws Exception;
 
+	List<LandAcquisition> getLandAcquisitionTypesOfLandsList(LandAcquisition obj) throws Exception;
+
+	List<LandAcquisition> getLandAcquisitionSubCategoryList(LandAcquisition obj) throws Exception;
+
 }
