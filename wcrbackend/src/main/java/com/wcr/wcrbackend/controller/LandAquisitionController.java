@@ -304,7 +304,14 @@ public class LandAquisitionController {
 	public List<LandAcquisition> getLaLandStatus() throws Exception{
 		return landAquisitionService.getLaLandStatus();
 	}
-	
+	@PostMapping("form/ajax/getLandAcquisitionForm")
+	public LandAcquisition getLandAcquisitionForm(@RequestBody LandAcquisition obj,HttpSession session) throws Exception{
+		User uObj = (User) session.getAttribute("user");
+		obj.setUser_type_fk(uObj.getUserTypeFk());
+		obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+		obj.setUser_id(uObj.getUserId());
+		return landAquisitionService.getLandAcquisitionForm(obj);
+	}
 	
 	
 	

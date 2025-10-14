@@ -45,4 +45,6 @@ public interface ILandAquisitionRepo {
 
 	List<LandAcquisition> getLaLandStatus() throws Exception;
 
+	LandAcquisition getLandAcquisitionForm(LandAcquisition obj) throws Exception;
+
 }
