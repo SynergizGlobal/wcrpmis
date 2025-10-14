@@ -1,5 +1,7 @@
 package com.wcr.wcrbackend.repo;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -451,6 +453,74 @@ public class LandAquisitionRepository implements ILandAquisitionRepo {
 			}
 		    objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
 		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<LandAcquisition> getCoordinates(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objList = null;
+	    try {
+	        String chainageFrom = obj.getChainage_from();
+
+	        if (chainageFrom == null || chainageFrom.trim().isEmpty()) {
+	            return Collections.emptyList(); // return empty list instead of throwing
+	        }
+
+	        String qry = "select string_agg(chainages,',') as chainage_from," +
+	                     " string_agg(latitude,',') as latitude," +
+	                     " string_agg(longitude,',') as longitude " +
+	                     " from chainages_master " +
+	                     " where project_id='" + obj.getProject_id_fk() + "' " +
+	                     " and id between (" +
+	                     "    select min(id)-1 from chainages_master " +
+	                     "    where project_id='" + obj.getProject_id_fk() + "' " +
+	                     "    and chainages >= cast('" + chainageFrom + "' as decimal(18,2))" +
+	                     " ) and (" +
+	                     "    select min(id) from chainages_master " +
+	                     "    where project_id='" + obj.getProject_id_fk() + "' " +
+	                     "    and chainages >= cast('" + chainageFrom + "' as decimal(18,2))" +
+	                     " )";
+
+	        objList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<>(LandAcquisition.class));
+
+	    } catch (Exception e) { 
+	        e.printStackTrace();
+	        throw new Exception(e);
+	    }
+	    return objList;
+	}
+
+	@Override
+	public List<LandAcquisition> getSubCategoryList(LandAcquisition obj) throws Exception {
+		List<LandAcquisition> objsList = new ArrayList<LandAcquisition>();
+		try {
+			String qry = "select id,la_sub_category as sub_category_of_land, la_category_fk from la_sub_category ls "
+					+ "LEFT OUTER JOIN la_category lc ON la_category_fk = la_category ";
+					
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				qry = qry + " where la_category_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				qry = qry + " where la_sub_category  = ? ";
+				arrSize++;
+			}
+			
+			Object[] pValues = new Object[arrSize];
+			
+			int i = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getType_of_land())) {
+				pValues[i++] = obj.getType_of_land();
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSub_category_of_land())) {
+				pValues[i++] = obj.getSub_category_of_land();
+			}	
+			objsList = jdbcTemplate.query( qry, pValues, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+		}catch(Exception e){ 
+			e.printStackTrace();
 			throw new Exception(e);
 		}
 		return objsList;

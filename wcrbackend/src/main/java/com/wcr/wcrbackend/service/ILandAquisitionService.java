@@ -19,4 +19,8 @@ public interface ILandAquisitionService {
 
 	List<LandAcquisition> getLandAcquisitionSubCategoryList(LandAcquisition obj) throws Exception;
 
+	List<LandAcquisition> getCoordinates(LandAcquisition obj) throws Exception;
+
+	List<LandAcquisition> getSubCategoryList(LandAcquisition obj) throws Exception;
+
 }

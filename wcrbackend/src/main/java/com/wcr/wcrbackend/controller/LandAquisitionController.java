@@ -192,4 +192,31 @@ public class LandAquisitionController {
 		}
 		return subCategoryList;
 	}
+	@PostMapping("/ajax/getCoordinates")
+	public List<LandAcquisition> getCoordinates(@RequestBody LandAcquisition obj,HttpSession session) {
+		List<LandAcquisition> objsList = null;
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_type_fk(uObj.getUserTypeFk());
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			obj.setUser_id(uObj.getUserId());
+			
+			objsList = landAquisitionService.getCoordinates(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getCoordinates : " + e.getMessage());
+		}
+		return objsList;
+	}
+	@PostMapping("/ajax/getSubCategorysList")
+	public List<LandAcquisition> getSubCategoryList(@RequestBody LandAcquisition obj){
+		List<LandAcquisition> objList = null;
+		try{
+			objList = landAquisitionService.getSubCategoryList(obj);			
+		}catch(Exception e){
+			e.printStackTrace();
+			logger.error("getSubCategoryList() : "+e.getMessage());
+		}
+		return objList;
+	}
 }

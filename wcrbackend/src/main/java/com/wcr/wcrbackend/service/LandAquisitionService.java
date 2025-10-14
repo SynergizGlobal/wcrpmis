@@ -52,4 +52,16 @@ public class LandAquisitionService implements ILandAquisitionService {
 		return landAquisitionRepository.getLandAcquisitionSubCategoryList(obj);
 	}
 
+	@Override
+	public List<LandAcquisition> getCoordinates(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getCoordinates(obj);
+	}
+
+	@Override
+	public List<LandAcquisition> getSubCategoryList(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.getSubCategoryList(obj);
+	}
+
 }
