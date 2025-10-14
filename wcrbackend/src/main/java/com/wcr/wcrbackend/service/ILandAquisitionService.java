@@ -1,0 +1,14 @@
+package com.wcr.wcrbackend.service;
+
+import java.util.List;
+
+import com.wcr.wcrbackend.DTO.LandAcquisition;
+
+public interface ILandAquisitionService {
+
+	int getTotalRecords(LandAcquisition obj, String searchParameter) throws Exception;
+
+	List<LandAcquisition> getLandAcquisitionList(LandAcquisition obj, int startIndex, int offset,
+			String searchParameter) throws Exception;
+
+}

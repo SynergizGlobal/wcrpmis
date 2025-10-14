@@ -65,6 +65,11 @@
     		<artifactId>mssql-jdbc</artifactId>
     		<scope>runtime</scope> <!-- Use a version compatible with your Java version -->
 		</dependency>
+		<dependency>
+      		<groupId>log4j</groupId>
+      		<artifactId>log4j</artifactId>
+      		<version>1.2.14</version>
+    	</dependency>
 	</dependencies>
 
 	<build>
