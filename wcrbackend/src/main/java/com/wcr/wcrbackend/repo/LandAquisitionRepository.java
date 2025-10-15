@@ -116,7 +116,7 @@ public class LandAquisitionRepository implements ILandAquisitionRepo {
 				pValues[i++] = "%" + searchParameter + "%";
 				pValues[i++] = "%" + searchParameter + "%";
 				pValues[i++] = "%" + searchParameter + "%";
-				pValues[i++] = "%" + searchParameter + "%";
+				//pValues[i++] = "%" + searchParameter + "%";
 			}
 
 			totalRecords = jdbcTemplate.queryForObject(qry, pValues, Integer.class);
