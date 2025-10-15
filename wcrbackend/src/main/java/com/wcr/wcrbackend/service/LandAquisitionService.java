@@ -187,4 +187,11 @@ public class LandAquisitionService implements ILandAquisitionService {
 		return landAquisitionRepository.addLandAcquisition(obj);
 	}
 
+	@Override
+	@Transactional
+	public boolean updateLandAcquisition(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.updateLandAcquisition(obj);
+	}
+
 }

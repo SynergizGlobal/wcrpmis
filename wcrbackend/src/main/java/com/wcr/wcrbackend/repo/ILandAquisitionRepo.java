@@ -63,4 +63,6 @@ public interface ILandAquisitionRepo {
 	
 	public boolean addLandAcquisition(LandAcquisition obj) throws Exception;
 
+	boolean updateLandAcquisition(LandAcquisition obj) throws Exception;
+
 }
