@@ -195,6 +195,7 @@ public class LandAquisitionService implements ILandAquisitionService {
 	}
 
 	@Override
+	@Transactional
 	public String[] uploadLAData(List<LandAcquisition> lasList, LandAcquisition la) {
 		// TODO Auto-generated method stub
 		return landAquisitionRepository.uploadLAData(lasList, la);
