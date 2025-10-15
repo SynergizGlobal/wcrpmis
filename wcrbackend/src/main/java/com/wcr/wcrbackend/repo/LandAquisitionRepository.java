@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -2136,5 +2136,505 @@ public class LandAquisitionRepository implements ILandAquisitionRepo {
 			throw new Exception(e);
 		}		
 		return executivesEmail;
+	}
+
+	@Override
+	public String[] uploadLAData(List<LandAcquisition> lasList, LandAcquisition la) {
+		boolean flag = false;
+		String errMsg = null;
+		int count = 0,row =2,sheet = 2,subRow = 3;
+		int sheet1 =2,sheet2=2,sheet3=2,sheet4=2,sheet5=2,sheet6=2;
+		//TransactionDefinition def = new DefaultTransactionDefinition();
+		//TransactionStatus status = transactionManager.getTransaction(def);
+		try {
+			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
+			
+			String insertQry = "INSERT INTO la_land_identification"
+					+ "( la_id, project_id_fk, survey_number, village_id, la_sub_category_fk, village, taluka, dy_slr, sdo, collector, proposal_submission_date_to_collector,"
+					+ "area_of_plot, jm_fee_amount, chainage_from, chainage_to, jm_fee_letter_received_date, jm_fee_paid_date, jm_start_date, jm_completion_date, "
+					+ "jm_sheet_date_to_sdo, jm_remarks, jm_approval, issues, jm_fee_amount_units,special_feature,"
+					+ "area_acquired,private_land_process,la_land_status_fk,category_fk,area_to_be_acquired,remarks,latitude,longitude)"
+					+ "VALUES"
+					+ "(:la_id, :project_id_fk, :survey_number, :village_id, :la_sub_category_fk, :village, :taluka, :dy_slr, :sdo, :collector, :proposal_submission_date_to_collector, "
+					+ ":area_of_plot, :jm_fee_amount, :chainage_from, :chainage_to, :jm_fee_letter_received_date, :jm_fee_paid_date, :jm_start_date, :jm_completion_date, "
+					+ ":jm_sheet_date_to_sdo, :jm_remarks, :jm_approval, :issues, :jm_fee_amount_units , :special_feature, :area_acquired, :private_land_process, "
+					+ ":la_land_status_fk, :category_fk, :area_to_be_acquired, :remarks,:latitude,:longitude)";
+			
+			String updatetQry = "UPDATE la_land_identification SET "
+					+ "survey_number= :survey_number, village_id= :village_id,la_sub_category_fk= :la_sub_category_fk, village= :village, taluka= :taluka, dy_slr= :dy_slr, sdo= :sdo, collector= :collector, proposal_submission_date_to_collector= :proposal_submission_date_to_collector,"
+					+ "area_of_plot= :area_of_plot, jm_fee_amount = :jm_fee_amount, chainage_from= :chainage_from, chainage_to= :chainage_to, jm_fee_letter_received_date= :jm_fee_letter_received_date, jm_fee_paid_date= :jm_fee_paid_date, jm_start_date= :jm_start_date, jm_completion_date= :jm_completion_date, "
+					+ "jm_sheet_date_to_sdo= :jm_sheet_date_to_sdo, jm_remarks= :jm_remarks, jm_approval= :jm_approval, issues= :issues,  jm_fee_amount_units= :jm_fee_amount_units,"
+					+ "la_land_status_fk= :la_land_status_fk, special_feature= :special_feature,private_land_process= :private_land_process,area_acquired= :area_acquired,"
+					+ "category_fk= :category_fk,area_to_be_acquired= :area_to_be_acquired,remarks= :remarks,modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP,latitude=:latitude,longitude=:longitude    "
+					+ "where la_id= :la_id ";
+		//	int rNo = 0;
+			for (LandAcquisition obj : lasList) {
+				
+				if (obj == null || obj.getProject_id_fk() == null) {
+			        continue; 
+			    }
+			
+				if(!StringUtils.isEmpty(obj.getJm_approval()))
+				{
+					if(obj.getJm_approval().compareTo("Accept")==0)
+					{
+						obj.setJm_approval("Accept");
+					}
+					else if(obj.getJm_approval().compareTo("Reject")==0)
+					{
+						obj.setJm_approval("Reject");
+					}	
+				}
+				
+				
+				double r1 = safeDoubleParse(obj.getChainage_from());
+				double r2 = safeDoubleParse(obj.getChainage_to());
+				
+				double c1=(r1+r2)/2;
+				
+				if (obj != null && obj.getProject_id_fk() != null) {
+				    String checkWorkID = obj.getProject_id_fk();
+
+				    if (checkWorkID.indexOf("-") != -1) {
+				        // If '-' exists, split and update project_id_fk
+				        String[] workidval = checkWorkID.split("-");
+				        if (workidval.length > 0) {
+				            obj.setProject_id_fk(workidval[0]);
+				        }
+				    }
+				    // else do nothing if '-' not present
+				} else {
+				    // Optionally handle null obj or null project_id_fk
+				    System.out.println("Warning: LandAcquisition object or project_id_fk is null");
+				}
+
+				
+				List<LandAcquisition> getChainageCoordinates = getCoordinates(obj);
+				
+				String[] splitChainage2 = new String[0];
+				String[] splitLatitude2 = new String[0];
+				String[] splitLongitude2 = new String[0];
+				
+				if (getChainageCoordinates != null && !getChainageCoordinates.isEmpty()) {
+				    LandAcquisition first = getChainageCoordinates.get(0);
+
+				    // Chainage
+				    String chainageFrom = first.getChainage_from();
+				    if (chainageFrom != null && !chainageFrom.isEmpty()) {
+				        splitChainage2 = chainageFrom.split(",");
+				    }
+
+				    // Latitude
+				    String splitLatitude = first.getLatitude();
+				    if (splitLatitude != null && !splitLatitude.isEmpty()) {
+				        splitLatitude2 = splitLatitude.split(",");
+				    }
+
+				    // Longitude
+				    String splitLongitude = first.getLongitude();
+				    if (splitLongitude != null && !splitLongitude.isEmpty()) {
+				        splitLongitude2 = splitLongitude.split(",");
+				    }
+				}
+                    	
+            	
+            	
+				String a1 = safeGet(splitChainage2, 0);
+				String b1 = safeGet(splitChainage2, 1);
+
+				String x1 = safeGet(splitLatitude2, 0);
+				String x2 = safeGet(splitLatitude2, 1);
+
+				String y1 = safeGet(splitLongitude2, 0);
+				String y2 = safeGet(splitLongitude2, 1);
+
+				// --- Safe calculations ---
+				double x3 = 0;
+				double y3 = 0;
+
+				try {
+				    double a1d = Double.parseDouble(a1);
+				    double b1d = Double.parseDouble(b1);
+				    double x1d = Double.parseDouble(x1);
+				    double x2d = Double.parseDouble(x2);
+				    double y1d = Double.parseDouble(y1);
+				    double y2d = Double.parseDouble(y2);
+
+				    if (b1d != a1d) { // avoid division by zero
+				        x3 = x2d + (((c1 - b1d) / (b1d - a1d)) * (x2d - x1d));
+				        y3 = y2d + (((c1 - b1d) / (b1d - a1d)) * (y2d - y1d));
+				    }
+				} catch (NumberFormatException e) {
+				    // Log warning if values are not numbers
+				    System.out.println("Invalid numeric values in latitude/longitude/chainage: " + e.getMessage());
+				}
+
+				// --- Save values back ---
+				obj.setLatitude(String.valueOf(x3));
+				obj.setLongitude(String.valueOf(y3));
+				
+
+				if(obj.getLa_land_status_fk().compareTo("Acquired")==0)
+				{
+					
+					obj.setJm_approval("Accept");
+					obj.setArea_acquired(obj.getArea_to_be_acquired());
+				}
+				else
+				{
+
+					obj.setArea_acquired(obj.getArea_acquired());
+				}					
+				
+				
+				String table_name = "la_land_identification";
+				String la_id = checkLAIdMethod(obj,table_name);
+				String sub_category_no = getSubCategoryNo(obj);
+				obj.setLa_sub_category_fk(sub_category_no);
+				row++;sheet = 1;
+				if(!StringUtils.isEmpty(obj.getLa_id())) {
+					obj.setLa_id(la_id);
+					//System.out.println(rNo++);
+					if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+						if(checkWorkinLA(obj.getProject_id_fk(),obj.getCreated_by_user_id_fk())>0)
+						{
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+						    count = namedParamJdbcTemplate.update(updatetQry, paramSource);						
+						}
+					}					
+					else
+					{
+						//SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+					    //count = namedParamJdbcTemplate.update(updatetQry, paramSource);
+						String checkQuery = "SELECT COUNT(1) FROM la_land_identification WHERE la_id = :la_id";
+						SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+
+						int exists = namedParamJdbcTemplate.queryForObject(checkQuery, paramSource, Integer.class);
+
+						if (exists > 0) {
+						    // Update if record exists
+						    count = namedParamJdbcTemplate.update(updatetQry, paramSource);
+						} else {
+						    // Insert if record does not exist
+						    count = namedParamJdbcTemplate.update(insertQry, paramSource);
+						}						
+					}
+				}else {
+					obj.setLa_id(getAutoGeneratedLAId(obj));
+					if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+						if(checkWorkinLA(obj.getProject_id_fk(),obj.getCreated_by_user_id_fk())>0)
+						{
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+						    count = namedParamJdbcTemplate.update(insertQry, paramSource);						
+						}
+					}					
+					else
+					{
+						SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+					    count = namedParamJdbcTemplate.update(insertQry, paramSource);
+					}
+				}
+				if(!StringUtils.isEmpty(obj.getPrivateIRAList())) {
+					subRow = sheet1;
+					String  privateInsertQry = "INSERT INTO la_private_ira "
+							+ " (la_id_fk, collector, submission_of_proposal_to_GM, approval_of_GM, draft_letter_to_con_for_approval_rp, date_of_approval_of_construction_rp, date_of_uploading_of_gazette_notification_rp, "
+							+ "publication_in_gazette_rp, date_of_proposal_to_DC_for_nomination, date_of_nomination_of_competenta_authority, draft_letter_to_con_for_approval_ca, date_of_approval_of_construction_ca, "
+							+ "date_of_uploading_of_gazette_notification_ca, publication_in_gazette_ca, date_of_submission_of_draft_notification_to_CALA, approval_of_CALA_20a, draft_letter_to_con_for_approval_20a,"
+							+ " date_of_approval_of_construction_20a, date_of_uploading_of_gazette_notification_20a, publication_in_gazette_20a, publication_in_2_local_news_papers_20a, pasting_of_notification_in_villages_20a,"
+							+ " receipt_of_grievances, disposal_of_grievances, date_of_submission_of_draft_notification_to_CALA_20e, approval_of_CALA_20e, draft_letter_to_con_for_approval_20e, date_of_approval_of_construction_20e, "
+							+ "date_of_uploading_of_gazette_notification_20e, publication_in_gazette_20e, publication_of_notice_in_2_local_news_papers_20e, date_of_submission_of_draft_notification_to_CALA_20f, approval_of_CALA_20f,"
+							+ " draft_letter_to_con_for_approval_20f, date_of_approval_of_construction_20f, date_of_uploading_of_gazette_notification_20f, publication_in_gazette_20f, publication_of_notice_in_2_local_news_papers_20f)"
+							+ "VALUES"
+							+ "(:la_id, :private_ira_collector, :submission_of_proposal_to_GM, :approval_of_GM, :draft_letter_to_con_for_approval_rp, :date_of_approval_of_construction_rp, :date_of_uploading_of_gazette_notification_rp,"
+							+ ":publication_in_gazette_rp, :date_of_proposal_to_DC_for_nomination, :date_of_nomination_of_competenta_authority, :draft_letter_to_con_for_approval_ca, :date_of_approval_of_construction_ca,"
+							+ " :date_of_uploading_of_gazette_notification_ca, :publication_in_gazette_ca, :date_of_submission_of_draft_notification_to_CALA, :approval_of_CALA_20a, :draft_letter_to_con_for_approval_20a,"
+							+ "	:date_of_approval_of_construction_20a, :date_of_uploading_of_gazette_notification_20a, :publication_in_gazette_20a, :publication_in_2_local_news_papers_20a, :pasting_of_notification_in_villages_20a,"
+							+ " :receipt_of_grievances, :disposal_of_grievances, :date_of_submission_of_draft_notification_to_CALA_20e, :approval_of_CALA_20e, :draft_letter_to_con_for_approval_20e, :date_of_approval_of_construction_20e,"
+							+ " :date_of_uploading_of_gazette_notification_20e, :publication_in_gazette_20e, :publication_of_notice_in_2_local_news_papers_20e, :date_of_submission_of_draft_notification_to_CALA_20f, :approval_of_CALA_20f, :draft_letter_to_con_for_approval_20f,"
+							+ " :date_of_approval_of_construction_20f, :date_of_uploading_of_gazette_notification_20f, :publication_in_gazette_20f, :publication_of_notice_in_2_local_news_papers_20f)";
+					
+					String  privateUpdateQry = "UPDATE la_private_ira set "
+							+ "collector= :private_ira_collector, submission_of_proposal_to_GM= :submission_of_proposal_to_GM, approval_of_GM= :approval_of_GM, draft_letter_to_con_for_approval_rp= :draft_letter_to_con_for_approval_rp, date_of_approval_of_construction_rp= :date_of_approval_of_construction_rp,"
+							+ " date_of_uploading_of_gazette_notification_rp= :date_of_uploading_of_gazette_notification_rp,publication_in_gazette_rp= :publication_in_gazette_rp, date_of_proposal_to_DC_for_nomination= :date_of_proposal_to_DC_for_nomination,"
+							+ " date_of_nomination_of_competenta_authority= :date_of_nomination_of_competenta_authority, draft_letter_to_con_for_approval_ca= :draft_letter_to_con_for_approval_ca,date_of_approval_of_construction_ca= :date_of_approval_of_construction_ca, "
+							+ "date_of_uploading_of_gazette_notification_ca= :date_of_uploading_of_gazette_notification_ca, publication_in_gazette_ca= :publication_in_gazette_ca, date_of_submission_of_draft_notification_to_CALA= :date_of_submission_of_draft_notification_to_CALA, "
+							+ "approval_of_CALA_20a= :approval_of_CALA_20a, draft_letter_to_con_for_approval_20a= :draft_letter_to_con_for_approval_20a,"
+							+ " date_of_approval_of_construction_20a= :date_of_approval_of_construction_20a, date_of_uploading_of_gazette_notification_20a= :date_of_uploading_of_gazette_notification_20a, publication_in_gazette_20a= :publication_in_gazette_20a, "
+							+ "publication_in_2_local_news_papers_20a= :publication_in_2_local_news_papers_20a, pasting_of_notification_in_villages_20a= :pasting_of_notification_in_villages_20a,"
+							+ " receipt_of_grievances= :receipt_of_grievances, disposal_of_grievances= :disposal_of_grievances, date_of_submission_of_draft_notification_to_CALA_20e= :date_of_submission_of_draft_notification_to_CALA_20e, approval_of_CALA_20e= :approval_of_CALA_20e,"
+							+ " draft_letter_to_con_for_approval_20e= :draft_letter_to_con_for_approval_20e, date_of_approval_of_construction_20e= :date_of_approval_of_construction_20e, "
+							+ "date_of_uploading_of_gazette_notification_20e= :date_of_uploading_of_gazette_notification_20e, publication_in_gazette_20e= :publication_in_gazette_20e, publication_of_notice_in_2_local_news_papers_20e= :publication_of_notice_in_2_local_news_papers_20e,"
+							+ " date_of_submission_of_draft_notification_to_CALA_20f= :date_of_submission_of_draft_notification_to_CALA_20f, approval_of_CALA_20f= :approval_of_CALA_20f,"
+							+ " draft_letter_to_con_for_approval_20f= :draft_letter_to_con_for_approval_20f, date_of_approval_of_construction_20f= :date_of_approval_of_construction_20f, date_of_uploading_of_gazette_notification_20f= :date_of_uploading_of_gazette_notification_20f, "
+							+ "publication_in_gazette_20f= :publication_in_gazette_20f, publication_of_notice_in_2_local_news_papers_20f= :publication_of_notice_in_2_local_news_papers_20f "
+							+ "where la_id_fk= :la_id";
+					
+					String upLandQry = "UPDATE la_land_identification set private_land_process = 'Private IRA',modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP where la_id= :la_id";
+					
+					for (LandAcquisition obj1 : obj.getPrivateIRAList()) {
+						String table_name1 = "la_private_ira";
+						String la_id1 = checkLAIdMethod(obj1,table_name1);
+						sheet = 2;subRow++;
+						if(!StringUtils.isEmpty(la_id1)) {
+							obj.setLa_id(la_id1);
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj1);
+						    count = namedParamJdbcTemplate.update(privateUpdateQry, paramSource);
+						    
+						    paramSource = new BeanPropertySqlParameterSource(obj1);
+						    namedParamJdbcTemplate.update(upLandQry, paramSource);
+						}else {
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj1);
+						    count = namedParamJdbcTemplate.update(privateInsertQry, paramSource);
+						    
+						    paramSource = new BeanPropertySqlParameterSource(obj1);
+						    namedParamJdbcTemplate.update(upLandQry, paramSource);
+						}
+					}
+					sheet1 = sheet1 + obj.getPrivateIRAList().size();
+				}
+				if(!StringUtils.isEmpty(obj.getPrivateLAList())) {
+					subRow = sheet2;
+					String  privateLAInsertQry = "INSERT INTO la_private_land_acquisition "
+					 		+ "(la_id_fk, name_of_the_owner, basic_rate, agriculture_tree_nos,agriculture_tree_rate, forest_tree_nos,"
+					 		+ " forest_tree_rate, consent_from_owner, legal_search_report, date_of_registration, date_of_possession,  "
+					 		+ " hundred_percent_Solatium, extra_25_percent, total_rate_divide_m2,"
+					 		+ " land_compensation, agriculture_tree_compensation, forest_tree_compensation, structure_compensation, borewell_compensation, total_compensation,"
+					 		+ " basic_rate_units, agriculture_tree_rate_units, forest_tree_rate_units)"
+					 		+ "VALUES"
+					 		+ "(:la_id, :name_of_the_owner, :basic_rate,  :agriculture_tree_nos, :agriculture_tree_rate, :forest_tree_nos,"
+					 		+ " :forest_tree_rate, :consent_from_owner, :legal_search_report, :date_of_registration, :date_of_possession, "//:private_special_feature, 
+					 		+ "  :hundred_percent_Solatium, :extra_25_percent, :total_rate_divide_m2,"
+					 		+ " :land_compensation, :agriculture_tree_compensation, :forest_tree_compensation, :structure_compensation, :borewell_compensation, :total_compensation,"
+					 		+ "  :basic_rate_units, :agriculture_tree_rate_units, :forest_tree_rate_units)";
+					 
+					String  privateLAUpdateQry = "UPDATE la_private_land_acquisition SET "
+					 		+ " name_of_the_owner= :name_of_the_owner, basic_rate= :basic_rate,  agriculture_tree_nos= :agriculture_tree_nos, agriculture_tree_rate= :agriculture_tree_rate, forest_tree_nos= :forest_tree_nos,"
+					 		+ "forest_tree_rate= :forest_tree_rate, consent_from_owner= :consent_from_owner, legal_search_report= :legal_search_report, date_of_registration= :date_of_registration, date_of_possession= :date_of_possession,  "//special_feature= :private_special_feature, 
+					 		+ " hundred_percent_Solatium= :hundred_percent_Solatium, extra_25_percent= :extra_25_percent, total_rate_divide_m2= :total_rate_divide_m2,"
+					 		+ "land_compensation= :land_compensation, agriculture_tree_compensation= :agriculture_tree_compensation, forest_tree_compensation= :forest_tree_compensation, structure_compensation= :structure_compensation, borewell_compensation= :borewell_compensation, "
+					 		+ "total_compensation= :total_compensation,basic_rate_units= :basic_rate_units,agriculture_tree_rate_units= :agriculture_tree_rate_units,forest_tree_rate_units= :forest_tree_rate_units  "
+					 		+ "where la_id_fk= :la_id";
+					
+					String upLandQry = "UPDATE la_land_identification set private_land_process = 'Private DPM',modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP where la_id= :la_id";
+					for (LandAcquisition obj2 : obj.getPrivateLAList()) {
+						sheet = 4;subRow++;
+						String table_name2 = "la_private_land_acquisition";
+						String la_id2 = checkLAIdMethod(obj2,table_name2);
+						obj.setType_of_land("Private");
+						if(!StringUtils.isEmpty(la_id2)) {
+							obj.setLa_id(la_id2);
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj2);
+						    count = namedParamJdbcTemplate.update(privateLAUpdateQry, paramSource);
+						    
+						    paramSource = new BeanPropertySqlParameterSource(obj2);
+						    namedParamJdbcTemplate.update(upLandQry, paramSource);
+						}else {
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj2);
+						    count = namedParamJdbcTemplate.update(privateLAInsertQry, paramSource);
+						    
+						    paramSource = new BeanPropertySqlParameterSource(obj2);
+						    namedParamJdbcTemplate.update(upLandQry, paramSource);
+						}
+					}
+					sheet2 = sheet2 + obj.getPrivateLAList().size();
+				}
+				if(!StringUtils.isEmpty(obj.getPrivateLVList())) {
+					subRow = sheet3;
+					String privateInsertSubQry = "INSERT INTO la_private_land_valuation "
+					 		+ "(la_id_fk, forest_tree_survey, forest_tree_valuation, forest_tree_valuation_status_fk, horticulture_tree_survey, horticulture_tree_valuation, "
+					 		+ "structure_survey, structure_valuation, borewell_survey, borewell_valuation, horticulture_tree_valuation_status_fk, structure_valuation_status_fk, "
+					 		+ "borewell_valuation_status_fk,  date_of_rfp_to_adtp, date_of_rate_fixation_of_land, sdo_demand_for_payment, "
+					 		+ "date_of_approval_for_payment, payment_amount, payment_date, payment_amount_units)"
+					 		+ "VALUES"
+					 		+ "(:la_id, :forest_tree_survey, :forest_tree_valuation, :forest_tree_valuation_status_fk, :horticulture_tree_survey, :horticulture_tree_valuation,"
+					 		+ " :structure_survey, :structure_valuation, :borewell_survey, :borewell_valuation, :horticulture_tree_valuation_status_fk, :structure_valuation_status_fk,"
+					 		+ " :borewell_valuation_status_fk, :date_of_rfp_to_adtp, :date_of_rate_fixation_of_land, :sdo_demand_for_payment,"
+					 		+ " :date_of_approval_for_payment, :payment_amount, :private_payment_date, :payment_amount_units)";
+					 
+					String privateUpdateSubQry = "UPDATE la_private_land_valuation SET "
+					 		+ " forest_tree_survey=:forest_tree_survey, forest_tree_valuation= :forest_tree_valuation, forest_tree_valuation_status_fk= :forest_tree_valuation_status_fk, horticulture_tree_survey= :horticulture_tree_survey, horticulture_tree_valuation= :horticulture_tree_valuation, "
+					 		+ "structure_survey= :structure_survey, structure_valuation= :structure_valuation, borewell_survey= :borewell_survey, borewell_valuation= :borewell_valuation, horticulture_tree_valuation_status_fk= :horticulture_tree_valuation_status_fk, structure_valuation_status_fk= :structure_valuation_status_fk, "
+					 		+ "borewell_valuation_status_fk=:borewell_valuation_status_fk, date_of_rfp_to_adtp= :date_of_rfp_to_adtp, date_of_rate_fixation_of_land= :date_of_rate_fixation_of_land, sdo_demand_for_payment= :sdo_demand_for_payment, "
+					 		+ "date_of_approval_for_payment= :date_of_approval_for_payment, payment_amount= :payment_amount, payment_date= :private_payment_date,payment_amount_units= :payment_amount_units  "
+					 		+ "where la_id_fk= :la_id";
+					
+					for (LandAcquisition obj3 : obj.getPrivateLVList()) {
+						sheet = 3;subRow++;
+						String table_name3 = "la_private_land_valuation";
+						String la_id3 = checkLAIdMethod(obj3,table_name3);
+						obj.setType_of_land("Private");
+						if(!StringUtils.isEmpty(la_id3)) {
+							obj.setLa_id(la_id3);
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj3);
+						    count = namedParamJdbcTemplate.update(privateUpdateSubQry, paramSource);
+						}else {
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj3);
+						    count = namedParamJdbcTemplate.update(privateInsertSubQry, paramSource);
+						}
+					}
+					sheet3 = sheet3 + obj.getPrivateLVList().size();
+				}
+				if(!StringUtils.isEmpty(obj.getGovList())) {
+					subRow = sheet4;
+					String govInsertQry = "INSERT INTO la_government_land_acquisition"
+							+ "( la_id_fk, proposal_submission,  valuation_date, letter_for_payment, amount_demanded, "
+							+ " approval_for_payment, payment_date, amount_paid,  possession_date,"//special_feature
+							+ "amount_demanded_units, amount_paid_units)"
+							+ "VALUES"
+							+ "(:la_id, :proposal_submission,  :valuation_date, :letter_for_payment,:amount_demanded, "
+							+ "  :approval_for_payment, :payment_date, :amount_paid,  :possession_date, " // :special_feature, 
+							+ "  :amount_demanded_units, :amount_paid_units)";
+					
+					String govUpdateQry = "UPDATE  la_government_land_acquisition SET "
+							+ "  valuation_date= :valuation_date, letter_for_payment= :letter_for_payment, amount_demanded= :amount_demanded, "
+							+ " approval_for_payment= :approval_for_payment, payment_date= :payment_date, amount_paid= :amount_paid,  possession_date= :possession_date, "
+							+ "amount_demanded_units= :amount_demanded_units, amount_paid_units= :amount_paid_units "
+							+ "where  la_id_fk= :la_id";
+					for (LandAcquisition obj4 : obj.getGovList()) {
+						sheet = 5;subRow++;
+						String table_name4 = "la_government_land_acquisition";
+						String la_id4 = checkLAIdMethod(obj4,table_name4);
+						obj.setType_of_land("Government");
+						if(!StringUtils.isEmpty(la_id4)) {
+							obj.setLa_id(la_id4);
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj4);
+						    count = namedParamJdbcTemplate.update(govUpdateQry, paramSource);
+						}else {
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj4);
+						    count = namedParamJdbcTemplate.update(govInsertQry, paramSource);
+						} 
+					}
+					sheet4 = sheet4 + obj.getGovList().size();
+				}
+				if(!StringUtils.isEmpty(obj.getForestList())) {
+					subRow = sheet5;
+					String forestInsertSubQry = "INSERT INTO la_forest_land_acquisition "
+					 		+ "( la_id_fk, on_line_submission, submission_date_to_dycfo, submission_date_to_ccf_thane, submission_date_to_nodal_officer, "
+					 		+ "submission_date_to_revenue_secretary_mantralaya, submission_date_to_regional_office_nagpur, date_of_approval_by_regional_office_nagpur, valuation_by_dycfo, "
+					 		+ "demanded_amount, payment_amount, approval_for_payment, payment_date, possession_date, survey_number,"//, special_feature
+					 		+ " demanded_amount_units, payment_amount_units)"
+					 		+ "VALUES"
+					 		+ "( :la_id, :forest_online_submission, :forest_submission_date_to_dycfo, :forest_submission_date_to_ccf_thane, :forest_submission_date_to_nodal_officer, "
+					 		+ ":forest_submission_date_to_revenue_secretary_mantralaya, :forest_submission_date_to_regional_office_nagpur, :forest_date_of_approval_by_regional_office_nagpur, :forest_valuation_by_dycfo,"
+					 		+ ":forest_demanded_amount, :forest_payment_amount, :forest_approval_for_payment, :forest_payment_date, :forest_possession_date, :survey_number, "// :forest_special_feature,
+					 		+ ":demanded_amount_units_forest, :payment_amount_units_forest)";
+					
+					String forestUpdateSubQry = "UPDATE la_forest_land_acquisition SET "
+					 		+ " on_line_submission= :forest_online_submission, submission_date_to_dycfo= :forest_submission_date_to_dycfo, submission_date_to_ccf_thane= :forest_submission_date_to_ccf_thane, submission_date_to_nodal_officer= :forest_submission_date_to_nodal_officer, "
+					 		+ "submission_date_to_revenue_secretary_mantralaya= :forest_submission_date_to_revenue_secretary_mantralaya, submission_date_to_regional_office_nagpur= :forest_submission_date_to_regional_office_nagpur, date_of_approval_by_regional_office_nagpur= :forest_date_of_approval_by_regional_office_nagpur, valuation_by_dycfo= :forest_valuation_by_dycfo, "
+					 		+ "demanded_amount= :forest_demanded_amount, payment_amount= :forest_payment_amount, approval_for_payment= :forest_approval_for_payment, payment_date= :forest_payment_date, possession_date= :forest_possession_date,  "//, special_feature= :forest_special_feature
+					 		+ " demanded_amount_units= :demanded_amount_units_forest,payment_amount_units= :payment_amount_units_forest   "
+					 		+ " where la_id_fk= :la_id ";
+
+					for (LandAcquisition obj5 : obj.getForestList()) {
+						sheet = 6;subRow++;
+						String table_name5 = "la_forest_land_acquisition";
+						String la_id5 = checkLAIdMethod(obj5,table_name5);
+						obj.setType_of_land("Forest");
+						if(!StringUtils.isEmpty(la_id5)) {
+							obj.setLa_id(la_id5);
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj5);
+						    count = namedParamJdbcTemplate.update(forestUpdateSubQry, paramSource);
+						}else {
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj5);
+						    count = namedParamJdbcTemplate.update(forestInsertSubQry, paramSource);
+						}
+					}
+					sheet5 = sheet5 + obj.getForestList().size();
+				}
+				if(!StringUtils.isEmpty(obj.getRailwayList())) {
+					subRow = sheet6;
+					String railwayInsertSubQry = " INSERT INTO la_railway_land_acquisition"
+					 		+ "(la_id_fk, online_submission, submission_date_to_DyCFO, "
+					 		+ "submission_date_to_CCF_Thane, [submission_date_to_nodal_officer/CCF Nagpur], submission_date_to_revenue_secretary_mantralaya, "
+					 		+ "submission_date_to_regional_office_nagpur, date_of_approval_by_Rregional_Office_agpur, valuation_by_DyCFO, demanded_amount, "
+					 		+ "approval_for_payment, payment_date, payment_amount, possession_date, "
+					 		+ "  demanded_amount_units, payment_amount_units)"
+					 		+ "VALUES"
+					 		+ "(:la_id, :railway_online_submission, :railway_submission_date_to_DyCFO, "
+					 		+ ":railway_submission_date_to_CCF_Thane, :railway_submission_date_to_nodal_officer_CCF_Nagpur, :railway_submission_date_to_revenue_secretary_mantralaya, "
+					 		+ ":railway_submission_date_to_regional_office_nagpur, :railway_date_of_approval_by_Rregional_Office_agpur, :railway_valuation_by_DyCFO, :railway_demanded_amount, "
+					 		+ ":railway_approval_for_payment, :railway_payment_date, :railway_payment_amount,  :railway_possession_date, "//, :railway_special_feature
+					 		+ "  :demanded_amount_units, :payment_amount_units_railway)";
+					
+					String railwayUpdateSubQry = " UPDATE la_railway_land_acquisition SET "
+					 		+ "survey_number= :survey_number, online_submission= :railway_online_submission, submission_date_to_DyCFO= :railway_submission_date_to_DyCFO, "
+					 		+ "submission_date_to_CCF_Thane= :railway_submission_date_to_CCF_Thane, [submission_date_to_nodal_officer/CCF Nagpur]= :railway_submission_date_to_nodal_officer_CCF_Nagpur, submission_date_to_revenue_secretary_mantralaya= :railway_submission_date_to_revenue_secretary_mantralaya,  "
+					 		+ "submission_date_to_regional_office_nagpur= :railway_submission_date_to_regional_office_nagpur,date_of_approval_by_Rregional_Office_agpur= :railway_date_of_approval_by_Rregional_Office_agpur, valuation_by_DyCFO= :railway_valuation_by_DyCFO, demanded_amount= :railway_demanded_amount, "
+					 		+ "approval_for_payment= :railway_approval_for_payment, payment_date= :railway_payment_date, payment_amount= :railway_payment_amount,  possession_date= :railway_possession_date,  "//special_feature= :railway_special_feature, 
+					 		+ "demanded_amount_units= :demanded_amount_units, payment_amount_units= :payment_amount_units_railway   "
+					 		+ "where la_id_fk= :la_id ";
+					for (LandAcquisition obj6 : obj.getRailwayList()) {
+						sheet = 7;subRow++;
+						String table_name6 = "la_railway_land_acquisition";
+						String la_id6 = checkLAIdMethod(obj6,table_name6);
+						obj.setType_of_land("Railway");
+						if(!StringUtils.isEmpty(la_id6)) {
+							obj.setLa_id(la_id6);
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj6);
+						    count = namedParamJdbcTemplate.update(railwayUpdateSubQry, paramSource);
+						}else {
+							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj6);
+						    count = namedParamJdbcTemplate.update(railwayInsertSubQry, paramSource);
+						}
+					}
+					sheet6 = sheet6 + obj.getRailwayList().size();
+				}
+				count = lasList.size();
+			   
+			}
+		   
+		   //transactionManager.commit(status);
+		}catch(Exception e){ 
+			//transactionManager.rollback(status);
+			e.printStackTrace();
+			errMsg = e.getMessage();
+		}
+		String arr[] = new String[5];
+		arr[0] = errMsg;
+	    arr[1] = String.valueOf(count);
+	    arr[2] = String.valueOf(row);
+	    arr[3] = String.valueOf(sheet);
+	    arr[4] = String.valueOf(subRow);
+		return arr;
+	}
+	
+	private double safeDoubleParse(String value) {
+	    if (value != null && !value.trim().isEmpty()) {
+	        try {
+	            return Double.parseDouble(value.trim());
+	        } catch (NumberFormatException e) {
+	            System.out.println("Invalid number format: " + value);
+	        }
+	    }
+	    return 0.0; // default if null/empty/invalid
+	}
+	
+	private String safeGet(String[] arr, int index) {
+	    return (arr != null && arr.length > index) ? arr[index] : "0"; // default "0" to avoid NumberFormatException
+	}
+	private int checkWorkinLA(String project_id_fk,String userId) throws Exception {
+		int Count=0;
+		try {
+			String qry = "SELECT count(*) AS count FROM land_executives WHERE project_id_fk=? and executive_user_id_fk=?";
+			Count = (int) jdbcTemplate.queryForObject(qry, new Object[] { project_id_fk,userId }, int.class);
+		} catch (Exception e) {
+			throw new Exception(e);
+		}		
+		return Count;
+	}	
+	
+	private String getSubCategoryNo(LandAcquisition obj) {
+		LandAcquisition dObj = null;
+		String subCateroryNo = null;
+		try {
+			String qry ="select id from la_sub_category where la_sub_category = ? and la_category_fk = ? " ;
+			dObj = (LandAcquisition)jdbcTemplate.queryForObject(qry, new Object[] {obj.getLa_sub_category_fk(),obj.getCategory_fk()}, new BeanPropertyRowMapper<LandAcquisition>(LandAcquisition.class));
+			subCateroryNo = dObj.getId();
+			return subCateroryNo;
+		}catch(Exception e){ 
+			subCateroryNo = null;
+			return subCateroryNo;
+		}
 	}
 }

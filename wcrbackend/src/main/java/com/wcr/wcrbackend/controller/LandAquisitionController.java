@@ -2,24 +2,35 @@ package com.wcr.wcrbackend.controller;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Writer;
+import java.math.BigDecimal;
 import java.text.DateFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
+import java.util.Locale;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.wcr.wcrbackend.DTO.FileFormatModel;
+import com.wcr.wcrbackend.DTO.FormHistory;
 import com.wcr.wcrbackend.DTO.LandAcquisition;
 import com.wcr.wcrbackend.DTO.LandAquisationPaginationObject;
 import com.wcr.wcrbackend.common.DateParser;
 import com.wcr.wcrbackend.entity.User;
+import com.wcr.wcrbackend.repo.IFormsHistoryDao;
 import com.wcr.wcrbackend.service.ILandAquisitionService;
 import com.wcr.wcrbackend.service.IUserService;
 
@@ -28,11 +39,14 @@ import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.WorkbookUtil;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -52,9 +66,15 @@ public class LandAquisitionController {
 
 	@Autowired
 	private IUserService userService;
+	
+	@Autowired
+	private IFormsHistoryDao formHistoryDao;
 
 	Logger logger = Logger.getLogger(LandAquisitionController.class);
-
+	
+	@Value("${template.upload.formatError}")
+	public String uploadformatError;
+	
 	@PostMapping("/ajax/get-land-acquisition")
 	public ResponseEntity<?> getLandAquisition(@RequestBody LandAcquisition obj, HttpServletRequest request,
 			HttpServletResponse response, HttpSession session) throws Exception {
@@ -5150,5 +5170,3440 @@ public class LandAquisitionController {
 				DateParser.parse(obj.getPublication_of_notice_in_2_local_news_papers_20f()));
 		return landAquisitionService.updateLandAcquisition(obj);
 
+	}
+	@PostMapping("/upload-la")
+	public void uploadLA(@RequestBody LandAcquisition obj,RedirectAttributes attributes,HttpSession session){
+		//ModelAndView model = new ModelAndView();
+		String msg = "";
+		try {
+			User uObj = (User) session.getAttribute("user");
+			String userId = uObj.getUserId();
+			String userName = uObj.getUserName();
+			obj.setCreated_by_user_id_fk(uObj.getUserId());
+			obj.setUser_id(uObj.getUserId());
+			obj.setUser_name(uObj.getUserName());
+			obj.setDesignation(uObj.getDesignation());
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			//model.setViewName("redirect:/land-acquisition");
+			
+			if(!StringUtils.isEmpty(obj.getLaUploadFile())){
+				MultipartFile multipartFile = obj.getLaUploadFile();
+				// Creates a workbook object from the uploaded excelfile
+				if (multipartFile.getSize() > 0){					
+					XSSFWorkbook workbook = new XSSFWorkbook(multipartFile.getInputStream());
+					// Creates a worksheet object representing the first sheet
+					int sheetsCount = workbook.getNumberOfSheets();
+					if(sheetsCount > 0) {
+						XSSFSheet laSheet = workbook.getSheetAt(1);
+						//System.out.println(uploadFilesSheet.getSheetName());
+						//header row
+						XSSFRow headerRow = laSheet.getRow(1);
+						//checking given file format
+						if(headerRow != null){
+							List<String> fileFormat = FileFormatModel.getLAFileFormat();
+							List<String> fileFormatLand = FileFormatModel.getLAFileFormatOnlyLandIndentification();
+							
+							int noOfColumns = headerRow.getLastCellNum();
+							if(sheetsCount==2)
+							{
+								if(noOfColumns == fileFormatLand.size()){
+									for (int i = 0; i < fileFormatLand.size();i++) {
+					                	//System.out.println(headerRow.getCell(i).getStringCellValue().trim());
+					                	//if(!fileFormat.get(i).trim().equals(headerRow.getCell(i).getStringCellValue().trim())){
+										String columnName = headerRow.getCell(i).getStringCellValue().trim();
+										if(!columnName.equals(fileFormatLand.get(i).trim()) && !columnName.contains(fileFormatLand.get(i).trim())){
+					                		attributes.addFlashAttribute("error",uploadformatError);
+					                		//return model;
+					                	}
+									}
+								}else{
+									attributes.addFlashAttribute("error",uploadformatError);
+			                		//return model;
+								}								
+							}
+							else
+							{
+								if(noOfColumns == fileFormat.size()){
+									for (int i = 0; i < fileFormat.size();i++) {
+					                	//System.out.println(headerRow.getCell(i).getStringCellValue().trim());
+					                	//if(!fileFormat.get(i).trim().equals(headerRow.getCell(i).getStringCellValue().trim())){
+										String columnName = headerRow.getCell(i).getStringCellValue().trim();
+										if(!columnName.equals(fileFormat.get(i).trim()) && !columnName.contains(fileFormat.get(i).trim())){
+					                		attributes.addFlashAttribute("error",uploadformatError);
+					                		//return model;
+					                	}
+									}
+								}else{
+									attributes.addFlashAttribute("error",uploadformatError);
+			                		//return model;
+								}								
+							}
+							
+						}else{
+							attributes.addFlashAttribute("error",uploadformatError);
+	                		//return model;
+						}
+						String[]  result = null;
+						if(sheetsCount==2)
+						{
+							 result = uploadLASingleSheet(obj,userId,userName);
+						}
+						else
+						{
+							result = uploadLA(obj,userId,userName);
+						}
+						String errMsg = result[0];String actualVal = "";
+						int count = 0,row = 0,sheet = 0,subRow = 0;
+						List<String> fileFormat = FileFormatModel.getLAFileFormat();
+						if(!StringUtils.isEmpty(result[1])){count = Integer.parseInt(result[1]);}
+						if(!StringUtils.isEmpty(result[2])){row = Integer.parseInt(result[2]);}
+						if(!StringUtils.isEmpty(result[3])){sheet = Integer.parseInt(result[3]);}
+						if(!StringUtils.isEmpty(result[4])){subRow = Integer.parseInt(result[4]);}
+						//System.out.println(errMsg);
+						if(!StringUtils.isEmpty(errMsg)) {
+							if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Duplicate entry")) {    
+								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;<b>Work and RR Id Mismatch at row: ("+row+")</b> please check and Upload again.</span>");
+								msg = "Work and Utility Shifting Id Mismatch at row: "+row;
+							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Data truncated")) {
+								actualVal = Integer.toString(subRow);
+								if(sheet == 1) {subRow = row; 
+									String error = "Data truncated";
+									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
+								} 
+								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								msg = "Incorrect value identified in Sheet: "+sheet+" at row: "+actualVal;
+							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Cannot add or update a child row")) {
+								actualVal = Integer.toString(subRow);
+								if(sheet == 1) {subRow = row;
+									String error = "Cannot add or update a child row";
+									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
+								}
+								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								msg = "Incorrect value identified in Sheet: "+sheet+" at row: "+actualVal;
+							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Incorrect date value")) {
+								actualVal = Integer.toString(subRow);
+								if(sheet == 1) {subRow = row;
+									String error = "Incorrect date value";
+									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
+								}
+								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect date value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								msg = "Incorrect date value identified in Sheet: "+sheet+" at row: "+actualVal;
+							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Incorrect integer value")) {
+								actualVal = Integer.toString(subRow);
+								if(sheet == 1) {subRow = row; 
+									String error = "Incorrect integer value";
+									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
+								}
+								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect integer value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								msg = "Incorrect integer value identified in Sheet: "+sheet+" at row: "+actualVal;
+							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Incorrect decimal value")) {
+								actualVal = Integer.toString(subRow);
+								if(sheet == 1) {subRow = row;
+									String error = "Incorrect decimal value";
+									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
+								}
+								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect decimal value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								msg = "Incorrect decimal value identified in Sheet: "+sheet+" at row: "+actualVal;
+							}
+						
+	                		//obj.setUploaded_by_user_id_fk(userId);
+	                		//obj.setStatus("Fail");
+	                		//obj.setRemarks(msg);
+							//boolean flag = service.saveRRDataUploadFile(obj);
+	                		//return model;
+						}
+						if(count > 0) {
+							attributes.addFlashAttribute("success", count + " Land Acquisition added successfully.");	
+							msg = count + " Land Acquisition added successfully.";
+							
+							FormHistory formHistory = new FormHistory();
+							formHistory.setCreated_by_user_id_fk(obj.getCreated_by_user_id_fk());
+							formHistory.setUser(obj.getDesignation()+" - "+obj.getUser_name());
+							formHistory.setModule_name_fk("Land Acquisition");
+							formHistory.setForm_name("Upload Land Acquisition");
+							formHistory.setForm_action_type("Upload");
+							formHistory.setForm_details( msg);
+							formHistory.setWork(obj.getProject_id_fk());
+							//formHistory.setContract(obj.getContract_id_fk());
+							
+							boolean history_flag = formHistoryDao.saveFormHistory(formHistory);
+							/********************************************************************************/
+						}else {
+							attributes.addFlashAttribute("success"," No records found.");	
+							msg = " No records found.";
+						}
+					}
+					workbook.close();
+				}
+			} else {
+				attributes.addFlashAttribute("error", "Something went wrong. Please try after some time");
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			attributes.addFlashAttribute("error", "Something went wrong. Please try after some time");
+			logger.fatal("updateDataDate() : "+e.getMessage());
+		}
+		//return model;
+	}
+
+	
+	/**
+	 * This method uploadLA() is called when user upload the file
+	 * 
+	 * @param obj is object for the model class User.
+	 * @param userId is type of String it store the userId
+	 * @param userName is type of String it store the userName
+	 * @param workbook is type of XSSWorkbook variable it takes the workbook as input.
+	 * @return type of this method is count.
+	 * @throws Exception 
+	 * @throws IOException will raise an exception when abnormal termination occur.
+	 */
+
+	private String[] uploadLA(LandAcquisition obj, String userId, String userName) throws Exception {
+		LandAcquisition la = null;
+		List<LandAcquisition> lasList = new ArrayList<LandAcquisition>();
+		String[] result = new String[5];
+		Writer w = null;
+		int count = 0;
+
+		SimpleDateFormat formatter1 = new SimpleDateFormat("dd-MM-yyyy");
+		SimpleDateFormat formatter3 = new SimpleDateFormat("MM/dd/yy");
+		SimpleDateFormat formatter2 = new SimpleDateFormat("yyyy-MM-dd");
+		
+		try {	
+			MultipartFile excelfile = obj.getLaUploadFile();
+			// Creates a workbook object from the uploaded excelfile
+			if (!StringUtils.isEmpty(excelfile) && excelfile.getSize() > 0 ){
+				XSSFWorkbook workbook = new XSSFWorkbook(excelfile.getInputStream());
+				int sheetsCount = workbook.getNumberOfSheets();
+				if(sheetsCount > 0) {
+					
+					XSSFSheet laSheet = workbook.getSheetAt(1);
+					//System.out.println(uploadFilesSheet.getSheetName());
+					//header row
+					//XSSFRow headerRow = uploadFilesSheet.getRow(0);							
+					DataFormatter formatter = new DataFormatter(); //creating formatter using the default locale
+					//System.out.println(uploadFilesSheet.getLastRowNum());
+					for(int i = 2; i <= laSheet.getLastRowNum();i++){
+						int v = laSheet.getLastRowNum();
+						XSSFRow row = laSheet.getRow(i);
+						// Sets the Read data to the model class
+						// Cell cell = row.getCell(0);
+						// String j_username = formatter.formatCellValue(row.getCell(0));
+						//System.out.println(i);
+						la = new LandAcquisition();
+						la.setCreated_by_user_id_fk(obj.getCreated_by_user_id_fk());
+						la.setUser_role_code(obj.getUser_role_code());
+						String val = null;
+						if(!StringUtils.isEmpty(row)) {								
+							val = formatter.formatCellValue(row.getCell(0)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setProject_id_fk(val);}
+							
+							val = formatter.formatCellValue(row.getCell(1)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setLa_id(val);}
+							
+							
+							val = formatter.formatCellValue(row.getCell(2)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setSurvey_number(val);}
+							
+							
+							val = formatter.formatCellValue(row.getCell(3)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setCategory_fk(val);}
+							
+							val = formatter.formatCellValue(row.getCell(4)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setLa_sub_category_fk(val);}	
+							
+							
+							val = formatter.formatCellValue(row.getCell(5)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(5));
+								}
+							
+								la.setArea_of_plot(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(6)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(6));
+								}
+								la.setArea_to_be_acquired(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(7)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(7));
+								}
+								la.setArea_acquired(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(8)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(8));
+								}
+								la.setLa_land_status_fk(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(9)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setChainage_from(val);}	
+							
+							
+							val = formatter.formatCellValue(row.getCell(10)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setChainage_to(val);}								
+							
+							val = formatter.formatCellValue(row.getCell(11)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setVillage(val);}										
+							
+							val = formatter.formatCellValue(row.getCell(12)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setTaluka(val);}
+							
+							val = formatter.formatCellValue(row.getCell(13)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setLatitude(val);}							
+							
+							val = formatter.formatCellValue(row.getCell(14)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setLongitude(val);}
+							
+							val = formatter.formatCellValue(row.getCell(15)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setDy_slr(val);}							
+							
+							val = formatter.formatCellValue(row.getCell(16)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setSdo(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(17)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setCollector(val);}
+							
+							val = formatter.formatCellValue(row.getCell(18)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setProposal_submission_date_to_collector(val);}
+							
+							val = formatter.formatCellValue(row.getCell(19)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_fee_letter_received_date(val);}
+							
+							
+							val = formatter.formatCellValue(row.getCell(20)).trim();
+							if(!StringUtils.isEmpty(val)) {
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(20));
+								}
+								la.setJm_fee_amount(val);
+							}
+						
+							val = formatter.formatCellValue(row.getCell(21)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_fee_paid_date(val);}								
+							
+							val = formatter.formatCellValue(row.getCell(22)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_start_date(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(23)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_completion_date(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(24)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_sheet_date_to_sdo(val);}				
+							
+							val = formatter.formatCellValue(row.getCell(25)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setJm_remarks(val);}										
+						
+							val = formatter.formatCellValue(row.getCell(26)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(26));
+								}
+								la.setJm_approval(val);}
+							
+							val = formatter.formatCellValue(row.getCell(27)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setSpecial_feature(val);}
+							
+							val = formatter.formatCellValue(row.getCell(28)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setRemarks(val);}
+							
+							val = formatter.formatCellValue(row.getCell(29)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setIssues(val);}
+					
+							la.setProposal_submission_date_to_collector(DateParser.parse(la.getProposal_submission_date_to_collector()));
+							la.setJm_fee_letter_received_date(DateParser.parse(la.getJm_fee_letter_received_date()));
+							la.setJm_fee_paid_date(DateParser.parse(la.getJm_fee_paid_date()));
+							la.setJm_start_date(DateParser.parse(la.getJm_start_date()));
+							la.setJm_completion_date(DateParser.parse(la.getJm_completion_date()));
+							la.setJm_sheet_date_to_sdo(DateParser.parse(la.getJm_sheet_date_to_sdo()));
+						}
+				
+						List<LandAcquisition> pObjList = new ArrayList<LandAcquisition>();
+						List<LandAcquisition> pObjList1 = new ArrayList<LandAcquisition>();
+						List<LandAcquisition> pObjList2 = new ArrayList<LandAcquisition>();
+						List<LandAcquisition> gObjList = new ArrayList<LandAcquisition>();
+						List<LandAcquisition> fObjList = new ArrayList<LandAcquisition>();
+						List<LandAcquisition> rObjList = new ArrayList<LandAcquisition>();
+						
+									XSSFSheet laPrivateSheet = workbook.getSheetAt(4);
+									XSSFSheet laPrivateLVSheet = workbook.getSheetAt(5);
+									XSSFSheet laprivateLASheet = workbook.getSheetAt(6);
+									XSSFSheet GovSheet = workbook.getSheetAt(7);
+									XSSFSheet forestSheet = workbook.getSheetAt(8);
+									XSSFSheet railwaySheet = workbook.getSheetAt(9);
+
+									XSSFRow privateIRA = laPrivateSheet.getRow(1);
+									XSSFRow privateLV = laPrivateLVSheet.getRow(1);
+									XSSFRow privateLA = laprivateLASheet.getRow(1);
+									XSSFRow Gov = GovSheet.getRow(1);
+									XSSFRow forest = forestSheet.getRow(1);
+									XSSFRow railway = railwaySheet.getRow(1);
+									//String val = null;
+									if(privateIRA != null){
+										for(int j = 2; j <= laPrivateSheet.getLastRowNum();j++){
+											XSSFRow row2 = laPrivateSheet.getRow(j);
+											LandAcquisition pObj = new LandAcquisition();
+											if(!StringUtils.isEmpty(row2) && formatter.formatCellValue(row2.getCell(0)).trim().equals(la.getLa_id())) {
+												val = formatter.formatCellValue(row2.getCell(0)).trim();
+												if(!StringUtils.isEmpty(val)) { pObj.setLa_id(val);}
+												
+												val = formatter.formatCellValue(row2.getCell(1)).trim();
+												if(!StringUtils.isEmpty(val)) { pObj.setPrivate_ira_collector(val);}
+												//Declaration of Special Railway project 
+												val = formatter.formatCellValue(row2.getCell(2)).trim();
+												
+
+
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date24 = null;
+														String dateString24 = null;
+														date24 = formatter3.parse(val);
+														dateString24 = formatter2.format(date24);										
+														pObj.setSubmission_of_proposal_to_GM(dateString24);
+														 
+													}
+													else
+													{
+													
+														Date date24 = null;
+														String dateString24 = null;
+														date24 = formatter1.parse(val);
+														dateString24 = formatter2.format(date24);
+														pObj.setSubmission_of_proposal_to_GM(dateString24);
+														
+													}
+													
+												}	
+												val = formatter.formatCellValue(row2.getCell(3)).trim();
+												
+											
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date25 = null;
+														String dateString25 = null;
+														date25 = formatter3.parse(val);
+														dateString25 = formatter2.format(date25);										
+														pObj.setApproval_of_GM(dateString25);
+														 
+													}
+													else
+													{
+													
+														Date date25 = null;
+														String dateString25 = null;
+														date25 = formatter1.parse(val);
+														dateString25 = formatter2.format(date25);	
+														pObj.setApproval_of_GM(dateString25);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(4)).trim();
+
+
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date26 = null;
+														String dateString26 = null;
+														date26 = formatter3.parse(val);
+														dateString26 = formatter2.format(date26);										
+														pObj.setDraft_letter_to_con_for_approval_rp(dateString26);
+														 
+													}
+													else
+													{
+													
+														Date date26 = null;
+														String dateString26 = null;
+														date26 = formatter1.parse(val);
+														dateString26 = formatter2.format(date26);
+														pObj.setDraft_letter_to_con_for_approval_rp(dateString26);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(5)).trim();
+												
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date27 = null;
+														String dateString27 = null;
+														date27 = formatter3.parse(val);
+														dateString27 = formatter2.format(date27);									
+														pObj.setDate_of_approval_of_construction_rp(dateString27);
+														 
+													}
+													else
+													{
+													
+														Date date27 = null;
+														String dateString27 = null;
+														date27 = formatter1.parse(val);
+														dateString27 = formatter2.format(date27);
+														pObj.setDate_of_approval_of_construction_rp(dateString27);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(6)).trim();
+
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date28 = null;
+														String dateString28 = null;
+														date28 = formatter3.parse(val);
+														dateString28 = formatter2.format(date28);									
+														pObj.setDate_of_uploading_of_gazette_notification_rp(dateString28);
+														 
+													}
+													else
+													{
+													
+														Date date28 = null;
+														String dateString28 = null;
+														date28 = formatter1.parse(val);
+														dateString28 = formatter2.format(date28);
+														pObj.setDate_of_uploading_of_gazette_notification_rp(dateString28);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(7)).trim();
+												
+											
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date29 = null;
+														String dateString29 = null;
+														date29 = formatter3.parse(val);
+														dateString29 = formatter2.format(date29);									
+														pObj.setPublication_in_gazette_rp(dateString29);
+														 
+													}
+													else
+													{
+													
+														Date date29 = null;
+														String dateString29 = null;
+														date29 = formatter1.parse(val);
+														dateString29 = formatter2.format(date29);	
+														pObj.setPublication_in_gazette_rp(dateString29);
+														
+													}
+													
+												}
+												//Nomination of competent Authority	
+												val = formatter.formatCellValue(row2.getCell(8)).trim();
+												
+											
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date30 = null;
+														String dateString30 = null;
+														date30= formatter3.parse(val);
+														dateString30 = formatter2.format(date30);								
+														pObj.setDate_of_proposal_to_DC_for_nomination(dateString30);
+														 
+													}
+													else
+													{
+													
+														Date date30 = null;
+														String dateString30 = null;
+														date30= formatter1.parse(val);
+														dateString30 = formatter2.format(date30);		
+														pObj.setDate_of_proposal_to_DC_for_nomination(dateString30);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(9)).trim();
+
+
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date31 = null;
+														String dateString31 = null;
+														date31= formatter3.parse(val);
+														dateString31 = formatter2.format(date31);						
+														pObj.setDate_of_nomination_of_competenta_authority(dateString31);
+														 
+													}
+													else
+													{
+													
+														Date date31 = null;
+														String dateString31 = null;
+														date31= formatter1.parse(val);
+														dateString31 = formatter2.format(date31);	
+														pObj.setDate_of_nomination_of_competenta_authority(dateString31);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(10)).trim();
+												
+											
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date32 = null;
+														String dateString32 = null;
+														date32 = formatter3.parse(val);
+														dateString32 = formatter2.format(date32);						
+														pObj.setDraft_letter_to_con_for_approval_ca(dateString32);
+														 
+													}
+													else
+													{
+													
+														Date date32 = null;
+														String dateString32 = null;
+														date32 = formatter1.parse(val);
+														dateString32 = formatter2.format(date32);	
+														pObj.setDraft_letter_to_con_for_approval_ca(dateString32);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(11)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date33 = null;
+														String dateString33 = null;
+														date33 = formatter3.parse(val);
+														dateString33 = formatter2.format(date33);					
+														pObj.setDate_of_approval_of_construction_ca(dateString33);
+														 
+													}
+													else
+													{
+													
+														Date date33 = null;
+														String dateString33 = null;
+														date33 = formatter1.parse(val);
+														dateString33 = formatter2.format(date33);
+														pObj.setDate_of_approval_of_construction_ca(dateString33);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(12)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date34 = null;
+														String dateString34 = null;
+														date34 = formatter3.parse(val);
+														dateString34 = formatter2.format(date34);				
+														pObj.setDate_of_uploading_of_gazette_notification_ca(dateString34);
+														 
+													}
+													else
+													{
+													
+														Date date34 = null;
+														String dateString34 = null;
+														date34 = formatter1.parse(val);
+														dateString34 = formatter2.format(date34);
+														pObj.setDate_of_uploading_of_gazette_notification_ca(dateString34);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(13)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date35 = null;
+														String dateString35 = null;
+														date35 = formatter3.parse(val);
+														dateString35 = formatter2.format(date35);			
+														pObj.setPublication_in_gazette_ca(dateString35);
+														 
+													}
+													else
+													{
+													
+														Date date35 = null;
+														String dateString35 = null;
+														date35 = formatter1.parse(val);
+														dateString35 = formatter2.format(date35);
+														pObj.setPublication_in_gazette_ca(dateString35);
+														
+													}
+													
+												}
+											//Publication of notification under 20 A 
+												val = formatter.formatCellValue(row2.getCell(14)).trim();
+												
+										
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date36 = null;
+														String dateString36 = null;
+														date36 = formatter3.parse(val);
+														dateString36 = formatter2.format(date36);			
+														pObj.setDate_of_submission_of_draft_notification_to_CALA(dateString36);
+														 
+													}
+													else
+													{
+													
+														Date date36 = null;
+														String dateString36 = null;
+														date36 = formatter1.parse(val);
+														dateString36 = formatter2.format(date36);		
+														pObj.setDate_of_submission_of_draft_notification_to_CALA(dateString36);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(15)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date37 = null;
+														String dateString37 = null;
+														date37 = formatter3.parse(val);
+														dateString37 = formatter2.format(date37);		
+														pObj.setApproval_of_CALA_20a(dateString37);
+														 
+													}
+													else
+													{
+													
+														Date date37 = null;
+														String dateString37 = null;
+														date37 = formatter1.parse(val);
+														dateString37 = formatter2.format(date37);		
+														pObj.setApproval_of_CALA_20a(dateString37);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(16)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date38 = null;
+														String dateString38 = null;
+														date38 = formatter3.parse(val);
+														dateString38 = formatter2.format(date38);		
+														pObj.setDraft_letter_to_con_for_approval_20a(dateString38);
+														 
+													}
+													else
+													{
+													
+														Date date38 = null;
+														String dateString38 = null;
+														date38 = formatter1.parse(val);
+														dateString38 = formatter2.format(date38);		
+														pObj.setDraft_letter_to_con_for_approval_20a(dateString38);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(17)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date39 = null;
+														String dateString39 = null;
+														date39 = formatter3.parse(val);
+														dateString39 = formatter2.format(date39);
+														pObj.setDate_of_approval_of_construction_20a(val);
+														 
+													}
+													else
+													{
+													
+														Date date39 = null;
+														String dateString39 = null;
+														date39 = formatter1.parse(val);
+														dateString39 = formatter2.format(date39);	
+														pObj.setDate_of_approval_of_construction_20a(val);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(18)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date40 = null;
+														String dateString40 = null;
+														date40 = formatter3.parse(val);
+														dateString40 = formatter2.format(date40);
+														pObj.setDate_of_uploading_of_gazette_notification_20a(dateString40);
+														 
+													}
+													else
+													{
+													
+														Date date40 = null;
+														String dateString40 = null;
+														date40 = formatter1.parse(val);
+														dateString40 = formatter2.format(date40);	
+														pObj.setDate_of_uploading_of_gazette_notification_20a(dateString40);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(19)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date41 = null;
+														String dateString41 = null;
+														date41 = formatter3.parse(val);
+														dateString41 = formatter2.format(date41);
+														pObj.setPublication_in_gazette_20a(dateString41);
+														 
+													}
+													else
+													{
+													
+														Date date41 = null;
+														String dateString41 = null;
+														date41 = formatter1.parse(val);
+														dateString41 = formatter2.format(date41);
+														pObj.setPublication_in_gazette_20a(dateString41);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(20)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date42 = null;
+														String dateString42 = null;
+														date42 = formatter3.parse(val);
+														dateString42 = formatter2.format(date42);
+														pObj.setPublication_in_2_local_news_papers_20a(dateString42);
+														 
+													}
+													else
+													{
+													
+														Date date42 = null;
+														String dateString42 = null;
+														date42 = formatter1.parse(val);
+														dateString42 = formatter2.format(date42);
+														pObj.setPublication_in_2_local_news_papers_20a(dateString42);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(21)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date43 = null;
+														String dateString43 = null;
+														date43 = formatter3.parse(val);
+														dateString43 = formatter2.format(date43);
+														pObj.setPasting_of_notification_in_villages_20a(dateString43);
+														 
+													}
+													else
+													{
+													
+														Date date43 = null;
+														String dateString43 = null;
+														date43 = formatter1.parse(val);
+														dateString43 = formatter2.format(date43);
+														pObj.setPasting_of_notification_in_villages_20a(dateString43);
+														
+													}
+													
+												}
+										    //Grievances Redressal	
+												val = formatter.formatCellValue(row2.getCell(22)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date44 = null;
+														String dateString44 = null;
+														date44 = formatter3.parse(val);
+														dateString44 = formatter2.format(date44);
+														pObj.setReceipt_of_grievances(dateString44);
+														 
+													}
+													else
+													{
+													
+														Date date44 = null;
+														String dateString44 = null;
+														date44 = formatter1.parse(val);
+														dateString44 = formatter2.format(date44);
+														pObj.setReceipt_of_grievances(dateString44);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(23)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date45 = null;
+														String dateString45 = null;
+														date45 = formatter3.parse(val);
+														dateString45= formatter2.format(date45);
+														pObj.setDisposal_of_grievances(dateString45);
+														 
+													}
+													else
+													{
+													
+														Date date45 = null;
+														String dateString45 = null;
+														date45 = formatter1.parse(val);
+														dateString45= formatter2.format(date45);
+														pObj.setDisposal_of_grievances(dateString45);
+														
+													}
+													
+												}
+											//Acquisition notice under 20E	
+												val = formatter.formatCellValue(row2.getCell(24)).trim();
+												
+										
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date46 = null;
+														String dateString46 = null;
+														date46 = formatter3.parse(val);
+														dateString46 = formatter2.format(date46);	
+														pObj.setDate_of_submission_of_draft_notification_to_CALA_20e(dateString46);
+														 
+													}
+													else
+													{
+													
+														Date date46 = null;
+														String dateString46 = null;
+														date46 = formatter1.parse(val);
+														dateString46 = formatter2.format(date46);	
+														pObj.setDate_of_submission_of_draft_notification_to_CALA_20e(dateString46);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(25)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date47 = null;
+														String dateString47 = null;
+														date47 = formatter3.parse(val);
+														dateString47 = formatter2.format(date47);	
+														pObj.setApproval_of_CALA_20e(dateString47);
+														 
+													}
+													else
+													{
+													
+														Date date47 = null;
+														String dateString47 = null;
+														date47 = formatter1.parse(val);
+														dateString47 = formatter2.format(date47);	
+														pObj.setApproval_of_CALA_20e(dateString47);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(26)).trim();
+
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date48 = null;
+														String dateString48 = null;
+														date48 = formatter3.parse(val);
+														dateString48 = formatter2.format(date48);
+														pObj.setDraft_letter_to_con_for_approval_20e(dateString48);
+														 
+													}
+													else
+													{
+													
+														Date date48 = null;
+														String dateString48 = null;
+														date48 = formatter1.parse(val);
+														dateString48 = formatter2.format(date48);
+														pObj.setDraft_letter_to_con_for_approval_20e(dateString48);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(27)).trim();
+
+
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date49 = null;
+														String dateString49 = null;
+														date49 = formatter3.parse(val);
+														dateString49 = formatter2.format(date49);
+														pObj.setDate_of_approval_of_construction_20e(dateString49);
+														 
+													}
+													else
+													{
+													
+														Date date49 = null;
+														String dateString49 = null;
+														date49 = formatter1.parse(val);
+														dateString49 = formatter2.format(date49);
+														pObj.setDate_of_approval_of_construction_20e(dateString49);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(28)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date50 = null;
+														String dateString50 = null;
+														date50 = formatter3.parse(val);
+														dateString50 = formatter2.format(date50);
+														pObj.setDate_of_uploading_of_gazette_notification_20e(dateString50);
+														 
+													}
+													else
+													{
+													
+														Date date50 = null;
+														String dateString50 = null;
+														date50 = formatter1.parse(val);
+														dateString50 = formatter2.format(date50);
+														pObj.setDate_of_uploading_of_gazette_notification_20e(dateString50);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(29)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date51 = null;
+														String dateString51 = null;
+														date51 = formatter3.parse(val);
+														dateString51 = formatter2.format(date51);
+														pObj.setPublication_in_gazette_20e(dateString51);
+														 
+													}
+													else
+													{
+													
+														Date date51 = null;
+														String dateString51 = null;
+														date51 = formatter1.parse(val);
+														dateString51 = formatter2.format(date51);
+														pObj.setPublication_in_gazette_20e(dateString51);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(30)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date52 = null;
+														String dateString52 = null;
+														date52 = formatter3.parse(val);
+														dateString52 = formatter2.format(date52);
+														pObj.setPublication_of_notice_in_2_local_news_papers_20e(dateString52);
+														 
+													}
+													else
+													{
+													
+														Date date52 = null;
+														String dateString52 = null;
+														date52 = formatter1.parse(val);
+														dateString52 = formatter2.format(date52);
+														pObj.setPublication_of_notice_in_2_local_news_papers_20e(dateString52);
+														
+													}
+													
+												}
+											//Acquisition notice under 20F						
+												val = formatter.formatCellValue(row2.getCell(31)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date53 = null;
+														String dateString53 = null;
+														date53 = formatter3.parse(val);
+														dateString53 = formatter2.format(date53);
+														pObj.setDate_of_submission_of_draft_notification_to_CALA_20f(dateString53);
+														 
+													}
+													else
+													{
+													
+														Date date53 = null;
+														String dateString53 = null;
+														date53 = formatter1.parse(val);
+														dateString53 = formatter2.format(date53);
+														pObj.setDate_of_submission_of_draft_notification_to_CALA_20f(dateString53);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(32)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date54 = null;
+														String dateString54 = null;
+														date54 = formatter3.parse(val);
+														dateString54 = formatter2.format(date54);
+														pObj.setApproval_of_CALA_20f(dateString54);
+														 
+													}
+													else
+													{
+													
+														Date date54 = null;
+														String dateString54 = null;
+														date54 = formatter1.parse(val);
+														dateString54 = formatter2.format(date54);
+														pObj.setApproval_of_CALA_20f(dateString54);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(33)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date55 = null;
+														String dateString55 = null;
+														date55 = formatter3.parse(val);
+														dateString55 = formatter2.format(date55);
+														pObj.setDraft_letter_to_con_for_approval_20f(dateString55);
+														 
+													}
+													else
+													{
+													
+														Date date55 = null;
+														String dateString55 = null;
+														date55 = formatter1.parse(val);
+														dateString55 = formatter2.format(date55);
+														pObj.setDraft_letter_to_con_for_approval_20f(dateString55);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(34)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date56 = null;
+														String dateString56 = null;
+														date56 = formatter3.parse(val);
+														dateString56 = formatter2.format(date56);
+														pObj.setDate_of_approval_of_construction_20f(dateString56);
+														 
+													}
+													else
+													{
+													
+														Date date56 = null;
+														String dateString56 = null;
+														date56 = formatter1.parse(val);
+														dateString56 = formatter2.format(date56);
+														pObj.setDate_of_approval_of_construction_20f(dateString56);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(35)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date57 = null;
+														String dateString57 = null;
+														date57 = formatter3.parse(val);
+														dateString57 = formatter2.format(date57);
+														pObj.setDate_of_uploading_of_gazette_notification_20f(dateString57);
+														 
+													}
+													else
+													{
+													
+														Date date57 = null;
+														String dateString57 = null;
+														date57 = formatter1.parse(val);
+														dateString57 = formatter2.format(date57);
+														pObj.setDate_of_uploading_of_gazette_notification_20f(dateString57);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(36)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date58 = null;
+														String dateString58 = null;
+														date58 = formatter3.parse(val);
+														dateString58 = formatter2.format(date58);
+														pObj.setPublication_in_gazette_20f(dateString58);
+														 
+													}
+													else
+													{
+													
+														Date date58 = null;
+														String dateString58 = null;
+														date58 = formatter1.parse(val);
+														dateString58 = formatter2.format(date58);
+														pObj.setPublication_in_gazette_20f(dateString58);
+														
+													}
+													
+												}
+												val = formatter.formatCellValue(row2.getCell(37)).trim();
+												
+
+												
+												
+												if(!StringUtils.isEmpty(val)) { 
+													if(val.contains("/")) 
+													{
+														Date date59 = null;
+														String dateString59 = null;
+														date59 = formatter3.parse(val);
+														dateString59 = formatter2.format(date59);
+														pObj.setPublication_of_notice_in_2_local_news_papers_20f(dateString59);
+														 
+													}
+													else
+													{
+													
+														Date date59 = null;
+														String dateString59 = null;
+														date59 = formatter1.parse(val);
+														dateString59 = formatter2.format(date59);
+														pObj.setPublication_of_notice_in_2_local_news_papers_20f(dateString59);
+														
+													}
+													
+												}
+											}
+											if(!StringUtils.isEmpty(pObj) && !StringUtils.isEmpty(pObj.getLa_id())
+													&& pObj.getLa_id().equals(la.getLa_id())) {
+												pObjList.add(pObj);
+											}
+										}
+								la.setPrivateIRAList(pObjList);
+								}
+								if(privateLA != null){
+									int b  = laprivateLASheet.getLastRowNum();
+									for(int j = 2; j <= laprivateLASheet.getLastRowNum();j++){
+										XSSFRow row2 = laprivateLASheet.getRow(j);
+										LandAcquisition pObj1 = new LandAcquisition();
+										if(!StringUtils.isEmpty(row2) && formatter.formatCellValue(row2.getCell(0)).trim().equals(la.getLa_id())) {
+											val = formatter.formatCellValue(row2.getCell(0)).trim();
+											if(!StringUtils.isEmpty(val)) { pObj1.setLa_id(val);}
+										
+											val = formatter.formatCellValue(row2.getCell(1)).trim();
+											if(!StringUtils.isEmpty(val)) { pObj1.setName_of_the_owner(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(2)).trim();
+											if(!StringUtils.isEmpty(val)) {
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(2));
+												}
+												pObj1.setBasic_rate(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(3)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(3));
+												}
+												pObj1.setHundred_percent_Solatium(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(4)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(4));
+												}
+												pObj1.setExtra_25_percent(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(5)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(5));
+												}
+												
+												pObj1.setTotal_rate_divide_m2(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(6)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(6));
+												}
+										
+												pObj1.setLand_compensation(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(7)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(7));
+												}
+											
+												pObj1.setAgriculture_tree_nos(Double.parseDouble(val));}
+											
+											val = formatter.formatCellValue(row2.getCell(8)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(8));
+												}
+											
+												pObj1.setAgriculture_tree_rate(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(9)).trim();
+											if(!StringUtils.isEmpty(val)) {
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(9));
+												}
+											
+												pObj1.setAgriculture_tree_compensation(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(10)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(10));
+												}
+												pObj1.setForest_tree_nos(Double.parseDouble(val));}
+											
+											val = formatter.formatCellValue(row2.getCell(11)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(11));
+												}
+												pObj1.setForest_tree_rate(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(12)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(12));
+												}
+												pObj1.setForest_tree_compensation(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(13)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(13));
+												}
+												pObj1.setStructure_compensation(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(14)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(14));
+												}
+												pObj1.setBorewell_compensation(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(15)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(15));
+												}
+												pObj1.setTotal_compensation(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(16)).trim();
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date215 = null;
+													String dateString215 = null;
+													date215 = formatter3.parse(val);
+													dateString215 = formatter2.format(date215);
+													pObj1.setConsent_from_owner(dateString215);
+													 
+												}
+												else
+												{
+													Date date215 = null;
+													String dateString215 = null;
+													date215 = formatter1.parse(val);
+													dateString215 = formatter2.format(date215);
+													pObj1.setConsent_from_owner(dateString215);
+												}												
+												
+												
+												
+												
+												
+											
+											}
+											val = formatter.formatCellValue(row2.getCell(17)).trim();
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date216 = null;
+													String dateString216 = null;
+													date216 = formatter3.parse(val);
+													dateString216 = formatter2.format(date216);
+													pObj1.setLegal_search_report(dateString216);
+													 
+												}
+												else
+												{
+													Date date216 = null;
+													String dateString216 = null;
+													date216 = formatter1.parse(val);
+													dateString216 = formatter2.format(date216);
+													pObj1.setLegal_search_report(dateString216);
+												}													
+												
+												
+												
+												
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(18)).trim();
+											
+
+											
+											
+											if(!StringUtils.isEmpty(val)) { 
+												
+												if(val.contains("/")) 
+												{
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter3.parse(val);
+													dateString15 = formatter2.format(date15);
+													pObj1.setDate_of_registration(dateString15);
+													 
+												}
+												else
+												{
+												
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter1.parse(val);
+													dateString15 = formatter2.format(date15);
+													pObj1.setDate_of_registration(dateString15);
+												}													
+												
+												
+											
+											}
+											val = formatter.formatCellValue(row2.getCell(19)).trim();
+
+											
+
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date16 = null;
+													String dateString16 = null;
+													date16 = formatter3.parse(val);
+													dateString16 = formatter2.format(date16);
+													pObj1.setDate_of_possession(dateString16);
+													 
+												}
+												else
+												{
+												
+													Date date16 = null;
+													String dateString16 = null;
+													date16 = formatter1.parse(val);
+													dateString16 = formatter2.format(date16);
+													pObj1.setDate_of_possession(dateString16);
+													
+												}												
+												
+												
+												
+											
+											}
+											
+
+							
+											
+											pObj1.setDate_of_registration(DateParser.parse(pObj1.getDate_of_registration()));
+											pObj1.setDate_of_possession(DateParser.parse(pObj1.getDate_of_possession()));
+											pObj1.setConsent_from_owner(DateParser.parse(pObj1.getConsent_from_owner()));
+											pObj1.setLegal_search_report(DateParser.parse(pObj1.getLegal_search_report()));
+											pObj1.setForest_tree_survey(DateParser.parse(pObj1.getForest_tree_survey()));
+											pObj1.setForest_tree_valuation(DateParser.parse(pObj1.getForest_tree_valuation()));
+											pObj1.setHorticulture_tree_survey(DateParser.parse(pObj1.getHorticulture_tree_survey()));
+											pObj1.setHorticulture_tree_valuation(DateParser.parse(pObj1.getHorticulture_tree_valuation()));
+											pObj1.setStructure_survey(DateParser.parse(pObj1.getStructure_survey()));
+											pObj1.setStructure_valuation(DateParser.parse(pObj1.getStructure_valuation()));
+											pObj1.setBorewell_survey(DateParser.parse(pObj1.getBorewell_survey()));
+											pObj1.setBorewell_valuation(DateParser.parse(pObj1.getBorewell_valuation()));
+											pObj1.setDate_of_rfp_to_adtp(DateParser.parse(pObj1.getDate_of_rfp_to_adtp()));
+											pObj1.setDate_of_rate_fixation_of_land(DateParser.parse(pObj1.getDate_of_rate_fixation_of_land()));
+											pObj1.setSdo_demand_for_payment(DateParser.parse(pObj1.getSdo_demand_for_payment()));
+											pObj1.setDate_of_approval_for_payment(DateParser.parse(pObj1.getDate_of_approval_for_payment()));
+											pObj1.setPrivate_payment_date(DateParser.parse(pObj1.getPrivate_payment_date()));
+										} 
+										if(!StringUtils.isEmpty(pObj1) && !StringUtils.isEmpty(pObj1.getLa_id())
+												&& pObj1.getLa_id().equals(la.getLa_id())) {
+											pObjList1.add(pObj1);
+										}
+									}
+							la.setPrivateLAList(pObjList1);
+							}	
+								if(privateLV != null){
+									for(int j = 2; j <= laPrivateLVSheet.getLastRowNum();j++){
+										XSSFRow row2 = laPrivateLVSheet.getRow(j);
+										LandAcquisition pObj2 = new LandAcquisition();
+										if(!StringUtils.isEmpty(row2) && formatter.formatCellValue(row2.getCell(0)).trim().equals(la.getLa_id())) {
+											val = formatter.formatCellValue(row2.getCell(0)).trim();
+											if(!StringUtils.isEmpty(val)) { pObj2.setLa_id(val);}
+										
+											val = formatter.formatCellValue(row2.getCell(1)).trim();
+											
+										
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter3.parse(val);
+													dateString15 = formatter2.format(date15);	
+													pObj2.setForest_tree_survey(dateString15);
+													 
+												}
+												else
+												{
+												
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter1.parse(val);
+													dateString15 = formatter2.format(date15);	
+													pObj2.setForest_tree_survey(dateString15);
+													
+												}													
+												
+												
+												
+											
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(2)).trim();
+
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date19 = null;
+													String dateString19 = null;
+													date19 = formatter3.parse(val);
+													dateString19 = formatter2.format(date19);
+													pObj2.setForest_tree_valuation(dateString19);
+													 
+												}
+												else
+												{
+												
+													Date date19 = null;
+													String dateString19 = null;
+													date19 = formatter1.parse(val);
+													dateString19 = formatter2.format(date19);
+													pObj2.setForest_tree_valuation(dateString19);
+													
+												}													
+												
+												
+											
+												
+											
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(3)).trim();
+											
+										
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date20 = null;
+													String dateString20 = null;
+													date20 = formatter3.parse(val);
+													dateString20 = formatter2.format(date20);	
+													pObj2.setHorticulture_tree_survey(dateString20);
+													 
+												}
+												else
+												{
+												
+													Date date20 = null;
+													String dateString20 = null;
+													date20 = formatter1.parse(val);
+													dateString20 = formatter2.format(date20);	
+													pObj2.setHorticulture_tree_survey(dateString20);
+													
+												}													
+												
+												
+												
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(4)).trim();
+
+
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date21 = null;
+													String dateString21 = null;
+													date21 = formatter3.parse(val);
+													dateString21 = formatter2.format(date21);
+													pObj2.setHorticulture_tree_valuation(dateString21);
+													 
+												}
+												else
+												{
+												
+													Date date21 = null;
+													String dateString21 = null;
+													date21 = formatter1.parse(val);
+													dateString21 = formatter2.format(date21);
+													pObj2.setHorticulture_tree_valuation(dateString21);
+													
+												}													
+												
+												
+												
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(5)).trim();
+											
+										
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date22 = null;
+													String dateString22 = null;
+													date22 = formatter3.parse(val);
+													dateString22 = formatter2.format(date22);	
+													pObj2.setStructure_survey(dateString22);
+													 
+												}
+												else
+												{
+												
+													Date date22 = null;
+													String dateString22 = null;
+													date22 = formatter1.parse(val);
+													dateString22 = formatter2.format(date22);	
+													pObj2.setStructure_survey(dateString22);
+													
+												}													
+												
+												
+												
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(6)).trim();
+
+
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date23 = null;
+													String dateString23 = null;
+													date23 = formatter3.parse(val);
+													dateString23 = formatter2.format(date23);
+													pObj2.setStructure_valuation(dateString23);
+													 
+												}
+												else
+												{
+												
+													Date date23 = null;
+													String dateString23 = null;
+													date23 = formatter1.parse(val);
+													dateString23 = formatter2.format(date23);
+													pObj2.setStructure_valuation(dateString23);
+													
+												}													
+												
+												
+												
+											
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(7)).trim();
+
+
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date24 = null;
+													String dateString24 = null;
+													date24 = formatter3.parse(val);
+													dateString24 = formatter2.format(date24);
+													pObj2.setBorewell_survey(dateString24);
+													 
+												}
+												else
+												{
+												
+													Date date24 = null;
+													String dateString24 = null;
+													date24 = formatter1.parse(val);
+													dateString24 = formatter2.format(date24);
+													pObj2.setBorewell_survey(dateString24);
+													
+												}													
+												
+												
+												
+												
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(8)).trim();
+											
+										
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date25 = null;
+													String dateString25 = null;
+													date25 = formatter3.parse(val);
+													dateString25 = formatter2.format(date25);	
+													pObj2.setBorewell_valuation(dateString25);
+													 
+												}
+												else
+												{
+												
+													Date date25 = null;
+													String dateString25 = null;
+													date25 = formatter1.parse(val);
+													dateString25 = formatter2.format(date25);	
+													pObj2.setBorewell_valuation(dateString25);
+													
+												}													
+												
+												
+												
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(9)).trim();
+											
+										
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date26 = null;
+													String dateString26 = null;
+													date26 = formatter3.parse(val);
+													dateString26 = formatter2.format(date26);	
+													pObj2.setDate_of_rfp_to_adtp(dateString26);
+													 
+												}
+												else
+												{
+												
+													Date date26 = null;
+													String dateString26 = null;
+													date26 = formatter1.parse(val);
+													dateString26 = formatter2.format(date26);	
+													pObj2.setDate_of_rfp_to_adtp(dateString26);
+													
+												}													
+												
+												
+												
+												
+											
+											}
+											
+											
+											val = formatter.formatCellValue(row2.getCell(10)).trim();
+											
+
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date27 = null;
+													String dateString27 = null;
+													date27 = formatter3.parse(val);
+													dateString27 = formatter2.format(date27);
+													pObj2.setDate_of_rate_fixation_of_land(dateString27);
+													 
+												}
+												else
+												{
+												
+													Date date27 = null;
+													String dateString27 = null;
+													date27 = formatter1.parse(val);
+													dateString27 = formatter2.format(date27);
+													pObj2.setDate_of_rate_fixation_of_land(dateString27);
+													
+												}													
+												
+												
+												
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(11)).trim();
+
+
+											
+											if(!StringUtils.isEmpty(val)) { 
+												
+												if(val.contains("/")) 
+												{
+													Date date28 = null;
+													String dateString28 = null;
+													date28 = formatter3.parse(val);
+													dateString28 = formatter2.format(date28);
+													pObj2.setSdo_demand_for_payment(dateString28);
+													 
+												}
+												else
+												{
+												
+													Date date28 = null;
+													String dateString28 = null;
+													date28 = formatter1.parse(val);
+													dateString28 = formatter2.format(date28);
+													pObj2.setSdo_demand_for_payment(dateString28);
+													
+												}													
+												
+												
+												
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(12)).trim();
+
+
+											
+											if(!StringUtils.isEmpty(val)) { 
+												
+												if(val.contains("/")) 
+												{
+													Date date29 = null;
+													String dateString29 = null;
+													date29 = formatter3.parse(val);
+													dateString29 = formatter2.format(date29);
+													pObj2.setDate_of_approval_for_payment(dateString29);
+													 
+												}
+												else
+												{
+												
+													Date date29 = null;
+													String dateString29 = null;
+													date29 = formatter1.parse(val);
+													dateString29 = formatter2.format(date29);
+													pObj2.setDate_of_approval_for_payment(dateString29);
+													
+												}													
+												
+												}
+											
+											val = formatter.formatCellValue(row2.getCell(13)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(13));
+												}
+												pObj2.setPayment_amount(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(14)).trim();
+											
+										
+											
+											if(!StringUtils.isEmpty(val)) { 
+												
+												if(val.contains("/")) 
+												{
+													Date date30 = null;
+													String dateString30 = null;
+													date30 = formatter3.parse(val);
+													dateString30 = formatter2.format(date30);	
+													pObj2.setPrivate_payment_date(dateString30);
+													 
+												}
+												else
+												{
+												
+													Date date30 = null;
+													String dateString30 = null;
+													date30 = formatter1.parse(val);
+													dateString30 = formatter2.format(date30);	
+													pObj2.setPrivate_payment_date(dateString30);
+													
+												}													
+												
+												
+												
+											
+											}
+						
+											
+											pObj2.setForest_tree_survey(DateParser.parse(pObj2.getForest_tree_survey()));
+											pObj2.setForest_tree_valuation(DateParser.parse(pObj2.getForest_tree_valuation()));
+											pObj2.setHorticulture_tree_survey(DateParser.parse(pObj2.getHorticulture_tree_survey()));
+											pObj2.setHorticulture_tree_valuation(DateParser.parse(pObj2.getHorticulture_tree_valuation()));
+											pObj2.setStructure_survey(DateParser.parse(pObj2.getStructure_survey()));
+											pObj2.setStructure_valuation(DateParser.parse(pObj2.getStructure_valuation()));
+											pObj2.setBorewell_survey(DateParser.parse(pObj2.getBorewell_survey()));
+											pObj2.setBorewell_valuation(DateParser.parse(pObj2.getBorewell_valuation()));
+											pObj2.setDate_of_rfp_to_adtp(DateParser.parse(pObj2.getDate_of_rfp_to_adtp()));
+											pObj2.setDate_of_rate_fixation_of_land(DateParser.parse(pObj2.getDate_of_rate_fixation_of_land()));
+											pObj2.setSdo_demand_for_payment(DateParser.parse(pObj2.getSdo_demand_for_payment()));
+											pObj2.setDate_of_approval_for_payment(DateParser.parse(pObj2.getDate_of_approval_for_payment()));
+											pObj2.setPrivate_payment_date(DateParser.parse(pObj2.getPrivate_payment_date()));
+											
+										}
+										if(!StringUtils.isEmpty(pObj2) && !StringUtils.isEmpty(pObj2.getLa_id())
+												&& pObj2.getLa_id().equals(la.getLa_id())) {
+											pObjList2.add(pObj2);
+										}
+									}
+							la.setPrivateLVList(pObjList2);
+							}
+								if(Gov != null){
+									for(int j = 2; j <= GovSheet.getLastRowNum();j++){
+										XSSFRow row2 = GovSheet.getRow(j);
+										LandAcquisition gov = new LandAcquisition();
+										if(!StringUtils.isEmpty(row2) && formatter.formatCellValue(row2.getCell(0)).trim().equals(la.getLa_id())) {
+											val = formatter.formatCellValue(row2.getCell(0)).trim();
+											if(!StringUtils.isEmpty(val)) { gov.setLa_id(val);}
+									
+											val = formatter.formatCellValue(row2.getCell(1)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												
+												if(val.contains("/")) 
+												{
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter3.parse(val);
+													dateString15 = formatter2.format(date15);													
+													
+													gov.setProposal_submission(dateString15);
+
+												 
+												}
+												else
+												{
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter1.parse(val);
+													dateString15 = formatter2.format(date15);														
+													
+													gov.setProposal_submission(dateString15);
+												}												
+												
+												
+												
+												
+											}
+											
+										
+											val = formatter.formatCellValue(row2.getCell(2)).trim();
+											
+										
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter3.parse(val);
+													dateString15 = formatter2.format(date15);													
+													
+													gov.setValuation_date(dateString15);
+
+												 
+												}
+												else
+												{
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter1.parse(val);
+													dateString15 = formatter2.format(date15);														
+													
+													gov.setValuation_date(dateString15);
+												}												
+												
+												
+												
+											
+											
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(3)).trim();
+											
+
+											
+											if(!StringUtils.isEmpty(val)) { 
+												
+
+												if(val.contains("/")) 
+												{
+													Date date16 = null;
+													String dateString16 = null;
+													date16 = formatter3.parse(val);
+													dateString16 = formatter2.format(date16);													
+													
+													gov.setLetter_for_payment(dateString16);
+												}
+												else
+												{
+													Date date16 = null;
+													String dateString16 = null;
+													date16 = formatter1.parse(val);
+													dateString16 = formatter2.format(date16);														
+													gov.setLetter_for_payment(dateString16);
+												}
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(4)).trim();
+											if(!StringUtils.isEmpty(val)) {
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												//System.out.println(val);
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(4));
+												}
+												
+												gov.setAmount_demanded(val);}
+											
+											
+											val = formatter.formatCellValue(row2.getCell(5)).trim();
+											
+										
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date17 = null;
+													String dateString17 = null;
+													date17 = formatter3.parse(val);
+													dateString17 = formatter2.format(date17);														
+													
+													gov.setApproval_for_payment(dateString17);
+												}
+												else
+												{
+													Date date17 = null;
+													String dateString17 = null;
+													date17 = formatter1.parse(val);
+													dateString17 = formatter2.format(date17);															
+													gov.setApproval_for_payment(dateString17);
+												}
+
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(6)).trim();
+											
+											
+											
+											if(!StringUtils.isEmpty(val)) 
+											{
+
+												if(val.contains("/")) 
+												{
+													Date date18 = null;
+													String dateString18 = null;
+													date18 = formatter3.parse(val);
+													dateString18 = formatter2.format(date18);														
+													
+													gov.setPayment_date(dateString18);
+												}
+												else
+												{
+													Date date18 = null;
+													String dateString18 = null;
+													date18 = formatter1.parse(val);
+													dateString18 = formatter2.format(date18);															
+													gov.setPayment_date(dateString18);
+												}
+												
+												
+												
+												
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(7)).trim();
+											if(!StringUtils.isEmpty(val)) {
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(7));
+												}
+												gov.setAmount_paid(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(8)).trim();
+											
+											
+											
+											if(!StringUtils.isEmpty(val)) { 
+												
+												if(val.contains("/")) 
+												{
+													Date date19 = null;
+													String dateString19 = null;
+													date19 = formatter3.parse(val);
+													dateString19 = formatter2.format(date19);															
+													
+													gov.setPossession_date(dateString19);
+												}
+												else
+												{
+													Date date19 = null;
+													String dateString19 = null;
+													date19 = formatter1.parse(val);
+													dateString19 = formatter2.format(date19);																
+													gov.setPossession_date(dateString19);
+												}												
+												
+												
+											
+											}
+											
+							
+											
+											gov.setProposal_submission(DateParser.parse(gov.getProposal_submission()));
+											gov.setLetter_for_payment(DateParser.parse(gov.getLetter_for_payment()));
+											gov.setApproval_for_payment(DateParser.parse(gov.getApproval_for_payment()));
+											gov.setPayment_date(DateParser.parse(gov.getPayment_date()));
+											gov.setPossession_date(DateParser.parse(gov.getPossession_date()));
+											gov.setValuation_date(DateParser.parse(gov.getValuation_date()));
+										}
+										if(!StringUtils.isEmpty(gov) && !StringUtils.isEmpty(gov.getLa_id())
+												&& gov.getLa_id().equals(la.getLa_id())) {
+											gObjList.add(gov);
+										}
+									}
+							la.setGovList(gObjList);
+							}
+								if(forest != null){
+									for(int j = 2; j <= forestSheet.getLastRowNum();j++){
+										XSSFRow row2 = forestSheet.getRow(j);
+										LandAcquisition fObj = new LandAcquisition();
+										if(!StringUtils.isEmpty(row2) && formatter.formatCellValue(row2.getCell(0)).trim().equals(la.getLa_id())) {
+
+										
+											
+											val = formatter.formatCellValue(row2.getCell(0)).trim();
+											if(!StringUtils.isEmpty(val)) { fObj.setLa_id(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(1)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												
+												if(val.contains("/")) {
+													Date date = null;
+													String dateString = null;
+													date = formatter3.parse(val);
+													dateString = formatter2.format(date);												
+													fObj.setForest_online_submission(dateString);
+												 
+											}
+											else
+											{
+											
+												Date date = null;
+												String dateString = null;
+												date = formatter1.parse(val);
+												dateString = formatter2.format(date);
+												fObj.setForest_online_submission(dateString);
+												
+											}												
+												
+												
+												
+												
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(2)).trim();
+											
+											if(!StringUtils.isEmpty(val)) { 
+											if(val.contains("/")) {
+													Date date = null;
+													String dateString = null;
+													date = formatter3.parse(val);
+													dateString = formatter2.format(date);												
+													fObj.setForest_submission_date_to_dycfo(dateString);
+												 
+											}
+											else
+											{
+											
+												Date date = null;
+												String dateString = null;
+												date = formatter1.parse(val);
+												dateString = formatter2.format(date);
+												fObj.setForest_submission_date_to_dycfo(dateString);
+												
+											}
+											}
+											
+											
+											val = formatter.formatCellValue(row2.getCell(3)).trim();
+											
+											
+	
+											
+											if(!StringUtils.isEmpty(val)) { 
+												if(val.contains("/")) 
+												{
+													Date date1 = null;
+													String dateString1 = null;
+													date1 = formatter3.parse(val);
+													dateString1 = formatter2.format(date1);												
+													fObj.setForest_submission_date_to_ccf_thane(dateString1);
+	
+												 
+												}
+												else
+												{
+												
+													Date date1 = null;
+													String dateString1 = null;
+													date1 = formatter1.parse(val);
+													dateString1 = formatter2.format(date1);	
+													fObj.setForest_submission_date_to_ccf_thane(dateString1);
+												}
+											}
+											
+											
+											
+											
+											val = formatter.formatCellValue(row2.getCell(4)).trim();
+											
+
+											if(!StringUtils.isEmpty(val)) { 	
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date2 = null;
+													String dateString2 = null;
+													date2 = formatter3.parse(val);
+													dateString2 = formatter2.format(date2);													
+													
+													fObj.setForest_submission_date_to_nodal_officer(dateString2);
+
+												 
+												}
+												else
+												{
+												
+													Date date2 = null;
+													String dateString2 = null;
+													date2 = formatter1.parse(val);
+													dateString2 = formatter2.format(date2);													
+													
+													fObj.setForest_submission_date_to_nodal_officer(dateString2);
+												}
+										}
+												
+
+											
+											val = formatter.formatCellValue(row2.getCell(5)).trim();
+											
+
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+
+												if(val.contains("/")) 
+												{
+													Date date3 = null;
+													String dateString3 = null;
+													date3 = formatter3.parse(val);
+													dateString3 = formatter2.format(date3);													
+													fObj.setForest_submission_date_to_revenue_secretary_mantralaya(dateString3);
+
+												 
+												}
+												else
+												{
+												
+													Date date3 = null;
+													String dateString3 = null;
+													date3 = formatter1.parse(val);
+													dateString3 = formatter2.format(date3);													
+													fObj.setForest_submission_date_to_revenue_secretary_mantralaya(dateString3);
+												}
+												
+												
+									}	
+
+											
+											val = formatter.formatCellValue(row2.getCell(6)).trim();
+											
+
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date4 = null;
+													String dateString4 = null;
+													date4 = formatter3.parse(val);
+													dateString4 = formatter2.format(date4);													
+													
+													fObj.setForest_submission_date_to_regional_office_nagpur(dateString4);
+
+												 
+												}
+												else
+												{
+												
+													Date date4 = null;
+													String dateString4 = null;
+													date4 = formatter1.parse(val);
+													dateString4 = formatter2.format(date4);													
+													
+													fObj.setForest_submission_date_to_regional_office_nagpur(dateString4);
+												}												
+												
+												
+
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(7)).trim();
+											
+
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date5 = null;
+													String dateString5 = null;
+													date5 = formatter3.parse(val);
+													dateString5 = formatter2.format(date5);													
+													
+													fObj.setForest_date_of_approval_by_regional_office_nagpur(dateString5);
+
+												 
+												}
+												else
+												{
+													Date date5 = null;
+													String dateString5 = null;
+													date5 = formatter1.parse(val);
+													dateString5 = formatter2.format(date5);													
+													
+													fObj.setForest_date_of_approval_by_regional_office_nagpur(dateString5);
+												}													
+												
+
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(8)).trim();
+											
+
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date6 = null;
+													String dateString6 = null;
+													date6 = formatter3.parse(val);
+													dateString6 = formatter2.format(date6);													
+													
+													fObj.setForest_valuation_by_dycfo(dateString6);
+
+												 
+												}
+												else
+												{
+													Date date6 = null;
+													String dateString6 = null;
+													date6 = formatter1.parse(val);
+													dateString6 = formatter2.format(date6);													
+													
+													fObj.setForest_valuation_by_dycfo(dateString6);
+												}													
+												
+
+										}
+											
+											val = formatter.formatCellValue(row2.getCell(9)).trim();
+											if(!StringUtils.isEmpty(val)) {
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(9));
+												}
+												fObj.setForest_demanded_amount(val);}
+
+											val = formatter.formatCellValue(row2.getCell(10)).trim();
+											
+
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date71 = null;
+													String dateString71 = null;
+													date71 = formatter3.parse(val);
+													dateString71 = formatter2.format(date71);													
+													
+													
+													fObj.setForest_approval_for_payment(dateString71);
+
+												 
+												}
+												else
+												{
+													Date date71 = null;
+													String dateString71 = null;
+													date71 = formatter1.parse(val);
+													dateString71 = formatter2.format(date71);													
+													
+													
+													fObj.setForest_approval_for_payment(dateString71);
+												}												
+												
+
+											}
+
+											val = formatter.formatCellValue(row2.getCell(11)).trim();
+											
+											
+											
+											if(!StringUtils.isEmpty(val)) { 
+												
+												if(val.contains("/")) 
+												{
+													Date date7 = null;
+													String dateString7 = null;
+													date7 = formatter3.parse(val);
+													dateString7 = formatter2.format(date7);													
+													
+													
+													
+													fObj.setForest_payment_date(dateString7);
+
+												 
+												}
+												else
+												{
+													Date date7 = null;
+													String dateString7 = null;
+													date7 = formatter1.parse(val);
+													dateString7 = formatter2.format(date7);													
+													
+													
+													
+													fObj.setForest_payment_date(dateString7);
+												}												
+												
+
+											}
+
+											val = formatter.formatCellValue(row2.getCell(12)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(12));
+												}
+										
+												fObj.setForest_payment_amount(val);}
+
+											
+
+											val = formatter.formatCellValue(row2.getCell(13)).trim();
+											
+												
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												
+												if(val.contains("/")) 
+												{
+													Date date8 = null;
+													String dateString8 = null;
+													date8 = formatter3.parse(val);
+													dateString8 = formatter2.format(date8);													
+													
+													
+													
+													fObj.setForest_possession_date(dateString8);
+
+												 
+												}
+												else
+												{
+													Date date8 = null;
+													String dateString8 = null;
+													date8 = formatter1.parse(val);
+													dateString8 = formatter2.format(date8);													
+													
+													
+													
+													fObj.setForest_possession_date(dateString8);
+												}													
+												
+
+										}
+
+
+											
+											fObj.setForest_online_submission(DateParser.parse(fObj.getForest_online_submission()));
+											fObj.setForest_submission_date_to_dycfo(DateParser.parse(fObj.getForest_submission_date_to_dycfo()));
+											fObj.setForest_submission_date_to_ccf_thane(DateParser.parse(fObj.getForest_submission_date_to_ccf_thane()));
+											fObj.setForest_submission_date_to_nodal_officer(DateParser.parse(fObj.getForest_submission_date_to_nodal_officer()));
+											fObj.setForest_submission_date_to_revenue_secretary_mantralaya(DateParser.parse(fObj.getForest_submission_date_to_revenue_secretary_mantralaya()));
+											fObj.setForest_submission_date_to_regional_office_nagpur(DateParser.parse(fObj.getForest_submission_date_to_regional_office_nagpur()));
+											fObj.setForest_date_of_approval_by_regional_office_nagpur(DateParser.parse(fObj.getForest_date_of_approval_by_regional_office_nagpur()));
+											fObj.setForest_valuation_by_dycfo(DateParser.parse(fObj.getForest_valuation_by_dycfo()));
+											fObj.setForest_approval_for_payment(DateParser.parse(fObj.getForest_approval_for_payment()));
+											fObj.setForest_payment_date(DateParser.parse(fObj.getForest_payment_date()));
+											fObj.setForest_possession_date(DateParser.parse(fObj.getForest_possession_date()));
+										}
+										if(!StringUtils.isEmpty(fObj) && !StringUtils.isEmpty(fObj.getLa_id())
+												&& fObj.getLa_id().equals(la.getLa_id())) {
+											fObjList.add(fObj);
+										}
+									}
+							la.setForestList(fObjList);
+							}
+								if(railway != null){
+									for(int j = 2; j <= railwaySheet.getLastRowNum();j++){
+										XSSFRow row2 = railwaySheet.getRow(j);
+										LandAcquisition railways = new LandAcquisition();
+										if(!StringUtils.isEmpty(row2) && formatter.formatCellValue(row2.getCell(0)).trim().equals(la.getLa_id())) {
+											val = formatter.formatCellValue(row2.getCell(0)).trim();
+											if(!StringUtils.isEmpty(val)) { railways.setLa_id(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(1)).trim();
+											if(!StringUtils.isEmpty(val)) {railways.setRailway_online_submission(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(2)).trim();
+
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+														Date date9 = null;
+														String dateString9 = null;
+														date9 = formatter3.parse(val);
+														dateString9 = formatter2.format(date9);													
+														railways.setRailway_submission_date_to_DyCFO(dateString9);
+													 
+												}
+												else
+												{
+												
+													Date date9 = null;
+													String dateString9 = null;
+													date9 = formatter1.parse(val);
+													dateString9 = formatter2.format(date9);	
+													railways.setRailway_submission_date_to_DyCFO(dateString9);
+													
+												}												
+
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(3)).trim();
+
+
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+														Date date10 = null;
+														String dateString10 = null;
+														date10 = formatter3.parse(val);
+														dateString10 = formatter2.format(date10);											
+														railways.setRailway_submission_date_to_CCF_Thane(dateString10);
+													 
+												}
+												else
+												{
+												
+													Date date10 = null;
+													String dateString10 = null;
+													date10 = formatter1.parse(val);
+													dateString10 = formatter2.format(date10);
+													railways.setRailway_submission_date_to_CCF_Thane(dateString10);
+													
+												}												
+												
+												
+												
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(4)).trim();
+											
+
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date11 = null;
+													String dateString11 = null;
+													date11 = formatter3.parse(val);
+													dateString11 = formatter2.format(date11);											
+													railways.setRailway_submission_date_to_nodal_officer_CCF_Nagpur(dateString11);
+													 
+												}
+												else
+												{
+												
+													Date date11 = null;
+													String dateString11 = null;
+													date11 = formatter1.parse(val);
+													dateString11 = formatter2.format(date11);
+													railways.setRailway_submission_date_to_nodal_officer_CCF_Nagpur(dateString11);
+													
+												}													
+												
+										}
+											
+											val = formatter.formatCellValue(row2.getCell(5)).trim();
+											
+
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+													Date date12 = null;
+													String dateString12 = null;
+													date12 = formatter3.parse(val);
+													dateString12 = formatter2.format(date12);										
+													railways.setRailway_submission_date_to_revenue_secretary_mantralaya(dateString12);
+													 
+												}
+												else
+												{
+												
+													Date date12 = null;
+													String dateString12 = null;
+													date12 = formatter1.parse(val);
+													dateString12 = formatter2.format(date12);
+													railways.setRailway_submission_date_to_revenue_secretary_mantralaya(dateString12);
+													
+												}												
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(6)).trim();
+
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+
+													Date date13 = null;
+													String dateString13 = null;
+													date13 = formatter3.parse(val);
+													dateString13 = formatter2.format(date13);									
+													railways.setRailway_submission_date_to_regional_office_nagpur(dateString13);
+													 
+												}
+												else
+												{
+												
+
+													Date date13 = null;
+													String dateString13 = null;
+													date13 = formatter1.parse(val);
+													dateString13 = formatter2.format(date13);
+													railways.setRailway_submission_date_to_regional_office_nagpur(dateString13);
+													
+												}												
+												
+												
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(7)).trim();
+
+
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+
+												if(val.contains("/")) 
+												{
+
+													Date date51 = null;
+													String dateString51 = null;
+													date51 = formatter3.parse(val);
+													dateString51 = formatter2.format(date51);								
+													railways.setRailway_date_of_approval_by_Rregional_Office_agpur(dateString51);
+													 
+												}
+												else
+												{
+												
+
+													Date date51 = null;
+													String dateString51 = null;
+													date51 = formatter1.parse(val);
+													dateString51 = formatter2.format(date51);
+													railways.setRailway_date_of_approval_by_Rregional_Office_agpur(dateString51);
+													
+												}
+
+											}											
+											
+											
+											
+											val = formatter.formatCellValue(row2.getCell(8)).trim();
+	
+										
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												if(val.contains("/")) 
+												{
+
+													Date date67 = null;
+													String dateString67 = null;
+													date67 = formatter3.parse(val);
+													dateString67 = formatter2.format(date67);								
+													railways.setRailway_valuation_by_DyCFO(dateString67);
+													 
+												}
+												else
+												{
+												
+													Date date67 = null;
+													String dateString67 = null;
+													date67 = formatter1.parse(val);
+													dateString67 = formatter2.format(date67);	
+													railways.setRailway_valuation_by_DyCFO(dateString67);
+													
+												}												
+												
+												
+												
+											
+											}
+											
+											
+											
+											val = formatter.formatCellValue(row2.getCell(9)).trim();
+											
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(9));
+												}
+												railways.setRailway_demanded_amount(val);}											
+											
+											val = formatter.formatCellValue(row2.getCell(10)).trim();
+											
+											
+											
+											if(!StringUtils.isEmpty(val)) { 
+												
+												if(val.contains("/")) 
+												{
+
+													Date date68 = null;
+													String dateString68 = null;
+													date68 = formatter3.parse(val);
+													dateString68 = formatter2.format(date68);							
+													railways.setRailway_approval_for_payment(dateString68);
+													 
+												}
+												else
+												{
+												
+													Date date68 = null;
+													String dateString68 = null;
+													date68 = formatter1.parse(val);
+													dateString68 = formatter2.format(date68);
+													railways.setRailway_approval_for_payment(dateString68);
+													
+												}													
+												
+												
+												
+											
+											}
+											
+											val = formatter.formatCellValue(row2.getCell(11)).trim();
+											
+
+											
+											
+											if(!StringUtils.isEmpty(val)) {
+												
+												
+												if(val.contains("/")) 
+												{
+
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter3.parse(val);
+													dateString15 = formatter2.format(date15);							
+													railways.setRailway_payment_date(dateString15);
+													 
+												}
+												else
+												{
+												
+													Date date15 = null;
+													String dateString15 = null;
+													date15 = formatter1.parse(val);
+													dateString15 = formatter2.format(date15);
+													railways.setRailway_payment_date(dateString15);
+													
+												}													
+												
+												
+												
+											
+											}
+											
+
+											
+											val = formatter.formatCellValue(row2.getCell(12)).trim();
+											if(!StringUtils.isEmpty(val)) { 
+												int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+												if(c != 2) {
+													val = getCellDataType(workbook,row2.getCell(12));
+												}
+												railways.setRailway_payment_amount(val);}
+											
+											val = formatter.formatCellValue(row2.getCell(13)).trim();
+											
+										
+											
+											if(!StringUtils.isEmpty(val)) { 
+												
+												
+												if(val.contains("/")) 
+												{
+
+													Date date16 = null;
+													String dateString16 = null;
+													date16 = formatter3.parse(val);
+													dateString16 = formatter2.format(date16);							
+													railways.setRailway_possession_date(dateString16);
+													 
+												}
+												else
+												{
+												
+													Date date16 = null;
+													String dateString16 = null;
+													date16 = formatter1.parse(val);
+													dateString16 = formatter2.format(date16);	
+													railways.setRailway_possession_date(dateString16);
+													
+												}													
+												
+												
+												
+											
+											}
+											
+
+											
+											railways.setRailway_online_submission(DateParser.parse(railways.getRailway_online_submission()));
+											railways.setRailway_submission_date_to_DyCFO(DateParser.parse(railways.getRailway_submission_date_to_DyCFO()));
+											railways.setRailway_submission_date_to_CCF_Thane(DateParser.parse(railways.getRailway_submission_date_to_CCF_Thane()));
+											railways.setRailway_submission_date_to_nodal_officer_CCF_Nagpur(DateParser.parse(railways.getRailway_submission_date_to_nodal_officer_CCF_Nagpur()));
+											railways.setRailway_submission_date_to_revenue_secretary_mantralaya(DateParser.parse(railways.getRailway_submission_date_to_revenue_secretary_mantralaya()));
+											railways.setRailway_submission_date_to_regional_office_nagpur(DateParser.parse(railways.getRailway_submission_date_to_regional_office_nagpur()));
+											railways.setRailway_date_of_approval_by_Rregional_Office_agpur(DateParser.parse(railways.getRailway_date_of_approval_by_Rregional_Office_agpur()));
+											railways.setRailway_valuation_by_DyCFO(DateParser.parse(railways.getRailway_valuation_by_DyCFO()));
+											railways.setRailway_approval_for_payment(DateParser.parse(railways.getRailway_approval_for_payment()));
+											railways.setRailway_payment_date(DateParser.parse(railways.getRailway_payment_date()));
+											railways.setRailway_possession_date(DateParser.parse(railways.getRailway_possession_date()));
+										}
+										if(!StringUtils.isEmpty(railways) && !StringUtils.isEmpty(railways.getLa_id())
+												&& railways.getLa_id().equals(la.getLa_id())) {
+											rObjList.add(railways);
+										}
+								
+									}
+							la.setRailwayList(rObjList);
+							}
+						boolean flag = la.checkNullOrEmpty();
+
+						if(!flag && !StringUtils.isEmpty(la.getLa_id())) {
+							lasList.add(la);
+						}
+
+					}
+					if(!lasList.isEmpty() && lasList != null){
+						//count  = laService.uploadLAs(lasList);
+						String[] arr  = landAquisitionService.uploadLAData(lasList,la);
+						result[0] = arr[0];
+						result[1] = arr[1];
+						result[2] = arr[2];
+						result[3] = arr[3];
+						result[4] = arr[4];						
+					}
+				}
+				workbook.close();
+			}
+				
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error("uploadLAs() : "+e.getMessage());
+			throw new Exception(e);	
+		}finally{
+		    try{
+		        if ( w != null)
+		        	w.close( );
+		    }catch ( IOException e){
+		    	e.printStackTrace();
+		    	logger.error("uploadLAs() : "+e.getMessage());
+		    	throw new Exception(e);
+		    }
+		}
+		
+		return result;
+	}
+	
+	private String[] uploadLASingleSheet(LandAcquisition obj, String userId, String userName) throws Exception {
+		LandAcquisition la = null;
+		List<LandAcquisition> lasList = new ArrayList<LandAcquisition>();
+		String[] result = new String[5];
+		Writer w = null;
+		int count = 0;
+		try {	
+			MultipartFile excelfile = obj.getLaUploadFile();
+			// Creates a workbook object from the uploaded excelfile
+			if (!StringUtils.isEmpty(excelfile) && excelfile.getSize() > 0 ){
+				XSSFWorkbook workbook = new XSSFWorkbook(excelfile.getInputStream());
+				int sheetsCount = workbook.getNumberOfSheets();
+				if(sheetsCount > 0) {
+					
+					XSSFSheet laSheet = workbook.getSheetAt(1);
+					//System.out.println(uploadFilesSheet.getSheetName());
+					//header row
+					//XSSFRow headerRow = uploadFilesSheet.getRow(0);							
+					DataFormatter formatter = new DataFormatter(); //creating formatter using the default locale
+					//System.out.println(uploadFilesSheet.getLastRowNum());
+					for(int i = 2; i <= laSheet.getLastRowNum();i++){
+						int v = laSheet.getLastRowNum();
+						XSSFRow row = laSheet.getRow(i);
+						// Sets the Read data to the model class
+						// Cell cell = row.getCell(0);
+						// String j_username = formatter.formatCellValue(row.getCell(0));
+						//System.out.println(i);
+						la = new LandAcquisition();
+						la.setCreated_by_user_id_fk(obj.getCreated_by_user_id_fk());
+						la.setUser_role_code(obj.getUser_role_code());
+						String val = null;
+						if(!StringUtils.isEmpty(row)) {								
+							val = formatter.formatCellValue(row.getCell(0)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setProject_id_fk(val);}
+							
+							val = formatter.formatCellValue(row.getCell(1)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setSurvey_number(val);}
+							
+							
+							val = formatter.formatCellValue(row.getCell(2)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setCategory_fk(val);}
+							
+							val = formatter.formatCellValue(row.getCell(3)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setLa_sub_category_fk(val);}	
+							
+							
+							val = formatter.formatCellValue(row.getCell(4)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(4));
+								}
+							
+								la.setArea_of_plot(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(5)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(5));
+								}
+								la.setArea_to_be_acquired(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(6)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(6));
+								}
+								la.setArea_acquired(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(7)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(7));
+								}
+								la.setLa_land_status_fk(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(8)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setChainage_from(val);}	
+							
+							
+							val = formatter.formatCellValue(row.getCell(9)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setChainage_to(val);}								
+							
+							val = formatter.formatCellValue(row.getCell(10)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setVillage(val);}										
+							
+							val = formatter.formatCellValue(row.getCell(11)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setTaluka(val);}
+							
+							val = formatter.formatCellValue(row.getCell(12)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setLatitude(val);}							
+							
+							val = formatter.formatCellValue(row.getCell(13)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setLongitude(val);}
+							
+							val = formatter.formatCellValue(row.getCell(14)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setDy_slr(val);}							
+							
+							val = formatter.formatCellValue(row.getCell(15)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setSdo(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(16)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setCollector(val);}
+							
+							val = formatter.formatCellValue(row.getCell(17)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setProposal_submission_date_to_collector(val);}
+							
+							val = formatter.formatCellValue(row.getCell(18)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_fee_letter_received_date(val);}
+							
+							
+							val = formatter.formatCellValue(row.getCell(19)).trim();
+							if(!StringUtils.isEmpty(val)) {
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(19));
+								}
+								la.setJm_fee_amount(val);
+							}
+						
+							val = formatter.formatCellValue(row.getCell(20)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_fee_paid_date(val);}								
+							
+							val = formatter.formatCellValue(row.getCell(21)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_start_date(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(22)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_completion_date(val);}	
+							
+							val = formatter.formatCellValue(row.getCell(23)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								if(val.contains("/")) {
+									
+									 
+								}
+								la.setJm_sheet_date_to_sdo(val);}				
+							
+							val = formatter.formatCellValue(row.getCell(24)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setJm_remarks(val);}										
+						
+							val = formatter.formatCellValue(row.getCell(25)).trim();
+							if(!StringUtils.isEmpty(val)) { 
+								int c = org.apache.commons.lang3.StringUtils.countMatches(val, "$");
+								if(c != 2) {
+									val = getCellDataType(workbook,row.getCell(25));
+								}
+								la.setJm_approval(val);}
+							
+							val = formatter.formatCellValue(row.getCell(26)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setSpecial_feature(val);}
+							
+							val = formatter.formatCellValue(row.getCell(27)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setRemarks(val);}
+							
+							val = formatter.formatCellValue(row.getCell(28)).trim();
+							if(!StringUtils.isEmpty(val)) { la.setIssues(val);}
+					
+							la.setProposal_submission_date_to_collector(DateParser.parse(la.getProposal_submission_date_to_collector()));
+							la.setJm_fee_letter_received_date(DateParser.parse(la.getJm_fee_letter_received_date()));
+							la.setJm_fee_paid_date(DateParser.parse(la.getJm_fee_paid_date()));
+							la.setJm_start_date(DateParser.parse(la.getJm_start_date()));
+							la.setJm_completion_date(DateParser.parse(la.getJm_completion_date()));
+							la.setJm_sheet_date_to_sdo(DateParser.parse(la.getJm_sheet_date_to_sdo()));
+						}
+
+
+
+
+
+						boolean flag = la.checkNullOrEmpty();
+
+						//if(!flag && !StringUtils.isEmpty(la.getLa_id())) {
+							lasList.add(la);
+						//}
+
+					}
+					if(!lasList.isEmpty() && lasList != null){
+						//count  = laService.uploadLAs(lasList);
+						String[] arr  = landAquisitionService.uploadLAData(lasList,la);
+						result[0] = arr[0];
+						result[1] = arr[1];
+						result[2] = arr[2];
+						result[3] = arr[3];
+						result[4] = arr[4];						
+					}
+				}
+				workbook.close();
+			}
+				
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error("uploadLAs() : "+e.getMessage());
+			throw new Exception(e);	
+		}finally{
+		    try{
+		        if ( w != null)
+		        	w.close( );
+		    }catch ( IOException e){
+		    	e.printStackTrace();
+		    	logger.error("uploadLAs() : "+e.getMessage());
+		    	throw new Exception(e);
+		    }
+		}
+		
+		return result;
+	}
+	private String getCellDataType(XSSFWorkbook workbook, XSSFCell cell) {
+		String val = null;
+		FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator(); 
+
+		// existing Sheet, Row, and Cell setup
+		//workbook.setForceFormulaRecalculation(true);
+		try {
+			CellType type = cell.getCellType();
+			if (!StringUtils.isEmpty(cell)) {
+			    switch (type) {
+			        case BOOLEAN:
+			            val = String.valueOf(cell.getBooleanCellValue());
+			            break;
+			        case NUMERIC:
+			        	val = String.valueOf(cell.getNumericCellValue());
+			        	if(val.contains("E")){
+			        		val = BigDecimal.valueOf(Double.parseDouble(val)).toPlainString();
+			        	}
+			       
+			            break;
+			        case STRING:
+			        	try {  
+			        		val = cell.getStringCellValue();
+			        		NumberFormat format = NumberFormat.getInstance(Locale.getDefault());
+			        		Number number = format.parse(val);
+			        		int d = number.intValue();
+			        		val = String.valueOf(d);
+			        		if(val.contains("E")){
+			        			val = BigDecimal.valueOf(Double.parseDouble(val)).toPlainString();
+			        		}
+			        	  } catch(NumberFormatException e){  
+			        		  val = cell.getStringCellValue();
+			        	  }  
+			            
+			            break;
+			        case BLANK:
+			        	val = cell.getStringCellValue();
+			            break;
+			        case ERROR:
+			            val = cell.getStringCellValue();
+			            break;
+			        case _NONE:
+			            val = cell.getStringCellValue();
+			            break;
+					default:
+						break;
+			    }
+			}else if (!StringUtils.isEmpty(cell)) {
+				DataFormatter formatter = new DataFormatter(); //creating formatter using the default locale
+				val = formatter.formatCellValue(cell).trim();
+			}
+		}catch(Exception e) {
+			try {
+				 val = cell.getStringCellValue();
+			}catch(Exception e1) {
+				val = String.valueOf(cell.getNumericCellValue());
+			}
+			
+		}
+	
+		return val;
 	}
 }

@@ -1,7 +1,9 @@
 package com.wcr.wcrbackend.DTO;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.AllArgsConstructor;
@@ -57,5 +59,18 @@ public class LandAcquisition {
 	private String[] laFileNames,laDocumentFileNames,laDocumentNames,la_file_typess;
 	
 	private Double agriculture_tree_nos,forest_tree_nos;
+	
+	public boolean checkNullOrEmpty() throws IllegalAccessException {
+		boolean flag = true;
+		try {
+			for (Field f : getClass().getDeclaredFields())
+		        if (!StringUtils.isEmpty(f.get(this)))
+		        	flag = false;
+		} catch (Exception e) {
+			
+		}
+	    
+	    return flag;            
+	}
 	
 }

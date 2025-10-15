@@ -65,4 +65,6 @@ public interface ILandAquisitionService {
 
 	boolean updateLandAcquisition(LandAcquisition obj) throws Exception;
 
+	String[] uploadLAData(List<LandAcquisition> lasList, LandAcquisition la);
+
 }
