@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import com.wcr.wcrbackend.DTO.LandAcquisition;
 import com.wcr.wcrbackend.repo.ILandAquisitionRepo;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class LandAquisitionService implements ILandAquisitionService {
 
@@ -179,6 +181,7 @@ public class LandAquisitionService implements ILandAquisitionService {
 	}
 
 	@Override
+	@Transactional
 	public boolean addLandAcquisition(LandAcquisition obj) throws Exception {
 		// TODO Auto-generated method stub
 		return landAquisitionRepository.addLandAcquisition(obj);
