@@ -60,5 +60,7 @@ public interface ILandAquisitionRepo {
 	List<LandAcquisition> geprivateIRAList(String la_id) throws Exception;
 
 	List<LandAcquisition> getLandAcquisitionList(LandAcquisition dObj) throws Exception;
+	
+	public boolean addLandAcquisition(LandAcquisition obj) throws Exception;
 
 }

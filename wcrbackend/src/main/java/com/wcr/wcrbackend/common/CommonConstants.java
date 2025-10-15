@@ -3,9 +3,10 @@ package com.wcr.wcrbackend.common;
 
 public class CommonConstants {
 	
-	//static UrlGenerator ugObj = new UrlGenerator();
-	//static String context_path = ugObj.getContextPath();
-	//static String base_path = ugObj.getNGINXFilesBasePath();
+	
+	static UrlGenerator ugObj = new UrlGenerator();
+	static String context_path = ugObj.getContextPath();
+	static String base_path = ugObj.getNGINXFilesBasePath();
 	
 	public final static String BASE_URL_SYNTRACK = "https://infoviz.syntrackpro.com/trusted/{0}/";  //{1} is the placeholder for tableau trusted token
 	public final static String BASE_URL_MRVC = "http://203.153.40.44:8000/trusted/{0}/";  //{0} is the placeholder for tableau trusted token
@@ -41,7 +42,7 @@ public class CommonConstants {
 	
 	public final static String  ISSUE_STATUS_RAISED = "Raised";
 	
-	/*public static String LOGIN_BACKGROUND_IMAGE_URL = "/"+context_path+"/resources/images/login-background.jpg";
+	public static String LOGIN_BACKGROUND_IMAGE_URL = "/"+context_path+"/resources/images/login-background.jpg";
 	
 	public final static String SAFETY_EQUIPMENT_FILES = "/"+context_path+"/SAFETY_EQUIPMENT_FILES/";
 	public final static String BUDGET_FILES = "/"+context_path+"/BUDGET_FILES/";
@@ -64,7 +65,7 @@ public class CommonConstants {
 	public final static String APPROVAL_BY_BANK_FILES = "/"+context_path+"/APPROVAL_BY_BANK_FILES/";
 	
 	/*********************************************************************************************/	
-	/*public final static String LOGIN_BACKGROUND_IMAGE = base_path+"/resources/images/";
+	public final static String LOGIN_BACKGROUND_IMAGE = base_path+"/resources/images/";
 	
 	public final static String STRIPCHART_FILE_SAVING_PATH = base_path+"/STRIPCHART_FILES/";
 	public final static String WORK_FILE_SAVING_PATH = base_path+"/WORK_FILES/";
@@ -173,5 +174,4 @@ public class CommonConstants {
 	public final static String UTILITY_UPLOADED_FILE_SAVING_PATH = "D:/PMISApplicationServer/nginx-1.9.9/html/"+context_path+"/UTILITY_UPLOADED_FILES/";
 
 	*/
-	
 }

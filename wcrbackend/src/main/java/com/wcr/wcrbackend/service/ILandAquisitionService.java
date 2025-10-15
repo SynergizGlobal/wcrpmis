@@ -61,4 +61,6 @@ public interface ILandAquisitionService {
 
 	List<LandAcquisition> getLandAcquisitionList(LandAcquisition dObj) throws Exception;
 
+	boolean addLandAcquisition(LandAcquisition obj) throws Exception;
+
 }

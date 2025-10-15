@@ -178,4 +178,10 @@ public class LandAquisitionService implements ILandAquisitionService {
 		return landAquisitionRepository.getLandAcquisitionList(dObj);
 	}
 
+	@Override
+	public boolean addLandAcquisition(LandAcquisition obj) throws Exception {
+		// TODO Auto-generated method stub
+		return landAquisitionRepository.addLandAcquisition(obj);
+	}
+
 }

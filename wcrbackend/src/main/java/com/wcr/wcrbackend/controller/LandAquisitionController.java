@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wcr.wcrbackend.DTO.LandAcquisition;
 import com.wcr.wcrbackend.DTO.LandAquisationPaginationObject;
+import com.wcr.wcrbackend.common.DateParser;
 import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.service.ILandAquisitionService;
 import com.wcr.wcrbackend.service.IUserService;
@@ -5095,5 +5096,128 @@ public class LandAquisitionController {
 		}catch (Exception e) {
 			// TODO: handle exception
 		}
+	}
+	
+	@PostMapping("/add-land-acquisition")
+	public boolean addLandAcquisition(@RequestBody LandAcquisition obj,HttpSession session) throws Exception{
+		//ModelAndView model = new ModelAndView();
+		//try{
+			//model.setViewName("redirect:/land-acquisition");
+			User uObj = (User) session.getAttribute("user");;
+			
+			obj.setCreated_by_user_id_fk(uObj.getUserId());
+			obj.setUser_id(uObj.getUserId());
+			obj.setUser_name(uObj.getUserName());
+			obj.setDesignation(uObj.getDesignation());
+			
+			obj.setProposal_submission_date_to_collector(DateParser.parse(obj.getProposal_submission_date_to_collector()));
+			obj.setJm_fee_letter_received_date(DateParser.parse(obj.getJm_fee_letter_received_date()));
+			obj.setJm_fee_paid_date(DateParser.parse(obj.getJm_fee_paid_date()));
+			obj.setJm_start_date(DateParser.parse(obj.getJm_start_date()));
+			obj.setJm_completion_date(DateParser.parse(obj.getJm_completion_date()));
+			obj.setJm_sheet_date_to_sdo(DateParser.parse(obj.getJm_sheet_date_to_sdo()));
+			
+			obj.setForest_online_submission(DateParser.parse(obj.getForest_online_submission()));
+			obj.setForest_submission_date_to_dycfo(DateParser.parse(obj.getForest_submission_date_to_dycfo()));
+			obj.setForest_submission_date_to_ccf_thane(DateParser.parse(obj.getForest_submission_date_to_ccf_thane()));
+			obj.setForest_submission_date_to_nodal_officer(DateParser.parse(obj.getForest_submission_date_to_nodal_officer()));
+			obj.setForest_submission_date_to_revenue_secretary_mantralaya(DateParser.parse(obj.getForest_submission_date_to_revenue_secretary_mantralaya()));
+			obj.setForest_submission_date_to_regional_office_nagpur(DateParser.parse(obj.getForest_submission_date_to_regional_office_nagpur()));
+			obj.setForest_date_of_approval_by_regional_office_nagpur(DateParser.parse(obj.getForest_date_of_approval_by_regional_office_nagpur()));
+			obj.setForest_valuation_by_dycfo(DateParser.parse(obj.getForest_valuation_by_dycfo()));
+			obj.setForest_approval_for_payment(DateParser.parse(obj.getForest_approval_for_payment()));
+			obj.setForest_payment_date(DateParser.parse(obj.getForest_payment_date()));
+			obj.setForest_possession_date(DateParser.parse(obj.getForest_possession_date()));
+			
+			obj.setProposal_submission(DateParser.parse(obj.getProposal_submission()));
+			obj.setLetter_for_payment(DateParser.parse(obj.getLetter_for_payment()));
+			obj.setApproval_for_payment(DateParser.parse(obj.getApproval_for_payment()));
+			obj.setPayment_date(DateParser.parse(obj.getPayment_date()));
+			obj.setPossession_date(DateParser.parse(obj.getPossession_date()));
+			obj.setValuation_date(DateParser.parse(obj.getValuation_date()));
+			
+			obj.setPlanned_date_of_possession(DateParser.parse(obj.getPlanned_date_of_possession()));
+			
+			obj.setRailway_online_submission(DateParser.parse(obj.getRailway_online_submission()));
+			obj.setRailway_submission_date_to_DyCFO(DateParser.parse(obj.getRailway_submission_date_to_DyCFO()));
+			obj.setRailway_submission_date_to_CCF_Thane(DateParser.parse(obj.getRailway_submission_date_to_CCF_Thane()));
+			obj.setRailway_submission_date_to_nodal_officer_CCF_Nagpur(DateParser.parse(obj.getRailway_submission_date_to_nodal_officer_CCF_Nagpur()));
+			obj.setRailway_submission_date_to_revenue_secretary_mantralaya(DateParser.parse(obj.getRailway_submission_date_to_revenue_secretary_mantralaya()));
+			obj.setRailway_submission_date_to_regional_office_nagpur(DateParser.parse(obj.getRailway_submission_date_to_regional_office_nagpur()));
+			obj.setRailway_date_of_approval_by_Rregional_Office_agpur(DateParser.parse(obj.getRailway_date_of_approval_by_Rregional_Office_agpur()));
+			obj.setRailway_valuation_by_DyCFO(DateParser.parse(obj.getRailway_valuation_by_DyCFO()));
+			obj.setRailway_approval_for_payment(DateParser.parse(obj.getRailway_approval_for_payment()));
+			obj.setRailway_payment_date(DateParser.parse(obj.getRailway_payment_date()));
+			obj.setRailway_possession_date(DateParser.parse(obj.getRailway_possession_date()));
+			
+			obj.setConsent_from_owner(DateParser.parse(obj.getConsent_from_owner()));
+			obj.setLegal_search_report(DateParser.parse(obj.getLegal_search_report()));
+			obj.setDate_of_registration(DateParser.parse(obj.getDate_of_registration()));
+			obj.setDate_of_possession(DateParser.parse(obj.getDate_of_possession()));
+			obj.setForest_tree_survey(DateParser.parse(obj.getForest_tree_survey()));
+			obj.setForest_tree_valuation(DateParser.parse(obj.getForest_tree_valuation()));
+			obj.setHorticulture_tree_survey(DateParser.parse(obj.getHorticulture_tree_survey()));
+			obj.setHorticulture_tree_valuation(DateParser.parse(obj.getHorticulture_tree_valuation()));
+			obj.setStructure_survey(DateParser.parse(obj.getStructure_survey()));
+			obj.setStructure_valuation(DateParser.parse(obj.getStructure_valuation()));
+			obj.setBorewell_survey(DateParser.parse(obj.getBorewell_survey()));
+			obj.setBorewell_valuation(DateParser.parse(obj.getBorewell_valuation()));
+			obj.setDate_of_rfp_to_adtp(DateParser.parse(obj.getDate_of_rfp_to_adtp()));
+			obj.setDate_of_rate_fixation_of_land(DateParser.parse(obj.getDate_of_rate_fixation_of_land()));
+			obj.setSdo_demand_for_payment(DateParser.parse(obj.getSdo_demand_for_payment()));
+			obj.setDate_of_approval_for_payment(DateParser.parse(obj.getDate_of_approval_for_payment()));
+			obj.setPrivate_payment_date(DateParser.parse(obj.getPrivate_payment_date()));
+			
+			obj.setSubmission_of_proposal_to_GM(DateParser.parse(obj.getSubmission_of_proposal_to_GM()));
+			obj.setApproval_of_GM(DateParser.parse(obj.getApproval_of_GM()));
+			obj.setDraft_letter_to_con_for_approval_rp(DateParser.parse(obj.getDraft_letter_to_con_for_approval_rp()));
+			obj.setDate_of_approval_of_construction_rp(DateParser.parse(obj.getDate_of_approval_of_construction_rp()));
+			obj.setDate_of_uploading_of_gazette_notification_rp(DateParser.parse(obj.getDate_of_uploading_of_gazette_notification_rp()));
+			obj.setPublication_in_gazette_rp(DateParser.parse(obj.getPublication_in_gazette_rp()));
+			
+			obj.setDate_of_proposal_to_DC_for_nomination(DateParser.parse(obj.getDate_of_proposal_to_DC_for_nomination()));
+			obj.setDate_of_nomination_of_competenta_authority(DateParser.parse(obj.getDate_of_nomination_of_competenta_authority()));
+			obj.setDraft_letter_to_con_for_approval_ca(DateParser.parse(obj.getDraft_letter_to_con_for_approval_ca()));
+			obj.setDate_of_approval_of_construction_ca(DateParser.parse(obj.getDate_of_approval_of_construction_ca()));
+			obj.setDate_of_uploading_of_gazette_notification_ca(DateParser.parse(obj.getDate_of_uploading_of_gazette_notification_ca()));
+			obj.setPublication_in_gazette_ca(DateParser.parse(obj.getPublication_in_gazette_ca()));
+			obj.setDate_of_submission_of_draft_notification_to_CALA(DateParser.parse(obj.getDate_of_submission_of_draft_notification_to_CALA()));
+			obj.setApproval_of_CALA_20a(DateParser.parse(obj.getApproval_of_CALA_20a()));
+			obj.setDraft_letter_to_con_for_approval_20a(DateParser.parse(obj.getDraft_letter_to_con_for_approval_20a()));
+			obj.setDate_of_approval_of_construction_20a(DateParser.parse(obj.getDate_of_approval_of_construction_20a()));
+			obj.setDate_of_uploading_of_gazette_notification_20a(DateParser.parse(obj.getDate_of_uploading_of_gazette_notification_20a()));
+			obj.setPublication_in_gazette_20a(DateParser.parse(obj.getPublication_in_gazette_20a()));
+			obj.setPublication_in_2_local_news_papers_20a(DateParser.parse(obj.getPublication_in_2_local_news_papers_20a()));
+			obj.setPasting_of_notification_in_villages_20a(DateParser.parse(obj.getPasting_of_notification_in_villages_20a()));
+			obj.setReceipt_of_grievances(DateParser.parse(obj.getReceipt_of_grievances()));
+			obj.setDisposal_of_grievances(DateParser.parse(obj.getDisposal_of_grievances()));
+			obj.setDate_of_submission_of_draft_notification_to_CALA_20e(DateParser.parse(obj.getDate_of_submission_of_draft_notification_to_CALA_20e()));
+			obj.setApproval_of_CALA_20e(DateParser.parse(obj.getApproval_of_CALA_20e()));
+			obj.setDraft_letter_to_con_for_approval_20e(DateParser.parse(obj.getDraft_letter_to_con_for_approval_20e()));
+			obj.setDate_of_approval_of_construction_20e(DateParser.parse(obj.getDate_of_approval_of_construction_20e()));
+			obj.setDate_of_uploading_of_gazette_notification_20e(DateParser.parse(obj.getDate_of_uploading_of_gazette_notification_20e()));
+			obj.setPublication_in_gazette_20e(DateParser.parse(obj.getPublication_in_gazette_20e()));
+			obj.setPublication_of_notice_in_2_local_news_papers_20e(DateParser.parse(obj.getPublication_of_notice_in_2_local_news_papers_20e()));
+			obj.setDate_of_submission_of_draft_notification_to_CALA_20f(DateParser.parse(obj.getDate_of_submission_of_draft_notification_to_CALA_20f()));
+			obj.setApproval_of_CALA_20f(DateParser.parse(obj.getApproval_of_CALA_20f()));
+			obj.setDraft_letter_to_con_for_approval_20f(DateParser.parse(obj.getDraft_letter_to_con_for_approval_20f()));
+			obj.setDate_of_approval_of_construction_20f(DateParser.parse(obj.getDate_of_approval_of_construction_20f()));
+			obj.setDate_of_uploading_of_gazette_notification_20f(DateParser.parse(obj.getDate_of_uploading_of_gazette_notification_20f()));
+			obj.setPublication_in_gazette_20f(DateParser.parse(obj.getPublication_in_gazette_20f()));
+			obj.setPublication_of_notice_in_2_local_news_papers_20f(DateParser.parse(obj.getPublication_of_notice_in_2_local_news_papers_20f()));
+			
+			
+			return landAquisitionService.addLandAcquisition(obj);
+		//	if(flag) {
+		//		attributes.addFlashAttribute("success", "Land Acquisition Added Succesfully.");
+		//	}
+		//	else {
+		//		attributes.addFlashAttribute("error","Adding Land Acquisition is failed. Try again.");
+		//	}
+		//}catch (Exception e) {
+		//	attributes.addFlashAttribute("error","Adding Land Acquisition is failed. Try again.");
+		//	logger.error("addLandAcquisition : " + e.getMessage());
+		//}
+		
 	}
 }
