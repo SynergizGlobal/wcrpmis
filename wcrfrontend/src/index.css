@@ -1,8 +1,6 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -10,4 +8,30 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+.react-select__control {
+  border: 0;
+  border-width: 0;
+  border-radius: 0 !important;
+  border-color: transparent !important;
+  border-bottom: 1px solid #aaa !important;
+  width: 100%;
+}
+.react-select__control:hover{
+  border-color: transparent !important;
+  box-shadow: none;
+  border-bottom: 1px solid var(--primary-color) !important;
+}
+.react-select__control--is-focused {
+  outline: 0;
+  border: 0;
+  border-width: 0;
+  border-radius: 0 !important;
+  border-color: var(--primary-color);
+}
+.react-select__indicator-separator{
+  background-color: transparent !important;
+}
+.react-select__placeholder {
+  color: #000 !important;
 }

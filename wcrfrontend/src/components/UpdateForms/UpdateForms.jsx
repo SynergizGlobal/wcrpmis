@@ -3,36 +3,41 @@ import axios from "axios";
 import styles from "./UpdateForms.module.css";
 import { API_BASE_URL } from "../../config";
 import { ChevronRight } from "lucide-react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 
+// Import icons
 import projectIcon from "../../assets/images/icons/uf-projects.svg";
 import worksIcon from "../../assets/images/icons/uf-works.svg";
 import contractsIcon from "../../assets/images/icons/uf-contratc_tenders.svg";
 import monitoringIcon from "../../assets/images/icons/uf-execution_monitoring.svg";
 import finaceIcon from "../../assets/images/icons/uf-finance.svg";
-import designIcon from "../../assets/images/icons/uf-design_drawings.svg"
-import issuesIcon from "../../assets/images/icons/uf-issues.svg"
-import laIcon from "../../assets/images/icons/uf-la.svg"
-import safetyIcon from "../../assets/images/icons/uf-safety.svg"
-import trainingIcon from "../../assets/images/icons/uf-training.svg"
-import riskIcon from "../../assets/images/icons/uf-risk.svg"
-import validateDataIcon from "../../assets/images/icons/uf-validate_data.svg"
-import utilityShiftingIcon from "../../assets/images/icons/uf-utility_shifting.svg"
-import fortnightPlanIcon from "../../assets/images/icons/uf-fortnight_plan.svg"
-import alertsIcon from "../../assets/images/icons/uf-alerts.svg"
-import gemPaymentStatusIcon from "../../assets/images/icons/uf-gem_payment_status.svg"
+import designIcon from "../../assets/images/icons/uf-design_drawings.svg";
+import issuesIcon from "../../assets/images/icons/uf-issues.svg";
+import laIcon from "../../assets/images/icons/uf-la.svg";
+import safetyIcon from "../../assets/images/icons/uf-safety.svg";
+import trainingIcon from "../../assets/images/icons/uf-training.svg";
+import riskIcon from "../../assets/images/icons/uf-risk.svg";
+import validateDataIcon from "../../assets/images/icons/uf-validate_data.svg";
+import utilityShiftingIcon from "../../assets/images/icons/uf-utility_shifting.svg";
+import fortnightPlanIcon from "../../assets/images/icons/uf-fortnight_plan.svg";
+import alertsIcon from "../../assets/images/icons/uf-alerts.svg";
+import gemPaymentStatusIcon from "../../assets/images/icons/uf-gem_payment_status.svg";
 
 export default function UpdateForms() {
   const [forms, setForms] = useState([]);
   const [openMenu, setOpenMenu] = useState(null);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
+  // Fetch forms
   useEffect(() => {
     fetchForms();
   }, []);
 
   const fetchForms = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/forms/api/getUpdateForms`,{
+      const res = await axios.get(`${API_BASE_URL}/forms/api/getUpdateForms`, {
         withCredentials: true,
       });
       setForms(res.data);
@@ -45,6 +50,7 @@ export default function UpdateForms() {
     setOpenMenu(openMenu === id ? null : id);
   };
 
+  //Close submenu when clicked outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -55,30 +61,39 @@ export default function UpdateForms() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-   const getIconForModule = (name) => {
+  // Map module names to icons
+  const getIconForModule = (name) => {
     const lower = name.toLowerCase();
     if (lower.includes("projects")) return projectIcon;
     if (lower.includes("work")) return worksIcon;
     if (lower.includes("contract")) return contractsIcon;
     if (lower.includes("execution") || lower.includes("monitoring"))
       return monitoringIcon;
-    // if (lower.includes("")) return finaceIcon;
-    if (lower.includes("design & drawing")) return designIcon;
+    if (lower.includes("finance")) return finaceIcon;
+    if (lower.includes("design")) return designIcon;
     if (lower.includes("issues")) return issuesIcon;
     if (lower.includes("land acquisition")) return laIcon;
+    if (lower.includes("safety")) return safetyIcon;
+    if (lower.includes("training")) return trainingIcon;
+    if (lower.includes("risk")) return riskIcon;
+    if (lower.includes("validate data")) return validateDataIcon;
     if (lower.includes("utility shifting")) return utilityShiftingIcon;
     if (lower.includes("fortnight plan")) return fortnightPlanIcon;
-    if (lower.includes("validate data")) return validateDataIcon;
-    if (lower.includes("gem payment status")) return gemPaymentStatusIcon;
-    // if (lower.includes("")) return trainingIcon;
-    // if (lower.includes("")) return riskIcon;
-    // if (lower.includes("")) return alertsIcon;
-
+    if (lower.includes("alert")) return alertsIcon;
+    if (lower.includes("gem payment")) return gemPaymentStatusIcon;
+    return null;
   };
 
-
-
-
+  //Handle route navigation without reload
+const handleNavigation = (formName, webFormUrl, hasSubMenu = false) => {
+  if (webFormUrl && webFormUrl.trim() !== "") {
+    navigate(`/updateforms/${webFormUrl}`);
+  } else {
+    const path = formName.toLowerCase().replace(/\s+/g, "-");
+    navigate(`/updateforms/${path}`);
+  }
+};
+  //Render submenus
   const renderSubMenu = (menu) => (
     <div className={styles.subDropdown} ref={menuRef}>
       {menu.map((sub) => (
@@ -97,15 +112,12 @@ export default function UpdateForms() {
                   }`}
                 />
               </div>
-              {openMenu === sub.formId &&
-                renderSubMenu(sub.formsSubMenuLevel2)}
+              {openMenu === sub.formId && renderSubMenu(sub.formsSubMenuLevel2)}
             </>
           ) : (
             <a
-              href={`/wcrpmis/${sub.webFormUrl}`}
+              onClick={() => handleNavigation(sub.formName, sub.webFormUrl)}
               className={styles.link}
-              target="_blank"
-              rel="noopener noreferrer"
             >
               {sub.formName}
             </a>
@@ -115,39 +127,55 @@ export default function UpdateForms() {
     </div>
   );
 
-  return (
-    <div className={styles.updateFormsContainer} ref={menuRef}>
+  // Hide main menu when on subpage 
+  const isSubRoute =
+  !location.pathname.endsWith("/updateforms") &&
+  !location.pathname.endsWith("/updateforms/");
 
-      <div className={styles.formsGrid}>
-        {forms.map((form) => (
-          <div key={form.formId} className={styles.card}>
-            <img
+  return (
+    <div
+      className={`${styles.updateFormsContainer} ${
+        isSubRoute ? styles.noStyle : ""
+      }`}
+      ref={menuRef}
+    >
+      {!isSubRoute && (
+        <div className={styles.formsGrid}>
+          {forms.map((form) => (
+            <div
+                key={form.formId}
+                className={styles.card}
+                onClick={() =>
+                  form.formsSubMenu?.length
+                    ? toggleMenu(form.formId)
+                    : handleNavigation(form.formName, form.webFormUrl)
+                }
+              >
+              <img
                 src={getIconForModule(form.formName)}
                 alt="icon"
                 className={styles.icon}
               />
-            <div
-              className={styles.cardHeader}
-              onClick={() => toggleMenu(form.formId)}
-            >
-              {/* <div className={styles.iconPlaceholder}> */}
-                {/* Optional: load module icons dynamically */}
-              {/* </div> */}
-              <span>{form.formName}</span>
-              {form.formsSubMenu?.length > 0 && (
-                <ChevronRight
-                  size={16}
-                  className={`${styles.arrow} ${
-                    openMenu === form.formId ? styles.arrowOpen : ""
-                  }`}
-                />
-              )}
+              <div className={styles.cardHeader}>
+                <span>{form.formName}</span>
+                {form.formsSubMenu?.length > 0 && (
+                  <ChevronRight
+                    size={16}
+                    className={`${styles.arrow} ${
+                      openMenu === form.formId ? styles.arrowOpen : ""
+                    }`}
+                  />
+                )}
+              </div>
+              {openMenu === form.formId &&
+                renderSubMenu(form.formsSubMenu || [])}
             </div>
-            {openMenu === form.formId &&
-              renderSubMenu(form.formsSubMenu || [])}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {/* Loads child component */}
+      <Outlet />
     </div>
   );
 }

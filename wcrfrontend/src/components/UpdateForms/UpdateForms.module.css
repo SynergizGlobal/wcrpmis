@@ -1,7 +1,12 @@
-.updateFormsContainer {
+.updateFormsContainer{
   padding: 20px;
   background-color: #eef2f8;
   min-height: 100vh;
+}
+.noStyle {
+  background: none;
+  padding: 0;
+  min-height: auto;
 }
 
 .pageTitle {

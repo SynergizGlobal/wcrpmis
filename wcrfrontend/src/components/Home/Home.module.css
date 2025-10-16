@@ -19,7 +19,7 @@
   background: white;
   padding: 10px 20px;
   text-align: center;
-  width: 120px;
+  min-width: 200px;
   display: flex;
   flex-direction: column;
   justify-content: center;

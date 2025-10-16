@@ -1,20 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Outlet, useLocation } from "react-router-dom";   // ✅ Import Outlet
+import { Outlet, useLocation } from "react-router-dom";
 import Header from "../Header/Header";
 import Sidebar from "../Sidebar/Sidebar";
 import Footer from "../Footer/Footer";
 import styles from "./layout.module.css";
 import { usePageTitle } from "../../context/PageTitleContext";
+import useAutoLogout from "../../hooks/useAutoLogout";
 
 export default function Layout() {
-
   const location = useLocation();
+  const { setPageTitle } = usePageTitle();
+  useAutoLogout(25); // ⏰ Auto logout after inactivity (in minutes)
 
-  const { setPageTitle, routeTitles } = usePageTitle();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarRef = useRef(null);
 
-  
+  // 🧠 Automatically set the correct header title even for nested routes
   useEffect(() => {
-    const staticRouteTitles = {
+    const routeTitles = {
       "/home": "Western Central Railways",
       "/dashboard": "Dashboard",
       "/updateforms": "Update Forms",
@@ -26,18 +29,18 @@ export default function Layout() {
       "/admin": "Admin Panel",
     };
 
-    // 🧠 If this route has a saved title, use it; otherwise, fallback
-    const restoredTitle =
-      routeTitles[location.pathname] ||
-      staticRouteTitles[location.pathname] ||
-      "Western Central Railways";
+    const currentPath = location.pathname.toLowerCase();
 
-    setPageTitle(restoredTitle);
-  }, [location.pathname, routeTitles, setPageTitle]);
+    // ✅ Match the nearest route prefix
+    const matchedKey =
+      Object.keys(routeTitles).find((key) =>
+        currentPath.startsWith(key)
+      ) || "/home";
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const sidebarRef = useRef(null);
+    setPageTitle(routeTitles[matchedKey]);
+  }, [location.pathname, setPageTitle]);
 
+  // 🔄 Sidebar toggle & responsiveness logic
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   useEffect(() => {
@@ -46,7 +49,7 @@ export default function Layout() {
         sidebarOpen &&
         sidebarRef.current &&
         !sidebarRef.current.contains(event.target) &&
-        window.innerWidth <= 767 
+        window.innerWidth <= 767
       ) {
         setSidebarOpen(false);
       }
@@ -75,13 +78,13 @@ export default function Layout() {
         ></div>
       )}
       <div className={styles.main}>
-        <Sidebar 
+        <Sidebar
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           sidebarRef={sidebarRef}
         />
         <div className={styles.content}>
-          <Outlet /> 
+          <Outlet />
         </div>
       </div>
       <Footer />

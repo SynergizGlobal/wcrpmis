@@ -66,7 +66,7 @@ export default function Header({ toggleSidebar }) {
         <button className={styles.hamburger} onClick={toggleSidebar}>
           &#9776;
         </button>
-        <h2 className={styles.pageName}>{pageTitle}</h2>
+        <h1 className={styles.pageName}>{pageTitle || "Western Central Railways"}</h1>
       </div>
 
       <div className={styles.right}>
