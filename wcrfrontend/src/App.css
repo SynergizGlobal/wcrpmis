@@ -382,10 +382,10 @@ input:focus, select:focus{
   .innerPage{
     padding: 15px;
   }
-  .formHeading{
+  .pageHeading{
         flex-direction: column;
   }
-  .formHeading h2 {
+  .pageHeading h2 {
       position: relative;
       left: 0;
       transform: translate(0, 0);
