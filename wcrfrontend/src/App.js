@@ -1,3 +1,5 @@
+import LandAcquisitionForm from "./components/UpdateForms/LandAcquisition/LandAcquisitionForm/LandAcquisitionForm";
+import LandAcquisition from "./components/UpdateForms/LandAcquisition/LandAcquisition";
 import Works from "./components/Works/Works";
 import Work from "./components/UpdateForms/Work/Work";
 import WorkForm from "./components/UpdateForms/Work/WorkForm/WorkForm";
@@ -52,10 +54,13 @@ function App() {
             <Route path="project" element={<Project />}>
               <Route path="projectform" element={<ProjectForm />} />
             </Route>
-            <Route path="work" element={<Work />} >
+            <Route path="work" element={<Work />}>
               <Route path="workform" element={<WorkForm />} />
             </Route>
+          <Route path="land-acquisition" element={<LandAcquisition />} >
+            <Route path="landacquisitionform" element={<LandAcquisitionForm />} />
           </Route>
+        </Route>
           <Route path="works" element={<Works />} />
           <Route path="admin" element={<Admin />} />
           <Route path="modules" element={<Modules />} />
