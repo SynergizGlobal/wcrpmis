@@ -143,7 +143,7 @@ export default function LandAcquisition() {
     // Fetch data when filters or pagination change
     useEffect(() => {
       fetchData(page, perPage);
-    }, [page, perPage]);
+    }, [village, typeOfLand, subCategory, landStatus, search, page, perPage]);
 
     // Reset dependent dropdowns
     useEffect(() => {
