@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wcr.wcrbackend.DTO.Design;
 import com.wcr.wcrbackend.DTO.DesignsPaginationObject;
+import com.wcr.wcrbackend.DTO.Safety;
 import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.service.IDesignService;
+import com.wcr.wcrbackend.service.ISafetyService;
 import com.wcr.wcrbackend.service.IUserService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,7 +33,44 @@ public class DesignController {
 	@Autowired
 	private IUserService userService;
 	
+	@Autowired
+	private ISafetyService safetyService;
+	
 	Logger logger = Logger.getLogger(DesignController.class);
+	
+	
+	
+	@PostMapping(value = "/ajax/form/update-design-status/projectsList")
+	public List<Safety> getProjectsListForSafetyForm(@RequestBody Safety obj, HttpSession session) {
+		List<Safety> objList = null;
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_id(uObj.getUserId());
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			objList = safetyService.getProjectsListForSafetyForm(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getP6ActivityData : " + e.getMessage());
+		}
+		return objList;
+	}
+	
+	@PostMapping(value = "/ajax/form/update-design-status/contractsList")
+	public List<Safety> getContractsListForSafetyForm(@RequestBody Safety obj, HttpSession session) {
+		List<Safety> objList = null;
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_id(uObj.getUserId());
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			obj.setDepartment_fk(uObj.getDepartmentFk());
+			objList = safetyService.getContractsListForSafetyForm(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getP6ActivityData : " + e.getMessage());
+		}
+		return objList;
+	}
+	
 	
 	@PostMapping(value = "/ajax/getP6ActivitiesData")
 	public List<Design> getP6ActivitiesData(@RequestBody Design obj) {
@@ -220,6 +259,76 @@ public class DesignController {
 		return null;
 	}
 	
+	@RequestMapping(value = "/ajax/getDrawingRepositoryList")
+	public DesignsPaginationObject getDrawingRepositoryList(@RequestBody Design obj, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws IOException {
+		//PrintWriter pw = null;
+		//JSONObject json = new JSONObject();
+		String json2 = null;
+		String userId = null;
+		String userName = null;
+		try {
+			
+			User uObj = (User) session.getAttribute("user");
+			
+			userId = uObj.getUserId();
+			userName = uObj.getUserName();
+
+			//pw = response.getWriter();
+			//Fetch the page number from client
+			Integer pageNumber = 0;
+			Integer pageDisplayLength = 0;
+			if (null != request.getParameter("iDisplayStart")) {
+				pageDisplayLength = Integer.valueOf(request.getParameter("iDisplayLength"));
+				pageNumber = (Integer.valueOf(request.getParameter("iDisplayStart")) / pageDisplayLength) + 1;
+			}
+			//Fetch search parameter
+			String searchParameter = request.getParameter("sSearch");
+
+			//Fetch Page display length
+			pageDisplayLength = Integer.valueOf(request.getParameter("iDisplayLength"));
+
+			List<Design> designsList = new ArrayList<Design>();
+
+			//Here is server side pagination logic. Based on the page number you could make call 
+			//to the data base create new list and send back to the client. For demo I am shuffling 
+			//the same list to show data randomly
+			int startIndex = 0;
+			int offset = pageDisplayLength;
+
+			if (pageNumber == 1) {
+				startIndex = 0;
+				offset = pageDisplayLength;
+				designsList = createDrawingRepositoryPaginationData(startIndex, offset, obj, searchParameter,session);
+			} else {
+				startIndex = (pageNumber * offset) - offset;
+				offset = pageDisplayLength;
+				designsList = createDrawingRepositoryPaginationData(startIndex, offset, obj, searchParameter,session);
+			}
+
+			//Search functionality: Returns filtered list based on search parameter
+			//designsList = getListBasedOnSearchParameter(searchParameter,designsList);
+
+			int totalRecords = getTotalDrawingRepositoryRecords(obj, searchParameter,session);
+
+			DesignsPaginationObject personJsonObject = new DesignsPaginationObject();
+			//Set Total display record
+			personJsonObject.setiTotalDisplayRecords(totalRecords);
+			//Set Total record
+			personJsonObject.setiTotalRecords(totalRecords);
+			personJsonObject.setAaData(designsList);
+
+			return personJsonObject;
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(
+					"getActivitiesList : User Id - " + userId + " - User Name - " + userName + " - " + e.getMessage());
+		}
+
+		return null;
+	}	
+	
+	
 	public List<Design> createPaginationData(int startIndex, int offset, Design obj, String searchParameter) {
 		List<Design> earthWorkList = null;
 		try {
@@ -237,6 +346,32 @@ public class DesignController {
 			obj.setUser_role_code(uObj.getUserRoleNameFk());
 			obj.setUser_name(uObj.getUserName());				
 			totalRecords = designService.getTotalRecords(obj, searchParameter);
+		} catch (Exception e) {
+			logger.error("getTotalRecords : " + e.getMessage());
+		}
+		return totalRecords;
+	}
+	
+	public List<Design> createDrawingRepositoryPaginationData(int startIndex, int offset, Design obj, String searchParameter, HttpSession session) {
+		List<Design> earthWorkList = null;
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_role_code(uObj.getUserRoleNameFk());
+			obj.setUser_name(uObj.getUserName());				
+			earthWorkList = designService.getDrawingRepositoryDesignsList(obj, startIndex, offset, searchParameter);
+		} catch (Exception e) {
+			logger.error("createDrawingRepositoryPaginationData : " + e.getMessage());
+		}
+		return earthWorkList;
+	}	
+	
+	private int getTotalDrawingRepositoryRecords(Design obj, String searchParameter,HttpSession session) {
+		int totalRecords = 0;
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_role_code(uObj.getUserRoleNameFk());
+			obj.setUser_name(uObj.getUserName());			
+			totalRecords = designService.getTotalDrawingRepositoryRecords(obj, searchParameter);
 		} catch (Exception e) {
 			logger.error("getTotalRecords : " + e.getMessage());
 		}
