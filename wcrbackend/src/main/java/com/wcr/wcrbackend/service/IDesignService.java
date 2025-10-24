@@ -86,4 +86,8 @@ public interface IDesignService {
 
 	List<Design> getDesignRevisions(Design design) throws Exception;
 
+	boolean saveDesignDataUploadFile(Design design) throws Exception;
+
+	int uploadDesignsNew(List<Design> designsList) throws Exception;
+
 }

@@ -217,5 +217,17 @@ public class DesignService implements IDesignService {
 		// TODO Auto-generated method stub
 		return designRepo.getDesignRevisions(design);
 	}
+	@Override
+	@Transactional
+	public boolean saveDesignDataUploadFile(Design design) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.saveDesignDataUploadFile(design);
+	}
+	@Override
+	@Transactional
+	public int uploadDesignsNew(List<Design> designsList) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.uploadDesignsNew(designsList);
+	}
 
 }
