@@ -136,7 +136,7 @@ public class DesignController {
 		return objList;
 	}
 	
-	@RequestMapping(value = "/ajax/form/update-design-status/update-design-status")
+	@PostMapping(value = "/ajax/form/update-design-status/update-design-status")
 	public boolean updateDesignStatusBulk(@RequestBody Design obj,RedirectAttributes attributes,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		try{
