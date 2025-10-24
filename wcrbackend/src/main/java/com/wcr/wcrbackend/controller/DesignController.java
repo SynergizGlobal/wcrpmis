@@ -136,6 +136,42 @@ public class DesignController {
 		return objList;
 	}
 	
+	@RequestMapping(value = "/ajax/form/update-design-status/update-design-status")
+	public boolean updateDesignStatusBulk(@RequestBody Design obj,RedirectAttributes attributes,HttpSession session){
+		//ModelAndView model = new ModelAndView();
+		try{
+			//model.setViewName("redirect:/update-design-status");
+			User uObj = (User) session.getAttribute("user");
+			String user_Id = uObj.getUserId();
+			String userName = uObj.getUserName();
+			String userDesignation = uObj.getDesignation();
+
+			obj.setCreated_by_user_id_fk(user_Id);
+			
+			obj.setCreated_by_user_id_fk(user_Id);
+			obj.setUser_name(userName);
+			obj.setDesignation(userDesignation);
+			
+			//User uObj = (User) session.getAttribute("user");
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			obj.setUser_id(uObj.getUserId());			
+			//obj.setProgress_date(DateParser.parse(obj.getProgress_date()));
+			boolean flag =  designService.updateDesignStatusBulk(obj);
+			/*if(flag) {
+				attributes.addFlashAttribute("success", "Design Status Updated Succesfully.");
+			}
+			else {
+				attributes.addFlashAttribute("success", "Design Status Updated Succesfully.");
+				//attributes.addFlashAttribute("error","Updating Design Status are failed. Try again.");
+			}*/
+			return flag;
+		}catch (Exception e) {
+			//attributes.addFlashAttribute("success", "Design Status Updated Succesfully.");
+			//attributes.addFlashAttribute("error","Updating Design Status are failed. Try again.");
+			logger.error("updateAcivitiesBulk : " + e.getMessage());
+		}
+		return false;
+	}	
 	
 	@PostMapping(value = "/ajax/getP6ActivitiesData")
 	public List<Design> getP6ActivitiesData(@RequestBody Design obj) {

@@ -229,5 +229,10 @@ public class DesignService implements IDesignService {
 		// TODO Auto-generated method stub
 		return designRepo.uploadDesignsNew(designsList);
 	}
+	@Override
+	public boolean updateDesignStatusBulk(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.updateDesignStatusBulk(obj);
+	}
 
 }

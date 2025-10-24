@@ -2772,5 +2772,110 @@ public class DesignRepository implements IDesignRepo {
 			throw new Exception(e);
 		}		
 		return design_id;
+	}
+
+	@Override
+	public boolean updateDesignStatusBulk(Design obj) throws Exception {
+		Connection con = null;
+		PreparedStatement insertStmt = null;
+		PreparedStatement updateStmt = null;
+		PreparedStatement updateRemarksActualDateQryStmt = null;
+		boolean flag = false;
+		try {
+			con = jdbcTemplate.getDataSource().getConnection();
+			String insertQry = "INSERT INTO designdrawingstatusremarks"
+					+ "(structure,component,element,activity,scope,target_date,actual_date,remarks,task_code)"
+					+ "VALUES"
+					+ "(?,?,?,?,?,?,?,?,?)";
+			
+			String updateQry = "update designdrawingstatusremarks set remarks=?,actual_date=? where task_code=?";
+			String updateRemarksActualDateQry = "update designdrawingstatusremarks set remarks='',actual_date='' where task_code=?";
+	
+			
+			insertStmt = con.prepareStatement(insertQry,Statement.RETURN_GENERATED_KEYS);
+			updateStmt = con.prepareStatement(updateQry);
+			
+			 updateRemarksActualDateQryStmt = con.prepareStatement(updateRemarksActualDateQry);
+			
+			int	arraySize = 0;
+			  if( !StringUtils.isEmpty(obj.getActual_dates()) && obj.getActual_dates().length > 0 ||  !StringUtils.isEmpty(obj.getDesignremarks()) && obj.getDesignremarks().length > 0) 
+			  {
+				 obj.setActual_dates(CommonMethods.replaceEmptyByNullInSringArray(obj.getActual_dates())); 
+				 if(arraySize < obj.getActual_dates().length) 
+				 { 
+					 arraySize= obj.getActual_dates().length; 
+				 } 
+				 obj.setDesignremarks(CommonMethods.replaceEmptyByNullInSringArray(obj.getDesignremarks())); 
+				 if(arraySize < obj.getDesignremarks().length) 
+				 { 
+					 arraySize= obj.getDesignremarks().length; 
+				 }				 
+			 }
+			
+			for (int i = 0; i < arraySize; i++) 
+			{				
+				if( (obj.getActual_dates()[i]!="" && obj.getActual_dates()[i]!=null && obj.getActual_dates()[i]!="" && !StringUtils.isEmpty(obj.getActual_dates()[i])) || (obj.getDesignremarks()[i]!="" && obj.getDesignremarks()[i]!=null && obj.getDesignremarks()[i]!="" && !StringUtils.isEmpty(obj.getDesignremarks()[i])))
+			    {
+			            if(getDesignP6ActivitiesData(obj.getTaskcodes()[i])>0)
+			            {
+
+			            	
+				            	updateStmt.setString(1, obj.getDesignremarks().length>0 ?obj.getDesignremarks()[i]:"");
+				            	updateStmt.setString(2, obj.getActual_dates().length>0 ?obj.getActual_dates()[i]:"");
+				            	updateStmt.setString(3, obj.getTaskcodes()[i]);
+				            	updateStmt.executeUpdate();
+			            	
+			            }
+			            else
+			            {
+						    insertStmt.setString(1, obj.getStructures()[i]);
+						    insertStmt.setString(2, obj.getComponents()[i]);
+						    insertStmt.setString(3, obj.getElements()[i]);					    
+						    insertStmt.setString(4, obj.getActivities()[i]);
+						    insertStmt.setString(5, obj.getScopes()[i]);
+						    insertStmt.setString(6, obj.getTarget_dates()[i]);
+						    
+						    insertStmt.setString(7, obj.getActual_dates().length>0 ?obj.getActual_dates()[i]:"");
+						    insertStmt.setString(8, obj.getDesignremarks().length>0 ?obj.getDesignremarks()[i]:"");
+						    
+						    insertStmt.setString(9, obj.getTaskcodes()[i]);
+						    
+						    insertStmt.executeUpdate();			            	
+			            }
+						  
+			    }
+				else
+				{
+		            if(getDesignP6ActivitiesData(obj.getTaskcodes()[i])>0)
+		            {
+
+		            	updateRemarksActualDateQryStmt.setString(1, obj.getTaskcodes()[i]);
+		            	updateRemarksActualDateQryStmt.executeUpdate();
+		            	
+		            }					
+				}
+			}
+
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		finally {
+			DBConnectionHandler.closeJDBCResoucrs(con, updateStmt, null);
+		}	
+		return flag;
 	}	
+	
+	private int getDesignP6ActivitiesData(String taskcode) throws Exception
+	{
+		int cnt=0;
+		try {
+				String qry ="select distinct(count (*)) as cnt from designdrawingstatusremarks where task_code=?";
+				cnt = (int) jdbcTemplate.queryForObject(qry, new Object[] { taskcode }, int.class);
+			
+		} catch (Exception e) {
+			throw new Exception(e);
+		}		
+		return cnt;
+	}
 }

@@ -90,4 +90,6 @@ public interface IDesignService {
 
 	int uploadDesignsNew(List<Design> designsList) throws Exception;
 
+	boolean updateDesignStatusBulk(Design obj) throws Exception;
+
 }
