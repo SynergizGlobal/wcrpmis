@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wcr.wcrbackend.DTO.Contract;
 import com.wcr.wcrbackend.DTO.Design;
 import com.wcr.wcrbackend.DTO.DesignsPaginationObject;
+import com.wcr.wcrbackend.DTO.Issue;
 import com.wcr.wcrbackend.DTO.Safety;
 import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.service.IContractService;
 import com.wcr.wcrbackend.service.IDesignService;
+import com.wcr.wcrbackend.service.IIssueService;
 import com.wcr.wcrbackend.service.ISafetyService;
 import com.wcr.wcrbackend.service.IUserService;
 
@@ -43,6 +45,10 @@ public class DesignController {
 	
 	@Autowired
 	private IContractService contractService;
+	
+	@Autowired
+	private IIssueService issueService;
+	
 	
 	Logger logger = Logger.getLogger(DesignController.class);
 	
@@ -624,6 +630,23 @@ public class DesignController {
 			List<Design> asBuiltStatuses = designService.getAsBuiltStatuses();
 			design.put("asBuiltStatuses", asBuiltStatuses);
 			
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	@GetMapping(value = "/ajax/form/get-design/issue")
+	public Map<String,List<Issue>> getDesignPayloadForIssue() {
+		Map<String, List<Issue>> design = new HashMap<>();
+		try {
+			Issue iObj = new Issue();
+			List<Issue> issueCategoryList = issueService.getIssuesCategoryList(iObj);	
+			design.put("issueCategoryList", issueCategoryList);
+			
+			List<Issue> issuePriorityList = issueService.getIssuesPriorityList();
+			design.put("issuePriorityList", issuePriorityList);
+					
 		}catch (Exception e) {
 			e.printStackTrace();
 			logger.error("getDesigns : " + e.getMessage());
