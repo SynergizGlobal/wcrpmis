@@ -3,3 +3,13 @@
   background-color: #f9f9f9;
   border-radius: 8px;
 }
+.dataTable {
+  overflow: visible !important;
+}
+
+.rs__menu, 
+.rs__menu-list, 
+.react-select__menu {
+  z-index: 9999 !important;
+  position: absolute !important;
+}

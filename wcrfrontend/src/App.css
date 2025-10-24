@@ -48,6 +48,7 @@ h5{
 }
 h6{
   font-size: 18px;
+  color: var(--primary-color);
 }
 p{
   margin: 8px 0 10px;
@@ -60,6 +61,9 @@ p{
 }
 .fw-800{
   font-weight: 800;
+}
+.w-100{
+  width: 100%;
 }
 .App {
   text-align: center;
@@ -228,6 +232,73 @@ p{
     background-color: #449d44;
     border-color: #398439;
 }
+input::placeholder {
+  color: #000;
+}
+.formHeading{
+  background-color: var(--heading-blue-bg);
+  color: #000;
+  padding: 8px 15px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0px 0 20px;
+}
+.formHeading h2{
+  display: flex;
+  align-items: center;
+  font-size: 24px;
+  margin: 0;
+}
+input, Select{
+  border: 0;
+  border-bottom: 1px solid #aaa;
+  border-radius: 0;
+}
+input:focus, select:focus{
+  border-color: var(--primary-color);
+}
+.form-row{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: space-between;
+  align-items: center;
+}
+.form-field{
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 0 30%;
+  margin-bottom: 10px;
+}
+.rupee-field {
+  position: relative;
+}
+.rupee-field input{
+ padding: 10px 10px 10px 2rem;
+}
+.rupee-field::before{
+  content: "₹";
+  position: absolute;
+  top: 95%;
+  left: 12px;
+  transform: translateY(-100%);
+  font-size: 20px;
+  color: #000;
+  pointer-events: none;
+}
+.paginationRow{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 15px 0;
+}
+.flex-100{
+  flex: 0 0 100%;
+}
 .form-post-buttons{
   display: flex;
   align-items: center;
@@ -258,6 +329,36 @@ input{
 }
 .justify-content-center{
   justify-content: center;
+}
+.justify-content-flex-start{
+  justify-content: flex-start;
+}
+.gap-10{
+  gap: 10px;
+}
+.gap-15{
+  gap: 15px;
+}
+.gap-20{
+  gap: 20px;
+}
+.gap-25{
+  gap: 25px;
+}
+.gap-30{
+  gap: 30px;
+}
+.gap-35{
+  gap: 35px;
+}
+.gap-40{
+  gap: 40px;
+}
+.gap-45{
+  gap: 45px;
+}
+.gap-50{
+  gap: 50px;
 }
 .pageHeading{
   background-color: var(--heading-blue-bg);
@@ -326,6 +427,7 @@ input{
 }
 .dataTable{
   overflow-x: auto;
+  overflow: visible !important;
 }
 .dataTable table{
   width: 100%;
@@ -356,54 +458,7 @@ input{
   padding: 4px 8px;
   background: transparent;
 }
-input::placeholder {
-  color: #000;
-}
-.formHeading{
-  background-color: var(--heading-blue-bg);
-  color: #000;
-  padding: 8px 15px;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0px 0 20px;
-}
-.formHeading h2{
-  display: flex;
-  align-items: center;
-  font-size: 24px;
-  margin: 0;
-}
-input, Select{
-  border: 0;
-  border-bottom: 1px solid #aaa;
-  border-radius: 0;
-}
-input:focus, select:focus{
-  border-color: var(--primary-color);
-}
-.form-row{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  justify-content: space-between;
-  align-items: center;
-}
-.form-field{
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex: 0 0 30%;
-  margin-bottom: 10px;
-}
-.paginationRow{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  margin: 15px 0;
-}
+
 /* pagination css */
 .pagination {
   display: flex;
@@ -514,7 +569,7 @@ input:focus, select:focus{
     align-items: flex-end;
   }
   .form-field{
-    flex: 0 0 46%;
+    flex: 1 0 46%;
   }
   label{
     font-size: 14px;
