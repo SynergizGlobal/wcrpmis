@@ -6,15 +6,18 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.wcr.wcrbackend.DTO.Contract;
 import com.wcr.wcrbackend.DTO.Design;
 import com.wcr.wcrbackend.DTO.DesignsPaginationObject;
 import com.wcr.wcrbackend.DTO.Safety;
 import com.wcr.wcrbackend.entity.User;
+import com.wcr.wcrbackend.service.IContractService;
 import com.wcr.wcrbackend.service.IDesignService;
 import com.wcr.wcrbackend.service.ISafetyService;
 import com.wcr.wcrbackend.service.IUserService;
@@ -35,6 +38,9 @@ public class DesignController {
 	
 	@Autowired
 	private ISafetyService safetyService;
+	
+	@Autowired
+	private IContractService contractService;
 	
 	Logger logger = Logger.getLogger(DesignController.class);
 	
@@ -376,5 +382,29 @@ public class DesignController {
 			logger.error("getTotalRecords : " + e.getMessage());
 		}
 		return totalRecords;
+	}
+	
+	@PostMapping(value = "/ajax/form/get-design/projectsList")
+	public List<Design> getProjectsListForDesignForm(@RequestBody Design obj) {
+		List<Design> design = null;
+		try {
+			design = designService.getProjectsListForDesignForm(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/departmentList")
+	public List<Contract> getDepartmentList() {
+		List<Contract> design = null;
+		try {
+			design = contractService.getDepartmentList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
 	}
 }

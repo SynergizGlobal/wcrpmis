@@ -1084,4 +1084,16 @@ public class DesignRepository implements IDesignRepo {
 		return totalRecords;
 	}
 
+	@Override
+	public List<Design> getProjectsListForDesignForm(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry = "select project_id,project_name from project order by project_id asc";
+			objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));			
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
 }

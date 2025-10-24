@@ -78,5 +78,10 @@ public class DesignService implements IDesignService {
 		// TODO Auto-generated method stub
 		return designRepo.getTotalDrawingRepositoryRecords(obj, searchParameter);
 	}
+	@Override
+	public List<Design> getProjectsListForDesignForm(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getProjectsListForDesignForm(obj);
+	}
 
 }

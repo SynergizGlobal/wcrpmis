@@ -32,4 +32,6 @@ public interface IDesignRepo {
 
 	int getTotalDrawingRepositoryRecords(Design obj, String searchParameter) throws Exception;
 
+	List<Design> getProjectsListForDesignForm(Design obj) throws Exception;
+
 }
