@@ -68,4 +68,16 @@ public interface IDesignService {
 
 	List<Design> getContractsListForDesignForm(Design obj) throws Exception;
 
+	List<Design> getComponentsforDesign(Design obj) throws Exception;
+
+	List<Design> getStructureIdsforDesign(Design obj) throws Exception;
+
+	List<Design> getStructureTypesforDesign(Design obj) throws Exception;
+
+	List<Design> getDesignUploadsList(Design obj) throws Exception;
+
+	List<Design> getHodList(Design obj) throws Exception;
+
+	List<Design> getDyHodList(Design obj) throws Exception;
+
 }

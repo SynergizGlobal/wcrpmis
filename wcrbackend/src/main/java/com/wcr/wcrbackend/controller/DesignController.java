@@ -751,5 +751,104 @@ public class DesignController {
 		return model;
 	}
 	
+	@PostMapping(value = "/ajax/getProjectsListForDesignForm")
+	public List<Design> getProjectsListForDesignForm1(@RequestBody Design obj) {
+		List<Design> objsList = null;
+		try {
+			objsList = designService.getProjectsListForDesignForm(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getProjectsListForDesignForm : " + e.getMessage());
+		}
+		return objsList;
+	}
 	
+	@RequestMapping(value = "/ajax/getComponentsforDesign")
+	public List<Design> getComponentsforDesign(@RequestBody Design obj) {
+		List<Design> objsList = null;
+		try {
+			objsList = designService.getComponentsforDesign(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getComponentsforDesign : " + e.getMessage());
+		}
+		return objsList;
+	}
+	
+	@PostMapping(value = "/ajax/getStructureIdsforDesign")
+	public List<Design> getStructureIdsforDesign(@RequestBody Design obj) {
+		List<Design> objsList = null;
+		try {
+			objsList = designService.getStructureIdsforDesign(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getStructureIdsforDesign : " + e.getMessage());
+		}
+		return objsList;
+	}	
+	
+	@PostMapping(value = "/ajax/getStructureTypesforDesign")
+	public List<Design> getStructureTypesforDesign(@RequestBody Design obj) {
+		List<Design> objsList = null;
+		try {
+			objsList = designService.getStructureTypesforDesign(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getStructureTypesforDesign : " + e.getMessage());
+		}
+		return objsList;
+	}	
+	
+	@PostMapping(value = "/ajax/getContractsListForDesignForm")
+	public List<Design> getContractsListForDesignForm(@RequestBody Design obj) {
+		List<Design> objsList = null;
+		try {
+			objsList = designService.getContractsListForDesignForm(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getContractsListForDesignForm : " + e.getMessage());
+		}
+		return objsList;
+	}
+	
+	@PostMapping(value = "/ajax/getDesignUploadsList")
+	public List<Design> getDesignUploadsList(@RequestBody Design obj) {
+		List<Design> objsList = null;
+		try {
+			objsList = designService.getDesignUploadsList(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesignUploadsList : " + e.getMessage());
+		}
+		return objsList;
+	}
+	
+	@PostMapping(value = "/ajax/getHodListForDesignForm")
+	public List<Design> getHodList(@RequestBody Design obj,HttpSession session) {
+		List<Design> dataList = null;  
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			
+			dataList = designService.getHodList(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getHodList : " + e.getMessage());
+		}
+		return dataList;
+	}
+	
+	@PostMapping(value = "/ajax/getDyHodListForDesignForm")
+	public List<Design> getDyHodList(@RequestBody Design obj,HttpSession session) {
+		List<Design> dataList = null;  
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			dataList = designService.getDyHodList(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDyHodList : " + e.getMessage());
+		}
+		return dataList;
+	}
 }

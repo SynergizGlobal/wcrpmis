@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 import com.wcr.wcrbackend.DTO.Design;
+import com.wcr.wcrbackend.common.CommonConstants;
 @Repository
 public class DesignRepository implements IDesignRepo {
 	@Autowired
@@ -1400,6 +1401,225 @@ public class DesignRepository implements IDesignRepo {
 			int i = 0;			
 			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
 				pValues[i++] = obj.getProject_id_fk();
+			}
+				
+			objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<Design>(Design.class));
+				
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getComponentsforDesign(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="select distinct component from p6_activities a left join structure s on s.structure_id=a.structure_id_fk where 0=0  ";
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_type_fk())) {
+				qry = qry + " and s.structure_type_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_id_fk())) {
+				qry = qry + " and s.structure = ? ";
+				arrSize++;
+			}
+			Object[] pValues = new Object[arrSize];
+			
+			int i = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_type_fk())) {
+				pValues[i++] = obj.getStructure_type_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_id_fk())) {
+				pValues[i++] = obj.getStructure_id_fk();
+			}
+				
+			objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getStructureIdsforDesign(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="select distinct structure_id as structure_id_fk,structure_name from structure where 0=0  ";
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_type_fk())) {
+				qry = qry + " and structure_type_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and project_id_fk = ? ";
+				arrSize++;
+			}			
+			Object[] pValues = new Object[arrSize];
+			
+			int i = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_type_fk())) {
+				pValues[i++] = obj.getStructure_type_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}			
+			objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getStructureTypesforDesign(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="select distinct structure_type_fk from structure where 0=0 ";
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and project_id_fk = ? ";
+				arrSize++;
+			}
+			Object[] pValues = new Object[arrSize];
+			
+			int i = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+			objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getDesignUploadsList(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry = "SELECT design_data_id, uploaded_file, dd.status, dd.remarks, uploaded_by_user_id_fk, FORMAT(uploaded_on,'dd-MM-yyyy  hh:mm ss') as uploaded_on "
+					+ ",uploaded_on as date from design_data dd " 
+					+ "left join [user] u ON dd.uploaded_by_user_id_fk = u.user_id "
+					+ "where design_data_id is not null order by FORMAT(uploaded_on,'%y-%m-%d %H : %i : %s') desc ";
+			
+		    objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));
+
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getHodList(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="SELECT u.user_id as hod,u.user_name,u.designation "
+					+ "FROM [user] u " 
+					+ "left join [user] u1 on u.reporting_to_id_srfk = u1.user_id "
+					+ "LEFT JOIN department d on u.department_fk = d.department "
+					+ "where  u.user_type_fk = ?  ";
+			
+			int arrSize = 1;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDy_hod()) && !obj.getUser_role_code().equals(CommonConstants.ROLE_CODE_IT_ADMIN)) {
+				qry = qry + " and u.user_id = ? ";
+				arrSize++;
+			}
+			qry = qry + " ORDER BY case when u.designation='ED Civil' then 1  " + 
+					"   when u.designation='CPM I' then 2  " + 
+					"   when u.designation='CPM II' then 3 " + 
+					"   when u.designation='CPM III' then 4  " + 
+					"   when u.designation='CPM V' then 5 " + 
+					"   when u.designation='CE' then 6  " + 
+					"   when u.designation='ED S&T' then 7  " + 
+					"   when u.designation='CSTE' then 8 " + 
+					"   when u.designation='GM Electrical' then 9 " + 
+					"   when u.designation='CEE Project I' then 10 " + 
+					"   when u.designation='CEE Project II' then 11 " + 
+					"   when u.designation='ED Finance & Planning' then 12 " + 
+					"   when u.designation='AGM Civil' then 13 " + 
+					"   when u.designation='DyCPM Civil' then 14 " + 
+					"   when u.designation='DyCPM III' then 15 " + 
+					"   when u.designation='DyCPM V' then 16 " + 
+					"   when u.designation='DyCE EE' then 17 " + 
+					"   when u.designation='DyCE Badlapur' then 18 " + 
+					"   when u.designation='DyCPM Pune' then 19 " + 
+					"   when u.designation='DyCE Proj' then 20 " + 
+					"   when u.designation='DyCEE I' then 21 " + 
+					"   when u.designation='DyCEE Projects' then 22 " + 
+					"   when u.designation='DyCEE PSI' then 23 " + 
+					"   when u.designation='DyCSTE I' then 24 " + 
+					"   when u.designation='DyCSTE IT' then 25 " + 
+					"   when u.designation='DyCSTE Projects' then 26 " + 
+					"   when u.designation='XEN Consultant' then 27 " + 
+					"   when u.designation='AEN Adhoc' then 28 " + 
+					"   when u.designation='AEN Project' then 29 " + 
+					"   when u.designation='AEN P-Way' then 30 " + 
+					"   when u.designation='AEN' then 31 " + 
+					"   when u.designation='Sr Manager Signal' then 32  " + 
+					"   when u.designation='Manager Signal' then 33 " + 
+					"   when u.designation='Manager Civil' then 34  " + 
+					"   when u.designation='Manager OHE' then 35 " + 
+					"   when u.designation='Manager GS' then 36 " + 
+					"   when u.designation='Manager Finance' then 37 " + 
+					"   when u.designation='Planning Manager' then 38 " + 
+					"   when u.designation='Manager Project' then 39 " + 
+					"   when u.designation='Manager' then 40  " + 
+					"   when u.designation='SSE' then 41 " + 
+					"   when u.designation='SSE Project' then 42 " + 
+					"   when u.designation='SSE Works' then 43 " + 
+					"   when u.designation='SSE Drg' then 44 " + 
+					"   when u.designation='SSE BR' then 45 " + 
+					"   when u.designation='SSE P-Way' then 46 " + 
+					"   when u.designation='SSE OHE' then 47 " + 
+					"   when u.designation='SPE' then 48 " + 
+					"   when u.designation='PE' then 49 " + 
+					"   when u.designation='JE' then 50 " + 
+					"   when u.designation='Demo-HOD-Elec' then 51 " + 
+					"   when u.designation='Demo-HOD-Engg' then 52 " + 
+					"   when u.designation='Demo-HOD-S&T' then 53 " + 
+					" " + 
+					"   end asc " + 
+					"" ;
+
+			//qry = qry + " ORDER BY Field(u.designation, 'ED Civil','CPM I','CPM II','CPM III','CPM V','CE','ED S&T','CSTE','GM Electrical','GGM Civil','CEE Project I','CEE Project II','ED Finance & Planning')";
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			pValues[i++] = CommonConstants.USER_TYPE_HOD;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDy_hod()) && !obj.getUser_role_code().equals(CommonConstants.ROLE_CODE_IT_ADMIN)) {
+				pValues[i++] = obj.getDy_hod();
+			}
+			
+			objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<Design>(Design.class));
+				
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getDyHodList(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="SELECT u.user_id as dy_hod,u.user_name,u.designation "
+					+ "FROM [user] u " 
+					+ "left join [user] u1 on u.reporting_to_id_srfk = u1.user_id " 
+					+ "where u.user_type_fk = ?  ";
+			
+			int arrSize = 1;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getHod()) && !obj.getUser_role_code().equals(CommonConstants.ROLE_CODE_IT_ADMIN)) {
+				qry = qry + " and u.reporting_to_id_srfk = ? ";
+				arrSize++;
+			}
+			
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			pValues[i++] = CommonConstants.USER_TYPE_DYHOD;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getHod()) && !obj.getUser_role_code().equals(CommonConstants.ROLE_CODE_IT_ADMIN)) {
+				pValues[i++] = obj.getHod();
 			}
 				
 			objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<Design>(Design.class));

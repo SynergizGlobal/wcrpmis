@@ -168,5 +168,35 @@ public class DesignService implements IDesignService {
 		// TODO Auto-generated method stub
 		return designRepo.getContractsListForDesignForm(obj);
 	}
+	@Override
+	public List<Design> getComponentsforDesign(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getComponentsforDesign(obj);
+	}
+	@Override
+	public List<Design> getStructureIdsforDesign(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getStructureIdsforDesign(obj);
+	}
+	@Override
+	public List<Design> getStructureTypesforDesign(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getStructureTypesforDesign(obj);
+	}
+	@Override
+	public List<Design> getDesignUploadsList(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getDesignUploadsList(obj);
+	}
+	@Override
+	public List<Design> getHodList(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getHodList(obj);
+	}
+	@Override
+	public List<Design> getDyHodList(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getDyHodList(obj);
+	}
 
 }
