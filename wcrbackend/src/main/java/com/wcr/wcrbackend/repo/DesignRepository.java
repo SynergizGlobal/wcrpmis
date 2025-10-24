@@ -2425,5 +2425,102 @@ public class DesignRepository implements IDesignRepo {
 		}
 			
 		return obj.getDesign_seq_id();
+	}
+
+	@Override
+	public List<Design> getDesignRevisions(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="select distinct d.design_seq_id , design_revisions_id,drawing_no,correspondence_letter_no,upload_file,	design_id_fk,	revision,	revision_date,	revision_status_fk,	[current],	ds.remarks " + 
+					"" + 
+					"from design d  " + 
+					"LEFT OUTER JOIN contract c ON d.contract_id_fk = c.contract_id  " + 
+					"LEFT OUTER JOIN contract c1 ON d.consultant_contract_id_fk = c1.contract_id  " + 
+					"LEFT OUTER JOIN contract c2 ON d.proof_consultant_contract_id_fk = c2.contract_id  " + 
+					"LEFT OUTER JOIN project p  ON d.project_id_fk  =  p.project_id  " + 
+					"left outer join [user] u  ON d.hod  =  u.user_id  " + 
+					"left outer join [user] u1  ON d.dy_hod  =  u1.user_id  " + 
+					"LEFT OUTER JOIN department dt  ON d.department_id_fk  =  dt.department   " + 
+					"left join design_revisions ds on d.design_id = ds.design_id_fk  where design_id_fk is not null ";
+				
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and d.project_id_fk = ?";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getContract_id_fk())) {
+				qry = qry + " and contract_id_fk = ?";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDepartment_id_fk())) {
+				qry = qry + " and department_id_fk = ?";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getHod())) {
+				qry = qry + " and hod = ?";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_type_fk())) {
+				qry = qry + " and structure_type_fk = ?";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDrawing_type_fk())) {
+				qry = qry + " and drawing_type_fk = ?";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSearchStr())) {
+				qry = qry + " and (contract_id_fk like ? or c.contract_short_name like ? or d.drawing_title like ? or d.structure_type_fk like ?"
+						+ " or drawing_type_fk like ? or d.contractor_drawing_no like ? or d.mrvc_drawing_no like ? or d.division_drawing_no like ? or d.hq_drawing_no like ? or d.design_seq_id like ?)";
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+				arrSize++;
+			}
+			
+
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getContract_id_fk())) {
+				pValues[i++] = obj.getContract_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDepartment_id_fk())) {
+				pValues[i++] = obj.getDepartment_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getHod())) {
+				pValues[i++] = obj.getHod();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_type_fk())) {
+				pValues[i++] = obj.getStructure_type_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDrawing_type_fk())) {
+				pValues[i++] = obj.getDrawing_type_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getSearchStr())) {		
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";	
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+				pValues[i++] = "%"+obj.getSearchStr()+"%";
+			}
+			objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<Design>(Design.class));
+			
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
 	}	
 }

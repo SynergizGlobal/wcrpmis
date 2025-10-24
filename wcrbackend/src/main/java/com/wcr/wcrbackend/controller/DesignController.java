@@ -1,18 +1,38 @@
 package com.wcr.wcrbackend.controller;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.util.WorkbookUtil;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.wcr.wcrbackend.DTO.Contract;
 import com.wcr.wcrbackend.DTO.Design;
@@ -50,6 +70,26 @@ public class DesignController {
 	@Autowired
 	private IIssueService issueService;
 	
+	@Value("${common.error.message}")
+	public String commonError;
+	
+	@Value("${record.dataexport.success}")
+	public String dataExportSucess;
+	
+	@Value("${record.dataexport.invalid.directory}")
+	public String dataExportInvalid;
+	
+	@Value("${record.dataexport.error}")
+	public String dataExportError;
+	
+	@Value("${record.dataexport.nodata}")
+	public String dataExportNoData;
+	
+	@Value("${template.upload.common.error}")
+	public String uploadCommonError;
+	
+	@Value("${template.upload.formatError}")
+	public String uploadformatError;
 	
 	Logger logger = Logger.getLogger(DesignController.class);
 	
@@ -961,5 +1001,437 @@ public class DesignController {
 			logger.error("updateDesign : " + e.getMessage());
 		}
 		return null;
+	}
+	
+
+	@PostMapping(value = "/export-design")
+	public void exportDesign(HttpServletRequest request, HttpServletResponse response,HttpSession session,@RequestBody Design design,RedirectAttributes attributes){
+		//ModelAndView view = new ModelAndView(PageConstants.designGrid);
+		List<Design> dataList = new ArrayList<Design>();
+		List<Design> dataRevisionsList = new ArrayList<Design>();
+		String userId = null;String userName = null;
+		try {
+			
+			User uObj = (User) session.getAttribute("user");
+			userId = uObj.getUserId();
+			userName = uObj.getUserName();
+			
+			
+			//view.setViewName("redirect:/design");
+			dataList = designService.getDesigns(design); 
+			dataRevisionsList = designService.getDesignRevisions(design);  
+			if(dataList != null && dataList.size() > 0){
+	            XSSFWorkbook  workBook = new XSSFWorkbook ();
+	            XSSFSheet sheet = workBook.createSheet(WorkbookUtil.createSafeSheetName("Design & Drawing"));
+	            XSSFSheet sheet1 = workBook.createSheet(WorkbookUtil.createSafeSheetName("Drawing Revisions"));
+	            
+		        workBook.setSheetOrder(sheet.getSheetName(), 0);
+		        workBook.setSheetOrder(sheet1.getSheetName(), 1);
+		        
+		        byte[] blueRGB = new byte[]{(byte)0, (byte)176, (byte)240};
+		        byte[] yellowRGB = new byte[]{(byte)255, (byte)192, (byte)0};
+		        byte[] greenRGB = new byte[]{(byte)146, (byte)208, (byte)80};
+		        byte[] redRGB = new byte[]{(byte)255, (byte)0, (byte)0};
+		        byte[] whiteRGB = new byte[]{(byte)255, (byte)255, (byte)255};
+		        
+		        boolean isWrapText = true;boolean isBoldText = true;boolean isItalicText = false; int fontSize = 9;String fontName = "Times New Roman";
+		        CellStyle blueStyle = cellFormating(workBook,blueRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle yellowStyle = cellFormating(workBook,yellowRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle greenStyle = cellFormating(workBook,greenRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle redStyle = cellFormating(workBook,redRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle whiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,false,isItalicText,fontSize,fontName);
+		        
+		        CellStyle indexWhiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        
+		        isWrapText = true;isBoldText = false;isItalicText = false; fontSize = 9;fontName = "Times New Roman";
+		        CellStyle sectionStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        
+		        XSSFRow headingRowFirst = sheet.createRow(0);
+
+	        	Cell cell1 = headingRowFirst.createCell(0);
+		        cell1.setCellStyle(whiteStyle);
+				cell1.setCellValue("Unique ID of the Work");
+				
+	        	Cell cell3 = headingRowFirst.createCell(1);
+		        cell3.setCellStyle(whiteStyle);
+				cell3.setCellValue("");
+				
+	        	Cell cell4 = headingRowFirst.createCell(2);
+		        cell4.setCellStyle(whiteStyle);
+				cell4.setCellValue("Department to which the design or drawing belongs to");
+				
+	        	Cell cell5 = headingRowFirst.createCell(3);
+		        cell5.setCellStyle(whiteStyle);
+				cell5.setCellValue("Dropdown from Reference Table");	
+				
+	        	Cell cell6 = headingRowFirst.createCell(4);
+		        cell6.setCellStyle(whiteStyle);
+				cell6.setCellValue("Dropdown from Reference Table");
+				
+	        	Cell cell7 = headingRowFirst.createCell(5);
+		        cell7.setCellStyle(whiteStyle);
+				cell7.setCellValue("");
+				
+	        	Cell cell8 = headingRowFirst.createCell(6);
+		        cell8.setCellStyle(whiteStyle);
+				cell8.setCellValue("");
+				
+	        	Cell cell81 = headingRowFirst.createCell(7);
+		        cell81.setCellStyle(whiteStyle);
+				cell81.setCellValue("");				
+				
+	        	Cell cell9 = headingRowFirst.createCell(8);
+		        cell9.setCellStyle(whiteStyle);
+				cell9.setCellValue("Drawing prepared By from reference table");
+				
+	        	Cell cell10 = headingRowFirst.createCell(9);
+		        cell10.setCellStyle(whiteStyle);
+				cell10.setCellValue("");
+				
+	        	Cell cell11 = headingRowFirst.createCell(10);
+		        cell11.setCellStyle(whiteStyle);
+				cell11.setCellValue("Contract ID of the consultant preparing the drawing (If prepared by MRVC or Contractor, leave blank)");
+				
+	        	Cell cell12 = headingRowFirst.createCell(11);
+		        cell12.setCellStyle(whiteStyle);
+				cell12.setCellValue("Proof Consultant Contract ID checking the design/ drg.(Leave blank if no proof checking) ");
+				
+	        	Cell cell13 = headingRowFirst.createCell(12);
+		        cell13.setCellStyle(whiteStyle);
+				cell13.setCellValue("Type of Drawing");
+				
+	        	Cell cell14 = headingRowFirst.createCell(13);
+		        cell14.setCellStyle(whiteStyle);
+				cell14.setCellValue("");
+				
+	        	Cell cell15 = headingRowFirst.createCell(14);
+		        cell15.setCellStyle(whiteStyle);
+				cell15.setCellValue("");
+				
+	        	Cell cell16 = headingRowFirst.createCell(15);
+		        cell16.setCellStyle(whiteStyle);
+				cell16.setCellValue("");
+				
+	        	Cell cell17 = headingRowFirst.createCell(16);
+		        cell17.setCellStyle(whiteStyle);
+				cell17.setCellValue("Title of the drawing");
+				
+	        	Cell cell18 = headingRowFirst.createCell(17);
+		        cell18.setCellStyle(whiteStyle);
+				cell18.setCellValue("Drawing No assigned by the Agency");
+				
+	        	Cell cell19 = headingRowFirst.createCell(18);
+		        cell19.setCellStyle(whiteStyle);
+				cell19.setCellValue("Drawing No assigned by MRVC");
+				
+	        	Cell cell20 = headingRowFirst.createCell(19);
+	        	cell20.setCellStyle(whiteStyle);
+	        	cell20.setCellValue("Drawing No assigned by the Division");
+				
+	        	Cell cell21 = headingRowFirst.createCell(20);
+		        cell21.setCellStyle(whiteStyle);
+				cell21.setCellValue("Drawing No assigned by the Head Quarters");
+				
+	        	Cell cell22 = headingRowFirst.createCell(21);
+		        cell22.setCellStyle(whiteStyle);
+				cell22.setCellValue("");
+				
+	        	Cell cell23 = headingRowFirst.createCell(22);
+		        cell23.setCellStyle(whiteStyle);
+				cell23.setCellValue("");
+				
+				
+	        	Cell cell26 = headingRowFirst.createCell(23);
+		        cell26.setCellStyle(whiteStyle);
+				cell26.setCellValue("");
+				
+	        	Cell cell27 = headingRowFirst.createCell(24);
+		        cell27.setCellStyle(whiteStyle);
+				cell27.setCellValue("Any additional remarks");
+				
+								
+				
+		        
+	            XSSFRow headingRow = sheet.createRow(1);
+	        	//String headerString = "PMIS Drawing No,Work ID,Approving Railway,Department,HOD,Dy HOD,Structure,Structure ID,Component,Prepared By,Contract ID,Consultant ,Proof Consultant ID,Drawing Type,Approval Authority,Required Date,GFC Release Date,Drawing Title,Agency Drawing No,MRVC Drawing No,Division Drawing No,HQ Drawing No,Stage,Submtted by,Submitted to,Purpose of Submission/Remarks,Submitted Date,Remarks";
+	        	String headerString = "PMIS Drawing No,Work ID, Contract ID, Approving Railway, Structure Type, Structure, Component, Consultant, Proof Consultant, 3PV Consultant, Prepared By, Drawing Type, Approval Authority, Required Date, GFC Approval Date, Drawing Title, Agency Drawing No., MRVC Drawing No., Division Drawing No., HQ Drawing No., Stage, Submitted By, Submitted To, Purpose of Submission/Remarks, Submitted Date, Remarks";
+	            String[] firstHeaderStringArr = headerString.split("\\,");
+	            
+	            for (int i = 0; i < firstHeaderStringArr.length; i++) {		        	
+		        	Cell cell = headingRow.createCell(i);
+			        cell.setCellStyle(greenStyle);
+					cell.setCellValue(firstHeaderStringArr[i]);
+				}
+	            
+	            short rowNo = 2;
+	            for (Design obj : dataList) {
+	                XSSFRow row = sheet.createRow(rowNo);
+	                int c = 0;
+	                Cell cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getDesign_seq_id());
+					
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getWork_id_fk());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_id_fk());							
+				    
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getApproving_railway());
+			
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getStructure_type_fk());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getStructure_id_fk());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getComponent());					
+				
+			
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					if(!StringUtils.isEmpty(obj.getConsultant_contract_id_fk())) {
+					cell.setCellValue(obj.getConsultant_contract_id_fk()+" - "+obj.getConsult_contarct());
+					}
+					else
+					{
+						cell.setCellValue("");
+					}
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					if(!StringUtils.isEmpty(obj.getProof_consultant_contract_id_fk())) {
+					cell.setCellValue(obj.getProof_consultant_contract_id_fk()+" - "+obj.getProof_consult_contarct());
+					}
+					else
+					{
+						cell.setCellValue("");
+					}
+					
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getThreepvc());	
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getPrepared_by_id_fk());					
+
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getDrawing_type_fk());
+
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getApproval_authority_fk());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRequired_date());
+					
+					
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getGfc_released());
+					
+					
+					
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getDrawing_title());					
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContractor_drawing_no());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getMrvc_drawing_no());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getDivision_drawing_no());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getHq_drawing_no());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getStage_fk());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getSubmitted_by());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getSubmitted_to());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getSubmission_purpose());
+	                
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getSubmitted_date());
+	                
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRemarks());
+	                
+	                
+	                rowNo++;
+	            }
+	            
+	            
+	            XSSFRow headingRow1 = sheet1.createRow(0);
+	        	String headerString1 = "PMIS Drawing No,Revision No.,Drawing No.,Correspondence Letter No,Revision Date,Revision Status,Remarks,Upload File";
+	            String[] firstHeaderStringArr1 = headerString1.split("\\,");
+	            
+	            for (int i = 0; i < firstHeaderStringArr1.length; i++) {		        	
+		        	Cell cell = headingRow1.createCell(i);
+			        cell.setCellStyle(greenStyle);
+					cell.setCellValue(firstHeaderStringArr1[i]);
+				}
+	            
+	            short rowNo1 = 1;
+	            for (Design obj : dataRevisionsList) {
+	                XSSFRow row = sheet1.createRow(rowNo1);
+	                int c = 0;
+	                
+	                Cell cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getDesign_seq_id());	                
+	            
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRevision());
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getDrawing_no());
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getCorrespondence_letter_no());					
+				    
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRevision_date());
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRevision_status());
+				
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRemarks());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getUpload_file());					
+
+	                rowNo1++;
+	            }	            
+	            
+	            
+	            for(int columnIndex = 0; columnIndex < firstHeaderStringArr.length; columnIndex++) {
+	        		sheet.setColumnWidth(columnIndex, 25 * 200);
+				}
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
+                Date date = new Date();
+                String fileName = "Design_"+dateFormat.format(date);
+                
+	            try{
+	                /*FileOutputStream fos = new FileOutputStream(fileDirectory +fileName+".xls");
+	                workBook.write(fos);
+	                fos.flush();*/
+	            	
+	               response.setContentType("application/.csv");
+	 			   response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+	 			   response.setContentType("application/vnd.ms-excel");
+	 			   // add response header
+	 			   response.addHeader("Content-Disposition", "attachment; filename=" + fileName+".xlsx");
+	 			   
+	 			    //copies all bytes from a file to an output stream
+	 			   workBook.write(response.getOutputStream()); // Write workbook to response.
+		           workBook.close();
+	 			    //flushes output stream
+	 			    response.getOutputStream().flush();
+	            	
+	                
+	                attributes.addFlashAttribute("success",dataExportSucess);
+	            	//response.setContentType("application/vnd.ms-excel");
+	            	//response.setHeader("Content-Disposition", "attachment; filename=filename.xls");
+	            	//XSSFWorkbook  workbook = new XSSFWorkbook ();
+	            	// ...
+	            	// Now populate workbook the usual way.
+	            	// ...
+	            	//workbook.write(response.getOutputStream()); // Write workbook to response.
+	            	//workbook.close();
+	            }catch(FileNotFoundException e){
+	                //e.printStackTrace();
+	                attributes.addFlashAttribute("error",dataExportInvalid);
+	            }catch(IOException e){
+	                //e.printStackTrace();
+	                attributes.addFlashAttribute("error",dataExportError);
+	            }
+         }else{
+        	 attributes.addFlashAttribute("error",dataExportNoData);
+         }
+		}catch(Exception e){	
+			e.printStackTrace();
+			logger.error("exportDesign : : User Id - "+userId+" - User Name - "+userName+" - "+e.getMessage());
+			attributes.addFlashAttribute("error", commonError);			
+		}
+		//return view;
+	}
+	
+
+	private CellStyle cellFormating(XSSFWorkbook workBook,byte[] rgb,HorizontalAlignment hAllign, VerticalAlignment vAllign, boolean isWrapText,boolean isBoldText,boolean isItalicText,int fontSize,String fontName) {
+		CellStyle style = workBook.createCellStyle();
+		//Setting Background color  
+		//style.setFillBackgroundColor(IndexedColors.AQUA.getIndex());
+		style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		
+		if (style instanceof XSSFCellStyle) {
+		   XSSFCellStyle xssfcellcolorstyle = (XSSFCellStyle)style;
+		   xssfcellcolorstyle.setFillForegroundColor(new XSSFColor(rgb, null));
+		}
+		//style.setFillPattern(FillPatternType.ALT_BARS);
+		style.setBorderBottom(BorderStyle.MEDIUM);
+		style.setBorderTop(BorderStyle.MEDIUM);
+		style.setBorderLeft(BorderStyle.MEDIUM);
+		style.setBorderRight(BorderStyle.MEDIUM);
+		style.setAlignment(hAllign);
+		style.setVerticalAlignment(vAllign);
+		style.setWrapText(isWrapText);
+		
+		Font font = workBook.createFont();
+        //font.setColor(HSSFColor.HSSFColorPredefined.WHITE.getIndex());
+        font.setFontHeightInPoints((short)fontSize);  
+        font.setFontName(fontName);  //"Times New Roman"
+        
+        font.setItalic(isItalicText); 
+        font.setBold(isBoldText);
+        // Applying font to the style  
+        style.setFont(font); 
+        
+        return style;
 	}
 }
