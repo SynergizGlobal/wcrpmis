@@ -83,5 +83,75 @@ public class DesignService implements IDesignService {
 		// TODO Auto-generated method stub
 		return designRepo.getProjectsListForDesignForm(obj);
 	}
+	@Override
+	public List<Design> getContractList() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getContractList();
+	}
+	@Override
+	public List<Design> getPreparedByList() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getPreparedByList();
+	}
+	@Override
+	public List<Design> componentList() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.componentList();
+	}
+	@Override
+	public List<Design> getApprovingRailwayList() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getApprovingRailwayList();
+	}
+	@Override
+	public List<Design> structureList() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.structureList();
+	}
+	@Override
+	public List<Design> drawingTypeList() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.drawingTypeList();
+	}
+	@Override
+	public List<Design> getRevisionStatuses() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getRevisionStatuses();
+	}
+	@Override
+	public List<Design> getApprovalAuthority() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getApprovalAuthority();
+	}
+	@Override
+	public List<Design> getStage() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getStage();
+	}
+	@Override
+	public List<Design> getSubmitted() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getSubmitted();
+	}
+	@Override
+	public List<Design> getStructureId() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getStructureId();
+	}
+	@Override
+	public List<Design> getSubmssionpurpose() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getSubmssionpurpose();
+	}
+	@Override
+	public List<Design> getDesignFileType() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getDesignFileType();
+	}
+	@Override
+	public List<Design> getAsBuiltStatuses() throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.getAsBuiltStatuses();
+	}
 
 }

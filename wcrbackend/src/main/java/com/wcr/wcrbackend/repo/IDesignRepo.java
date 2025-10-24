@@ -34,4 +34,32 @@ public interface IDesignRepo {
 
 	List<Design> getProjectsListForDesignForm(Design obj) throws Exception;
 
+	List<Design> getContractList() throws Exception;
+
+	List<Design> getPreparedByList() throws Exception;
+
+	List<Design> componentList() throws Exception;
+
+	List<Design> getApprovingRailwayList() throws Exception;
+
+	List<Design> structureList() throws Exception;
+
+	List<Design> drawingTypeList() throws Exception;
+
+	List<Design> getRevisionStatuses() throws Exception;
+
+	List<Design> getApprovalAuthority() throws Exception;
+
+	List<Design> getStage() throws Exception;
+
+	List<Design> getSubmitted() throws Exception;
+
+	List<Design> getStructureId() throws Exception;
+
+	List<Design> getSubmssionpurpose() throws Exception;
+
+	List<Design> getDesignFileType() throws Exception;
+
+	List<Design> getAsBuiltStatuses() throws Exception;
+
 }

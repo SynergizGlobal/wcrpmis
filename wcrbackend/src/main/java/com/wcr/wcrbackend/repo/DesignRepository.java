@@ -1096,4 +1096,172 @@ public class DesignRepository implements IDesignRepo {
 		return objsList;
 	}
 
+	@Override
+	public List<Design> getContractList() throws Exception {
+		List<Design> objList = null;
+		try {
+			String qry ="select contract_id as contract_id_fk,contract_name from contract";
+				objList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objList;
+	}
+
+	@Override
+	public List<Design> getPreparedByList() throws Exception {
+		List<Design> objList = null;
+		try {
+			String qry ="select prepared_by as prepared_by_id_fk from design_prepared_by";
+				objList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objList;
+	}
+
+	@Override
+	public List<Design> componentList() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="select distinct component from p6_activities";
+				objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getApprovingRailwayList() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry = "SELECT railway_id from railway where railway_id in ('WR','CR','MRVC','Others') order by case when railway_id='WR' then 1 when railway_id='CR' then 2 when railway_id='MRVC' then 3 when railway_id='Others' then 4 end asc";
+		    objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> structureList() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="select structure_type as structure_type_fk from structure_type";
+				objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> drawingTypeList() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="select drawing_type as drawing_type_fk from drawing_type";
+				objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getRevisionStatuses() throws Exception {
+		List<Design> objList = null;
+		try {
+			String qry ="select revision_status from revision_status";
+				objList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objList;
+	}
+
+	@Override
+	public List<Design> getApprovalAuthority() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry = "SELECT approval_authority as approval_authority_fk from approval_authority where approval_authority is not null and approval_authority <> '' ";
+		    objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getStage() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry = "SELECT stage as stage_fk from stage where stage is not null and stage <> '' ";
+		    objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getSubmitted() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry = "SELECT design_status_submit from design_status_submit where design_status_submit is not null and design_status_submit <> ''  ";
+		    objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getStructureId() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry = "SELECT structure from structure where structure is not null and structure <> '' group by structure ";
+		    objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getSubmssionpurpose() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry = "SELECT submission_purpose from design_status_submission_purpose where submission_purpose is not null and submission_purpose <> '' ";
+		    objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getDesignFileType() throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry = "SELECT design_file_type from design_file_type where design_file_type is not null and design_file_type <> '' ";
+		    objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getAsBuiltStatuses() throws Exception {
+		List<Design> objList = null;
+		try {
+			String qry ="select as_built_status from as_built_status";
+				objList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));	
+		}catch(Exception e){ 
+		throw new Exception(e);
+		}
+		return objList;
+	}
+
 }

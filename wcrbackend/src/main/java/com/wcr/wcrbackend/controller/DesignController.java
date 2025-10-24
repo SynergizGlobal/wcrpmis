@@ -2,7 +2,9 @@ package com.wcr.wcrbackend.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -401,6 +403,227 @@ public class DesignController {
 		List<Contract> design = null;
 		try {
 			design = contractService.getDepartmentList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/contractList")
+	public List<Design> getContractList() {
+		List<Design> design = null;
+		try {
+			design = designService.getContractList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/preparedBy")
+	public List<Design> getPreparedByList() {
+		List<Design> design = null;
+		try {
+			design = designService.getPreparedByList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/componentList")
+	public List<Design> componentList() {
+		List<Design> design = null;
+		try {
+			design = designService.componentList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/approvingRailway")
+	public List<Design> getApprovingRailwayList() {
+		List<Design> design = null;
+		try {
+			design = designService.getApprovingRailwayList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/structureTypeList")
+	public List<Design> structureList() {
+		List<Design> design = null;
+		try {
+			design = designService.structureList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/drawingTypeList")
+	public List<Design> drawingTypeList() {
+		List<Design> design = null;
+		try {
+			design = designService.drawingTypeList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/revisionStatuses")
+	public List<Design> getRevisionStatuses() {
+		List<Design> design = null;
+		try {
+			design = designService.getRevisionStatuses();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/approvalAuthority")
+	public List<Design> getApprovalAuthority() {
+		List<Design> design = null;
+		try {
+			design = designService.getApprovalAuthority();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	@GetMapping(value = "/ajax/form/get-design/stage")
+	public List<Design> getStage() {
+		List<Design> design = null;
+		try {
+			design = designService.getStage();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	@GetMapping(value = "/ajax/form/get-design/submitted")
+	public List<Design> getSubmitted() {
+		List<Design> design = null;
+		try {
+			design = designService.getSubmitted();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/structureId")
+	public List<Design> getStructureId() {
+		List<Design> design = null;
+		try {
+			design = designService.getStructureId();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/submssionpurpose")
+	public List<Design> getSubmssionpurpose() {
+		List<Design> design = null;
+		try {
+			design = designService.getSubmssionpurpose();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@GetMapping(value = "/ajax/form/get-design/designFileType")
+	public List<Design> getDesignFileType() {
+		List<Design> design = null;
+		try {
+			design = designService.getDesignFileType();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	@GetMapping(value = "/ajax/form/get-design/asBuiltStatuses")
+	public List<Design> getAsBuiltStatuses() {
+		List<Design> design = null;
+		try {
+			design = designService.getAsBuiltStatuses();
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return design;
+	}
+	
+	@PostMapping(value = "/ajax/form/get-design/design")
+	public Map<String,List<Design>> getDesignPayloadForDesign(@RequestBody Design obj) {
+		Map<String, List<Design>> design = new HashMap<>();
+		try {
+			List<Design> projectsList = designService.getProjectsListForDesignForm(obj);
+			design.put("projectsList", projectsList);
+			
+			List<Design> contractList = designService.getContractList();
+			design.put("contractList", contractList);
+			
+			List<Design> preparedBy = designService.getPreparedByList();
+			design.put("preparedBy", preparedBy);
+			
+			List<Design> componentList = designService.componentList();
+			design.put("componentList", componentList);			
+
+			List<Design> approvingRailway = designService.getApprovingRailwayList();
+			design.put("approvingRailway", approvingRailway);
+			
+			List<Design> structureTypeList = designService.structureList();
+			design.put("structureTypeList", structureTypeList);
+			
+			List<Design> drawingTypeList = designService.drawingTypeList();
+			design.put("drawingTypeList", drawingTypeList);
+			
+			List<Design> revisionStatuses = designService.getRevisionStatuses();
+			design.put("revisionStatuses", revisionStatuses);
+			
+			List<Design> approvalAuthority = designService.getApprovalAuthority();
+			design.put("approvalAuthority", approvalAuthority);
+			
+			List<Design> stage = designService.getStage();
+			design.put("stage", stage);
+			
+			List<Design> submitted = designService.getSubmitted();
+			design.put("submitted", submitted);
+			
+			List<Design> structureId = designService.getStructureId();
+			design.put("structureId", structureId);
+			
+			List<Design> submssionpurpose = designService.getSubmssionpurpose();
+			design.put("submssionpurpose", submssionpurpose);
+			
+			List<Design> designFileType = designService.getDesignFileType();
+			design.put("designFileType", designFileType);
+		
+			List<Design> asBuiltStatuses = designService.getAsBuiltStatuses();
+			design.put("asBuiltStatuses", asBuiltStatuses);
+			
 		}catch (Exception e) {
 			e.printStackTrace();
 			logger.error("getDesigns : " + e.getMessage());
