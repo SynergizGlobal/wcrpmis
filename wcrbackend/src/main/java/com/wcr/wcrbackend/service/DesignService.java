@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 import com.wcr.wcrbackend.DTO.Design;
 import com.wcr.wcrbackend.repo.IDesignRepo;
+
+import jakarta.transaction.Transactional;
 @Service
 public class DesignService implements IDesignService {
 	@Autowired
@@ -197,6 +199,12 @@ public class DesignService implements IDesignService {
 	public List<Design> getDyHodList(Design obj) throws Exception {
 		// TODO Auto-generated method stub
 		return designRepo.getDyHodList(obj);
+	}
+	@Override
+	@Transactional
+	public String addDesign(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.addDesign(obj);
 	}
 
 }

@@ -80,4 +80,6 @@ public interface IDesignRepo {
 
 	List<Design> getDyHodList(Design obj) throws Exception;
 
+	String addDesign(Design obj) throws Exception;
+
 }
