@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -5172,9 +5174,11 @@ public class LandAquisitionController {
 
 	}
 	@PostMapping("/upload-la")
-	public void uploadLA(@RequestBody LandAcquisition obj,RedirectAttributes attributes,HttpSession session){
+	public ResponseEntity<?> uploadLA(@RequestBody LandAcquisition obj,RedirectAttributes attributes,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		String msg = "";
+		String attributeKey ="";
+		String attributeMsg = "";
 		try {
 			User uObj = (User) session.getAttribute("user");
 			String userId = uObj.getUserId();
@@ -5212,13 +5216,13 @@ public class LandAquisitionController {
 					                	//if(!fileFormat.get(i).trim().equals(headerRow.getCell(i).getStringCellValue().trim())){
 										String columnName = headerRow.getCell(i).getStringCellValue().trim();
 										if(!columnName.equals(fileFormatLand.get(i).trim()) && !columnName.contains(fileFormatLand.get(i).trim())){
-					                		attributes.addFlashAttribute("error",uploadformatError);
-					                		//return model;
+					                		//attributes.addFlashAttribute("error",uploadformatError);
+					                		return ResponseEntity.ok(Map.of("error",uploadformatError));
 					                	}
 									}
 								}else{
-									attributes.addFlashAttribute("error",uploadformatError);
-			                		//return model;
+									//attributes.addFlashAttribute("error",uploadformatError);
+			                		return ResponseEntity.ok(Map.of("error",uploadformatError));
 								}								
 							}
 							else
@@ -5229,19 +5233,19 @@ public class LandAquisitionController {
 					                	//if(!fileFormat.get(i).trim().equals(headerRow.getCell(i).getStringCellValue().trim())){
 										String columnName = headerRow.getCell(i).getStringCellValue().trim();
 										if(!columnName.equals(fileFormat.get(i).trim()) && !columnName.contains(fileFormat.get(i).trim())){
-					                		attributes.addFlashAttribute("error",uploadformatError);
-					                		//return model;
+					                		//attributes.addFlashAttribute("error",uploadformatError);
+					                		return ResponseEntity.ok(Map.of("error",uploadformatError));
 					                	}
 									}
 								}else{
-									attributes.addFlashAttribute("error",uploadformatError);
-			                		//return model;
+									//attributes.addFlashAttribute("error",uploadformatError);
+									return ResponseEntity.ok(Map.of("error",uploadformatError));
 								}								
 							}
 							
 						}else{
-							attributes.addFlashAttribute("error",uploadformatError);
-	                		//return model;
+							//attributes.addFlashAttribute("error",uploadformatError);
+							return ResponseEntity.ok(Map.of("error",uploadformatError));
 						}
 						String[]  result = null;
 						if(sheetsCount==2)
@@ -5262,7 +5266,9 @@ public class LandAquisitionController {
 						//System.out.println(errMsg);
 						if(!StringUtils.isEmpty(errMsg)) {
 							if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Duplicate entry")) {    
-								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;<b>Work and RR Id Mismatch at row: ("+row+")</b> please check and Upload again.</span>");
+								//attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;<b>Work and RR Id Mismatch at row: ("+row+")</b> please check and Upload again.</span>");
+								attributeKey = "error";
+								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;<b>Work and RR Id Mismatch at row: ("+row+")</b> please check and Upload again.</span>";
 								msg = "Work and Utility Shifting Id Mismatch at row: "+row;
 							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Data truncated")) {
 								actualVal = Integer.toString(subRow);
@@ -5270,7 +5276,10 @@ public class LandAquisitionController {
 									String error = "Data truncated";
 									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
 								} 
-								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								//attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								attributeKey = "error";
+								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
+								
 								msg = "Incorrect value identified in Sheet: "+sheet+" at row: "+actualVal;
 							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Cannot add or update a child row")) {
 								actualVal = Integer.toString(subRow);
@@ -5278,7 +5287,10 @@ public class LandAquisitionController {
 									String error = "Cannot add or update a child row";
 									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
 								}
-								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								//attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								attributeKey = "error";
+								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
+								
 								msg = "Incorrect value identified in Sheet: "+sheet+" at row: "+actualVal;
 							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Incorrect date value")) {
 								actualVal = Integer.toString(subRow);
@@ -5286,7 +5298,10 @@ public class LandAquisitionController {
 									String error = "Incorrect date value";
 									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
 								}
-								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect date value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								//attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect date value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								attributeKey = "error";
+								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect date value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
+								
 								msg = "Incorrect date value identified in Sheet: "+sheet+" at row: "+actualVal;
 							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Incorrect integer value")) {
 								actualVal = Integer.toString(subRow);
@@ -5294,7 +5309,10 @@ public class LandAquisitionController {
 									String error = "Incorrect integer value";
 									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
 								}
-								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect integer value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								//attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect integer value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								attributeKey = "error";
+								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect integer value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
+								
 								msg = "Incorrect integer value identified in Sheet: "+sheet+" at row: "+actualVal;
 							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Incorrect decimal value")) {
 								actualVal = Integer.toString(subRow);
@@ -5302,7 +5320,10 @@ public class LandAquisitionController {
 									String error = "Incorrect decimal value";
 									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
 								}
-								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect decimal value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								//attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect decimal value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
+								attributeKey = "error";
+								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect decimal value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
+								
 								msg = "Incorrect decimal value identified in Sheet: "+sheet+" at row: "+actualVal;
 							}
 						
@@ -5313,7 +5334,10 @@ public class LandAquisitionController {
 	                		//return model;
 						}
 						if(count > 0) {
-							attributes.addFlashAttribute("success", count + " Land Acquisition added successfully.");	
+							//attributes.addFlashAttribute("success", count + " Land Acquisition added successfully.");	
+							attributeKey = "success";
+							attributeMsg = count + " Land Acquisition added successfully.";
+							
 							msg = count + " Land Acquisition added successfully.";
 							
 							FormHistory formHistory = new FormHistory();
@@ -5329,22 +5353,31 @@ public class LandAquisitionController {
 							boolean history_flag = formHistoryDao.saveFormHistory(formHistory);
 							/********************************************************************************/
 						}else {
-							attributes.addFlashAttribute("success"," No records found.");	
+							//attributes.addFlashAttribute("success"," No records found.");	
+							attributeKey = "success";
+							attributeMsg = " No records found.";
+							
 							msg = " No records found.";
 						}
 					}
 					workbook.close();
 				}
 			} else {
-				attributes.addFlashAttribute("error", "Something went wrong. Please try after some time");
+				attributeKey = "error";
+				attributeMsg = "Something went wrong. Please try after some time";
+				//attributes.addFlashAttribute("error", "Something went wrong. Please try after some time");
 			}
 			
 		} catch (Exception e) {
 			e.printStackTrace();
-			attributes.addFlashAttribute("error", "Something went wrong. Please try after some time");
+			//attributes.addFlashAttribute("error", "Something went wrong. Please try after some time");
+			attributeKey = "error";
+			attributeMsg = "Something went wrong. Please try after some time";
+			
 			logger.fatal("updateDataDate() : "+e.getMessage());
 		}
 		//return model;
+		return ResponseEntity.ok(Map.of(attributeKey,attributeMsg));
 	}
 
 	
