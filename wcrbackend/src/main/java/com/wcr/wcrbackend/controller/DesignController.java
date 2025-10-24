@@ -904,4 +904,62 @@ public class DesignController {
 		}
 		return null;
 	}
+	
+	@PostMapping(value = "/update-design")
+	public String updateDesign(@RequestBody Design obj,HttpSession session){
+		//ModelAndView model = new ModelAndView();
+		try{
+			//String user_Id = (String) session.getAttribute("USER_ID");
+			//String userName = (String) session.getAttribute("USER_NAME");
+			//String userDesignation = (String) session.getAttribute("USER_DESIGNATION");
+			
+			User uObj = (User) session.getAttribute("user");
+			obj.setCreated_by_user_id_fk(uObj.getUserId());
+			obj.setUser_id(uObj.getUserId());
+			obj.setUser_name(uObj.getUserName());
+			obj.setDesignation(uObj.getDesignation());
+			//obj.setCreated_by_user_id_fk(user_Id);
+			//obj.setUser_id(user_Id);
+			//obj.setUser_name(userName);
+			//obj.setDesignation(userDesignation);
+			//model.setViewName("redirect:/design");
+			
+			obj.setPlanned_start(DateParser.parse(obj.getPlanned_start()));
+			obj.setPlanned_finish(DateParser.parse(obj.getPlanned_finish()));
+			obj.setConsultant_submission(DateParser.parse(obj.getConsultant_submission()));
+			obj.setMrvc_reviewed(DateParser.parse(obj.getMrvc_reviewed()));
+			obj.setDivisional_approval(DateParser.parse(obj.getDivisional_approval()));
+			obj.setHq_approval(DateParser.parse(obj.getHq_approval()));
+			obj.setGfc_released(DateParser.parse(obj.getGfc_released()));
+			obj.setAs_built_date(DateParser.parse(obj.getAs_built_date()));
+			obj.setSubmitted_to_division(DateParser.parse(obj.getSubmitted_to_division()));
+			obj.setSubmitted_to_hq(DateParser.parse(obj.getSubmitted_to_hq()));
+			
+			obj.setQuery_raised_by_division(DateParser.parse(obj.getQuery_raised_by_division()));
+			obj.setQuery_replied_to_division(DateParser.parse(obj.getQuery_replied_to_division()));
+			obj.setQuery_raised_by_hq(DateParser.parse(obj.getQuery_raised_by_hq()));
+			obj.setQuery_replied_to_hq(DateParser.parse(obj.getQuery_replied_to_hq()));
+			obj.setSubmitted_for_crs_sanction(DateParser.parse(obj.getSubmitted_for_crs_sanction()));
+			obj.setQuery_raised_for_crs_sanction(DateParser.parse(obj.getQuery_raised_for_crs_sanction()));
+			obj.setQuery_replied_for_crs_sanction(DateParser.parse(obj.getQuery_replied_for_crs_sanction()));
+			obj.setCrs_sanction_approved(DateParser.parse(obj.getCrs_sanction_approved()));
+			
+			obj.setRequired_date(DateParser.parse(obj.getRequired_date()));
+			obj.setSubmitted_date(DateParser.parse(obj.getSubmitted_date()));
+			
+			String designid =  designService.updateDesign(obj);
+			/*if(!StringUtils.isEmpty(designid)) {
+				attributes.addFlashAttribute("success", "Design "+designid+" Updated Succesfully.");
+			}
+			else {
+				attributes.addFlashAttribute("error","Updating Design is failed. Try again.");
+			}*/
+			return designid;
+		}catch (Exception e) {
+			e.printStackTrace();
+			//attributes.addFlashAttribute("error","Updating Design is failed. Try again.");
+			logger.error("updateDesign : " + e.getMessage());
+		}
+		return null;
+	}
 }

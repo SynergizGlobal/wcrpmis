@@ -82,4 +82,6 @@ public interface IDesignService {
 
 	String addDesign(Design obj) throws Exception;
 
+	String updateDesign(Design obj) throws Exception;
+
 }

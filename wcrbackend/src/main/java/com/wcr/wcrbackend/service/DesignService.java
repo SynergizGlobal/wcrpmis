@@ -206,5 +206,11 @@ public class DesignService implements IDesignService {
 		// TODO Auto-generated method stub
 		return designRepo.addDesign(obj);
 	}
+	@Override
+	@Transactional
+	public String updateDesign(Design obj) throws Exception {
+		// TODO Auto-generated method stub
+		return designRepo.updateDesign(obj);
+	}
 
 }
