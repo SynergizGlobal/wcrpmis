@@ -29,6 +29,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -1051,7 +1052,7 @@ public class DesignController {
 	
 
 	@PostMapping(value = "/export-design")
-	public void exportDesign(HttpServletRequest request, HttpServletResponse response,HttpSession session,@RequestBody Design design,RedirectAttributes attributes){
+	public ResponseEntity<?> exportDesign(HttpServletRequest request, HttpServletResponse response,HttpSession session,@RequestBody Design design,RedirectAttributes attributes){
 		//ModelAndView view = new ModelAndView(PageConstants.designGrid);
 		List<Design> dataList = new ArrayList<Design>();
 		List<Design> dataRevisionsList = new ArrayList<Design>();
@@ -1420,8 +1421,8 @@ public class DesignController {
 	 			    //flushes output stream
 	 			    response.getOutputStream().flush();
 	            	
-	                
-	                attributes.addFlashAttribute("success",dataExportSucess);
+	                return ResponseEntity.ok(Map.of("success",dataExportSucess));
+	                //attributes.addFlashAttribute();
 	            	//response.setContentType("application/vnd.ms-excel");
 	            	//response.setHeader("Content-Disposition", "attachment; filename=filename.xls");
 	            	//XSSFWorkbook  workbook = new XSSFWorkbook ();
@@ -1432,18 +1433,22 @@ public class DesignController {
 	            	//workbook.close();
 	            }catch(FileNotFoundException e){
 	                //e.printStackTrace();
-	                attributes.addFlashAttribute("error",dataExportInvalid);
+	            	 return ResponseEntity.ok(Map.of("error",dataExportInvalid));
+	                //attributes.addFlashAttribute("error",dataExportInvalid);
 	            }catch(IOException e){
 	                //e.printStackTrace();
-	                attributes.addFlashAttribute("error",dataExportError);
+	            	return ResponseEntity.ok(Map.of("error",dataExportError));
+	                //attributes.addFlashAttribute("error",dataExportError);
 	            }
          }else{
-        	 attributes.addFlashAttribute("error",dataExportNoData);
+        	 return ResponseEntity.ok(Map.of("error",dataExportNoData));
+        	 //attributes.addFlashAttribute("error",dataExportNoData);
          }
 		}catch(Exception e){	
 			e.printStackTrace();
 			logger.error("exportDesign : : User Id - "+userId+" - User Name - "+userName+" - "+e.getMessage());
-			attributes.addFlashAttribute("error", commonError);			
+			//attributes.addFlashAttribute("error", commonError);
+			return ResponseEntity.ok(Map.of("error",commonError));
 		}
 		//return view;
 	}
