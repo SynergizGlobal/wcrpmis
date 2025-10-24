@@ -653,4 +653,103 @@ public class DesignController {
 		}
 		return design;
 	}
+	@PostMapping(value = "/ajax/form/get-design/designDetails")
+	public Design getDesignDetails(@RequestBody Design obj) {
+		Design designDetails = null;
+		try {
+			designDetails = designService.getDesignDetails(obj);	
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDesigns : " + e.getMessage());
+		}
+		return designDetails;
+	}
+	
+	@PostMapping(value = "/ajax/form/drawing-repository")
+	public Map<String, List<Design>> DrawingRepository(@RequestBody Design obj,HttpSession session){
+		Map<String, List<Design>> model = new HashMap<>();
+		try{
+			
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_role_code(uObj.getUserRoleNameFk());
+			obj.setUser_name(uObj.getUserName());			
+			
+			List<Design> contractList = designService.getContractListFilter(obj);
+			model.put("contractList", contractList);
+			
+			
+			List<Design> structureTypeList = designService.getStructureTypeListFilter(obj);
+			model.put("structureTypeList", structureTypeList);
+			
+			List<Design> structureId = designService.getStructureIdsListFilter(obj);
+			model.put("structureId", structureId);			
+
+
+		}catch (Exception e) {
+			logger.error("Drawing Repository : " + e.getMessage());
+		}
+		return model;
+	}
+	
+	@PostMapping(value = "/ajax/form/add-design-form")
+	public Map<String, List<Design>> addDesignForm(@RequestBody Design obj){
+		Map<String, List<Design>> model = new HashMap<>();
+		try{
+			
+			List<Design> projectsList = designService.getProjectsListForDesignForm(obj);
+			model.put("projectsList", projectsList);
+			
+			List<Design> contractsList = designService.getContractsListForDesignForm(obj);
+			model.put("contractsList", contractsList);
+			
+			List<Design> contractList = designService.getContractList();
+			model.put("contractList", contractList);
+			
+			List<Design> preparedBy = designService.getPreparedByList();
+			model.put("preparedBy", preparedBy);
+			
+			List<Design> componentList = designService.componentList();
+			model.put("componentList", componentList);			
+			
+			List<Design> approvingRailway = designService.getApprovingRailwayList();
+			model.put("approvingRailway", approvingRailway);
+			
+			List<Design> structureTypeList = designService.structureList();
+			model.put("structureTypeList", structureTypeList);
+			
+			List<Design> drawingTypeList = designService.drawingTypeList();
+			model.put("drawingTypeList", drawingTypeList);
+			
+			List<Design> revisionStatuses = designService.getRevisionStatuses();
+			model.put("revisionStatuses", revisionStatuses);
+			
+			List<Design> approvalAuthority = designService.getApprovalAuthority();
+			model.put("approvalAuthority", approvalAuthority);
+			
+			List<Design> structureId = designService.getStructureId();
+			model.put("structureId", structureId);
+			
+			List<Design> stage = designService.getStage();
+			model.put("stage", stage);
+			
+			List<Design> submitted = designService.getSubmitted();
+			model.put("submitted", submitted);
+			
+			List<Design> submssionpurpose = designService.getSubmssionpurpose();
+			model.put("submssionpurpose", submssionpurpose);
+			
+			List<Design> designFileType = designService.getDesignFileType();
+			model.put("designFileType", designFileType);
+		
+			List<Design> asBuiltStatuses = designService.getAsBuiltStatuses();
+			model.put("asBuiltStatuses", asBuiltStatuses);		
+
+
+		}catch (Exception e) {
+			logger.error("Drawing Repository : " + e.getMessage());
+		}
+		return model;
+	}
+	
+	
 }

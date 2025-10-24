@@ -62,4 +62,10 @@ public interface IDesignService {
 
 	List<Design> getAsBuiltStatuses() throws Exception;
 
+	Design getDesignDetails(Design obj) throws Exception;
+
+	List<Design> getStructureTypeListFilter(Design obj) throws Exception;
+
+	List<Design> getContractsListForDesignForm(Design obj) throws Exception;
+
 }

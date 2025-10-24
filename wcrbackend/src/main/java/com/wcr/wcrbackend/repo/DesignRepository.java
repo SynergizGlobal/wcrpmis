@@ -1264,4 +1264,150 @@ public class DesignRepository implements IDesignRepo {
 		return objList;
 	}
 
+	@Override
+	public Design getDesignDetails(Design obj) throws Exception {
+		Design dObj = null;
+		try {
+			String qry ="select design_id,approving_railway,approval_authority_fk,structure_id_fk,FORMAT(d.required_date,'dd-MM-yyyy') AS required_date,d.project_id_fk,p.project_name,c.contract_short_name,d.contract_id_fk,d.department_id_fk,d.consultant_contract_id_fk,d.proof_consultant_contract_id_fk,d.hod,d.dy_hod," + 
+					"d.prepared_by_id_fk,d.structure_type_fk,d.drawing_type_fk,d.contractor_drawing_no,d.mrvc_drawing_no,d.division_drawing_no" + 
+					",d.hq_drawing_no,d.drawing_title"+
+					",FORMAT(d.gfc_released,'dd-MM-yyyy') AS gfc_released,"
+					+ "d.remarks,d.component,d.design_seq_id,[3pvc] as threepvc "
+					+ "from design d "  
+					+"LEFT OUTER JOIN contract c ON d.contract_id_fk = c.contract_id "+
+					"LEFT OUTER JOIN project p  ON d.project_id_fk  =  p.project_id "
+					+ "where design_id is not null and design_id = ?" ;
+			
+			dObj = (Design)jdbcTemplate.queryForObject(qry, new Object[] {obj.getDesign_id()}, new BeanPropertyRowMapper<Design>(Design.class));
+			//FORMAT(consultant_submission,'dd-MM-yyyy') AS consultant_submission,
+			if(!StringUtils.isEmpty(dObj)) {
+				String qry2 ="select distinct revision,[current],FORMAT(revision_date,'dd-MM-yyyy') AS revision_date,remarks,revision_status_fk,drawing_no,correspondence_letter_no,upload_file from design_revisions where design_id_fk = ?";
+				List<Design> objList = jdbcTemplate.query( qry2,new Object[] {obj.getDesign_id()}, new BeanPropertyRowMapper<Design>(Design.class));
+				dObj.setDesignRevisions(objList);
+			}
+			
+			if(!StringUtils.isEmpty(dObj)) {
+				String qry2 ="select id, design_file_type_fk,name,design_id_fk, attachment  from design_files where design_id_fk = ?"; 
+				List<Design> objList = jdbcTemplate.query( qry2,new Object[] {obj.getDesign_id()}, new BeanPropertyRowMapper<Design>(Design.class));
+				dObj.setDesignFilesList(objList);
+			}
+			if(!StringUtils.isEmpty(dObj)) {
+				String qry3 ="select id, design_id_fk, stage_fk, submitted_by, submitted_to,FORMAT(submitted_date,'dd-MM-yyyy') AS submitted_date, submssion_purpose,latest from design_status where design_id_fk = ? and (latest is null or latest = 'Yes' or latest='No') order by submitted_date DESC, id DESC ";
+				List<Design> objList = jdbcTemplate.query( qry3,new Object[] {obj.getDesign_id()}, new BeanPropertyRowMapper<Design>(Design.class));
+				dObj.setDesignStatusList(objList);
+			}
+			
+		}catch(Exception e){  
+			throw new Exception(e);
+		}
+		return dObj;
+	}
+
+	@Override
+	public List<Design> getStructureTypeListFilter(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="select distinct d.structure_type_fk "
+					+ "from design d "  
+					+"LEFT OUTER JOIN contract c ON d.contract_id_fk = c.contract_id "
+					+"left join contractor c1 on c1.contractor_id=c.contractor_id_fk "
+					+ " where d.contract_id_fk is not null and d.contract_id_fk <> '' ";
+				
+			int arrSize = 0;
+			
+			if("Contractor".compareTo(obj.getUser_role_code())==0 && !StringUtils.isEmpty(obj.getUser_role_code())) {
+				qry = qry + " and contractor_name=? "; 
+				arrSize++;
+			}
+			
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and d.project_id_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getContract_id_fk())) {
+				qry = qry + " and d.contract_id_fk = ? ";
+				arrSize++;
+			}	
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDepartment_id_fk())) {
+				qry = qry + " and department_id_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getHod())) {
+				qry = qry + " and hod = ?";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_type_fk())) {
+				qry = qry + " and structure_type_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDrawing_type_fk())) {
+				qry = qry + " and drawing_type_fk = ? ";
+				arrSize++;
+			}
+			qry = qry + " group by d.structure_type_fk";
+			
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			
+			if("Contractor".compareTo(obj.getUser_role_code())==0 && !StringUtils.isEmpty(obj.getUser_role_code())) {
+				pValues[i++] = obj.getUser_name();
+			}
+			
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getContract_id_fk())) {
+				pValues[i++] = obj.getContract_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDepartment_id_fk())) {
+				pValues[i++] = obj.getDepartment_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getHod())) {
+				pValues[i++] = obj.getHod();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStructure_type_fk())) {
+				pValues[i++] = obj.getStructure_type_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDrawing_type_fk())) {
+				pValues[i++] = obj.getDrawing_type_fk();
+			}
+			
+			objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<Design>(Design.class));
+			
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Design> getContractsListForDesignForm(Design obj) throws Exception {
+		List<Design> objsList = null;
+		try {
+			String qry ="select contract_id,contract_name,contract_short_name,project_id_fk "
+					+ "from contract "
+					+ "where contract_id is not null ";
+			
+			int arrSize = 0;			
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and project_id_fk = ?";
+				arrSize++;
+			}
+			qry = qry + " order by contract_id asc";
+			
+			Object[] pValues = new Object[arrSize];
+			
+			int i = 0;			
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+				
+			objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<Design>(Design.class));
+				
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
 }
