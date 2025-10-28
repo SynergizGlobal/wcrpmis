@@ -55,4 +55,8 @@ public interface IUtilityShiftingService {
 
 	List<UtilityShifting> getUtilityShiftingUploadsList(UtilityShifting obj) throws Exception;
 
+	List<UtilityShifting> getUtilityShiftingList(UtilityShifting dObj) throws Exception;
+
+	List<UtilityShifting> getRDetailsList(String utility_shifting_id) throws Exception;
+
 }

@@ -1578,5 +1578,102 @@ public class UtilityShiftingRepo implements IUtilityShiftingRepo {
 			throw new Exception(e);
 		}
 		return objsList;
+	}
+	@Override
+	public List<UtilityShifting> getUtilityShiftingList(UtilityShifting obj) throws Exception {
+		List<UtilityShifting> objsList = null;
+		try {
+			String qry = "SELECT distinct s.*,s.id, s.utility_shifting_id, s.project_id_fk,us.project_id_fk,p.project_name,c.contract_short_name,FORMAT(s.identification ,'dd-MM-yyyy') AS  identification, s.location_name, reference_number, utility_description, utility_type_fk, "
+					+ "utility_category_fk, s.owner_name, execution_agency_fk, contract_id_fk,  FORMAT(s.start_date ,'dd-MM-yyyy') AS start_date, s.scope, s.completed, s.shifting_status_fk, FORMAT(shifting_completion_date ,'dd-MM-yyyy') AS shifting_completion_date, "
+					+ "s.remarks, s.latitude, s.longitude, impacted_contract_id_fk, requirement_stage_fk, FORMAT(s.planned_completion_date ,'dd-MM-yyyy') AS planned_completion_date, unit_fk, s.created_by, s.created_date, s.modified_by,"
+					+ " s.modified_date,custodian,executed_by,impacted_element,affected_structures,c.contract_id,c.contract_name,c.contract_short_name,us.project_id_fk,p.project_name,"
+					+ "s.hod_user_id_fk,u.user_name,u.designation,chainage "
+					+ " from utility_shifting s "					
+					+ "LEFT OUTER JOIN contract c ON s.impacted_contract_id_fk  = c.contract_id "
+					+ "LEFT OUTER JOIN project p ON s.project_id_fk = p.project_id "
+					+ "LEFT OUTER JOIN utility_shifting_executives us on s.project_id_fk = us.project_id_fk "
+					+ "LEFT OUTER JOIN [user] u on s.hod_user_id_fk = u.user_id "
+					+ "where utility_shifting_id is not null " ;
+			int arrSize = 0;
+		
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and s.project_id_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getLocation_name())) {
+				qry = qry + " and location_name = ? ";
+				arrSize++;
+			}			
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getUtility_category_fk())) {
+				qry = qry + " and utility_category_fk = ? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getUtility_type_fk())) {
+				qry = qry + " and utility_type_fk = ? ";
+				arrSize++;
+			}
+			
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getShifting_status_fk())) {
+				qry = qry + " and shifting_status_fk =? ";
+				arrSize++;
+			}
+			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				qry = qry + " and us.executive_user_id_fk = ? ";
+				arrSize++;
+			}	
+			
+			Object[] pValues = new Object[arrSize];
+			
+			int i = 0;
+
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getLocation_name())) {
+				pValues[i++] = obj.getLocation_name();
+			}			
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getUtility_category_fk())) {
+				pValues[i++] = obj.getUtility_category_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getUtility_type_fk())) {
+				pValues[i++] = obj.getUtility_type_fk();
+			}
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getShifting_status_fk())) {
+				pValues[i++] = obj.getShifting_status_fk();
+			}
+			if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				pValues[i++] = obj.getUser_id();
+			}			
+			objsList = jdbcTemplate.query( qry, pValues, new BeanPropertyRowMapper<UtilityShifting>(UtilityShifting.class));	
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+	@Override
+	public List<UtilityShifting> getRDetailsList(String utility_shifting_id) throws Exception {
+		List<UtilityShifting> objsList = null;
+		try {
+			String qry ="select rc.id, FORMAT(progress_date ,'dd-MM-yyyy') AS progress_date, progress_of_work, r.utility_shifting_id as utility_shifting_id  "
+					+ "from utility_shifting_progress rc "
+					+ "LEFT JOIN utility_shifting r on rc.utility_shifting_id = r.utility_shifting_id "
+					+ "WHERE rc.utility_shifting_id is not null ";
+			int arrSize = 0;
+			if(!StringUtils.isEmpty(utility_shifting_id) ) {
+				qry = qry + " and rc.utility_shifting_id  = ? ";
+				arrSize++;
+			}
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			if(!StringUtils.isEmpty(utility_shifting_id)) {
+				pValues[i++] = utility_shifting_id;
+			}
+		    objsList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<UtilityShifting>(UtilityShifting.class));
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return objsList;
 	}	
 }

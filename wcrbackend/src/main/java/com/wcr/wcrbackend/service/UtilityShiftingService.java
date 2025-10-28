@@ -138,5 +138,15 @@ public class UtilityShiftingService implements IUtilityShiftingService {
 		// TODO Auto-generated method stub
 		return utilitiyShiftingRepo.getUtilityShiftingUploadsList(obj);
 	}
+	@Override
+	public List<UtilityShifting> getUtilityShiftingList(UtilityShifting dObj) throws Exception {
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.getUtilityShiftingList(dObj);
+	}
+	@Override
+	public List<UtilityShifting> getRDetailsList(String utility_shifting_id) throws Exception {
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.getRDetailsList(utility_shifting_id);
+	}
 
 }
