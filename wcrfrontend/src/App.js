@@ -1,3 +1,4 @@
+import GanttBarChart from "./components/Charts/GanttBarChart/GanttBarChart";
 import LandAcquisitionForm from "./components/UpdateForms/LandAcquisition/LandAcquisitionForm/LandAcquisitionForm";
 import LandAcquisition from "./components/UpdateForms/LandAcquisition/LandAcquisition";
 import Works from "./components/Works/Works";
@@ -57,10 +58,10 @@ function App() {
             <Route path="work" element={<Work />}>
               <Route path="workform" element={<WorkForm />} />
             </Route>
-          <Route path="land-acquisition" element={<LandAcquisition />} >
+          <Route path="land-acquisition" element={<LandAcquisition />}>
             <Route path="landacquisitionform" element={<LandAcquisitionForm />} />
           </Route>
-        </Route>
+        <Route path="ganttbarchart" element={<GanttBarChart />} /></Route>
           <Route path="works" element={<Works />} />
           <Route path="admin" element={<Admin />} />
           <Route path="modules" element={<Modules />} />
@@ -70,6 +71,8 @@ function App() {
           <Route path="documents" element={<Documents />} />
           
           <Route path="quicklinks" element={<QuickLinks />} />
+
+        
           {/* Add more nested pages here later */}
         </Route>
 
@@ -81,6 +84,8 @@ function App() {
               <h2>{message}</h2>
             </div>} />
       
+      
+          
       </Routes>
     </BrowserRouter>
     </PageTitleProvider>;

@@ -141,7 +141,7 @@ export default function LandAcquisitionForm() {
           borewell_compensation: "",
           total_compensation: "",
 
-          attachments: [{ la_file_typess: "", laDocumentNames: "", laFiles: "" }],
+          attachments: [{ la_file_types: "", laDocumentNames: "", laFiles: "" }],
 
           remarks: "",
           issues: "",
@@ -170,7 +170,7 @@ export default function LandAcquisitionForm() {
 
   const loadDropdowns = async () => {
     try {
-      const [projectsRes, statusRes, typesRes, subCatsRes, fileTypes] = await Promise.all([
+      const [projectsRes, statusRes, typesRes, subCatsRes, fileTypesRes] = await Promise.all([
           axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getProjectsList`, {}, { withCredentials: true }),
           axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaLandStatus`, { withCredentials: true }),
           axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getLandsListForLAForm`, {}, { withCredentials: true }),
@@ -178,10 +178,10 @@ export default function LandAcquisitionForm() {
           axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaFileType`, { withCredentials: true }),
         ]);
 
-       const projects = (projectsRes.data || []).map(p =>
-        // ({ value: p.project_id_fk, label: `${p.project_id_fk} - ${p.project_name}` })
-          ({ value: p.project_id_fk, label: p.project_name })
-        );
+       const projects = (projectsRes.data || []).map(p => ({
+          value: p.project_id,
+          label: `${p.project_id} - ${p.work_code}`
+        }));
 
         const statuses = (statusRes.data || [])
           .filter(s => s.la_land_status)
@@ -191,10 +191,15 @@ export default function LandAcquisitionForm() {
           .filter(t => t.type_of_land)
           .map(t => formatOption(t.type_of_land));
 
-          const fileTypeses = (fileTypes.data || [])
-          .filter(f => f.la_file_typess)
-          .map(f => formatOption(f.la_file_typess));
+        const fileTypes = (fileTypesRes.data || [])
+          .filter(ft => ft.la_file_types || ft.file_type || ft.name)
+          .map(ft => ({
+            value: ft.la_file_types || ft.file_type || ft.name,
+            label: ft.la_file_types || ft.file_type || ft.name,
+          }));
 
+        setfileTypeOptions(fileTypes);
+        console.log("File Type API Response:", fileTypesRes.data);
           
 
         // Keep *raw* list so we can filter client-side by type_of_land if API provides it
@@ -204,7 +209,7 @@ export default function LandAcquisitionForm() {
         setProjectOptions(projects);
         setStatusOptions(statuses);
         setTypeOptions(types);
-        setfileTypeOptions(fileTypeses);
+        setfileTypeOptions(fileTypes);
 
       if (isEdit && row) {
           // Plain fields
@@ -224,8 +229,13 @@ export default function LandAcquisitionForm() {
           // plainKeys.forEach(k => (row[k] ?? row[k] === 0) && setValue(k, row[k]));
 
           // Project
-            const p = projectsRes.data.find(x => x.project_id_fk === row.project_id_fk);
-  if (p) setValue("project_id_fk", { value: p.project_id_fk, label: p.project_name });
+            const p = projectsRes.data.find(x => x.project_id === row.project_id_fk);
+            if (p) {
+              setValue("project_id_fk", {
+                value: p.project_id,
+                label: `${p.project_id} - ${p.work_code}`
+              });
+            }
 
           // Status
           const s = statusRes.data.find(x => x.la_land_status === row.la_land_status_fk);
@@ -236,8 +246,18 @@ export default function LandAcquisitionForm() {
           const t = typesRes.data.find(x => x.type_of_land === row.type_of_land);
   if (t) setValue("type_of_land", { value: t.type_of_land, label: t.type_of_land });
 
-          const f = fileTypes.data.find(x => x.la_file_typess === row.la_file_typess);
-  if (f) setValue("la_file_typess", { value: f.la_file_typess, label: f.la_file_typess });
+  if (row.attachments?.length > 0) {
+  row.attachments.forEach((a, i) => {
+    const ft = fileTypesRes .data.find(x => x.value === a.la_file_types);
+    if (ft) {
+      setValue(`attachments.${i}.la_file_types`, {
+        value: ft.la_file_types,
+        label: ft.la_file_types
+      });
+    }
+  });
+}
+
 
           // Build filtered sub-category list for the current type
             const filtered = subCatsRaw.filter(x => x.type_of_land === row.type_of_land);
@@ -255,6 +275,8 @@ export default function LandAcquisitionForm() {
           setValue("la_file_typess", null);
           setSubCategoryOptions([]); // nothing until a type is chosen
         }
+        console.log("Project API Response:", projectsRes.data);
+console.log("File Type API Response:", fileTypesRes.data);
       } catch (err) {
         console.error("Dropdown load failed", err);
       }
@@ -326,22 +348,23 @@ const onSubmit = async (data) => {
                   <div className="form-field">
                     <label>Project <span className="red">*</span></label>
                     <Controller
-                        name="project_id_fk"
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field }) => (
-                          <Select
-                            {...field}
-                            classNamePrefix="react-select"
-                            options={projectOptions}
-                            placeholder="Select Project"
-                            isSearchable
-                            isClearable
-                            value={field.value || null}
-                            onChange={(opt) => field.onChange(opt)}
-                          />
-                        )}
-                      />
+                      name="project_id_fk"
+                      control={control}
+                      rules={{ required: true }}
+                      render={({ field }) => (
+                        <Select
+                          {...field}
+                          classNamePrefix="react-select"
+                          options={projectOptions}
+                          placeholder="Select Project"
+                          isSearchable
+                          isClearable
+                          value={projectOptions.find(opt => opt.value === field.value?.value) || null}
+                          onChange={(opt) => field.onChange(opt)}
+                        />
+                      )}
+                    />
+
                     {errors.project_id_fk && (
                       <p className="error-text">{errors.project_id_fk.message}</p>
                     )}
@@ -360,7 +383,7 @@ const onSubmit = async (data) => {
                           placeholder="Select Status"
                           isSearchable
                           isClearable
-                          value={field.value || null}
+                          value={field.value}
                           onChange={(opt) => field.onChange(opt)}
                         />
                       )}
@@ -1134,14 +1157,14 @@ const onSubmit = async (data) => {
                                           <tr key={item.id}>
                                             <td>
                                               <Controller
-                                                name="la_file_typess"
+                                                name={`attachments.${index}.la_file_types`}
                                                 control={control}
                                                 render={({ field }) => (
                                                   <Select
                                                     {...field}
                                                     classNamePrefix="react-select"
                                                     options={fileTypeOptions}
-                                                    placeholder="Select Sub Category"
+                                                    placeholder="Select File Type"
                                                     isSearchable
                                                     isClearable
                                                     value={field.value}
@@ -1149,6 +1172,7 @@ const onSubmit = async (data) => {
                                                   />
                                                 )}
                                               />
+
                                             </td>
                                             <td>
                                               <input
@@ -1194,7 +1218,7 @@ const onSubmit = async (data) => {
                                     type="button"
                                     className="btn-2 btn-green"
                                     onClick={() =>
-                                      appendAttachments({ la_file_typess: "", laDocumentNames: "", laFiles: "" })
+                                      appendAttachments({ la_file_types: null, laDocumentNames: "", laFiles: "" })
                                     }
                                   >
                                     <BiListPlus

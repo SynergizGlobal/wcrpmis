@@ -4,7 +4,7 @@ import styles from "./Dashboard.module.css";
 import { ChevronDown } from "lucide-react";
 import { usePageTitle } from "../../context/PageTitleContext";
 
-export default function Dashboard({ title, data }) {
+export default function Dashboard({ title, data, children  }) {
   const { setPageTitle } = usePageTitle();
   const [openMenu, setOpenMenu] = useState(null);
   const menuRef = useRef(null);
@@ -116,6 +116,7 @@ export default function Dashboard({ title, data }) {
       <div className={styles.container}>
         <h2>{title}</h2>
         {data && <p>Total Records: {data.length}</p>}
+        {children}
       </div>
     </>
   );
