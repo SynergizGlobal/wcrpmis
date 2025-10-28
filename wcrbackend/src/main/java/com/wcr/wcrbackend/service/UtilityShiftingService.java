@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import com.wcr.wcrbackend.DTO.UtilityShifting;
 import com.wcr.wcrbackend.repo.IUtilityShiftingRepo;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class UtilityShiftingService implements IUtilityShiftingService {
 
@@ -102,6 +104,39 @@ public class UtilityShiftingService implements IUtilityShiftingService {
 	public List<UtilityShifting> getStatusListForUtilityShifting(UtilityShifting obj) throws Exception {
 		// TODO Auto-generated method stub
 		return utilitiyShiftingRepo.getStatusListForUtilityShifting(obj);
+	}
+	@Override
+	@Transactional
+	public boolean addUtilityShifting(UtilityShifting obj) throws Exception {
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.addUtilityShifting(obj);
+	}
+	@Override
+	public int getTotalRecords(UtilityShifting obj, String searchParameter) throws Exception {
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.getTotalRecords(obj, searchParameter);
+	}
+	@Override
+	public List<UtilityShifting> getUtilityShiftingList(UtilityShifting obj, int startIndex, int offset,
+			String searchParameter) throws Exception {
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.getUtilityShiftingList(obj, startIndex, offset, searchParameter);
+	}
+	@Override
+	public UtilityShifting getUtilityShifting(UtilityShifting obj) throws Exception{
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.getUtilityShifting(obj);
+	}
+	@Override
+	@Transactional
+	public boolean updateUtilityShifting(UtilityShifting obj) throws Exception {
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.updateUtilityShifting(obj);
+	}
+	@Override
+	public List<UtilityShifting> getUtilityShiftingUploadsList(UtilityShifting obj) throws Exception {
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.getUtilityShiftingUploadsList(obj);
 	}
 
 }

@@ -42,4 +42,17 @@ public interface IUtilityShiftingService {
 
 	List<UtilityShifting> getStatusListForUtilityShifting(UtilityShifting obj) throws Exception;
 
+	boolean addUtilityShifting(UtilityShifting obj) throws Exception;
+
+	int getTotalRecords(UtilityShifting obj, String searchParameter) throws Exception;
+
+	List<UtilityShifting> getUtilityShiftingList(UtilityShifting obj, int startIndex, int offset,
+			String searchParameter) throws Exception;
+
+	UtilityShifting getUtilityShifting(UtilityShifting obj) throws Exception;
+
+	boolean updateUtilityShifting(UtilityShifting obj) throws Exception;
+
+	List<UtilityShifting> getUtilityShiftingUploadsList(UtilityShifting obj) throws Exception;
+
 }
