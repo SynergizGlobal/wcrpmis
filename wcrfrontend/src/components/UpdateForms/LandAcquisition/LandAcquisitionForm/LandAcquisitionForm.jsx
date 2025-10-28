@@ -11,6 +11,7 @@ import { API_BASE_URL } from "../../../../config";
 
 import { MdOutlineDeleteSweep } from 'react-icons/md';
 import { BiListPlus } from 'react-icons/bi';
+import { RiAttachment2 } from 'react-icons/ri';
 
 export default function LandAcquisitionForm() {
 
@@ -180,7 +181,7 @@ export default function LandAcquisitionForm() {
 
        const projects = (projectsRes.data || []).map(p => ({
           value: p.project_id,
-          label: `${p.project_id} - ${p.work_code}`
+          label: `${p.project_id} - ${p.project_name || p.work_code || ""}`.trim().replace(/ -$/, "")
         }));
 
         const statuses = (statusRes.data || [])
@@ -191,14 +192,34 @@ export default function LandAcquisitionForm() {
           .filter(t => t.type_of_land)
           .map(t => formatOption(t.type_of_land));
 
-        const fileTypes = (fileTypesRes.data || [])
-          .filter(ft => ft.la_file_types || ft.file_type || ft.name)
+        // Normalize the API response
+        const rawFileTypes = Array.isArray(fileTypesRes.data)
+          ? fileTypesRes.data
+          : Array.isArray(fileTypesRes.data?.data)
+          ? fileTypesRes.data.data
+          : [];
+
+        console.log("✅ Normalized File Type API Data:", rawFileTypes);
+
+        const fileTypes = rawFileTypes
+          .filter(ft => ft.la_file_type) // only keep entries that have a file type name
           .map(ft => ({
-            value: ft.la_file_types || ft.file_type || ft.name,
-            label: ft.la_file_types || ft.file_type || ft.name,
+            value: ft.la_file_type,
+            label: ft.la_file_type,
           }));
 
-        setfileTypeOptions(fileTypes);
+        // Fallback if backend returns empty list
+        if (fileTypes.length === 0) {
+          console.warn("⚠️ File Type API returned empty, using fallback list");
+          setfileTypeOptions([
+            { value: "Land Document", label: "Land Document" },
+          ]);
+        } else {
+          setfileTypeOptions(fileTypes);
+        }
+
+        console.log("✅ Final File Type Options:", fileTypes);
+
         console.log("File Type API Response:", fileTypesRes.data);
           
 
@@ -230,12 +251,12 @@ export default function LandAcquisitionForm() {
 
           // Project
             const p = projectsRes.data.find(x => x.project_id === row.project_id_fk);
-            if (p) {
-              setValue("project_id_fk", {
-                value: p.project_id,
-                label: `${p.project_id} - ${p.work_code}`
-              });
-            }
+              if (p) {
+                setValue("project_id_fk", {
+                  value: p.project_id,
+                  label: `${p.project_id} - ${p.project_name || p.work_code || ""}`.trim().replace(/ -$/, "")
+                });
+              }
 
           // Status
           const s = statusRes.data.find(x => x.la_land_status === row.la_land_status_fk);
@@ -1183,11 +1204,25 @@ const onSubmit = async (data) => {
                                               />
                                             </td>
                                             <td>
-                                              <input
-                                                type="file"
-                                                {...register(`attachments.${index}.laFiles`)}
-                                                className="form-control"
-                                              />
+                                              <div className={styles["file-upload-wrapper"]}>
+                                                <label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
+                                                  <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
+                                                  Upload File
+                                                </label>
+                                                <input
+                                                  id={`file-${index}`}
+                                                  type="file"
+                                                  {...register(`attachments.${index}.laFiles`)}
+                                                  className={styles["file-upload-input"]}
+                                                />
+                                                {watch(`attachments.${index}.laFiles`)?.[0]?.name && (
+                                                  <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569" }}>
+                                                    Selected: {watch(`attachments.${index}.laFiles`)[0].name}
+                                                  </p>
+                                                )}
+
+                                              </div>
+
                                             </td>
                                             <td className="text-center d-flex align-center justify-content-center">
                                               <button
@@ -1234,7 +1269,6 @@ const onSubmit = async (data) => {
                         <textarea
                           type="text"
                           {...register("jm_remarks")}
-                          placeholder="Enter remarks for JM approval"
                           className="form-control"
                         >
                         </textarea>

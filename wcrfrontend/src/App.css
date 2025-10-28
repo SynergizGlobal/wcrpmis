@@ -13,6 +13,7 @@
 *{
   text-decoration: none;
   box-sizing: border-box;
+  font-family: var(--body-font);
   
 }
 body{
