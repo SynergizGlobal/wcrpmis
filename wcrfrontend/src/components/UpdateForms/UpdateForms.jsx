@@ -22,6 +22,7 @@ import utilityShiftingIcon from "../../assets/images/icons/uf-utility_shifting.s
 import fortnightPlanIcon from "../../assets/images/icons/uf-fortnight_plan.svg";
 import alertsIcon from "../../assets/images/icons/uf-alerts.svg";
 import gemPaymentStatusIcon from "../../assets/images/icons/uf-gem_payment_status.svg";
+import dmsIcon from "../../assets/images/icons/dms.svg";
 
 export default function UpdateForms() {
   const [forms, setForms] = useState([]);
@@ -72,6 +73,7 @@ export default function UpdateForms() {
     if (lower.includes("finance")) return finaceIcon;
     if (lower.includes("design")) return designIcon;
     if (lower.includes("issues")) return issuesIcon;
+    if (lower.includes("dms")) return dmsIcon;
     if (lower.includes("land acquisition")) return laIcon;
     if (lower.includes("safety")) return safetyIcon;
     if (lower.includes("training")) return trainingIcon;
@@ -85,7 +87,36 @@ export default function UpdateForms() {
   };
 
   //Handle route navigation without reload
-const handleNavigation = (formName, webFormUrl, hasSubMenu = false) => {
+const handleNavigation = async(formName, webFormUrl, hasSubMenu = false) => {
+    const lower = formName.toLowerCase();
+
+  // ✅ Special handling for DMS
+  if (lower.includes("dms")) {
+    try {
+      // Call backend DMS API
+      const res = await axios.get(`${API_BASE_URL}/dms/dms`, {
+        withCredentials: true,
+      });
+
+      // Expect backend to return the redirect link as plain text or JSON
+      const redirectUrl =
+        typeof res.data === "string"
+          ? res.data
+          : res.data?.redirectUrl || res.data?.url;
+
+      if (redirectUrl) {
+        // Open in new tab
+        window.open(redirectUrl, "_blank", "noopener,noreferrer");
+      } else {
+        alert("⚠️ DMS link not found in response");
+      }
+    } catch (err) {
+      console.error("❌ Error opening DMS:", err);
+      alert("Failed to open DMS. Please try again.");
+    }
+    return;
+  }
+
   if (webFormUrl && webFormUrl.trim() !== "") {
     navigate(`/updateforms/${webFormUrl}`);
   } else {
