@@ -75,11 +75,11 @@ public class UrlGenerator {
 				ip_address = "pmis.mrvc.gov.in";
 			}*/
 		    
-		    if("10.203.10.158".equals(ip_address) || "203.153.40.44".equals(ip_address) || "pmis.mrvc.gov.in".equals(ip_address)) {
+		    if("10.203.10.158".equals(ip_address) || "115.124.125.227".equals(ip_address) || "pmis.mrvc.gov.in".equals(ip_address)) {
 		    	base_path = "C:/Development/nginx-1.9.9/html/"+getContextPath();
 		    }else if("13.235.73.61".equals(ip_address)) {
 		    	base_path = "usr/share/nginx/html/"+getContextPath();
-		    }else if("127.0.0.1".equals(ip_address) || "localhost:90".equals(ip_address)) {
+		    }else if("127.0.0.1".equals(ip_address) || "localhost:8080".equals(ip_address)) {
 		    	base_path = "C:/Development/nginx-1.9.9/html/"+getContextPath();
 		    }
 		} catch (Exception e) {
