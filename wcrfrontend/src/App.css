@@ -431,7 +431,7 @@ input{
 }
 .dataTable{
   overflow-x: auto;
-  overflow: visible !important;
+  /* overflow: visible !important; */
 }
 .dataTable table{
   width: 100%;

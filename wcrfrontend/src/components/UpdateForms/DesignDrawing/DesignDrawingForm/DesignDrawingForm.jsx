@@ -8,6 +8,7 @@ import { API_BASE_URL } from "../../../../config";
 
 import { MdOutlineDeleteSweep } from 'react-icons/md';
 import { BiListPlus } from 'react-icons/bi';
+import { RiAttachment2 } from 'react-icons/ri';
 
 
 export default function DesignDrawingForm() {
@@ -326,15 +327,15 @@ export default function DesignDrawingForm() {
                 <table className="table table-bordered align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: "11%" }}>Revision No.</th>
-                      <th style={{ width: "11%" }}>Drawing No. <span className="red">*</span></th>
-                      <th style={{ width: "11%" }}>Correspondence Letter No. <span className="red">*</span></th>
-                      <th style={{ width: "11%" }}>Revision Date <span className="red">*</span></th>
-                      <th style={{ width: "11%" }}>Revision Status <span className="red">*</span></th>
-                      <th style={{ width: "14%" }}>Remarks</th>
-                      <th style={{ width: "16%" }}>Upload File <span className="red">*</span></th>
-                      <th style={{ width: "6%" }}>Current</th>
-                      <th style={{ width: "8%" }}>Action</th>
+                      <th style={{ width: "150px" }}>Revision No.</th>
+                      <th style={{ width: "150px" }}>Drawing No. <span className="red">*</span></th>
+                      <th style={{ width: "150px" }}>Correspondence Letter No. <span className="red">*</span></th>
+                      <th style={{ width: "150px" }}>Revision Date <span className="red">*</span></th>
+                      <th style={{ width: "150px" }}>Revision Status <span className="red">*</span></th>
+                      <th style={{ width: "180px" }}>Remarks</th>
+                      <th style={{ width: "180px" }}>Upload File <span className="red">*</span></th>
+                      <th style={{ width: "100px" }}>Current</th>
+                      <th style={{ width: "100px" }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -343,9 +344,9 @@ export default function DesignDrawingForm() {
                         <tr key={item.id}>
                           <td>
                             <input
-                              type="date"
-                              {...register(`revisionDetails.${index}.revisions`)}
+                              type="text"
                               disabled={isEdit} 
+                              {...register(`revisionDetails.${index}.revisions`)}
                               className="form-control"
                             />
                           </td>
@@ -387,7 +388,8 @@ export default function DesignDrawingForm() {
                           </td>
                            <td>
                             <Controller
-                                name={(`revisionDetails.${index}.revision_status_fks`,{ required: "required" })}
+                                name={`revisionDetails.${index}.revision_status_fks`}
+                                rules={{ required: "required" }}
                                 control={control}
                                 render={({ field }) => (
                                   <Select
@@ -412,16 +414,65 @@ export default function DesignDrawingForm() {
                             />
                           </td>
                           <td>
+                            <div className={styles["file-upload-wrapper"]}>
+                              <label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
+                                <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
+                              </label>
+                              <input
+                              id={`file-${index}`}
+                                type="file"
+                                {...register(`revisionDetails.${index}.uploadFiles`, { required: "required" })}
+                                className={styles["file-upload-input"]}
+                              />
+                              {watch(`revisionDetails.${index}.uploadFiles`)?.[0]?.name && (() => {
+                                const fullName = watch(`revisionDetails.${index}.uploadFiles`)[0].name;
+
+                                const dotIndex = fullName.lastIndexOf(".");
+                                const ext = dotIndex !== -1 ? fullName.slice(dotIndex) : "";
+                                const base = dotIndex !== -1 ? fullName.slice(0, dotIndex) : fullName;
+
+                                const maxStart = 10;
+                                const maxEnd = 6;
+
+                                const trimmedBase =
+                                  base.length > maxStart + maxEnd
+                                    ? `${base.slice(0, maxStart)}...${base.slice(-maxEnd)}`
+                                    : base;
+
+                                return (
+                                  <p style={{
+                                    marginTop: "6px",
+                                    fontSize: "0.9rem",
+                                    color: "#475569",
+                                    display: "block",
+                                    maxWidth: "180px",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    direction: "rtl", /* ✅ shows extension always */
+                                    textAlign: "left"
+                                  }}
+                                    title={fullName}  // ✅ tooltip full name
+                                  >
+                                    {`${trimmedBase}${ext}`}
+                                  </p>
+                                );
+                              })()}
+
+
+                              {errors.revisionDetails?.[index]?.uploadFiles && (
+                                <span className="red">
+                                  {errors.revisionDetails[index].uploadFiles.message}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td>
                             <input
-                              type="file"
-                              {...register(`revisionDetails.${index}.uploadFiles`, { required: "required" })}
+                              type="checkbox"
+                              {...register(`revisionDetails.${index}.current`)}
                               className="form-control"
                             />
-                            {errors.revisionDetails?.[index]?.uploadFiles && (
-                              <span className="red">
-                                {errors.revisionDetails[index].uploadFiles.message}
-                              </span>
-                            )}
                           </td>
                           <td className="text-center d-flex align-center justify-content-center">
                             <button
@@ -447,24 +498,6 @@ export default function DesignDrawingForm() {
                 </table>
               </div>
 
-              <div className="form-row">
-              <div className="form-field">
-                <label>Drawing Title <span className="red">*</span></label>
-                <textarea 
-                {...register("remarks")}
-                onChange={(e) => setValue("remarks", e.target.value)}
-                name="remarks"
-                rules={{ required: true }}
-                maxLength={200}
-                rows="3"
-                ></textarea>
-                <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
-                  {watch("remarks")?.length || 0}/200
-                  {errors.remarks && <span className="red">Required</span>}
-                </div>
-              </div>
-            </div>
-
               <div className="d-flex align-center justify-content-center mt-1">
                 <button
                   type="button"
@@ -486,6 +519,24 @@ export default function DesignDrawingForm() {
                     size="24"
                   />
                 </button>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label>Drawing Title <span className="red">*</span></label>
+                <textarea 
+                {...register("remarks")}
+                onChange={(e) => setValue("remarks", e.target.value)}
+                name="remarks"
+                rules={{ required: true }}
+                maxLength={200}
+                rows="3"
+                ></textarea>
+                <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                  {watch("remarks")?.length || 0}/200
+                  {errors.remarks && <span className="red">Required</span>}
+                </div>
               </div>
             </div>
 

@@ -26,6 +26,7 @@ export default function LandAcquisitionForm() {
     const [allSubCategories, setAllSubCategories] = useState([]);
     const [subCategoryOptions, setSubCategoryOptions] = useState([]);
     const [fileTypeOptions, setfileTypeOptions] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const {
         register,
@@ -49,11 +50,11 @@ export default function LandAcquisitionForm() {
           dy_slr: "",
           sdo: "",
           collector: "",
-          total_area_to_be_acquired: "",
+          area_to_be_acquired: "",
           area_of_plot: "",
           latitude: "",
           longitude: "",
-          propsal_submission_date_to_collector: "",
+          proposal_submission_date_to_collector: "",
           jm_fee_amount: "",
           chainage_from: "",
           chainage_to: "",
@@ -161,151 +162,118 @@ export default function LandAcquisitionForm() {
 
       
 
-      useEffect(() => {
-          if (isEdit && state?.data) {
-            Object.entries(state.data).forEach(([key, value]) => setValue(key, value));
-          }
-        }, [state, setValue, isEdit]);
+      // useEffect(() => {
+      //     if (isEdit && state?.data) {
+      //       Object.entries(state.data).forEach(([key, value]) => setValue(key, value));
+      //     }
+      //   }, [state, setValue, isEdit]);
 
     useEffect(() => {
-
   const loadDropdowns = async () => {
     try {
       const [projectsRes, statusRes, typesRes, subCatsRes, fileTypesRes] = await Promise.all([
-          axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getProjectsList`, {}, { withCredentials: true }),
-          axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaLandStatus`, { withCredentials: true }),
-          axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getLandsListForLAForm`, {}, { withCredentials: true }),
-          axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`, {}, { withCredentials: true }),
-          axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaFileType`, { withCredentials: true }),
-        ]);
+        axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getProjectsList`, {}, { withCredentials: true }),
+        axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaLandStatus`, { withCredentials: true }),
+        axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getLandsListForLAForm`, {}, { withCredentials: true }),
+        axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`, {}, { withCredentials: true }),
+        axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaFileType`, { withCredentials: true }),
+      ]);
 
-       const projects = (projectsRes.data || []).map(p => ({
-          value: p.project_id,
-          label: `${p.project_id} - ${p.project_name || p.work_code || ""}`.trim().replace(/ -$/, "")
-        }));
+      const formatOption = (value, label = value) => ({ value, label });
+      const projects = (projectsRes.data || []).map(p => ({
+        value: p.project_id,
+        label: `${p.project_id} - ${p.project_name || p.work_code || ""}`.trim(),
+      }));
+      const statuses = (statusRes.data || []).map(s => formatOption(s.la_land_status));
+      const types = (typesRes.data || []).map(t => formatOption(t.type_of_land));
+      const subCatsRaw = subCatsRes.data || [];
 
-        const statuses = (statusRes.data || [])
-          .filter(s => s.la_land_status)
-          .map(s => formatOption(s.la_land_status));
+      const fileTypes = (Array.isArray(fileTypesRes.data) ? fileTypesRes.data : fileTypesRes.data?.data || [])
+        .filter(ft => ft.la_file_type)
+        .map(ft => formatOption(ft.la_file_type));
 
-        const types = (typesRes.data || [])
-          .filter(t => t.type_of_land)
-          .map(t => formatOption(t.type_of_land));
+      setProjectOptions(projects);
+      setStatusOptions(statuses);
+      setTypeOptions(types);
+      setAllSubCategories(subCatsRaw);
+      setfileTypeOptions(fileTypes.length ? fileTypes : [{ value: "Land Document", label: "Land Document" }]);
 
-        // Normalize the API response
-        const rawFileTypes = Array.isArray(fileTypesRes.data)
-          ? fileTypesRes.data
-          : Array.isArray(fileTypesRes.data?.data)
-          ? fileTypesRes.data.data
-          : [];
-
-        console.log("✅ Normalized File Type API Data:", rawFileTypes);
-
-        const fileTypes = rawFileTypes
-          .filter(ft => ft.la_file_type) // only keep entries that have a file type name
-          .map(ft => ({
-            value: ft.la_file_type,
-            label: ft.la_file_type,
-          }));
-
-        // Fallback if backend returns empty list
-        if (fileTypes.length === 0) {
-          console.warn("⚠️ File Type API returned empty, using fallback list");
-          setfileTypeOptions([
-            { value: "Land Document", label: "Land Document" },
-          ]);
-        } else {
-          setfileTypeOptions(fileTypes);
-        }
-
-        console.log("✅ Final File Type Options:", fileTypes);
-
-        console.log("File Type API Response:", fileTypesRes.data);
-          
-
-        // Keep *raw* list so we can filter client-side by type_of_land if API provides it
-        const subCatsRaw = (subCatsRes.data || []);
-        setAllSubCategories(subCatsRaw);
-
-        setProjectOptions(projects);
-        setStatusOptions(statuses);
-        setTypeOptions(types);
-        setfileTypeOptions(fileTypes);
-
+      
       if (isEdit && row) {
-          // Plain fields
+        console.log("🧠 Raw edit row data:", row);
 
-          Object.keys(row).forEach(k => row[k] !== null && setValue(k, row[k]));
+      const isArrayOfPairs = Array.isArray(row) && row.every((item) => Array.isArray(item) && item.length === 2);
+      const dataObject = isArrayOfPairs ? Object.fromEntries(row) : row;
 
-          const plainKeys = [
-            "survey_number", "special_feature", "area_acquired", "village",
-            "taluka", "dy_slr", "sdo", "collector",
-            "area_to_be_acquired", "area_of_plot", "latitude",
-            "longitude", "proposal_submission_date_to_collector",
-            "jm_fee_amount", "chainage_from", "chainage_to",
-            "jm_fee_letter_received_date", "jm_fee_paid_date",
-            "jm_start_date", "jm_completion_date", "jm_sheet_date_to_sdo",
-            "jm_approval", "jm_remarks",
-          ];
-          // plainKeys.forEach(k => (row[k] ?? row[k] === 0) && setValue(k, row[k]));
+      console.log("📦 Converted row object:", dataObject);
 
-          // Project
-            const p = projectsRes.data.find(x => x.project_id === row.project_id_fk);
-              if (p) {
-                setValue("project_id_fk", {
-                  value: p.project_id,
-                  label: `${p.project_id} - ${p.project_name || p.work_code || ""}`.trim().replace(/ -$/, "")
-                });
-              }
+        // Map backend keys to form fields
+        const mapping = {
+          survey_number: row.survey_number || row.la_survey_number,
+          special_feature: row.special_feature || row.la_special_feature,
+          area_acquired: row.area_acquired || row.la_area_acquired,
+          village: row.village || row.la_village,
+          taluka: row.taluka || row.la_taluka,
+          dy_slr: row.dy_slr || row.la_dy_slr,
+          sdo: row.sdo || row.la_sdo,
+          collector: row.collector || row.la_collector,
+          total_area_to_be_acquired: row.total_area_to_be_acquired || row.la_total_area_to_be_acquired,
+          area_of_plot: row.area_of_plot || row.la_area_of_plot,
+          latitude: row.latitude || row.la_latitude,
+          longitude: row.longitude || row.la_longitude,
+          proposal_submission_date_to_collector: row.proposal_submission_date_to_collector || row.la_proposal_submission_date_to_collector,
+          jm_fee_amount: row.jm_fee_amount || row.la_jm_fee_amount,
+          chainage_from: row.chainage_from || row.la_chainage_from,
+          chainage_to: row.chainage_to || row.la_chainage_to,
+          jm_fee_letter_received_date: row.jm_fee_letter_received_date || row.la_jm_fee_letter_received_date,
+          jm_fee_paid_date: row.jm_fee_paid_date || row.la_jm_fee_paid_date,
+          jm_start_date: row.jm_start_date || row.la_jm_start_date,
+          jm_completion_date: row.jm_completion_date || row.la_jm_completion_date,
+          jm_sheet_date_to_sdo: row.jm_sheet_date_to_sdo || row.la_jm_sheet_date_to_sdo,
+          jm_remarks: row.jm_remarks || row.la_jm_remarks,
+        };
 
-          // Status
-          const s = statusRes.data.find(x => x.la_land_status === row.la_land_status_fk);
-  if (s) setValue("la_land_status_fk", { value: s.la_land_status, label: s.la_land_status });
+        // ✅ Fill all fields automatically
+        Object.entries(dataObject).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            setValue(key, value);
+          }
+        });
 
+        // ✅ Handle dropdowns properly
+        const proj = projectOptions.find((p) => p.value === dataObject.project_id_fk);
+        if (proj) setValue("project_id_fk", proj);
 
-          // Type + SubCategory (needs filtering)
-          const t = typesRes.data.find(x => x.type_of_land === row.type_of_land);
-  if (t) setValue("type_of_land", { value: t.type_of_land, label: t.type_of_land });
+        const status = statusOptions.find((s) => s.value === dataObject.la_land_status_fk);
+        if (status) setValue("la_land_status_fk", status);
 
-  if (row.attachments?.length > 0) {
-  row.attachments.forEach((a, i) => {
-    const ft = fileTypesRes .data.find(x => x.value === a.la_file_types);
-    if (ft) {
-      setValue(`attachments.${i}.la_file_types`, {
-        value: ft.la_file_types,
-        label: ft.la_file_types
-      });
-    }
-  });
-}
+        const type = typeOptions.find((t) => t.value === dataObject.type_of_land);
+        if (type) setValue("type_of_land", type);
 
+        const subFiltered = (allSubCategories || []).filter(
+          (sc) => sc.type_of_land === (dataObject.type_of_land || dataObject.la_type_of_land)
+        );
+        const subOptions = subFiltered.map((sc) => ({
+          value: sc.sub_category_of_land,
+          label: sc.sub_category_of_land,
+        }));
+        setSubCategoryOptions(subOptions);
 
-          // Build filtered sub-category list for the current type
-            const filtered = subCatsRaw.filter(x => x.type_of_land === row.type_of_land);
-  setSubCategoryOptions(filtered.map(x => ({ value: x.sub_category_of_land, label: x.sub_category_of_land })));
+        const sub = subOptions.find((sc) =>
+          [dataObject.sub_category_of_land, dataObject.la_sub_category_of_land].includes(sc.value)
+        );
+        if (sub) setValue("sub_category_of_land", sub);
 
-            const sc = filtered.find(x => x.sub_category_of_land === row.sub_category_of_land);
-  if (sc) setValue("sub_category_of_land", { value: sc.sub_category_of_land, label: sc.sub_category_of_land });
-  
-        } else {
-          // Add mode: ensure selects are blank
-          setValue("project_id_fk", null);
-          setValue("la_land_status_fk", null);
-          setValue("type_of_land", null);
-          setValue("sub_category_of_land", null);
-          setValue("la_file_typess", null);
-          setSubCategoryOptions([]); // nothing until a type is chosen
-        }
-        console.log("Project API Response:", projectsRes.data);
-console.log("File Type API Response:", fileTypesRes.data);
-      } catch (err) {
-        console.error("Dropdown load failed", err);
+        console.log("✅ Form values after prefill:", getValues());
       }
-    };
+    } catch (err) {
+      console.error("Dropdown loading failed:", err);
+    }
+  };
 
-    loadDropdowns();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  loadDropdowns();
+}, [isEdit, row, setValue]);
+
 
    const filterSubCategories = (rawList, typeValue) => {
   if (!rawList) return [];
@@ -334,26 +302,55 @@ console.log("File Type API Response:", fileTypesRes.data);
 }, [watch("type_of_land"), allSubCategories]);
 
 const onSubmit = async (data) => {
-    try {
-      const endpoint = isEdit
-        ? `${API_BASE_URL}/projects/${state.project.projectId}`
-        : `${API_BASE_URL}/projects`;
+  try {
+    setLoading(true);
 
-      if (isEdit) {
-        await axios.put(endpoint, data);
-      } else {
-        await axios.post(endpoint, data);
-      }
+    // ✅ Choose correct endpoint
+    const endpoint = isEdit
+      ? `${API_BASE_URL}/land-acquisition/update-land-acquisition`
+      : `${API_BASE_URL}/land-acquisition/add-land-acquisition`;
 
-      alert("✅ Project saved successfully!");
-      navigate("/wcrpmis/updateforms/project");
-    } catch (err) {
-      console.error("❌ Error saving project:", err);
-      alert("Error saving project");
+    // ✅ Include la_id for update (otherwise backend treats it as new)
+    const payload = {
+      ...data,
+      la_id: row?.la_id || data.la_id,
+      project_id_fk: data.project_id_fk?.value || data.project_id_fk,
+      type_of_land: data.type_of_land?.value || data.type_of_land,
+      sub_category_of_land:
+        data.sub_category_of_land?.value || data.sub_category_of_land,
+    };
+
+    console.log("🚀 Sending payload to:", endpoint, payload);
+
+    const res = await axios.post(endpoint, payload, { withCredentials: true });
+
+    console.log("📥 Response:", res.data);
+
+    if (res.data === true || res.data?.success === true) {
+      alert(`✅ Land Acquisition ${isEdit ? "updated" : "added"} successfully!`);
+      navigate("/wcrpmis/updateforms/land-acquisition");
+    } else {
+      alert("⚠️ Backend did not confirm success — check server logs");
+      console.warn("⚠️ Unexpected backend response:", res.data);
     }
-  };
+  } catch (err) {
+    console.error("❌ Error during submission:", err);
+    alert("❌ Failed to save data. See console for details.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+console.log("🗂️ Editing Row Data:", row);
+console.log("🏷️ SubCategory:", row.sub_category_of_land);
+console.log("📍 Coordinates:", row.latitude, row.longitude);
 
   
+useEffect(() => {
+  console.log("📋 Current Form Mode:", isEdit ? "EDIT" : "ADD");
+  if (isEdit) console.log("🗂️ Editing Existing Record:", row);
+}, [isEdit, row]);
+
 
   return (
     <div className={`${styles.container} container-padding`}>
@@ -470,7 +467,7 @@ const onSubmit = async (data) => {
                   </div>
                   <div className="form-field">
                     <label>Acquired Area (Ha) <span className="red">*</span></label>
-                    <input {...register("area_acquired")} type="text" placeholder="Enter Value"/>
+                    <input {...register("area_acquired")} type="text" rules={{ required: true }} placeholder="Enter Value"/>
                   </div>
                   <div className="form-field">
                     <label>Village <span className="red">*</span></label>
@@ -1288,8 +1285,8 @@ const onSubmit = async (data) => {
                     </div>
 
                 <div className="form-post-buttons">
-                  <button type="submit" className="btn btn-primary">
-                    {isEdit ? "Update" : "Save"}
+                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                    {loading ? "Saving..." : isEdit ? "Update" : "Save"}
                   </button>
                   <button
                     type="button"

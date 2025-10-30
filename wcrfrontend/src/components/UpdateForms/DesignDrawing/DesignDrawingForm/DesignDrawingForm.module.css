@@ -3,3 +3,24 @@
   background-color: #f9f9f9;
   border-radius: 8px;
 }
+.file-upload-label-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0284c7;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  opacity: 1;
+}
+
+.file-upload-label-icon:hover {
+  background-color: #0369a1;
+  transform: scale(1.03);
+}
+
+.file-upload-input {
+  display: none;
+}
