@@ -59,4 +59,8 @@ public interface IUtilityShiftingService {
 
 	List<UtilityShifting> getRDetailsList(String utility_shifting_id) throws Exception;
 
+	boolean saveUSDataUploadFile(UtilityShifting obj) throws Exception;
+
+	String[] uploadUtilityShiftingData(List<UtilityShifting> ussList, UtilityShifting us) throws Exception;
+
 }

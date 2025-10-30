@@ -148,5 +148,17 @@ public class UtilityShiftingService implements IUtilityShiftingService {
 		// TODO Auto-generated method stub
 		return utilitiyShiftingRepo.getRDetailsList(utility_shifting_id);
 	}
+	@Override
+	@Transactional
+	public boolean saveUSDataUploadFile(UtilityShifting obj) throws Exception {
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.saveUSDataUploadFile(obj);
+	}
+	@Override
+	@Transactional
+	public String[] uploadUtilityShiftingData(List<UtilityShifting> ussList, UtilityShifting us) throws Exception {
+		// TODO Auto-generated method stub
+		return utilitiyShiftingRepo.uploadUtilityShiftingData(ussList, us);
+	}
 
 }
