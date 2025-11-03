@@ -759,4 +759,357 @@ public class IssueRepository implements IIssueRepo {
 		return objsList;
 	}
 
+	@Override
+	public List<Issue> getProjectsListForIssueForm(Issue obj) throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "";
+			
+			if (CommonConstants.USER_TYPE_MANAGEMENT.equals(obj.getUser_type())
+					|| CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				qry = "select distinct project_id_fk,project_name "
+						+ "from contract c "
+						+ "LEFT JOIN project p ON c.project_id_fk = p.project_id "
+						+ "where contract_status_fk IN('In Progress','Not Started') ";
+			} else {
+				qry = "SELECT distinct project_id_fk,project_name "
+						+ "FROM contract c "
+						+ "LEFT JOIN project p ON c.project_id_fk = p.project_id "
+						+ "where contract_status_fk IN('In Progress','Not Started') ";
+			}
+			int arrSize = 0;
+
+			if (!CommonConstants.USER_TYPE_MANAGEMENT.equals(obj.getUser_type())
+					&& !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				qry = qry + "AND (hod_user_id_fk = ? or dy_hod_user_id_fk = ? " 
+						+ "or contract_id in(select contract_id_fk from contract_executive where executive_user_id_fk = ?) " 
+						+ "or contract_id in(select contract_id_fk from structure_contract_responsible_people where responsible_people_id_fk = ?) " 
+						+ "or contract_id in(select contract_id_fk from fob_contract_responsible_people where fob_id_fk in(select fob_id_fk from fob_contract_responsible_people where responsible_people_id_fk = ?)) "
+						+ ")"; 
+						
+				arrSize = arrSize + 5;
+			}
+
+			
+			Object[] pValues = new Object[arrSize];
+			
+			int i = 0;
+			if (!CommonConstants.USER_TYPE_MANAGEMENT.equals(obj.getUser_type())
+					&& !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				pValues[i++] = obj.getUser_id();
+				pValues[i++] = obj.getUser_id();
+				pValues[i++] = obj.getUser_id();
+				pValues[i++] = obj.getUser_id();
+				pValues[i++] = obj.getUser_id();
+			}
+			qry = qry + " order by c.project_id_fk asc";
+
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getContractsListForIssueForm(Issue obj) throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "";
+			if (CommonConstants.USER_TYPE_MANAGEMENT.equals(obj.getUser_type())
+					|| CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				qry = "select contract_id as contract_id_fk,contract_name,contract_short_name,project_id_fk,"
+						+ "hod_user_id_fk,dy_hod_user_id_fk,contract_type_fk " 
+						+ "from contract c "
+						+ "where contract_status_fk IN('In Progress','Not Started','Not Awarded') ";
+			} else {
+				qry = "SELECT contract_id as contract_id_fk,contract_name,contract_short_name,project_id_fk,"
+						+ "hod_user_id_fk,dy_hod_user_id_fk,contract_type_fk "
+						+ "FROM contract c "
+						+ "where contract_status_fk IN('In Progress','Not Started','Not Awarded') ";
+			}
+			int arrSize = 0;
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and c.project_id_fk = ? ";
+				arrSize++;
+			}
+
+			if (!CommonConstants.USER_TYPE_MANAGEMENT.equals(obj.getUser_type())
+					&& !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				qry = qry + " AND (hod_user_id_fk = ? or dy_hod_user_id_fk = ? " 
+						+ "or contract_id in(select contract_id_fk from contract_executive where executive_user_id_fk = ?) " 
+						+ "or contract_id in(select contract_id_fk from structure_contract_responsible_people where responsible_people_id_fk = ?) " 
+						+ "or contract_id in(select contract_id_fk from fob_contract_responsible_people where fob_id_fk in(select fob_id_fk from fob_contract_responsible_people where responsible_people_id_fk = ?)) "
+						+ ")"; 
+						
+				arrSize = arrSize + 5;
+			}
+
+			
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+			if (!CommonConstants.USER_TYPE_MANAGEMENT.equals(obj.getUser_type())
+					&& !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+				pValues[i++] = obj.getUser_id();
+				pValues[i++] = obj.getUser_id();
+				pValues[i++] = obj.getUser_id();
+				pValues[i++] = obj.getUser_id();
+				pValues[i++] = obj.getUser_id();
+			}
+			qry = qry + " group by contract_id,contract_name,contract_short_name,project_id_fk,hod_user_id_fk,dy_hod_user_id_fk,contract_type_fk order by contract_id asc ";
+			
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getIssuesStatusList() throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "select status from issue_status";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getIssueTitlesList(Issue obj) throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "select short_description,issues_related_to from issue_category_title ";
+			int arraSize = 0;
+			if (!StringUtils.isEmpty(obj.getCategory_fk())) {
+				qry = qry + "where issue_category_fk = ? ";
+				arraSize++;
+			}
+			qry = qry + "group by short_description,issues_related_to order by short_description ";
+			Object[] pValues = new Object[arraSize];
+			int i = 0;
+			if (!StringUtils.isEmpty(obj.getCategory_fk())) {
+				pValues[i++] = obj.getCategory_fk();
+			}
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getDepartmentList() throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "select department as department_fk,department_name from department where department <> 'MGMT'";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getRailwayList() throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "SELECT railway_id,railway_name from railway WHERE railway_id <> 'Con' and railway_id='MRVC' ORDER BY case when railway_id='MRVC' then 1" + 
+					"when railway_id='CR' then 2 when railway_id='WR' then 3 when railway_id='Others' then 4 end asc";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getReportedByList() throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "SELECT user_id as reported_by_user_id,designation as reported_by_designation " + "FROM [user] "
+					+ "where user_type_fk = ? group by user_id,designation order by designation";
+
+			Object[] pValues = new Object[] { CommonConstants.USER_TYPE_HOD };
+
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getResponsiblePersonList(Issue obj) throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "SELECT user_id as responsible_person_user_id,designation as responsible_person_designation "
+					+ "FROM [user] " + "where user_type_fk = ? ";
+			int arrSize = 1;
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDepartment_name())) {
+				qry = qry + "and department_fk = (select department from department where department_name = ?)";
+				arrSize++;
+			}
+			qry = qry + "group by user_id,designation order by designation";
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			pValues[i++] = CommonConstants.USER_TYPE_DYHOD;
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDepartment_name())) {
+				pValues[i++] = obj.getDepartment_name();
+			}
+
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getEscalatedToList() throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "SELECT user_id as escalated_to_user_id,designation as escalated_to_designation "
+					+ "FROM [user] "
+					+ "where (user_type_fk = ? or user_type_fk = ?) group by user_id,designation order by designation";
+
+			Object[] pValues = new Object[] { CommonConstants.USER_TYPE_HOD, CommonConstants.USER_TYPE_MANAGEMENT };
+
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getOtherOrganizationsList() throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "SELECT issue_other_organization as other_organization from issue_other_organization";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getIssueFileTypes() throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "SELECT issue_file_type from issue_file_type";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getStructures(Issue obj) throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "select distinct structure from activities_view ";
+			int arraSize = 0;
+			if (!StringUtils.isEmpty(obj.getContract_id())) {
+				qry = qry + "where contract_id = ? ";
+				arraSize++;
+			}
+			Object[] pValues = new Object[arraSize];
+			int i = 0;
+			if (!StringUtils.isEmpty(obj.getContract_id())) {
+				pValues[i++] = obj.getContract_id();
+			}
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getComponents(Issue obj) throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "select distinct component from activities_view ";
+			int arraSize = 0;
+			if (!StringUtils.isEmpty(obj.getContract_id())) {
+				qry = qry + "where contract_id = ? ";
+				arraSize++;
+			}
+			Object[] pValues = new Object[arraSize];
+			int i = 0;
+			if (!StringUtils.isEmpty(obj.getContract_id())) {
+				pValues[i++] = obj.getContract_id();
+			}
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getStructureListForIssue(Issue obj) throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "select distinct structure from p6_activities a " + 
+					"left join structure s on s.structure_id=a.structure_id_fk  ";
+			int arraSize = 0;
+			if (!StringUtils.isEmpty(obj.getContract_id_fk())) {
+				qry = qry + "where a.contract_id_fk = ? ";
+				arraSize++;
+			}
+			Object[] pValues = new Object[arraSize];
+			int i = 0;
+			if (!StringUtils.isEmpty(obj.getContract_id_fk())) {
+				pValues[i++] = obj.getContract_id_fk();
+			}
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Issue> getComponentListForIssue(Issue obj) throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "select distinct component from p6_activities a " + 
+					"left join structure s on s.structure_id=a.structure_id_fk  where 0=0 ";
+			int arraSize = 0;
+			if (!StringUtils.isEmpty(obj.getContract_id_fk())) {
+				qry = qry + "and a.contract_id_fk = ? ";
+				arraSize++;
+			}
+			if (!StringUtils.isEmpty(obj.getStructure())) {
+				qry = qry + "and structure = ? ";
+				arraSize++;
+			}
+			
+			Object[] pValues = new Object[arraSize];
+			int i = 0;
+			if (!StringUtils.isEmpty(obj.getContract_id_fk())) {
+				pValues[i++] = obj.getContract_id_fk();
+			}
+
+			if (!StringUtils.isEmpty(obj.getStructure())) {
+				pValues[i++] = obj.getStructure();
+			}
+			
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
 }

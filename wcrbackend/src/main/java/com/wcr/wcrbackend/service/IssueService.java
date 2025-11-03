@@ -67,4 +67,94 @@ public class IssueService implements IIssueService {
 		return issueRepo.getIssuesList(obj);
 	}
 
+	@Override
+	public List<Issue> getProjectsListForIssueForm(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getProjectsListForIssueForm(obj);
+	}
+
+	@Override
+	public List<Issue> getContractsListForIssueForm(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getContractsListForIssueForm(obj);
+	}
+
+	@Override
+	public List<Issue> getIssuesStatusList() throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getIssuesStatusList();
+	}
+
+	@Override
+	public List<Issue> getIssueTitlesList(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getIssueTitlesList(obj);
+	}
+
+	@Override
+	public List<Issue> getDepartmentList() throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getDepartmentList();
+	}
+
+	@Override
+	public List<Issue> getRailwayList() throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getRailwayList();
+	}
+
+	@Override
+	public List<Issue> getReportedByList() throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getReportedByList();
+	}
+
+	@Override
+	public List<Issue> getResponsiblePersonList(Issue object) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getResponsiblePersonList(object);
+	}
+
+	@Override
+	public List<Issue> getEscalatedToList() throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getEscalatedToList();
+	}
+
+	@Override
+	public List<Issue> getOtherOrganizationsList() throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getOtherOrganizationsList();
+	}
+
+	@Override
+	public List<Issue> getIssueFileTypes() throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getIssueFileTypes();
+	}
+
+	@Override
+	public List<Issue> getStructures(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getStructures(obj);
+	}
+
+	@Override
+	public List<Issue> getComponents(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getComponents(obj);
+	}
+
+	@Override
+	public List<Issue> getStructureListForIssue(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getStructureListForIssue(obj);
+	}
+
+	@Override
+	public List<Issue> getComponentListForIssue(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getComponentListForIssue(obj);
+	}
+
 }

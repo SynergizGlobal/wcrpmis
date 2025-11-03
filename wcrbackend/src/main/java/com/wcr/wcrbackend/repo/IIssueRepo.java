@@ -24,4 +24,34 @@ public interface IIssueRepo {
 
 	List<Issue> getIssuesList(Issue obj) throws Exception;
 
+	List<Issue> getProjectsListForIssueForm(Issue obj) throws Exception;
+
+	List<Issue> getContractsListForIssueForm(Issue obj) throws Exception;
+
+	List<Issue> getIssuesStatusList() throws Exception;
+
+	List<Issue> getIssueTitlesList(Issue obj) throws Exception;
+
+	List<Issue> getDepartmentList() throws Exception;
+
+	List<Issue> getRailwayList() throws Exception;
+
+	List<Issue> getReportedByList() throws Exception;
+
+	List<Issue> getResponsiblePersonList(Issue object) throws Exception;
+
+	List<Issue> getEscalatedToList() throws Exception;
+
+	List<Issue> getOtherOrganizationsList() throws Exception;
+
+	List<Issue> getIssueFileTypes() throws Exception;
+
+	List<Issue> getStructures(Issue obj) throws Exception;
+
+	List<Issue> getComponents(Issue obj) throws Exception;
+
+	List<Issue> getStructureListForIssue(Issue obj) throws Exception;
+
+	List<Issue> getComponentListForIssue(Issue obj) throws Exception;
+
 }
