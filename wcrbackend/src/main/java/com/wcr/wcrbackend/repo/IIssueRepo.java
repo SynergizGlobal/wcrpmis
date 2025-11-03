@@ -56,4 +56,10 @@ public interface IIssueRepo {
 
 	Boolean addIssue(Issue obj) throws Exception;
 
+	List<Issue> getActionTakens(Issue obj) throws Exception;
+
+	Issue getIssue(Issue obj) throws Exception;
+
+	boolean updateIssue(Issue obj) throws Exception;
+
 }

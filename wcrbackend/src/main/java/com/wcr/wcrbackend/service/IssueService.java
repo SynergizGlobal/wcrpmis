@@ -166,4 +166,23 @@ public class IssueService implements IIssueService {
 		return issueRepo.addIssue(obj);
 	}
 
+	@Override
+	public List<Issue> getActionTakens(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getActionTakens(obj);
+	}
+
+	@Override
+	public Issue getIssue(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.getIssue(obj);
+	}
+
+	@Override
+	@Transactional
+	public boolean updateIssue(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.updateIssue(obj);
+	}
+
 }

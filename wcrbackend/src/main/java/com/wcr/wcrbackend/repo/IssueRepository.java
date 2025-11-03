@@ -26,6 +26,7 @@ import com.wcr.wcrbackend.DTO.Messages;
 import com.wcr.wcrbackend.common.CommonConstants;
 import com.wcr.wcrbackend.common.CommonConstants2;
 import com.wcr.wcrbackend.common.CommonMethods;
+import com.wcr.wcrbackend.common.DateParser;
 import com.wcr.wcrbackend.common.EMailSender;
 import com.wcr.wcrbackend.common.FileUploads;
 @Repository
@@ -2321,5 +2322,283 @@ public class IssueRepository implements IIssueRepo {
 			throw new Exception(e);
 		}
 
+	}
+
+	@Override
+	public List<Issue> getActionTakens(Issue obj) throws Exception {
+		List<Issue> objsList = null;
+		try {
+			String qry = "select comment,created_by,created_date,u.user_name from issue_history i left join [user] u on u.user_id=i.created_by where 0=0  ";
+			int arraSize = 0;
+			if (!StringUtils.isEmpty(obj.getIssue_id())) {
+				qry = qry + "and issue_id_fk = ? ";
+				arraSize++;
+			}
+		
+			Object[] pValues = new Object[arraSize];
+			int i = 0;
+			if (!StringUtils.isEmpty(obj.getIssue_id())) {
+				pValues[i++] = obj.getIssue_id();
+			}
+			
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public Issue getIssue(Issue obj) throws Exception {
+		Issue iObj = null;
+		try {
+			String qry = "select issue_id,contract_id_fk,title,FORMAT(date,'dd-MM-yyyy') AS date,location,reported_by,responsible_person,c.department_fk,"
+					+ "priority_fk,category_fk,status_fk,corrective_measure,FORMAT(resolved_date,'dd-MM-yyyy') AS resolved_date,escalated_to,i.remarks,contract_name,c.contract_short_name,project_id_fk,project_name,i.zonal_railway_fk,r.railway_name,other_organization,"
+					+ "FORMAT(escalation_date,'dd-MM-yyyy') AS escalation_date,FORMAT(assigned_date,'dd-MM-yyyy') AS assigned_date, "
+					+ "u2.designation as responsible_person_designation,u3.designation as escalated_to_designation,"
+					+ "c.hod_user_id_fk,c.dy_hod_user_id_fk,i.status_fk as existing_status_fk,other_org_resposible_person_name,other_org_resposible_person_designation,description,structure,component  "
+					+ "from issue i " + "left outer join [user] u2 on i.responsible_person = u2.user_id "
+					+ "left outer join [user] u3 on i.escalated_to = u3.user_id "
+					+ "LEFT OUTER JOIN contract c ON i.contract_id_fk  = c.contract_id "
+					+ "LEFT OUTER JOIN department d ON c.department_fk  = d.department "
+					+ "LEFT OUTER JOIN project p ON c.project_id_fk  = p.project_id "
+					+ "LEFT OUTER JOIN railway r ON i.zonal_railway_fk  = r.railway_id "
+					+ "where issue_id = ? ";
+			int arrSize = 1;
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getContract_id_fk())) {
+				qry = qry + " and contract_id_fk = ?";
+				arrSize++;
+			}
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getPriority_fk())) {
+				qry = qry + " and priority_fk = ?";
+				arrSize++;
+			}
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getCategory_fk())) {
+				qry = qry + " and category_fk = ?";
+				arrSize++;
+			}
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStatus_fk())) {
+				qry = qry + " and status_fk = ?";
+				arrSize++;
+			}
+
+			Object[] pValues = new Object[arrSize];
+
+			int i = 0;
+			pValues[i++] = obj.getIssue_id();
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getContract_id_fk())) {
+				pValues[i++] = obj.getContract_id_fk();
+			}
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getPriority_fk())) {
+				pValues[i++] = obj.getPriority_fk();
+			}
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getCategory_fk())) {
+				pValues[i++] = obj.getCategory_fk();
+			}
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getStatus_fk())) {
+				pValues[i++] = obj.getStatus_fk();
+			}
+
+			iObj = (Issue) jdbcTemplate.queryForObject(qry, pValues, new BeanPropertyRowMapper<Issue>(Issue.class));
+
+			if (!StringUtils.isEmpty(iObj)) {
+				String filesQry = "select file_name,issue_id_fk as issue_id,id as issue_file_id,issue_file_type_fk from issue_files where issue_id_fk = ? ";
+				List<Issue> objsList = jdbcTemplate.query(filesQry, new Object[] { obj.getIssue_id() },
+						new BeanPropertyRowMapper<Issue>(Issue.class));
+				if (!StringUtils.isEmpty(objsList)) {
+					iObj.setIssueFilesList(objsList);
+				}
+
+				String fileNamesQry = "select STRING_AGG(file_name,',') as attachments from issue_files where issue_id_fk = ? ";
+				Issue fileNames = jdbcTemplate.queryForObject(fileNamesQry, new Object[] { obj.getIssue_id() },
+						new BeanPropertyRowMapper<Issue>(Issue.class));
+				if (!StringUtils.isEmpty(fileNames)) {
+					iObj.setAttachments(fileNames.getAttachments());
+				}
+
+				if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getUser_id())) {
+					if (obj.getUser_id().equals(iObj.getResponsible_person())
+							|| obj.getUser_id().equals(iObj.getEscalated_to())
+							|| obj.getUser_id().equals(iObj.getHod_user_id_fk())
+							|| obj.getUser_id().equals(iObj.getDy_hod_user_id_fk())
+							|| obj.getUser_role_code().equals(CommonConstants.ROLE_CODE_IT_ADMIN)) {
+						iObj.setReadonlyForm(false);
+					} else {
+						iObj.setReadonlyForm(true);
+					}
+
+				}
+
+				if (!StringUtils.isEmpty(obj.getMessage_id())) {
+					NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
+					String msgUpdateqry = "UPDATE messages SET read_time=CURRENT_TIMESTAMP where message_id = :message_id";
+
+					BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+					template.update(msgUpdateqry, paramSource);
+				}
+
+			}
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return iObj;
+	}
+
+	@Override
+	public boolean updateIssue(Issue obj) throws Exception {
+		boolean flag = false;
+		//TransactionDefinition def = new DefaultTransactionDefinition();
+		//TransactionStatus status = transactionManager.getTransaction(def);
+		try {
+			String priority = obj.getPriority_fk();
+			String status_fk = obj.getStatus_fk();
+			obj.setStatus_fk("");obj.setPriority_fk("");
+			Issue issue = getIssue(obj);
+			obj.setStatus_fk(status_fk);obj.setPriority_fk(priority);
+			NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
+			String qry = "UPDATE issue SET "
+					+ "title=:title,date=:date,location=:location,reported_by=:reported_by,responsible_person=:responsible_person,"
+					+ "priority_fk=:priority_fk,category_fk=:category_fk,status_fk=:status_fk,corrective_measure=:corrective_measure,resolved_date=:resolved_date,escalated_to=:escalated_to,"
+					+ "remarks=:remarks,zonal_railway_fk=:zonal_railway_fk,"
+					+ "other_organization=:other_organization,other_org_resposible_person_name=:other_org_resposible_person_name,other_org_resposible_person_designation=:other_org_resposible_person_designation,"
+					+ "escalation_date=:escalation_date,assigned_date=:assigned_date,description=:description,modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP,structure=:structure,component=:component " + "where issue_id = :issue_id";
+			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+			int count = template.update(qry, paramSource);
+			if (count > 0) {
+				flag = true;				
+				
+				int arraySize = 0;
+				if (!StringUtils.isEmpty(obj.getIssueFileNames()) && obj.getIssueFileNames().length > 0) {
+					obj.setIssueFileNames(CommonMethods.replaceEmptyByNullInSringArray(obj.getIssueFileNames()));
+					if (arraySize < obj.getIssueFileNames().length) {
+						arraySize = obj.getIssueFileNames().length;
+					}
+				}
+
+				if (!StringUtils.isEmpty(obj.getIssue_file_types()) && obj.getIssue_file_types().length > 0) {
+					obj.setIssue_file_types(CommonMethods.replaceEmptyByNullInSringArray(obj.getIssue_file_types()));
+					if (arraySize < obj.getIssue_file_types().length) {
+						arraySize = obj.getIssue_file_types().length;
+					}
+				}
+				
+				if (!StringUtils.isEmpty(obj.getIssue_file_ids()) && obj.getIssue_file_ids().length > 0) {
+					obj.setIssue_file_ids(CommonMethods.replaceEmptyByNullInSringArray(obj.getIssue_file_ids()));
+					if (arraySize < obj.getIssue_file_ids().length) {
+						arraySize = obj.getIssue_file_ids().length;
+					}
+				}
+				
+				String placeholders = "";
+				String issue_file_ids = "";
+				for (int i = 0; i < arraySize; i++) {
+					if(!StringUtils.isEmpty(obj.getIssue_file_ids()) && obj.getIssue_file_ids().length > 0 && !StringUtils.isEmpty(obj.getIssue_file_ids()[i])) {
+						placeholders = placeholders + "?,";
+						issue_file_ids = issue_file_ids + obj.getIssue_file_ids()[i] + ",";
+					}
+				}
+				
+				if (!StringUtils.isEmpty(placeholders)) {
+					placeholders = org.apache.commons.lang3.StringUtils.chop(placeholders);					
+					issue_file_ids = org.apache.commons.lang3.StringUtils.chop(issue_file_ids);
+
+					String deleteFilesQry = "delete from issue_files where id not in("+issue_file_ids+") and issue_id_fk = :issue_id";
+					Issue fileObj = new Issue();
+					fileObj.setIssue_id(obj.getIssue_id());
+					paramSource = new BeanPropertySqlParameterSource(fileObj);
+					template.update(deleteFilesQry, paramSource);
+				}else {
+					String deleteFilesQry = "delete from issue_files where  issue_id_fk = :issue_id";
+					Issue fileObj = new Issue();
+					fileObj.setIssue_id(obj.getIssue_id());
+					paramSource = new BeanPropertySqlParameterSource(fileObj);
+					template.update(deleteFilesQry, paramSource);
+				}
+
+				String insertFileQry = "INSERT INTO issue_files (file_name,issue_id_fk,issue_file_type_fk,created_date)VALUES(:file_name,:issue_id,:issue_file_type_fk,CURRENT_TIMESTAMP)";
+				String updateFileQry = "UPDATE issue_files set file_name=:file_name,issue_id_fk=:issue_id,issue_file_type_fk=:issue_file_type_fk WHERE id=:issue_file_id";
+				boolean newFileAdded = false;
+				for (int i = 0; i < arraySize; i++) {
+					MultipartFile multipartFile = obj.getIssueFiles()[i];
+					if ((null != multipartFile && !multipartFile.isEmpty())
+							|| !StringUtils.isEmpty(obj.getIssueFileNames()[i])) {
+						long fileLength = multipartFile.getSize();
+						if(fileLength > 0) {newFileAdded = true;}
+						String saveDirectory = CommonConstants2.ISSUE_FILE_SAVING_PATH + obj.getIssue_id()
+								+ File.separator;
+						String fileName = obj.getIssueFileNames()[i];
+						String issue_file_id = null;
+						if(!StringUtils.isEmpty(obj.getIssue_file_ids()) && obj.getIssue_file_ids().length > 0) {
+							 issue_file_id = obj.getIssue_file_ids()[i];
+						}
+						if (null != multipartFile && !multipartFile.isEmpty()) {
+							FileUploads.singleFileSaving(multipartFile, saveDirectory, fileName);
+						}
+						Issue fileObj = new Issue();
+						fileObj.setFile_name(fileName);
+						fileObj.setIssue_file_type_fk(obj.getIssue_file_types()[i]);
+						fileObj.setIssue_file_id(issue_file_id);
+						fileObj.setIssue_id(obj.getIssue_id());
+						paramSource = new BeanPropertySqlParameterSource(fileObj);
+						if(!StringUtils.isEmpty(issue_file_id)) {
+							template.update(updateFileQry, paramSource);
+						}else {
+							template.update(insertFileQry, paramSource);
+						}
+					}
+				}
+				
+				FormHistory formHistory = new FormHistory();
+				formHistory.setCreated_by_user_id_fk(obj.getCreated_by_user_id_fk());
+				formHistory.setUser(obj.getDesignation()+" - "+obj.getUser_name());
+				formHistory.setModule_name_fk("Issues");
+				formHistory.setForm_name("Update Issue");
+				formHistory.setForm_action_type("Update");
+				formHistory.setForm_details("Updated issue: "+obj.getTitle());
+				formHistory.setProject_id_fk(obj.getProject_id_fk());
+				formHistory.setContract_id_fk(obj.getContract_id_fk());
+				
+				boolean history_flag = formsHistoryDao.saveFormHistory(formHistory);
+				int count_old = 0,count_new = 0;
+				String issue_id = obj.getIssue_id();
+				String issue_status = obj.getStatus_fk();
+				String existing_status_fk = obj.getExisting_status_fk();
+				String reported_by_email_id = obj.getReported_by_email_id();
+				String existing_responsible_person = obj.getExisting_responsible_person();
+				String existing_escalated_to = obj.getExisting_escalated_to();
+				if(!StringUtils.isEmpty(issue)){
+					issue.setDate(DateParser.parse(issue.getDate()));
+					issue.setResolved_date(DateParser.parse(issue.getResolved_date()));
+					issue.setEscalation_date(DateParser.parse(issue.getEscalation_date()));
+					issue.setAssigned_date(DateParser.parse(issue.getAssigned_date()));
+					count_old = issue.getIssueFilesList().size();
+					count_new = obj.getIssueFileNames().length;
+					
+					if(((!StringUtils.isEmpty(obj.getDescription())) && !obj.getDescription().equals(issue.getDescription())) 
+							|| ((!StringUtils.isEmpty(obj.getPriority_fk()) && !obj.getPriority_fk().equals(issue.getPriority_fk()))) 
+							|| ((!StringUtils.isEmpty(obj.getCorrective_measure()) && !obj.getCorrective_measure().equals(issue.getCorrective_measure())))
+							 || ((!StringUtils.isEmpty(obj.getZonal_railway_fk()) && !obj.getZonal_railway_fk().equals(issue.getZonal_railway_fk()))) 
+							 || ((!StringUtils.isEmpty(obj.getOther_organization()) && !obj.getOther_organization().equals(issue.getOther_organization())))
+							 || ((!StringUtils.isEmpty(obj.getOther_org_resposible_person_name()) && !obj.getOther_org_resposible_person_name().equals(issue.getOther_org_resposible_person_name()))) 
+							 || ((!StringUtils.isEmpty(obj.getOther_org_resposible_person_designation()) && !obj.getOther_org_resposible_person_designation().equals(issue.getOther_org_resposible_person_designation())))
+							 || ((!StringUtils.isEmpty(obj.getStatus_fk()) && !obj.getStatus_fk().equals(issue.getStatus_fk()))) 
+							 || ((!StringUtils.isEmpty(obj.getDate()) && !obj.getDate().equals(issue.getDate())))
+							 || ((!StringUtils.isEmpty(obj.getAssigned_date()) && !obj.getAssigned_date().equals(issue.getAssigned_date())))
+							 || ((!StringUtils.isEmpty(obj.getEscalation_date()) && !obj.getEscalation_date().equals(issue.getEscalation_date())))
+							 || ((!StringUtils.isEmpty(obj.getEscalated_to()) && !obj.getEscalated_to().equals(issue.getEscalated_to())))
+							 || ((!StringUtils.isEmpty(obj.getResponsible_person()) && !obj.getResponsible_person().equals(issue.getResponsible_person())))
+							 ||  newFileAdded == true) {
+						history_flag = addIssueInHistory(obj,template);
+						sendEmailWithIssueStatusAlert(issue_id, issue_status, reported_by_email_id, existing_status_fk,
+								existing_responsible_person, existing_escalated_to,"1",obj.getDesignation(),obj.getUser_name());
+					}
+				}
+			}
+			//transactionManager.commit(status);
+		} catch (Exception e) {
+			//transactionManager.rollback(status);
+			throw new Exception(e);
+		}
+		return flag;
 	}
 }
