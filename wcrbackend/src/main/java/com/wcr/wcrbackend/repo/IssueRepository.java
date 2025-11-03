@@ -1,20 +1,44 @@
 package com.wcr.wcrbackend.repo;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.wcr.wcrbackend.DTO.FormHistory;
 import com.wcr.wcrbackend.DTO.Issue;
+import com.wcr.wcrbackend.DTO.Mail;
+import com.wcr.wcrbackend.DTO.Messages;
 import com.wcr.wcrbackend.common.CommonConstants;
+import com.wcr.wcrbackend.common.CommonConstants2;
+import com.wcr.wcrbackend.common.CommonMethods;
+import com.wcr.wcrbackend.common.EMailSender;
+import com.wcr.wcrbackend.common.FileUploads;
 @Repository
 public class IssueRepository implements IIssueRepo {
 
+	public static Logger logger = Logger.getLogger(IssueRepository.class);
+	
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+	
+	@Autowired
+	IFormsHistoryDao formsHistoryDao;
+	
 	@Override
 	public List<Issue> getIssuesCategoryList(Issue obj) throws Exception {
 		List<Issue> objsList = null;
@@ -1112,4 +1136,1190 @@ public class IssueRepository implements IIssueRepo {
 		return objsList;
 	}
 
+	@Override
+	public Boolean addIssue(Issue obj) throws Exception {
+		boolean flag = false;
+		//TransactionDefinition def = new DefaultTransactionDefinition();
+		//TransactionStatus status = transactionManager.getTransaction(def);
+		String issue_id = null;
+		try {
+			NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
+			
+			if (StringUtils.isEmpty(obj.getTitle())) {
+			    obj.setTitle(obj.getTitle1());
+			}
+			
+			String qry = "INSERT INTO issue"
+					+ "(contract_id_fk,title,date,location,reported_by,responsible_person,"
+					+ "priority_fk,category_fk,status_fk,assigned_date,corrective_measure,resolved_date,escalated_to,remarks,"
+					+ "zonal_railway_fk,other_organization,other_org_resposible_person_name,other_org_resposible_person_designation,escalation_date,created_by_user_id_fk,created_date,description,la_id,structure,component) "
+					+ "VALUES "
+					+ "(:contract_id_fk,:title,:date,:location,:reported_by,:responsible_person,:"
+					+ "priority_fk,:category_fk,:status_fk,:assigned_date,:corrective_measure,:resolved_date,:escalated_to,:remarks,"
+					+ ":zonal_railway_fk,:other_organization,:other_org_resposible_person_name,:other_org_resposible_person_designation,:escalation_date,:created_by_user_id_fk,CURRENT_TIMESTAMP,:description,:la_id,:structure,:component)";
+			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+			KeyHolder keyHolder = new GeneratedKeyHolder();
+			int count = template.update(qry, paramSource, keyHolder);
+			if (count > 0) {
+				issue_id = String.valueOf(keyHolder.getKey().intValue());
+				obj.setIssue_id(issue_id);
+				flag = true;
+
+				String fileQry = "INSERT INTO issue_files (file_name,issue_id_fk,issue_file_type_fk,created_date)VALUES(:file_name,:issue_id,:issue_file_type_fk,CURRENT_TIMESTAMP)";
+
+				int arraySize = 0;
+				if (!StringUtils.isEmpty(obj.getIssueFileNames()) && obj.getIssueFileNames().length > 0) {
+					obj.setIssueFileNames(CommonMethods.replaceEmptyByNullInSringArray(obj.getIssueFileNames()));
+					if (arraySize < obj.getIssueFileNames().length) {
+						arraySize = obj.getIssueFileNames().length;
+					}
+				}
+
+				if (!StringUtils.isEmpty(obj.getIssue_file_types()) && obj.getIssue_file_types().length > 0) {
+					obj.setIssue_file_types(CommonMethods.replaceEmptyByNullInSringArray(obj.getIssue_file_types()));
+					if (arraySize < obj.getIssue_file_types().length) {
+						arraySize = obj.getIssue_file_types().length;
+					}
+				}
+				for (int i = 0; i < arraySize; i++) {
+					MultipartFile multipartFile = obj.getIssueFiles()[i];
+					if ((null != multipartFile && !multipartFile.isEmpty())) {
+						String saveDirectory = CommonConstants2.ISSUE_FILE_SAVING_PATH + issue_id
+								+ File.separator;
+						String fileName = obj.getIssueFileNames()[i];
+						if (null != multipartFile && !multipartFile.isEmpty()) {
+							FileUploads.singleFileSaving(multipartFile, saveDirectory, fileName);
+						}
+						Issue fileObj = new Issue();
+						fileObj.setFile_name(fileName);
+						fileObj.setIssue_file_type_fk(obj.getIssue_file_types()[i]);
+						fileObj.setIssue_id(issue_id);
+						paramSource = new BeanPropertySqlParameterSource(fileObj);
+						template.update(fileQry, paramSource);
+					}
+				}
+				
+				FormHistory formHistory = new FormHistory();
+				formHistory.setCreated_by_user_id_fk(obj.getCreated_by_user_id_fk());
+				formHistory.setUser(obj.getDesignation()+" - "+obj.getUser_name());
+				formHistory.setModule_name_fk("Issues");
+				formHistory.setForm_name("Add Issue");
+				formHistory.setForm_action_type("Add");
+				formHistory.setForm_details("Added issue: "+obj.getTitle());
+				formHistory.setProject_id_fk(obj.getProject_id_fk());
+				formHistory.setContract_id_fk(obj.getContract_id_fk());
+				
+				boolean history_flag = formsHistoryDao.saveFormHistory(formHistory);
+				
+				history_flag = addIssueInHistory(obj,template);
+
+				String issue_status = obj.getStatus_fk();
+				String reported_by_email_id = obj.getReported_by_email_id();
+				sendEmailWithIssueStatusAlert(issue_id, issue_status, reported_by_email_id, obj.getExisting_status_fk(), null,
+						null,"0",obj.getDesignation(),obj.getUser_name());
+
+			}
+			//transactionManager.commit(status);
+		} catch (Exception e) {
+			//transactionManager.rollback(status);
+			throw new Exception(e);
+		}
+		return flag;
+	}
+	private boolean addIssueInHistory(Issue obj, NamedParameterJdbcTemplate template) throws Exception {
+		boolean flag = false;
+		try {
+			
+			if(!StringUtils.isEmpty(obj.getCorrective_measure()))
+					{
+						if(!obj.getCorrective_measure().equals(obj.getComment()) && StringUtils.isEmpty(obj.getExisting_status_fk())) {			
+							obj.setComment(obj.getCorrective_measure());
+						}
+					}
+			if(!StringUtils.isEmpty(obj.getRemarks_new()) && "Escalated".equalsIgnoreCase(obj.getExisting_status_fk())) {
+				obj.setComment(obj.getRemarks_new());
+			}
+			if(!StringUtils.isEmpty(obj.getEscalated_to())) {
+				obj.setAssigned_person_user_id_fk(obj.getEscalated_to());
+			}else if(!StringUtils.isEmpty(obj.getResponsible_person())) {
+				obj.setAssigned_person_user_id_fk(obj.getResponsible_person());
+			}else{
+				obj.setAssigned_person_user_id_fk(obj.getDy_hod_user_id_fk());
+			}
+			if(!StringUtils.isEmpty(obj.getStatus_fk()) 
+					&& obj.getStatus_fk().equals(obj.getExisting_status_fk()) ) {
+				obj.setStatus_fk("Updated");
+			}
+			/*if(!"Closed".equals(obj.getStatus_fk()) && !StringUtils.isEmpty(obj.getResponsible_person())
+					&& obj.getResponsible_person().equals(obj.getExisting_responsible_person()) ) {
+				obj.setStatus_fk("Updated");
+			}*/
+			if("Closed".equals(obj.getStatus_fk()) ) {
+				//obj.setStatus_fk(obj.getStatus_fk());
+				obj.setAssigned_person_user_id_fk(null);
+			}
+			String qry = "INSERT INTO issue_history(issue_id_fk,issue_status_fk,assigned_person_user_id_fk,comment,created_by) "
+					+ "VALUES "
+					+ "(:issue_id,:status_fk,:assigned_person_user_id_fk,:comment,:created_by_user_id_fk)";
+			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+			int count = template.update(qry, paramSource);
+			if (count > 0) {
+				flag = true;
+			}
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return flag;
+	}
+	
+	public void sendEmailWithIssueStatusAlert(String issue_id, String issue_status, String reported_by_email_id,
+			String existing_status_fk, String existing_responsible_person, String existing_escalated_to,String action,String Designation,String User)
+			throws Exception {
+
+		try {
+
+			String emailsQry = "select i.issue_id,zonal_railway_fk,description,date,contractor_name,w.work_short_name,i.contract_id_fk,i.status_fk,i.reported_by,c.contract_short_name,w.work_name,c.contract_name,i.category_fk,i.priority_fk,i.title,i.location,i.corrective_measure,i.remarks,"
+					+ "u2.designation as responsible_person_designation,u3.designation as escalated_to_designation,"
+					+ "u2.email_id as responsible_person_email_id,u3.email_id as escalated_to_email_id,"
+					+ "u4.email_id as contract_hod_email_id,u5.email_id as contract_dyhod_email_id,u5.user_name as dyhod_name,u4.user_name as hod_name, "
+					+ "i.responsible_person as responsible_person_user_id,i.escalated_to as escalated_to_user_id,"
+					+ "c.hod_user_id_fk as contract_hod_user_id,c.dy_hod_user_id_fk as contract_dyhod_user_id,"
+					+ "u1.email_id as created_by_email_id,i.created_by_user_id_fk,other_org_resposible_person_name,other_org_resposible_person_designation,(select top 1 email_id from issue i\r\n" + 
+					"\r\n" + 
+					"inner join (select contract_id_fk, department_id_fk,executive_user_id_fk,user_name,\r\n" + 
+					"designation, department_fk,user_type_fk,user_role_name_fk,email_id from contract_executive a left join [user] b\r\n" + 
+					"on a.executive_user_id_fk = b.user_id\r\n" + 
+					"where department_fk not in('Fin','Plan')) m on m.contract_id_fk=i.contract_id_fk\r\n" + 
+					"\r\n" + 
+					"where i.contract_id_fk = c.contract_id  and issue_id="+issue_id+"  and designation in('XEN')) as aen_email,\r\n" + 
+					"\r\n" + 
+					"(select  distinct top 1 email_id from contract_executive c1\r\n" + 
+					"\r\n" + 
+					"left join [user] u on u.user_id=c1.executive_user_id_fk\r\n" + 
+					"\r\n" + 
+					"where user_id is not null and contract_id_fk=c.contract_id and designation like '%Project Engineer%') as pe_email,\r\n" + 
+					"	\r\n" + 
+					"\r\n" + 
+					"(select top 1 email_id from issue i\r\n" + 
+					"\r\n" + 
+					"inner join (select contract_id_fk, department_id_fk,executive_user_id_fk,user_name,\r\n" + 
+					"designation, department_fk,user_type_fk,user_role_name_fk,email_id from contract_executive a left join [user] b\r\n" + 
+					"on a.executive_user_id_fk = b.user_id\r\n" + 
+					"where department_fk not in('Fin','Plan')) m on m.contract_id_fk=i.contract_id_fk\r\n" + 
+					"\r\n" + 
+					"where i.contract_id_fk = c.contract_id  and issue_id="+issue_id+"  and designation in('SSE')) as sse_email,\r\n" + 
+					"(select top 1 user_name from issue i\r\n" + 
+					"\r\n" + 
+					"inner join (select contract_id_fk, department_id_fk,executive_user_id_fk,user_name,\r\n" + 
+					"designation, department_fk,user_type_fk,user_role_name_fk,email_id from contract_executive a left join [user] b\r\n" + 
+					"on a.executive_user_id_fk = b.user_id\r\n" + 
+					"where department_fk not in('Fin','Plan')) m on m.contract_id_fk=i.contract_id_fk\r\n" + 
+					"\r\n" + 
+					"where i.contract_id_fk = c.contract_id  and issue_id="+issue_id+"  and designation in('XEN')) as aen_name,\r\n" + 
+					"\r\n" + 
+					"(select  distinct top 1 user_name from contract_executive c1\r\n" + 
+					"\r\n" + 
+					"left join [user] u on u.user_id=c1.executive_user_id_fk\r\n" + 
+					"\r\n" + 
+					"where user_id is not null and contract_id_fk=c.contract_id and designation like '%Project Engineer%') as pe_name,\r\n" + 
+					"	\r\n" + 
+					"\r\n" + 
+					"(select top 1 user_name from issue i\r\n" + 
+					"\r\n" + 
+					"inner join (select contract_id_fk, department_id_fk,executive_user_id_fk,user_name,\r\n" + 
+					"designation, department_fk,user_type_fk,user_role_name_fk,email_id from contract_executive a left join [user] b\r\n" + 
+					"on a.executive_user_id_fk = b.user_id\r\n" + 
+					"where department_fk not in('Fin','Plan')) m on m.contract_id_fk=i.contract_id_fk\r\n" + 
+					"\r\n" + 
+					"where i.contract_id_fk = c.contract_id  and issue_id="+issue_id+"  and designation in('SSE')) as sse_name,(select email_id from [user] where user_name=c1.contractor_name) as contractor_email,(select top 1 comment from issue_history where issue_id_fk=i.issue_id and comment is not null order by id desc\r\n" + 
+							") as comment,    (\r\n" + 
+							"        SELECT top 1 email_id \r\n" + 
+							"        FROM issue i\r\n" + 
+							"        INNER JOIN (\r\n" + 
+							"            SELECT \r\n" + 
+							"                contract_id_fk, \r\n" + 
+							"                department_id_fk, \r\n" + 
+							"                executive_user_id_fk, \r\n" + 
+							"                user_name,\r\n" + 
+							"                designation, \r\n" + 
+							"                department_fk, \r\n" + 
+							"                user_type_fk, \r\n" + 
+							"                user_role_name_fk, \r\n" + 
+							"                email_id \r\n" + 
+							"            FROM contract_executive a \r\n" + 
+							"            LEFT JOIN [user] b\r\n" + 
+							"            ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"            WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"        ) m \r\n" + 
+							"        ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"        WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"        AND issue_id = issue_id \r\n" + 
+							"        AND designation IN ('Asst. Manager')\r\n" + 
+							"    ) AS ass_email,\r\n" + 
+							"        (\r\n" + 
+							"            SELECT top 1 user_name \r\n" + 
+							"            FROM issue i\r\n" + 
+							"            INNER JOIN (\r\n" + 
+							"                SELECT \r\n" + 
+							"                    contract_id_fk, \r\n" + 
+							"                    department_id_fk, \r\n" + 
+							"                    executive_user_id_fk, \r\n" + 
+							"                    user_name,\r\n" + 
+							"                    designation, \r\n" + 
+							"                    department_fk, \r\n" + 
+							"                    user_type_fk, \r\n" + 
+							"                    user_role_name_fk, \r\n" + 
+							"                    email_id \r\n" + 
+							"                FROM contract_executive a \r\n" + 
+							"                LEFT JOIN [user] b\r\n" + 
+							"                ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"            ) m \r\n" + 
+							"            ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"            WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"            AND issue_id = issue_id \r\n" + 
+							"            AND designation IN ('Asst. Manager')\r\n" + 
+							"    ) AS ass_name,\r\n" + 
+							"    \r\n" + 
+							"        (\r\n" + 
+							"            SELECT top 1 email_id \r\n" + 
+							"            FROM issue i\r\n" + 
+							"            INNER JOIN (\r\n" + 
+							"                SELECT \r\n" + 
+							"                    contract_id_fk, \r\n" + 
+							"                    department_id_fk, \r\n" + 
+							"                    executive_user_id_fk, \r\n" + 
+							"                    user_name,\r\n" + 
+							"                    designation, \r\n" + 
+							"                    department_fk, \r\n" + 
+							"                    user_type_fk, \r\n" + 
+							"                    user_role_name_fk, \r\n" + 
+							"                    email_id \r\n" + 
+							"                FROM contract_executive a \r\n" + 
+							"                LEFT JOIN [user] b\r\n" + 
+							"                ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"            ) m \r\n" + 
+							"            ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"            WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"            AND issue_id = issue_id \r\n" + 
+							"            AND designation IN ('Asst. Resident Engineer')\r\n" + 
+							"        ) AS assr_email,\r\n" + 
+							"            (\r\n" + 
+							"                SELECT top 1 user_name \r\n" + 
+							"                FROM issue i\r\n" + 
+							"                INNER JOIN (\r\n" + 
+							"                    SELECT \r\n" + 
+							"                        contract_id_fk, \r\n" + 
+							"                        department_id_fk, \r\n" + 
+							"                        executive_user_id_fk, \r\n" + 
+							"                        user_name,\r\n" + 
+							"                        designation, \r\n" + 
+							"                        department_fk, \r\n" + 
+							"                        user_type_fk, \r\n" + 
+							"                        user_role_name_fk, \r\n" + 
+							"                        email_id \r\n" + 
+							"                    FROM contract_executive a \r\n" + 
+							"                    LEFT JOIN [user] b\r\n" + 
+							"                    ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                    WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                ) m \r\n" + 
+							"                ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                AND issue_id = issue_id \r\n" + 
+							"                AND designation IN ('Asst. Resident Engineer')\r\n" + 
+							"    ) AS assr_name,\r\n" + 
+							"    \r\n" + 
+							"            (\r\n" + 
+							"                SELECT top 1 email_id \r\n" + 
+							"                FROM issue i\r\n" + 
+							"                INNER JOIN (\r\n" + 
+							"                    SELECT \r\n" + 
+							"                        contract_id_fk, \r\n" + 
+							"                        department_id_fk, \r\n" + 
+							"                        executive_user_id_fk, \r\n" + 
+							"                        user_name,\r\n" + 
+							"                        designation, \r\n" + 
+							"                        department_fk, \r\n" + 
+							"                        user_type_fk, \r\n" + 
+							"                        user_role_name_fk, \r\n" + 
+							"                        email_id \r\n" + 
+							"                    FROM contract_executive a \r\n" + 
+							"                    LEFT JOIN [user] b\r\n" + 
+							"                    ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                    WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                ) m \r\n" + 
+							"                ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                AND issue_id = issue_id \r\n" + 
+							"                AND designation IN ('Resident Engineer')\r\n" + 
+							"            ) AS rs_email,\r\n" + 
+							"                (\r\n" + 
+							"                    SELECT top 1 user_name \r\n" + 
+							"                    FROM issue i\r\n" + 
+							"                    INNER JOIN (\r\n" + 
+							"                        SELECT \r\n" + 
+							"                            contract_id_fk, \r\n" + 
+							"                            department_id_fk, \r\n" + 
+							"                            executive_user_id_fk, \r\n" + 
+							"                            user_name,\r\n" + 
+							"                            designation, \r\n" + 
+							"                            department_fk, \r\n" + 
+							"                            user_type_fk, \r\n" + 
+							"                            user_role_name_fk, \r\n" + 
+							"                            email_id \r\n" + 
+							"                        FROM contract_executive a \r\n" + 
+							"                        LEFT JOIN [user] b\r\n" + 
+							"                        ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                        WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                    ) m \r\n" + 
+							"                    ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                    WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                    AND issue_id = issue_id \r\n" + 
+							"                    AND designation IN ('Resident Engineer')\r\n" + 
+							"    ) AS rs_name,(\r\n" + 
+							"                SELECT top 1 email_id \r\n" + 
+							"                FROM issue i\r\n" + 
+							"                INNER JOIN (\r\n" + 
+							"                    SELECT \r\n" + 
+							"                        contract_id_fk, \r\n" + 
+							"                        department_id_fk, \r\n" + 
+							"                        executive_user_id_fk, \r\n" + 
+							"                        user_name,\r\n" + 
+							"                        designation, \r\n" + 
+							"                        department_fk, \r\n" + 
+							"                        user_type_fk, \r\n" + 
+							"                        user_role_name_fk, \r\n" + 
+							"                        email_id \r\n" + 
+							"                    FROM contract_executive a \r\n" + 
+							"                    LEFT JOIN [user] b\r\n" + 
+							"                    ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                    WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                ) m \r\n" + 
+							"                ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                AND issue_id = issue_id \r\n" + 
+							"                AND designation IN ('Project Manager')\r\n" + 
+							"            ) AS pm_email,\r\n" + 
+							"                (\r\n" + 
+							"                    SELECT top 1 user_name \r\n" + 
+							"                    FROM issue i\r\n" + 
+							"                    INNER JOIN (\r\n" + 
+							"                        SELECT \r\n" + 
+							"                            contract_id_fk, \r\n" + 
+							"                            department_id_fk, \r\n" + 
+							"                            executive_user_id_fk, \r\n" + 
+							"                            user_name,\r\n" + 
+							"                            designation, \r\n" + 
+							"                            department_fk, \r\n" + 
+							"                            user_type_fk, \r\n" + 
+							"                            user_role_name_fk, \r\n" + 
+							"                            email_id \r\n" + 
+							"                        FROM contract_executive a \r\n" + 
+							"                        LEFT JOIN [user] b\r\n" + 
+							"                        ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                        WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                    ) m \r\n" + 
+							"                    ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                    WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                    AND issue_id = issue_id \r\n" + 
+							"                    AND designation IN ('Project Manager')\r\n" + 
+							"    ) AS pm_name,\r\n" + 
+							"    \r\n" + 
+							"    \r\n" + 
+							" (\r\n" + 
+							"                SELECT top 1 email_id \r\n" + 
+							"                FROM issue i\r\n" + 
+							"                INNER JOIN (\r\n" + 
+							"                    SELECT \r\n" + 
+							"                        contract_id_fk, \r\n" + 
+							"                        department_id_fk, \r\n" + 
+							"                        executive_user_id_fk, \r\n" + 
+							"                        user_name,\r\n" + 
+							"                        designation, \r\n" + 
+							"                        department_fk, \r\n" + 
+							"                        user_type_fk, \r\n" + 
+							"                        user_role_name_fk, \r\n" + 
+							"                        email_id \r\n" + 
+							"                    FROM contract_executive a \r\n" + 
+							"                    LEFT JOIN [user] b\r\n" + 
+							"                    ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                    WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                ) m \r\n" + 
+							"                ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                AND issue_id = issue_id \r\n" + 
+							"                AND designation IN ('AEN')\r\n" + 
+							"            ) AS ae_email,\r\n" + 
+							"                (\r\n" + 
+							"                    SELECT top 1 user_name \r\n" + 
+							"                    FROM issue i\r\n" + 
+							"                    INNER JOIN (\r\n" + 
+							"                        SELECT \r\n" + 
+							"                            contract_id_fk, \r\n" + 
+							"                            department_id_fk, \r\n" + 
+							"                            executive_user_id_fk, \r\n" + 
+							"                            user_name,\r\n" + 
+							"                            designation, \r\n" + 
+							"                            department_fk, \r\n" + 
+							"                            user_type_fk, \r\n" + 
+							"                            user_role_name_fk, \r\n" + 
+							"                            email_id \r\n" + 
+							"                        FROM contract_executive a \r\n" + 
+							"                        LEFT JOIN [user] b\r\n" + 
+							"                        ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                        WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                    ) m \r\n" + 
+							"                    ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                    WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                    AND issue_id = issue_id \r\n" + 
+							"                    AND designation IN ('AEN')\r\n" + 
+							"    ) AS ae_name,   \r\n" + 
+							"    \r\n" + 
+							"    \r\n" + 
+							"   \r\n" + 
+							"   (\r\n" + 
+							"                   SELECT top 1 email_id \r\n" + 
+							"                   FROM issue i\r\n" + 
+							"                   INNER JOIN (\r\n" + 
+							"                       SELECT \r\n" + 
+							"                           contract_id_fk, \r\n" + 
+							"                           department_id_fk, \r\n" + 
+							"                           executive_user_id_fk, \r\n" + 
+							"                           user_name,\r\n" + 
+							"                           designation, \r\n" + 
+							"                           department_fk, \r\n" + 
+							"                           user_type_fk, \r\n" + 
+							"                           user_role_name_fk, \r\n" + 
+							"                           email_id \r\n" + 
+							"                       FROM contract_executive a \r\n" + 
+							"                       LEFT JOIN [user] b\r\n" + 
+							"                       ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                       WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                   ) m \r\n" + 
+							"                   ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                   WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                   AND issue_id = issue_id \r\n" + 
+							"                   AND designation IN ('SPE')\r\n" + 
+							"               ) AS spe_email,\r\n" + 
+							"                   (\r\n" + 
+							"                       SELECT top 1 user_name \r\n" + 
+							"                       FROM issue i\r\n" + 
+							"                       INNER JOIN (\r\n" + 
+							"                           SELECT \r\n" + 
+							"                               contract_id_fk, \r\n" + 
+							"                               department_id_fk, \r\n" + 
+							"                               executive_user_id_fk, \r\n" + 
+							"                               user_name,\r\n" + 
+							"                               designation, \r\n" + 
+							"                               department_fk, \r\n" + 
+							"                               user_type_fk, \r\n" + 
+							"                               user_role_name_fk, \r\n" + 
+							"                               email_id \r\n" + 
+							"                           FROM contract_executive a \r\n" + 
+							"                           LEFT JOIN [user] b\r\n" + 
+							"                           ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                           WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                       ) m \r\n" + 
+							"                       ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                       WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                       AND issue_id = issue_id \r\n" + 
+							"                       AND designation IN ('SPE')\r\n" + 
+							"    ) AS spe_name,   \r\n" + 
+							"    \r\n" + 
+							"    \r\n" + 
+							"    \r\n" + 
+							"  (\r\n" + 
+							"                   SELECT top 1 email_id \r\n" + 
+							"                   FROM issue i\r\n" + 
+							"                   INNER JOIN (\r\n" + 
+							"                       SELECT \r\n" + 
+							"                           contract_id_fk, \r\n" + 
+							"                           department_id_fk, \r\n" + 
+							"                           executive_user_id_fk, \r\n" + 
+							"                           user_name,\r\n" + 
+							"                           designation, \r\n" + 
+							"                           department_fk, \r\n" + 
+							"                           user_type_fk, \r\n" + 
+							"                           user_role_name_fk, \r\n" + 
+							"                           email_id \r\n" + 
+							"                       FROM contract_executive a \r\n" + 
+							"                       LEFT JOIN [user] b\r\n" + 
+							"                       ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                       WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                   ) m \r\n" + 
+							"                   ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                   WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                   AND issue_id = issue_id \r\n" + 
+							"                   AND designation IN ('PE')\r\n" + 
+							"               ) AS pe_email,\r\n" + 
+							"                   (\r\n" + 
+							"                       SELECT top 1 user_name \r\n" + 
+							"                       FROM issue i\r\n" + 
+							"                       INNER JOIN (\r\n" + 
+							"                           SELECT \r\n" + 
+							"                               contract_id_fk, \r\n" + 
+							"                               department_id_fk, \r\n" + 
+							"                               executive_user_id_fk, \r\n" + 
+							"                               user_name,\r\n" + 
+							"                               designation, \r\n" + 
+							"                               department_fk, \r\n" + 
+							"                               user_type_fk, \r\n" + 
+							"                               user_role_name_fk, \r\n" + 
+							"                               email_id \r\n" + 
+							"                           FROM contract_executive a \r\n" + 
+							"                           LEFT JOIN [user] b\r\n" + 
+							"                           ON a.executive_user_id_fk = b.user_id\r\n" + 
+							"                           WHERE department_fk NOT IN ('Fin', 'Plan')\r\n" + 
+							"                       ) m \r\n" + 
+							"                       ON m.contract_id_fk = i.contract_id_fk\r\n" + 
+							"                       WHERE i.contract_id_fk = c.contract_id \r\n" + 
+							"                       AND issue_id = issue_id \r\n" + 
+							"                       AND designation IN ('PE')\r\n" + 
+							"    ) AS pe_name  "
+					+ "from issue i " + "left outer join [user] u1 on i.created_by_user_id_fk = u1.user_id "
+					+ "left outer join [user] u2 on i.responsible_person = u2.user_id "
+					+ "left outer join [user] u3 on i.escalated_to = u3.user_id "
+					+ "LEFT OUTER JOIN contract c ON i.contract_id_fk  = c.contract_id "
+					+ "left outer join [user] u4 on c.hod_user_id_fk = u4.user_id "
+					+ "left outer join [user] u5 on c.dy_hod_user_id_fk = u5.user_id "
+					+ " left outer join contractor c1 on c1.contractor_id = c.contractor_id_fk "
+					+ "where issue_id = ? ";
+
+			Object[] pValues = new Object[] { issue_id };
+
+			Issue iObj = (Issue) jdbcTemplate.queryForObject(emailsQry, pValues,
+					new BeanPropertyRowMapper<Issue>(Issue.class));
+			if (!StringUtils.isEmpty(iObj)) {
+
+				/*********************************************************************************************/
+				NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
+
+				String issueMessageQry = "INSERT INTO messages (message,user_id_fk,redirect_url,created_date,message_type)"
+						+ "VALUES" + "(:message,:user_id_fk,:redirect_url,CURRENT_TIMESTAMP,:message_type)";
+
+				String isuue_status = null;
+				if (!StringUtils.isEmpty(iObj.getStatus_fk())) {
+					isuue_status = iObj.getStatus_fk().toLowerCase();
+				}
+				String message1 = "A new issue against " + iObj.getContract_id_fk() + " has been " + isuue_status
+						+ " to you";
+
+				String message2 = "An issue against " + iObj.getContract_id_fk() + " has been " + isuue_status;
+
+				String message3 = "An issue against " + iObj.getContract_id_fk() + " has been ";
+
+				if ("Assigned".equals(iObj.getStatus_fk()) && !StringUtils.isEmpty(iObj.getResponsible_person_user_id())
+						&& !iObj.getResponsible_person_user_id().equals(existing_responsible_person)) {
+					message3 = message3 + isuue_status;
+				} else if ("Escalated".equals(iObj.getStatus_fk())
+						&& !StringUtils.isEmpty(iObj.getResponsible_person_user_id())
+						&& !iObj.getEscalated_to_user_id().equals(existing_escalated_to)) {
+					message3 = message3 + isuue_status;
+				} else {
+					message3 = message3 + "updated";
+				}
+
+				String hod_user_id = "", dy_hod_user_id = "", responsible_person_user_id = "",
+						escalated_to_user_id = "", created_by_user_id = "";
+				if ("Raised".equals(iObj.getStatus_fk())) {
+					hod_user_id = iObj.getContract_hod_user_id();
+					dy_hod_user_id = iObj.getContract_dyhod_user_id();
+					created_by_user_id = iObj.getCreated_by_user_id_fk();
+				} else if ("Assigned".equals(iObj.getStatus_fk())) {
+					responsible_person_user_id = iObj.getResponsible_person_user_id();
+					hod_user_id = iObj.getContract_hod_user_id();
+					dy_hod_user_id = iObj.getContract_dyhod_user_id();
+				} else if ("Escalated".equals(iObj.getStatus_fk())) {
+					escalated_to_user_id = iObj.getEscalated_to_user_id();
+					responsible_person_user_id = iObj.getResponsible_person_user_id();
+					hod_user_id = iObj.getContract_hod_user_id();
+					dy_hod_user_id = iObj.getContract_dyhod_user_id();
+				} else if ("Closed".equals(iObj.getStatus_fk())) {
+					hod_user_id = iObj.getContract_hod_user_id();
+					dy_hod_user_id = iObj.getContract_dyhod_user_id();
+					responsible_person_user_id = iObj.getResponsible_person_user_id();
+					escalated_to_user_id = iObj.getEscalated_to_user_id();
+					created_by_user_id = iObj.getCreated_by_user_id_fk();
+				}
+				String redirect_url = null;
+				if ("Closed".equals(iObj.getStatus_fk())) {
+					redirect_url = "/get-issue/" + iObj.getIssue_id();
+				} else {
+					redirect_url = "/get-issue/" + iObj.getIssue_id();
+				}
+				String message_type = "Issue";
+
+				if (!StringUtils.isEmpty(iObj.getStatus_fk()) && "Raised".equals(iObj.getStatus_fk())
+						&& !iObj.getStatus_fk().equals(existing_status_fk)) {
+					if (!StringUtils.isEmpty(dy_hod_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(dy_hod_user_id);
+						msgObj.setMessage(message1);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(hod_user_id) && !(hod_user_id.equals(created_by_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(hod_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(created_by_user_id) && !(created_by_user_id.equals(dy_hod_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(created_by_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+				}
+				if (!StringUtils.isEmpty(iObj.getStatus_fk()) && "Assigned".equals(iObj.getStatus_fk())
+						&& !iObj.getStatus_fk().equals(existing_status_fk)) {
+					if (!StringUtils.isEmpty(hod_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(hod_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(dy_hod_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(dy_hod_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(responsible_person_user_id) && !(responsible_person_user_id.equals(dy_hod_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(responsible_person_user_id);
+						msgObj.setMessage(message1);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+				} else if (!StringUtils.isEmpty(iObj.getStatus_fk()) && "Assigned".equals(iObj.getStatus_fk())
+						&& iObj.getStatus_fk().equals(existing_status_fk)
+						&& !StringUtils.isEmpty(iObj.getResponsible_person_user_id())
+						&& iObj.getResponsible_person_user_id().equals(existing_responsible_person)) {
+					if (!StringUtils.isEmpty(responsible_person_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(responsible_person_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(hod_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(hod_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(dy_hod_user_id) && !(dy_hod_user_id.equals(responsible_person_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(dy_hod_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+				} else if (!StringUtils.isEmpty(iObj.getStatus_fk()) && "Assigned".equals(iObj.getStatus_fk())
+						&& iObj.getStatus_fk().equals(existing_status_fk)
+						&& !StringUtils.isEmpty(iObj.getResponsible_person_user_id())
+						&& !iObj.getResponsible_person_user_id().equals(existing_responsible_person)) {
+					if (!StringUtils.isEmpty(responsible_person_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(responsible_person_user_id);
+						msgObj.setMessage(message1);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(hod_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(hod_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(dy_hod_user_id) && !(dy_hod_user_id.equals(responsible_person_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(dy_hod_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+				}
+
+				if (!StringUtils.isEmpty(iObj.getStatus_fk()) && "Escalated".equals(iObj.getStatus_fk())
+						&& !iObj.getStatus_fk().equals(existing_status_fk)) {
+					if (!StringUtils.isEmpty(escalated_to_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(escalated_to_user_id);
+						msgObj.setMessage(message1);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(responsible_person_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(responsible_person_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(hod_user_id) && !(hod_user_id.equals(escalated_to_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(hod_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(dy_hod_user_id) && !(dy_hod_user_id.equals(responsible_person_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(dy_hod_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+				} else if (!StringUtils.isEmpty(iObj.getStatus_fk()) && "Escalated".equals(iObj.getStatus_fk())
+						&& iObj.getStatus_fk().equals(existing_status_fk)
+						&& !StringUtils.isEmpty(iObj.getEscalated_to_user_id())
+						&& iObj.getEscalated_to_user_id().equals(existing_escalated_to)) {
+					if (!StringUtils.isEmpty(escalated_to_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(escalated_to_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(responsible_person_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(responsible_person_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(hod_user_id) && !(hod_user_id.equals(escalated_to_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(hod_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(dy_hod_user_id) && !(dy_hod_user_id.equals(responsible_person_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(dy_hod_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+				} else if (!StringUtils.isEmpty(iObj.getStatus_fk()) && "Escalated".equals(iObj.getStatus_fk())
+						&& iObj.getStatus_fk().equals(existing_status_fk)
+						&& !StringUtils.isEmpty(iObj.getEscalated_to_user_id())
+						&& !iObj.getEscalated_to_user_id().equals(existing_escalated_to)) {
+					if (!StringUtils.isEmpty(escalated_to_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(escalated_to_user_id);
+						msgObj.setMessage(message1);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(responsible_person_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(responsible_person_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(hod_user_id) && !(hod_user_id.equals(escalated_to_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(hod_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(dy_hod_user_id) && !(dy_hod_user_id.equals(responsible_person_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(dy_hod_user_id);
+						msgObj.setMessage(message3);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+				}
+
+				if (!StringUtils.isEmpty(iObj.getStatus_fk()) && "Closed".equals(iObj.getStatus_fk())
+						&& !iObj.getStatus_fk().equals(existing_status_fk)) {
+					if (!StringUtils.isEmpty(hod_user_id) && !(hod_user_id.equals(escalated_to_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(hod_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(dy_hod_user_id) && !(dy_hod_user_id.equals(responsible_person_user_id))) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(dy_hod_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(responsible_person_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(responsible_person_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(escalated_to_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(escalated_to_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+					if (!StringUtils.isEmpty(created_by_user_id)) {
+						Messages msgObj = new Messages();
+						msgObj.setUser_id_fk(created_by_user_id);
+						msgObj.setMessage(message2);
+						msgObj.setRedirect_url(redirect_url);
+						msgObj.setMessage_type(message_type);
+						BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(msgObj);
+						template.update(issueMessageQry, paramSource);
+					}
+				}
+
+				/*********************************************************************************************/
+				String mailTo = "";
+				String mailCC = "";
+				String mailBodyHeader = "";
+
+				if ("Raised".equals(iObj.getStatus_fk())) {
+					if (!StringUtils.isEmpty(iObj.getContract_dyhod_email_id())) {
+						//mailTo = mailTo + iObj.getContract_dyhod_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(reported_by_email_id)) {
+						//mailCC = mailCC + reported_by_email_id + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getContract_hod_email_id())) {
+						//mailCC = mailCC + iObj.getContract_hod_email_id() + ",";
+					}
+				} else if ("Assigned".equals(iObj.getStatus_fk())) {
+					if (!StringUtils.isEmpty(iObj.getResponsible_person_email_id())) {
+						//mailTo = mailTo + iObj.getResponsible_person_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getContract_hod_email_id())) {
+						//mailCC = mailCC + iObj.getContract_hod_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getContract_dyhod_email_id())) {
+						//mailCC = mailCC + iObj.getContract_dyhod_email_id() + ",";
+					}
+				} else if ("Escalated".equals(iObj.getStatus_fk())) {
+					if (!StringUtils.isEmpty(iObj.getEscalated_to_email_id())) {
+						//mailTo = mailTo + iObj.getEscalated_to_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getResponsible_person_email_id())) {
+						//mailCC = mailCC + iObj.getResponsible_person_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getContract_hod_email_id())) {
+						//mailCC = mailCC + iObj.getContract_hod_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getContract_dyhod_email_id())) {
+						//mailCC = mailCC + iObj.getContract_dyhod_email_id() + ",";
+					}
+				} else if ("Closed".equals(iObj.getStatus_fk())) {
+					if (!StringUtils.isEmpty(iObj.getContract_hod_email_id())) {
+						//mailTo = mailTo + iObj.getContract_hod_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getContract_dyhod_email_id())) {
+						//mailCC = mailCC + iObj.getContract_dyhod_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getEscalated_to_email_id())) {
+						//mailCC = mailCC + iObj.getEscalated_to_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getResponsible_person_email_id())) {
+						//mailCC = mailCC + iObj.getResponsible_person_email_id() + ",";
+					}
+					if (!StringUtils.isEmpty(iObj.getCreated_by_email_id())) {
+						//mailCC = mailCC + iObj.getCreated_by_email_id() + ",";
+					}
+				}
+
+				if (!StringUtils.isEmpty(mailTo)) {
+					//mailTo = org.apache.commons.lang3.StringUtils.chop(mailTo);
+				}
+
+				if (!StringUtils.isEmpty(mailCC)) {
+					//mailCC = org.apache.commons.lang3.StringUtils.chop(mailCC);
+				}
+
+				
+
+				if (!StringUtils.isEmpty(iObj.getStatus_fk()) && !iObj.getStatus_fk().equals(existing_status_fk)
+						&& !iObj.getStatus_fk().equals("Closed")) {
+					mailBodyHeader = mailBodyHeader + "A new ";
+				} else {
+					mailBodyHeader = mailBodyHeader + "An ";
+				}
+				mailBodyHeader = mailBodyHeader + "issue against ";
+
+				if (!StringUtils.isEmpty(iObj.getContract_id_fk())) {
+					mailBodyHeader = mailBodyHeader + iObj.getContract_id_fk();
+				}
+				mailBodyHeader = mailBodyHeader + " has been ";
+
+				if (!StringUtils.isEmpty(iObj.getStatus_fk()) && !StringUtils.isEmpty(existing_status_fk)
+						&& iObj.getStatus_fk().equals(existing_status_fk)) {
+					if ("Assigned".equals(iObj.getStatus_fk())
+							&& !StringUtils.isEmpty(iObj.getResponsible_person_user_id())
+							&& !iObj.getResponsible_person_user_id().equals(existing_responsible_person)) {
+						mailBodyHeader = mailBodyHeader + isuue_status;
+					} else if ("Escalated".equals(iObj.getStatus_fk())
+							&& !StringUtils.isEmpty(iObj.getResponsible_person_user_id())
+							&& !iObj.getEscalated_to_user_id().equals(existing_escalated_to)) {
+						mailBodyHeader = mailBodyHeader + isuue_status;
+					} else {
+						mailBodyHeader = mailBodyHeader + "updated ";
+					}
+				} else {
+					mailBodyHeader = mailBodyHeader + isuue_status;
+					if ("Assigned".equals(iObj.getStatus_fk()) || "Escalated".equals(iObj.getStatus_fk())) {
+						mailBodyHeader = mailBodyHeader + " to you ";
+					}
+				}
+				
+				
+				
+				String recipientName = iObj.getPe_name() + "," + iObj.getSse_name() + " and " + iObj.getAen_name();
+
+				if (iObj.getPe_name() == null || iObj.getPe_name().isEmpty() ||
+				    iObj.getSse_name() == null || iObj.getSse_name().isEmpty() ||
+				    iObj.getAen_name() == null || iObj.getAen_name().isEmpty()) {
+				    recipientName = iObj.getDyhod_name();  // Use Dyhod_name if any of the previous names are missing
+				    mailTo = mailTo + iObj.getContract_dyhod_email_id() + ",";
+				}
+
+				// Add names dynamically to recipientName string
+				if (iObj.getAss_name() != null && !iObj.getAss_name().isEmpty()) {
+				    recipientName += ", " + iObj.getAss_name();
+				}
+				if (iObj.getAssr_name() != null && !iObj.getAssr_name().isEmpty()) {
+				    recipientName += ", " + iObj.getAssr_name();
+				}
+				if (iObj.getRs_name() != null && !iObj.getRs_name().isEmpty()) {
+				    recipientName += ", " + iObj.getRs_name();
+				}
+				if (iObj.getPm_name() != null && !iObj.getPm_name().isEmpty()) {
+				    recipientName += ", " + iObj.getPm_name();
+				}
+				if (iObj.getAe_name() != null && !iObj.getAe_name().isEmpty()) {
+				    recipientName += ", " + iObj.getAe_name();
+				}
+				if (iObj.getSpe_name() != null && !iObj.getSpe_name().isEmpty()) {
+				    recipientName += ", " + iObj.getSpe_name();
+				}
+
+				// Add emails to 'mailTo'
+				if (iObj.getPe_email() != null && !iObj.getPe_email().isEmpty()) {
+				    mailTo = mailTo + iObj.getPe_email() + ",";
+				}
+				if (iObj.getAen_mail() != null && !iObj.getAen_mail().isEmpty()) {
+				    mailTo = mailTo + iObj.getAen_mail() + ",";
+				}
+				if (iObj.getSse_email() != null && !iObj.getSse_email().isEmpty()) {
+				    mailTo = mailTo + iObj.getSse_email() + ",";
+				}
+				if (iObj.getAss_email() != null && !iObj.getAss_email().isEmpty()) {
+				    mailTo = mailTo + iObj.getAss_email() + ",";
+				}
+				if (iObj.getAssr_email() != null && !iObj.getAssr_email().isEmpty()) {
+				    mailTo = mailTo + iObj.getAssr_email() + ",";
+				}
+				if (iObj.getRs_email() != null && !iObj.getRs_email().isEmpty()) {
+				    mailTo = mailTo + iObj.getRs_email() + ",";
+				}
+				if (iObj.getPm_email() != null && !iObj.getPm_email().isEmpty()) {
+				    mailTo = mailTo + iObj.getPm_email() + ",";
+				}
+				if (iObj.getAe_email() != null && !iObj.getAe_email().isEmpty()) {
+				    mailTo = mailTo + iObj.getAe_email() + ",";
+				}
+				if (iObj.getSpe_email() != null && !iObj.getSpe_email().isEmpty()) {
+				    mailTo = mailTo + iObj.getSpe_email() + ",";
+				}
+
+			    // Add DyHOD and Contractor to 'CC'
+			    if (iObj.getContract_dyhod_email_id() != null && !iObj.getContract_dyhod_email_id().isEmpty()) {
+			        mailCC=mailCC+iObj.getContract_dyhod_email_id()+",";
+			    }
+			    if (iObj.getContractor_email() != null && !iObj.getContractor_email().isEmpty()) {
+			    	mailCC=mailCC+iObj.getContractor_email()+",";
+			    }			
+			    String currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+			    iObj.setCurdate(currentDate);
+				
+			    
+				String header="Dear "+recipientName+",\r\n" + 
+						"\r\n" + 
+						"We would like to inform you that a new issue has been added to the MRVC-PMIS portal by "+iObj.getContractor_name()+". Below are the details of the issue:\r\n" + 
+						"";
+				
+				if ("Raised".equals(iObj.getStatus_fk())) {
+					iObj.setMail_body_header(header);
+					iObj.setHod_name(recipientName);
+				}
+
+
+				String emailSubject = "PMIS Issue Notification - Issue ";
+
+				if (!StringUtils.isEmpty(iObj.getStatus_fk()) && !StringUtils.isEmpty(existing_status_fk)
+						&& iObj.getStatus_fk().equals(existing_status_fk)) {
+					if ("Assigned".equals(iObj.getStatus_fk())
+							&& !StringUtils.isEmpty(iObj.getResponsible_person_user_id())
+							&& !iObj.getResponsible_person_user_id().equals(existing_responsible_person)) {
+						emailSubject = emailSubject + iObj.getStatus_fk();
+					} else if ("Escalated".equals(iObj.getStatus_fk())
+							&& !StringUtils.isEmpty(iObj.getResponsible_person_user_id())
+							&& !iObj.getEscalated_to_user_id().equals(existing_escalated_to)) {
+						emailSubject = emailSubject + iObj.getStatus_fk();
+					} else if ("Closed".equals(iObj.getStatus_fk())) {
+						emailSubject = emailSubject + iObj.getStatus_fk();
+					} else {
+						emailSubject = emailSubject + "Updated";
+					}
+				} else {
+					emailSubject = emailSubject + issue_status;
+				}
+				
+				iObj.setAction("a new issue has been added");
+				iObj.setActionremarks("0");
+
+				if ("Raised".equals(iObj.getStatus_fk()) && "1".equals(action)) 
+				{
+					if(iObj.getStatus_fk()!=iObj.getExisting_status_fk())
+					{
+						emailSubject = "PMIS Issue Notification - Issue has Re-Opened";
+						iObj.setAction("issue has been Re-Opened by "+iObj.getContractor_name());
+						iObj.setActionremarks("1");
+					}
+					else
+					{
+						emailSubject = "PMIS Issue Notification - Issue Updated";
+						iObj.setAction("issue has been updated by "+User+"("+Designation+")");
+						iObj.setActionremarks("0");
+					    if (iObj.getContractor_email() != null && !iObj.getContractor_email().isEmpty()) {
+					    	mailTo=iObj.getContractor_email();
+					    	iObj.setHod_name(iObj.getContractor_name());
+					    }
+					}
+				}
+				else if ("Closed".equals(iObj.getStatus_fk()) && "1".equals(action)) {
+					
+					if(iObj.getStatus_fk()!=iObj.getExisting_status_fk())
+					{
+						iObj.setAction("an issue was closed by "+User+"("+Designation+")");
+						iObj.setActionremarks("1");
+					    if (iObj.getContractor_email() != null && !iObj.getContractor_email().isEmpty()) {
+					    	mailTo=iObj.getContractor_email();
+					    	iObj.setHod_name(iObj.getContractor_name());
+					    }	
+					}
+					else
+					{
+						emailSubject = "PMIS Issue Notification - Issue Updated";
+						iObj.setAction("issue has been updated by "+User+"("+Designation+")");
+						iObj.setActionremarks("0");
+					    if (iObj.getContractor_email() != null && !iObj.getContractor_email().isEmpty()) {
+					    	mailTo=iObj.getContractor_email();
+					    	iObj.setHod_name(iObj.getContractor_name());
+					    }						
+					}
+				}
+				else
+				{
+					iObj.setAction("a new issue has been added to the MRVC-PMIS portal by "+iObj.getContractor_name());
+					iObj.setActionremarks("0");
+				}
+				
+
+				Mail mail = new Mail();
+				mail.setMailTo(mailTo);
+				mail.setMailCc(mailCC);
+				mail.setMailBcc(CommonConstants.BCC_MAIL);
+				mail.setMailSubject(emailSubject);
+				mail.setTemplateName("IssueStatusAlert.vm");
+
+				SimpleDateFormat monthFormat = new SimpleDateFormat("dd-MMM-YYYY");
+				String today_date = monthFormat.format(new Date()).toUpperCase();
+
+				SimpleDateFormat yearFormat = new SimpleDateFormat("YYYY");
+				String current_year = yearFormat.format(new Date()).toUpperCase();
+
+				if (!StringUtils.isEmpty(mailTo)) {
+					EMailSender emailSender = new EMailSender();
+					logger.error("sendEmailWithIssueStatusAlert() >> Sending mail to " + mailTo + ": Start ");
+					logger.error("sendEmailWithIssueStatusAlert() >> Sending mail CC " + mailCC + ": Start ");
+					emailSender.sendEmailWithIssueStatusAlert(mail, iObj, today_date, current_year);
+					logger.error("sendEmailWithIssueStatusAlert() >> Sending mail to " + mailTo + ": end ");
+					logger.error("sendEmailWithIssueStatusAlert() >> Sending mail CC " + mailCC + ": end ");
+				}
+			}
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+
+	}
 }

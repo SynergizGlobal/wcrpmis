@@ -54,4 +54,6 @@ public interface IIssueService {
 
 	List<Issue> getComponentListForIssue(Issue obj) throws Exception;
 
+	Boolean addIssue(Issue obj) throws Exception;
+
 }

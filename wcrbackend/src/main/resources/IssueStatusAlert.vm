@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>PMIS Issue Alert</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+
+<body style="margin: 0; padding: 0;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td style="padding: 10px 0 30px 0;">
+                <table align="center" border="0" cellpadding="0" cellspacing="0" width="700px"
+                    style="border: 1px solid #cccccc; border-collapse: collapse;">
+                    
+                    <tr>
+						<td align="left"
+							style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+										    
+				Dear $alert.hod_name,<br>We would like to inform you that $alert.action. Below are the details of the issue:<br>
+						
+						</td>
+					</tr>
+                    
+                    <tr>
+                        <td bgcolor="#f1f1f1" style="padding: 5px ;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+
+                                <tr>
+                                    <td>
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td valign="middle">
+                                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        
+                                                        <tbody>
+                                                            <tr>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     Work Details
+                                                                </td>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                    #if($alert.work_short_name && !$alert.work_short_name.empty) 
+                                                                    	$alert.work_short_name
+                                                                    #end
+                                                                </td>
+                                                            </tr>
+															<tr>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     Contract Details
+                                                                </td>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                    #if($alert.contract_short_name && !$alert.contract_short_name.empty) 
+                                                                    	$alert.contract_short_name
+                                                                    #end
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+ 																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     Issue Raised On
+                                                                </td>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                    #if($alert.curdate && !$alert.curdate.empty) 
+                                                                    	$alert.curdate
+                                                                    #end
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+ 																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     Reported By
+                                                                </td>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                    #if($alert.reported_by && !$alert.reported_by.empty) 
+                                                                    	$alert.reported_by
+                                                                    #end
+                                                                </td>
+                                                            </tr> 
+                                                              <tr>
+ 																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     Issue Description
+                                                                </td>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                    #if($alert.description && !$alert.description.empty) 
+                                                                    	$alert.description
+                                                                    #end
+                                                                </td>
+                                                            </tr>                                                                                                                                                                                  
+															<tr>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     Category
+                                                                </td>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                    #if($alert.category_fk && !$alert.category_fk.empty) 
+                                                                    	$alert.category_fk
+                                                                    #end
+                                                                </td>
+                                                            </tr>
+ 															<tr>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     Priority
+                                                                </td>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                    #if($alert.priority_fk && !$alert.priority_fk.empty) 
+                                                                    	$alert.priority_fk
+                                                                    #end
+                                                                </td>
+                                                            </tr>                                                           
+															<tr>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     Organization Responsible for Issue
+                                                                </td>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                    #if($alert.zonal_railway_fk && !$alert.zonal_railway_fk.empty) 
+                                                                    	$alert.zonal_railway_fk
+                                                                    #end
+                                                                </td>
+                                                            </tr>
+															<tr>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     Deadline for Issue Resolution
+                                                                </td>
+																<td align="left" width="100px"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                    #if($alert.date && !$alert.date.empty) 
+                                                                    	$alert.date
+                                                                    #end
+                                                                </td>
+                                                            </tr>
+#if($alert.actionremarks == "1") 
+<tr>
+    <td align="left" width="100px"
+        style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+        Latest Action Taken/Remarks
+    </td>
+    <td align="left" width="100px"
+        style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+        #if($alert.comment && !$alert.comment.empty) 
+            $alert.comment
+        #else
+            No remarks available
+        #end
+    </td>
+</tr>
+#end
+                                                            
+                                                            <tr>
+																<td align="left" width="100px" colspan="2"
+                                                                    style="padding: 10px;font-family: Arial, sans-serif; font-size: 12px; font-weight: 500; border:1px solid #A0A3BB; width: 170px; min-width: 170px; max-width: 170px; word-wrap:break-word;">
+                                                                     The concerned team is expected to attend to the issue at the earliest and take the necessary actions.
+<a href="http://203.153.40.44:90/wrpmis/get-issue/$alert.issue_id">Click Here</a>  for more details on the issue.<br>
+Thank you for your attention to this matter.
+<br><br>
+Regards,
+<br>
+MRVC-WRPMIS Team.
+
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                        <tr>
+                                                            <td
+                                                                style="padding: 25px 0 0 0; color: #22223B; font-family: Arial, sans-serif; font-size: 13px; line-height: 20px;">
+															</td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#E3F2FD" style="padding: 4px">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td style=" font-family: Arial, sans-serif; font-size: 12px;" align="center">
+                                        &copy; $current_year @ mrvc.indianrailways.gov.in | Designed & Developed by <a
+                                            href="https://www.synergizglobal.com"><img src="https://syntrack-dev.s3.ap-south-1.amazonaws.com/SynergizGlobal/img/synergiz.png" alt="SynergizGlobal"
+                                                style=" width: 100px;  height: 25px; vertical-align: bottom;"></a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

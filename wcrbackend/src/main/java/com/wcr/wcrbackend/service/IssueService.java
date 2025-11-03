@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import com.wcr.wcrbackend.DTO.Issue;
 import com.wcr.wcrbackend.repo.IIssueRepo;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class IssueService implements IIssueService {
 
@@ -155,6 +157,13 @@ public class IssueService implements IIssueService {
 	public List<Issue> getComponentListForIssue(Issue obj) throws Exception {
 		// TODO Auto-generated method stub
 		return issueRepo.getComponentListForIssue(obj);
+	}
+
+	@Override
+	@Transactional
+	public Boolean addIssue(Issue obj) throws Exception {
+		// TODO Auto-generated method stub
+		return issueRepo.addIssue(obj);
 	}
 
 }

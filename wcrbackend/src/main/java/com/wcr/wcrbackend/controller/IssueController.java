@@ -6,12 +6,15 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wcr.wcrbackend.DTO.Issue;
+import com.wcr.wcrbackend.common.CommonConstants;
+import com.wcr.wcrbackend.common.DateParser;
 import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.service.IIssueService;
 import com.wcr.wcrbackend.service.IUserService;
@@ -282,5 +285,48 @@ public class IssueController {
 			logger.error("getIssueStatusListForIssuesForm : " + e.getMessage());
 		}
 		return objsList;
+	}
+	
+	@PostMapping(value="/add-issue")
+	public Boolean addIssue(@RequestBody Issue obj,HttpSession session) {
+		//ModelAndView model = new ModelAndView();
+		Boolean flag = false;
+		try {
+			//model.setViewName("redirect:/issues");
+			User uObj = (User) session.getAttribute("user");
+			String user_Id = uObj.getUserId();
+			String userName = uObj.getUserName();
+			String userDesignation = uObj.getDesignation();
+			
+			User user = (User)session.getAttribute("user");
+			if(!StringUtils.isEmpty(user) && !StringUtils.isEmpty(user.getEmailId())) {
+				obj.setReported_by_email_id(user.getEmailId());
+			}
+			
+			obj.setDate(DateParser.parse(obj.getDate()));			
+			obj.setResolved_date(DateParser.parse(obj.getResolved_date()));			
+			obj.setEscalation_date(DateParser.parse(obj.getEscalation_date()));
+			obj.setAssigned_date(DateParser.parse(obj.getAssigned_date()));
+			if(!StringUtils.isEmpty(obj.getZonal_railway_fk()) && obj.getZonal_railway_fk().equals("MRVC")) {
+				obj.setOther_organization(obj.getZonal_railway_fk() + " - " + obj.getOther_organization());
+			}
+			obj.setCreated_by_user_id_fk(user_Id);
+			obj.setUser_name(userName);
+			obj.setDesignation(userDesignation);
+			
+			obj.setStatus_fk(CommonConstants.ISSUE_STATUS_RAISED);
+			
+			flag = issueService.addIssue(obj);
+			/*if(flag) {
+				attributes.addFlashAttribute("success", "Issue "+obj.getStatus_fk()+" successfully");
+			}else {
+				attributes.addFlashAttribute("error", "Adding issue failed. Try again.");
+			}*/
+		} catch (Exception e) {
+			e.printStackTrace();
+			//attributes.addFlashAttribute("error", commonError);
+			logger.error("addIssue : " + e.getMessage());
+		}
+		return flag;
 	}
 }
