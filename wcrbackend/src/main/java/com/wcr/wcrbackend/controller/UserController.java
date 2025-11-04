@@ -628,8 +628,11 @@ public class UserController {
 		String attributeKey = "";
 		String attributeMsg = "";
 		try {
-			userId = (String) session.getAttribute("USER_ID");
-			userName = (String) session.getAttribute("USER_NAME");
+			//userId = (String) session.getAttribute("USER_ID");
+			//userName = (String) session.getAttribute("USER_NAME");
+			com.wcr.wcrbackend.entity.User uObj = (com.wcr.wcrbackend.entity.User) session.getAttribute("user");
+			userId = uObj.getUserId();
+			userName = uObj.getUserName();
 			//model.setViewName("redirect:/users");
 			
 			if(!StringUtils.isEmpty(user.getFileName())){
