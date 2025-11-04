@@ -14,6 +14,8 @@ import com.wcr.wcrbackend.DTO.User;
 import com.wcr.wcrbackend.DTO.UtilityShifting;
 import com.wcr.wcrbackend.repo.IUserDao;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class UserService implements IUserService {
 
@@ -118,6 +120,43 @@ public class UserService implements IUserService {
 	public List<RandRMain> getRRList(User obj) throws Exception {
 		// TODO Auto-generated method stub
 		return userDoaService.getRRList(obj);
+	}
+	@Override
+	@Transactional
+	public String addUser(User obj) throws Exception {
+		// TODO Auto-generated method stub
+		return userDoaService.addUser(obj);
+	}
+	@Override
+	public User getUser(User obj) throws Exception {
+		// TODO Auto-generated method stub
+		return userDoaService.getUser(obj);
+	}
+	@Override
+	@Transactional
+	public boolean updateUser(User obj) throws Exception {
+		// TODO Auto-generated method stub
+		return userDoaService.updateUser(obj);
+	}
+	@Override
+	public boolean deleteUser(User obj) throws Exception {
+		// TODO Auto-generated method stub
+		return userDoaService.deleteUser(obj);
+	}
+	@Override
+	public List<User> getUsersExportList(User user) throws Exception {
+		// TODO Auto-generated method stub
+		return userDoaService.getUsersExportList(user);
+	}
+	@Override
+	public List<User> getReportingToUserId(String reporting_to_id_srfk) throws Exception {
+		// TODO Auto-generated method stub
+		return userDoaService.getReportingToUserId(reporting_to_id_srfk);
+	}
+	@Override
+	public int uploadUsers(List<User> usersList) throws Exception {
+		// TODO Auto-generated method stub
+		return userDoaService.uploadUsers(usersList);
 	}
 
 }

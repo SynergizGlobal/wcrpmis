@@ -52,4 +52,18 @@ public interface IUserService {
 
 	List<RandRMain> getRRList(User obj) throws Exception;
 
+	String addUser(User obj) throws Exception;
+
+	User getUser(User obj) throws Exception;
+
+	boolean updateUser(User obj) throws Exception;
+
+	boolean deleteUser(User obj) throws Exception;
+
+	List<User> getUsersExportList(User user) throws Exception;
+
+	List<User> getReportingToUserId(String reporting_to_id_srfk) throws Exception;
+
+	int uploadUsers(List<User> usersList) throws Exception;
+
 }
