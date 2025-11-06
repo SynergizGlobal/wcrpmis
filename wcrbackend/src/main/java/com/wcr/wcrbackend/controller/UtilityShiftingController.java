@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -239,7 +240,7 @@ public class UtilityShiftingController {
 	
 	@PostMapping(value = "/ajax/form/add-utility-shifting")
 	public Map<String,List<UtilityShifting>> addUtilityShiftingForm(@RequestBody UtilityShifting obj,HttpSession session) {
-		Map<String,List<UtilityShifting>> map = new HashMap<>();
+		Map<String,List<UtilityShifting>> map = new LinkedHashMap<>();
 		List<UtilityShifting> dataList = null;  
 		try {
 			User uObj = (User) session.getAttribute("user");
@@ -441,7 +442,7 @@ public class UtilityShiftingController {
 	@PostMapping(value="/ajax/form/get-utility-shifting")
 	public Map<String, List<UtilityShifting>> getUtilityShifting(@RequestBody UtilityShifting obj,HttpSession session) {
 		//ModelAndView model = new ModelAndView();
-		Map<String, List<UtilityShifting>> map = new HashMap<>();
+		Map<String, List<UtilityShifting>> map = new LinkedHashMap<>();
 		try {
 		
 			User uObj = (User) session.getAttribute("user");
