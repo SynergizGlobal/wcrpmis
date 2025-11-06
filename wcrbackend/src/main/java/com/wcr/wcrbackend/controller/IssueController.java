@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.io.FileNotFoundException;
@@ -193,7 +194,7 @@ public class IssueController {
 	
 	@PostMapping(value = "/ajax/form/add-issue-form")
 	public Map<String, List<Issue>> addIssueForm(HttpSession session,@RequestBody Issue obj) {
-		Map<String, List<Issue>> map = new HashMap<>();
+		Map<String, List<Issue>> map = new LinkedHashMap<>();
 		
 		List<Issue> issues = null;
 		try {
@@ -377,7 +378,7 @@ public class IssueController {
 	
 	@PostMapping(value="/ajax/form/get-issue")
 	public Map<String, List<Issue>> getIssue(@RequestBody Issue obj,HttpSession session) {
-		Map<String, List<Issue>> map = new HashMap<>();
+		Map<String, List<Issue>> map = new LinkedHashMap<>();
 		//ModelAndView model = new ModelAndView();
 		try {
 			//model.setViewName(PageConstants2.updateIssueForm);
