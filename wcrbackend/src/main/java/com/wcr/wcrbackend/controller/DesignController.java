@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.poi.ss.usermodel.BorderStyle;
@@ -671,7 +672,7 @@ public class DesignController {
 	
 	@PostMapping(value = "/ajax/form/get-design/design")
 	public Map<String,List<Design>> getDesignPayloadForDesign(@RequestBody Design obj) {
-		Map<String, List<Design>> design = new HashMap<>();
+		Map<String, List<Design>> design = new LinkedHashMap<>();
 		try {
 			List<Design> projectsList = designService.getProjectsListForDesignForm(obj);
 			design.put("projectsList", projectsList);
@@ -726,7 +727,7 @@ public class DesignController {
 	}
 	@GetMapping(value = "/ajax/form/get-design/issue")
 	public Map<String,List<Issue>> getDesignPayloadForIssue() {
-		Map<String, List<Issue>> design = new HashMap<>();
+		Map<String, List<Issue>> design = new LinkedHashMap<>();
 		try {
 			Issue iObj = new Issue();
 			List<Issue> issueCategoryList = issueService.getIssuesCategoryList(iObj);	
@@ -755,7 +756,7 @@ public class DesignController {
 	
 	@PostMapping(value = "/ajax/form/drawing-repository")
 	public Map<String, List<Design>> DrawingRepository(@RequestBody Design obj,HttpSession session){
-		Map<String, List<Design>> model = new HashMap<>();
+		Map<String, List<Design>> model = new LinkedHashMap<>();
 		try{
 			
 			User uObj = (User) session.getAttribute("user");
@@ -781,7 +782,7 @@ public class DesignController {
 	
 	@PostMapping(value = "/ajax/form/add-design-form")
 	public Map<String, List<Design>> addDesignForm(@RequestBody Design obj){
-		Map<String, List<Design>> model = new HashMap<>();
+		Map<String, List<Design>> model = new LinkedHashMap<>();
 		try{
 			
 			List<Design> projectsList = designService.getProjectsListForDesignForm(obj);
