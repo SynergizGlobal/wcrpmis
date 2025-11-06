@@ -480,7 +480,7 @@ public class DesignController {
 		return totalRecords;
 	}
 	
-	@PostMapping(value = "/ajax/form/get-design/projectsList")
+	/*@PostMapping(value = "/ajax/form/get-design/projectsList")
 	public List<Design> getProjectsListForDesignForm(@RequestBody Design obj) {
 		List<Design> design = null;
 		try {
@@ -490,7 +490,7 @@ public class DesignController {
 			logger.error("getDesigns : " + e.getMessage());
 		}
 		return design;
-	}
+	}*/
 	
 	@GetMapping(value = "/ajax/form/get-design/departmentList")
 	public List<Contract> getDepartmentList() {
@@ -504,7 +504,7 @@ public class DesignController {
 		return design;
 	}
 	
-	@GetMapping(value = "/ajax/form/get-design/contractList")
+	/*@GetMapping(value = "/ajax/form/get-design/contractList")
 	public List<Design> getContractList() {
 		List<Design> design = null;
 		try {
@@ -667,7 +667,7 @@ public class DesignController {
 			logger.error("getDesigns : " + e.getMessage());
 		}
 		return design;
-	}
+	}*/
 	
 	@PostMapping(value = "/ajax/form/get-design/design")
 	public Map<String,List<Design>> getDesignPayloadForDesign(@RequestBody Design obj) {
