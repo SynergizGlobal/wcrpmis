@@ -543,6 +543,9 @@ input{
 .ifNoOverflow:has(.contractForm){
   overflow-y: visible;
 }
+.ifNoOverflowHidden:has(.contractForm) .sidebar{
+  overflow: initial;
+}
 input[maxlength] {
   padding: 10px 60px 10px 10px;
 }

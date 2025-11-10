@@ -20,7 +20,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen, sidebarRef }) {
   };
 
   return (
-    <aside ref={sidebarRef} className={`${styles.sidebar} ${sidebarOpen ? styles.open : ""}`}>
+    <aside ref={sidebarRef} className={`sidebar ${styles.sidebar} ${sidebarOpen ? styles.open : ""}`}>
       <ul onClick={handleLinkClick}>
         <li>
           <NavLink 
