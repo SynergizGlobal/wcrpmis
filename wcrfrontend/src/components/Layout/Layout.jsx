@@ -77,13 +77,13 @@ export default function Layout() {
           onClick={() => setSidebarOpen(false)}
         ></div>
       )}
-      <div className={styles.main}>
+      <div className={`ifNoOverflowHidden ${styles.main}`}>
         <Sidebar
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           sidebarRef={sidebarRef}
         />
-        <div className={styles.content}>
+        <div className={`ifNoOverflow ${styles.content}`}>
           <Outlet />
         </div>
       </div>

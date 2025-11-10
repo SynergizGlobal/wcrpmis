@@ -276,6 +276,7 @@ input:focus, select:focus{
   gap: 5px;
   flex: 1 0 30%;
   margin-bottom: 10px;
+  position: relative;
 }
 .rupee-field {
   position: relative;
@@ -292,6 +293,10 @@ input:focus, select:focus{
   font-size: 20px;
   color: #000;
   pointer-events: none;
+}
+td.rupee-field::before{
+  top: 50%;
+  transform: translateY(-50%);
 }
 .paginationRow{
   display: flex;
@@ -527,6 +532,24 @@ input{
 .hidden{
   visibility: hidden;
   z-index: -1;
+}
+.overflow-visible{
+  overflow-y: visible !important;
+}
+.ifNoOverflowHidden:has(.contractForm){
+  overflow-y: visible;
+  overflow: initial;
+}
+.ifNoOverflow:has(.contractForm){
+  overflow-y: visible;
+}
+input[maxlength] {
+  padding: 10px 60px 10px 10px;
+}
+input[maxlength] + div{
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
 }
 @media(max-width: 992px) {
   .filterRow{

@@ -1,3 +1,5 @@
+import ContractForm from "./components/UpdateForms/Contract/ContractForm/ContractForm";
+import Contract from "./components/UpdateForms/Contract/Contract";
 import DesignDrawingForm from "./components/UpdateForms/DesignDrawing/DesignDrawingForm/DesignDrawingForm";
 import DesignDrawing from "./components/UpdateForms/DesignDrawing/DesignDrawing";
 import GanttBarChart from "./components/Charts/GanttBarChart/GanttBarChart";
@@ -63,11 +65,14 @@ function App() {
             <Route path="land-acquisition" element={<LandAcquisition />}>
               <Route path="landacquisitionform" element={<LandAcquisitionForm />} />
             </Route>
-          <Route path="design" element={<DesignDrawing />} >
-            <Route path="add-design-form" element={<DesignDrawingForm />} />
+            <Route path="design" element={<DesignDrawing />}>
+              <Route path="add-design-form" element={<DesignDrawingForm />} />
+            </Route>
+            <Route path="ganttbarchart" element={<GanttBarChart />} />
+            <Route path="contract" element={<Contract />} >
+              <Route path="add-contract-form" element={<ContractForm />} />
+            </Route>
           </Route>
-          <Route path="ganttbarchart" element={<GanttBarChart />} />
-        </Route>
           <Route path="works" element={<Works />} />
           <Route path="admin" element={<Admin />} />
           <Route path="modules" element={<Modules />} />
