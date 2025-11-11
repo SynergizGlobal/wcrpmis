@@ -303,7 +303,7 @@ export default function LandAcquisition() {
                       <td>
                         <button
                           className="btn btn-sm btn-outline-primary"
-                          onClick={() => navigate("landacquisitionform", { state: { data: row } })}
+                          onClick={() => navigate("landacquisitionform", { state: { la_id: row.la_id } })}
                         >
                           <MdEditNote
                             size="22"

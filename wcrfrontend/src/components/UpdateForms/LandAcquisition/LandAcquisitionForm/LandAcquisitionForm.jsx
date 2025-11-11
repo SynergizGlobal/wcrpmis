@@ -17,8 +17,9 @@ export default function LandAcquisitionForm() {
 
     const navigate = useNavigate();
     const { state } = useLocation(); // passed when editing
-    const row = state?.data || null;
-    const isEdit = !!row;
+    const row = state?.data ?? null;
+    const laId = state?.la_id ?? row?.la_id ?? null;
+    const isEdit = Boolean((row && Object.keys(row).length > 0) || laId);
 
     const [projectOptions, setProjectOptions] = useState([]);
     const [statusOptions, setStatusOptions] = useState([]);
@@ -186,7 +187,20 @@ export default function LandAcquisitionForm() {
       }));
       const statuses = (statusRes.data || []).map(s => formatOption(s.la_land_status));
       const types = (typesRes.data || []).map(t => formatOption(t.type_of_land));
-      const subCatsRaw = subCatsRes.data || [];
+      const subCatsRaw = Array.isArray(subCatsRes.data) ? subCatsRes.data : [];
+      const safeSubCats = subCatsRaw.filter(sc =>
+        sc &&
+        typeof sc === "object" &&
+        Object.keys(sc).length > 0 &&
+        "sub_category_of_land" in sc &&
+        "type_of_land" in sc &&
+        sc.sub_category_of_land !== null &&
+        sc.type_of_land !== null
+        );
+        setAllSubCategories(safeSubCats);
+
+      console.log("🧩 Safe SubCategories:", safeSubCats);
+
 
       const fileTypes = (Array.isArray(fileTypesRes.data) ? fileTypesRes.data : fileTypesRes.data?.data || [])
         .filter(ft => ft.la_file_type)
@@ -195,12 +209,14 @@ export default function LandAcquisitionForm() {
       setProjectOptions(projects);
       setStatusOptions(statuses);
       setTypeOptions(types);
-      setAllSubCategories(subCatsRaw);
+      setAllSubCategories(safeSubCats);
       setfileTypeOptions(fileTypes.length ? fileTypes : [{ value: "Land Document", label: "Land Document" }]);
 
       
       if (isEdit && row) {
         console.log("🧠 Raw edit row data:", row);
+
+        setValue("project_id_fk", projects.find(p => p.value === dataObject.project_id_fk) || null);
 
       const isArrayOfPairs = Array.isArray(row) && row.every((item) => Array.isArray(item) && item.length === 2);
       const dataObject = isArrayOfPairs ? Object.fromEntries(row) : row;
@@ -250,9 +266,17 @@ export default function LandAcquisitionForm() {
         const type = typeOptions.find((t) => t.value === dataObject.type_of_land);
         if (type) setValue("type_of_land", type);
 
-        const subFiltered = (allSubCategories || []).filter(
-          (sc) => sc.type_of_land === (dataObject.type_of_land || dataObject.la_type_of_land)
-        );
+       const subFiltered = Array.isArray(allSubCategories)
+        ? allSubCategories.filter(
+            (sc) =>
+              sc &&
+              typeof sc === "object" &&
+              sc.sub_category_of_land &&
+              sc.type_of_land &&
+              sc.type_of_land === (dataObject.type_of_land || dataObject.la_type_of_land)
+          )
+        : [];
+
         const subOptions = subFiltered.map((sc) => ({
           value: sc.sub_category_of_land,
           label: sc.sub_category_of_land,
@@ -274,32 +298,125 @@ export default function LandAcquisitionForm() {
   loadDropdowns();
 }, [isEdit, row, setValue]);
 
+useEffect(() => {
+  const fetchLandAcquisitionById = async () => {
+    try {
+      const laIdLocal = laId;
+      if (!laIdLocal) return;
+
+      const res = await axios.post(
+        `${API_BASE_URL}/land-acquisition/form/ajax/getLandAcquisitionForm`,
+        { la_id: laIdLocal },
+        { withCredentials: true }
+      );
+
+      const record = res.data;
+      if (!record) {
+        console.warn("⚠️ No record returned for la_id:", laIdLocal);
+        return;
+      }
+
+      // ✅ Fill all fields
+      Object.entries(record).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+          setValue(key, value);
+        }
+      });
+
+      // ✅ Dropdowns
+      if (projectOptions.length) {
+        const proj = projectOptions.find(p => p.value === record.project_id_fk);
+        if (proj) setValue("project_id_fk", proj);
+      }
+
+      if (statusOptions.length) {
+        const status = statusOptions.find(s => s.value === record.la_land_status_fk);
+        if (status) setValue("la_land_status_fk", status);
+      }
+
+      if (typeOptions.length) {
+        const type = typeOptions.find(t => t.value === record.type_of_land);
+        if (type) setValue("type_of_land", type);
+      }
+
+      if (allSubCategories.length && record.type_of_land) {
+        const filteredSubs = allSubCategories
+          .filter(sc => sc.type_of_land === record.type_of_land)
+          .map(sc => ({
+            value: sc.sub_category_of_land,
+            label: sc.sub_category_of_land
+          }));
+        setSubCategoryOptions(filteredSubs);
+        const sub = filteredSubs.find(sc => sc.value === record.sub_category_of_land);
+        if (sub) setValue("sub_category_of_land", sub);
+      }
+
+      console.log("✅ Record loaded successfully:", record);
+    } catch (err) {
+      console.error("❌ Failed to fetch land acquisition record:", err);
+    }
+  };
+
+  if (isEdit && laId && projectOptions.length > 0 && typeOptions.length > 0) {
+    fetchLandAcquisitionById();
+  }
+}, [isEdit, laId, projectOptions, statusOptions, typeOptions, allSubCategories]);
 
    const filterSubCategories = (rawList, typeValue) => {
-  if (!rawList) return [];
+  if (!rawList || !Array.isArray(rawList) || rawList.length === 0) return [];
+  
+  try {
+    return rawList
+      .filter((sc) => {
+        // completely skip null or non-objects
+        if (!sc || typeof sc !== "object") return false;
 
-  return rawList
-    .filter(sc => sc.sub_category_of_land)
-    .filter(sc =>
-      !typeValue || !sc.type_of_land || sc.type_of_land === typeValue
-    )
-    .map(sc => ({
-      value: sc.sub_category_of_land,
-      label: sc.sub_category_of_land
-    }));
+        // skip if missing keys
+        if (!("type_of_land" in sc) && !("sub_category_of_land" in sc)) return false;
+
+        // if a type is selected, only match that type
+        if (typeValue && sc.type_of_land && sc.type_of_land !== typeValue) return false;
+
+        return true;
+      })
+      .map((sc) => {
+        if (!sc || typeof sc !== "object") return { value: "", label: "" };
+        const sub = sc.sub_category_of_land ?? "";
+        return { value: sub, label: sub };
+      });
+  } catch (err) {
+    console.error("⚠️ filterSubCategories failed:", err, rawList);
+    return [];
+  }
 };
 
-  const selectedType = watch("type_of_land"); // {value,label} or null
-  useEffect(() => {
-  const typeValue = watch("type_of_land")?.value;
-  const filtered = filterSubCategories(allSubCategories, typeValue);
+
+  const selectedType = watch("type_of_land");
+useEffect(() => {
+  if (!Array.isArray(allSubCategories) || allSubCategories.some(sc => sc === null)) {
+    console.warn("⚠️ Invalid subcategory data:", allSubCategories);
+    setSubCategoryOptions([]);
+    return;
+  }
+
+  const typeValue = selectedType?.value || selectedType || "";
+  const filtered = Array.isArray(allSubCategories)
+    ? filterSubCategories(allSubCategories, typeValue)
+    : [];
+
   setSubCategoryOptions(filtered);
 
   const currentSub = watch("sub_category_of_land");
-  if (currentSub && !filtered.find(f => f.value === currentSub.value)) {
+  if (currentSub && !filtered.find((f) => f.value === currentSub?.value)) {
     setValue("sub_category_of_land", null);
   }
-}, [watch("type_of_land"), allSubCategories]);
+}, [selectedType, allSubCategories]);
+
+
+useEffect(() => {
+  console.log("🐛 allSubCategories data from API:", allSubCategories);
+}, [allSubCategories]);
+
 
 const onSubmit = async (data) => {
   try {
@@ -342,14 +459,23 @@ const onSubmit = async (data) => {
 };
 
 console.log("🗂️ Editing Row Data:", row);
-console.log("🏷️ SubCategory:", row.sub_category_of_land);
-console.log("📍 Coordinates:", row.latitude, row.longitude);
+console.log("🧾 laId:", laId, "isEdit:", isEdit);
+
+// safe logging (no crash)
+console.log("🏷️ SubCategory:", row?.sub_category_of_land ?? "(no subcategory)");
+console.log("📍 Coordinates:", row?.latitude ?? "(no lat)", row?.longitude ?? "(no lng)");
+// console.log("🏷️ SubCategory:", row?.sub_category_of_land ?? "(no row)");
+// console.log("📍 Coordinates:", row?.latitude ?? "(lat missing)", row?.longitude ?? "(lng missing)");
 
   
 useEffect(() => {
   console.log("📋 Current Form Mode:", isEdit ? "EDIT" : "ADD");
   if (isEdit) console.log("🗂️ Editing Existing Record:", row);
 }, [isEdit, row]);
+
+if (!Array.isArray(allSubCategories)) {
+  return <div>Loading subcategories...</div>;
+}
 
 
   return (
