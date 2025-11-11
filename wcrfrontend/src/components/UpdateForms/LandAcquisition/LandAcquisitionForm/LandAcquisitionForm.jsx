@@ -26,6 +26,7 @@ export default function LandAcquisitionForm() {
     const [typeOptions, setTypeOptions] = useState([]);
     const [allSubCategories, setAllSubCategories] = useState([]);
     const [subCategoryOptions, setSubCategoryOptions] = useState([]);
+    const [subsReady, setSubsReady] = useState(false);
     const [fileTypeOptions, setfileTypeOptions] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -176,7 +177,11 @@ export default function LandAcquisitionForm() {
         axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getProjectsList`, {}, { withCredentials: true }),
         axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaLandStatus`, { withCredentials: true }),
         axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getLandsListForLAForm`, {}, { withCredentials: true }),
-        axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`, {}, { withCredentials: true }),
+        axios.post(
+            `${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`,
+            { type_of_land: selectedType?.value || "" },
+            { withCredentials: true }
+          ),
         axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaFileType`, { withCredentials: true }),
       ]);
 
@@ -304,6 +309,7 @@ useEffect(() => {
       const laIdLocal = laId;
       if (!laIdLocal) return;
 
+      // 1️⃣ Fetch record details first
       const res = await axios.post(
         `${API_BASE_URL}/land-acquisition/form/ajax/getLandAcquisitionForm`,
         { la_id: laIdLocal },
@@ -316,40 +322,80 @@ useEffect(() => {
         return;
       }
 
-      // ✅ Fill all fields
+      // 2️⃣ If subcategories not yet loaded, load them for this type
+      if (Array.isArray(allSubCategories) && allSubCategories.length === 0 && record.type_of_land) {
+        const subRes = await axios.post(
+          `${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`,
+          { type_of_land: record.type_of_land },
+          { withCredentials: true }
+        );
+        setAllSubCategories(subRes.data || []);
+      }
+
+      // 3️⃣ Set form field values
       Object.entries(record).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== "") {
           setValue(key, value);
         }
       });
 
-      // ✅ Dropdowns
-      if (projectOptions.length) {
+      // 4️⃣ Map dropdowns
+      if (Array.isArray(projectOptions) && projectOptions.length) {
         const proj = projectOptions.find(p => p.value === record.project_id_fk);
         if (proj) setValue("project_id_fk", proj);
       }
 
-      if (statusOptions.length) {
+      if (Array.isArray(statusOptions) && statusOptions.length) {
         const status = statusOptions.find(s => s.value === record.la_land_status_fk);
         if (status) setValue("la_land_status_fk", status);
       }
 
-      if (typeOptions.length) {
+      if (Array.isArray(typeOptions) && typeOptions.length) {
         const type = typeOptions.find(t => t.value === record.type_of_land);
         if (type) setValue("type_of_land", type);
       }
 
-      if (allSubCategories.length && record.type_of_land) {
-        const filteredSubs = allSubCategories
-          .filter(sc => sc.type_of_land === record.type_of_land)
-          .map(sc => ({
-            value: sc.sub_category_of_land,
-            label: sc.sub_category_of_land
-          }));
-        setSubCategoryOptions(filteredSubs);
-        const sub = filteredSubs.find(sc => sc.value === record.sub_category_of_land);
-        if (sub) setValue("sub_category_of_land", sub);
+      // 5️⃣ Now safely populate subcategories
+      if (Array.isArray(allSubCategories) && record.type_of_land) {
+        let filteredSubs = allSubCategories.filter(
+          sc => sc && sc.type_of_land === record.type_of_land
+        );
+
+        // 🔄 if still empty, load subcategories dynamically
+        if (filteredSubs.length === 0) {
+          const subRes = await axios.post(
+            `${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`,
+            { type_of_land: record.type_of_land },
+            { withCredentials: true }
+          );
+          filteredSubs = subRes.data || [];
+          setAllSubCategories(filteredSubs);
+        }
+
+        const subOptions = filteredSubs.map(sc => ({
+          value: sc.sub_category_of_land,
+          label: sc.sub_category_of_land,
+        }));
+
+        setSubCategoryOptions(subOptions);
+
+        const selectedSub = subOptions.find(
+          opt => opt.value === record.sub_category_of_land
+        );
+
+        // ✅ Always set dropdown if found
+        if (selectedSub) {
+          setValue("sub_category_of_land", selectedSub);
+          setSubsReady(true);
+        } else if (record.sub_category_of_land) {
+          // fallback: show plain string as label if API missing
+          setValue("sub_category_of_land", {
+            value: record.sub_category_of_land,
+            label: record.sub_category_of_land,
+          });
+        }
       }
+
 
       console.log("✅ Record loaded successfully:", record);
     } catch (err) {
@@ -357,10 +403,11 @@ useEffect(() => {
     }
   };
 
+  // ✅ Execute once dropdowns are ready
   if (isEdit && laId && projectOptions.length > 0 && typeOptions.length > 0) {
     fetchLandAcquisitionById();
   }
-}, [isEdit, laId, projectOptions, statusOptions, typeOptions, allSubCategories]);
+}, [isEdit, laId, projectOptions.length, typeOptions.length]);
 
    const filterSubCategories = (rawList, typeValue) => {
   if (!rawList || !Array.isArray(rawList) || rawList.length === 0) return [];
@@ -407,9 +454,21 @@ useEffect(() => {
   setSubCategoryOptions(filtered);
 
   const currentSub = watch("sub_category_of_land");
-  if (currentSub && !filtered.find((f) => f.value === currentSub?.value)) {
-    setValue("sub_category_of_land", null);
+    if (!subsReady) {
+    setSubCategoryOptions(filtered);
+    setSubsReady(true);
+  } else {
+    // Only update options; don't clear current selection if still valid
+    setSubCategoryOptions(filtered);
+    const currentSub = watch("sub_category_of_land");
+    if (
+      currentSub &&
+      !filtered.find((f) => f.value === (currentSub?.value || currentSub))
+    ) {
+      console.log("⚠️ Keeping existing subcategory:", currentSub);
+    }
   }
+
 }, [selectedType, allSubCategories]);
 
 
@@ -422,37 +481,61 @@ const onSubmit = async (data) => {
   try {
     setLoading(true);
 
-    // ✅ Choose correct endpoint
-    const endpoint = isEdit
-      ? `${API_BASE_URL}/land-acquisition/update-land-acquisition`
-      : `${API_BASE_URL}/land-acquisition/add-land-acquisition`;
+    const sanitizeDate = (val) => (val ? val : null);
 
-    // ✅ Include la_id for update (otherwise backend treats it as new)
+    const sanitizeNumber = (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      const num = Number(val);
+      return isNaN(num) ? null : num;
+    };
+
     const payload = {
       ...data,
       la_id: row?.la_id || data.la_id,
       project_id_fk: data.project_id_fk?.value || data.project_id_fk,
+      la_land_status_fk: data.la_land_status_fk?.value || data.la_land_status_fk,
       type_of_land: data.type_of_land?.value || data.type_of_land,
-      sub_category_of_land:
-        data.sub_category_of_land?.value || data.sub_category_of_land,
-    };
+      sub_category_of_land: data.sub_category_of_land?.value || data.sub_category_of_land,
 
-    console.log("🚀 Sending payload to:", endpoint, payload);
+      // ✅ Convert numbers properly
+      area_acquired: sanitizeNumber(data.area_acquired),
+      area_to_be_acquired: sanitizeNumber(data.area_to_be_acquired),
+      area_of_plot: sanitizeNumber(data.area_of_plot),
+      jm_fee_amount: sanitizeNumber(data.jm_fee_amount),
+      chainage_from: sanitizeNumber(data.chainage_from),
+      chainage_to: sanitizeNumber(data.chainage_to),
+      latitude: sanitizeNumber(data.latitude),
+      longitude: sanitizeNumber(data.longitude),
+
+      // ✅ Nullify dates if empty
+      proposal_submission_date_to_collector: sanitizeDate(data.proposal_submission_date_to_collector),
+      jm_fee_letter_received_date: sanitizeDate(data.jm_fee_letter_received_date),
+      jm_fee_paid_date: sanitizeDate(data.jm_fee_paid_date),
+      jm_start_date: sanitizeDate(data.jm_start_date),
+      jm_completion_date: sanitizeDate(data.jm_completion_date),
+      jm_sheet_date_to_sdo: sanitizeDate(data.jm_sheet_date_to_sdo),
+    };
+console.log("🚀 Clean Payload:", JSON.stringify(payload, null, 2));
+
+
+    console.log("🚀 Clean Payload:", payload);
+
+    const endpoint = isEdit
+      ? `${API_BASE_URL}/land-acquisition/update-land-acquisition`
+      : `${API_BASE_URL}/land-acquisition/add-land-acquisition`;
 
     const res = await axios.post(endpoint, payload, { withCredentials: true });
-
     console.log("📥 Response:", res.data);
 
-    if (res.data === true || res.data?.success === true) {
+    if (res.data === true) {
       alert(`✅ Land Acquisition ${isEdit ? "updated" : "added"} successfully!`);
-      navigate("/wcrpmis/updateforms/land-acquisition");
+      navigate("/updateforms/land-acquisition");
     } else {
-      alert("⚠️ Backend did not confirm success — check server logs");
-      console.warn("⚠️ Unexpected backend response:", res.data);
+      alert("⚠️ Save failed — backend returned false or error.");
     }
   } catch (err) {
     console.error("❌ Error during submission:", err);
-    alert("❌ Failed to save data. See console for details.");
+    alert("❌ Save failed. Check console.");
   } finally {
     setLoading(false);
   }
@@ -594,6 +677,9 @@ if (!Array.isArray(allSubCategories)) {
                   <div className="form-field">
                     <label>Acquired Area (Ha) <span className="red">*</span></label>
                     <input {...register("area_acquired")} type="text" rules={{ required: true }} placeholder="Enter Value"/>
+                    {errors.area_acquired && (
+                      <span className="text-danger">Required</span>
+                    )}
                   </div>
                   <div className="form-field">
                     <label>Village <span className="red">*</span></label>
@@ -679,7 +765,7 @@ if (!Array.isArray(allSubCategories)) {
                           <input
                             type="radio"
                             value="accept"
-                            {...register("jm_approval", { required: "Please select JM Approval" })}
+                            {...register("jm_approval")}
                           />
                           Accept
                         </label>
