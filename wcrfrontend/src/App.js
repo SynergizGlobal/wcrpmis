@@ -1,3 +1,5 @@
+import UtilityShiftingForm from "./components/UpdateForms/UtilityShifting/UtilityShiftingForm/UtilityShiftingForm";
+import UtilityShifting from "./components/UpdateForms/UtilityShifting/UtilityShifting";
 import ContractForm from "./components/UpdateForms/Contract/ContractForm/ContractForm";
 import Contract from "./components/UpdateForms/Contract/Contract";
 import DesignDrawingForm from "./components/UpdateForms/DesignDrawing/DesignDrawingForm/DesignDrawingForm";
@@ -69,8 +71,11 @@ function App() {
               <Route path="add-design-form" element={<DesignDrawingForm />} />
             </Route>
             <Route path="ganttbarchart" element={<GanttBarChart />} />
-            <Route path="contract" element={<Contract />} >
+            <Route path="contract" element={<Contract />}>
               <Route path="add-contract-form" element={<ContractForm />} />
+            </Route>
+            <Route path="utilityshifting" element={<UtilityShifting />} >
+              <Route path="add-utility-shifting" element={<UtilityShiftingForm />} />
             </Route>
           </Route>
           <Route path="works" element={<Works />} />
