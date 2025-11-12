@@ -84,7 +84,7 @@
   display: flex;
   margin-left: 30px;
   background-color: var(--secondary-blue);
-  width: 84%;
+  width: 84%; 
 }
 
 /* Each submenu link */
