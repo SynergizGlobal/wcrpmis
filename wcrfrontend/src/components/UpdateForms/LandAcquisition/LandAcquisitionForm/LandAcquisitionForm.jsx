@@ -68,6 +68,7 @@ export default function LandAcquisitionForm() {
           jm_approval: "",
           jm_remarks: "",
           private_land_process: "",
+          
 
           // private(indian railway act)
 
@@ -145,7 +146,7 @@ export default function LandAcquisitionForm() {
           borewell_compensation: "",
           total_compensation: "",
 
-          attachments: [{ la_file_types: "", laDocumentNames: "", laFiles: "" }],
+          attachments: [{ la_file_typess: "", laDocumentNames: "", laFiles: "" }],
 
           remarks: "",
           issues: "",
@@ -283,7 +284,7 @@ export default function LandAcquisitionForm() {
         : [];
 
         const subOptions = subFiltered.map((sc) => ({
-          value: sc.sub_category_of_land,
+          value: sc.id,
           label: sc.sub_category_of_land,
         }));
         setSubCategoryOptions(subOptions);
@@ -317,6 +318,22 @@ useEffect(() => {
       );
 
       const record = res.data;
+      
+      if (Array.isArray(record.laFilesList) && record.laFilesList.length > 0) {
+        removeAttachments();
+
+        // Map backend data
+        const mappedAttachments = record.laFilesList.map((f) => ({
+          la_file_typess: { value: f.la_file_type_fk, label: f.la_file_type_fk },
+          laDocumentNames: f.name || "",
+          laDocumentFileNames: f.attachment || "",
+          laFiles: "", 
+        }));
+
+        mappedAttachments.forEach((att) => appendAttachments(att));
+      }
+
+
       if (!record) {
         console.warn("⚠️ No record returned for la_id:", laIdLocal);
         return;
@@ -355,13 +372,13 @@ useEffect(() => {
         if (type) setValue("type_of_land", type);
       }
 
-      // 5️⃣ Now safely populate subcategories
+      // 5️⃣ Populate subcategories properly with ID
       if (Array.isArray(allSubCategories) && record.type_of_land) {
         let filteredSubs = allSubCategories.filter(
           sc => sc && sc.type_of_land === record.type_of_land
         );
 
-        // 🔄 if still empty, load subcategories dynamically
+        // 🔄 Load dynamically if empty
         if (filteredSubs.length === 0) {
           const subRes = await axios.post(
             `${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`,
@@ -373,24 +390,23 @@ useEffect(() => {
         }
 
         const subOptions = filteredSubs.map(sc => ({
-          value: sc.sub_category_of_land,
+          value: sc.id, // ✅ pass table row ID
           label: sc.sub_category_of_land,
         }));
 
         setSubCategoryOptions(subOptions);
 
-        const selectedSub = subOptions.find(
-          opt => opt.value === record.sub_category_of_land
-        );
+        // ✅ find by ID first (matches backend FK)
+        const selectedSub =
+          subOptions.find(opt => opt.value === record.la_sub_category_fk) ||
+          subOptions.find(opt => opt.label === record.sub_category_of_land);
 
-        // ✅ Always set dropdown if found
         if (selectedSub) {
           setValue("sub_category_of_land", selectedSub);
           setSubsReady(true);
         } else if (record.sub_category_of_land) {
-          // fallback: show plain string as label if API missing
           setValue("sub_category_of_land", {
-            value: record.sub_category_of_land,
+            value: record.la_sub_category_fk || record.sub_category_of_land,
             label: record.sub_category_of_land,
           });
         }
@@ -402,7 +418,10 @@ useEffect(() => {
       console.error("❌ Failed to fetch land acquisition record:", err);
     }
   };
-
+  if (getValues("attachments")?.length > 1 && isEdit) {
+    console.log("⚠️ Attachments already loaded, skipping duplicate append.");
+    return;
+  }
   // ✅ Execute once dropdowns are ready
   if (isEdit && laId && projectOptions.length > 0 && typeOptions.length > 0) {
     fetchLandAcquisitionById();
@@ -410,35 +429,70 @@ useEffect(() => {
 }, [isEdit, laId, projectOptions.length, typeOptions.length]);
 
    const filterSubCategories = (rawList, typeValue) => {
-  if (!rawList || !Array.isArray(rawList) || rawList.length === 0) return [];
-  
-  try {
-    return rawList
-      .filter((sc) => {
-        // completely skip null or non-objects
-        if (!sc || typeof sc !== "object") return false;
+      if (!rawList || !Array.isArray(rawList) || rawList.length === 0) return [];
 
-        // skip if missing keys
-        if (!("type_of_land" in sc) && !("sub_category_of_land" in sc)) return false;
+      try {
+        return rawList
+          .filter((sc) => {
+            // skip null / malformed items
+            if (!sc || typeof sc !== "object") return false;
 
-        // if a type is selected, only match that type
-        if (typeValue && sc.type_of_land && sc.type_of_land !== typeValue) return false;
+            // check required keys
+            if (!("type_of_land" in sc) && !("sub_category_of_land" in sc)) return false;
 
-        return true;
-      })
-      .map((sc) => {
-        if (!sc || typeof sc !== "object") return { value: "", label: "" };
-        const sub = sc.sub_category_of_land ?? "";
-        return { value: sub, label: sub };
-      });
-  } catch (err) {
-    console.error("⚠️ filterSubCategories failed:", err, rawList);
-    return [];
-  }
-};
+            // filter by type if selected
+            if (typeValue && sc.type_of_land && sc.type_of_land !== typeValue) return false;
+
+            return true;
+          })
+          .map((sc) => ({
+            value: sc.id ?? sc.value ?? "",
+            label: sc.sub_category_of_land ?? sc.label ?? "",
+          }));
+      } catch (err) {
+        console.error("⚠️ filterSubCategories failed:", err, rawList);
+        return [];
+      }
+    };
+
 
 
   const selectedType = watch("type_of_land");
+  useEffect(() => {
+  // Only fetch subcategories when user selects a type in ADD mode
+  if (!isEdit && selectedType?.value) {
+    const fetchSubCategories = async () => {
+      try {
+        const res = await axios.post(
+          `${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`,
+          { type_of_land: selectedType.value },
+          { withCredentials: true }
+        );
+
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          const formatted = res.data
+            .filter(sc => sc && sc.id && sc.sub_category_of_land)
+            .map(sc => ({
+              value: sc.id,
+              label: sc.sub_category_of_land,
+            }));
+
+          setAllSubCategories(res.data);
+          setSubCategoryOptions(formatted);
+          console.log("✅ Loaded subcategories for type:", selectedType.value, formatted);
+        } else {
+          setSubCategoryOptions([]);
+          console.warn("⚠️ No subcategories found for type:", selectedType.value);
+        }
+      } catch (err) {
+        console.error("❌ Failed to load subcategories for selected type:", err);
+      }
+    };
+
+    fetchSubCategories();
+  }
+}, [selectedType, isEdit]);
+
 useEffect(() => {
   if (!Array.isArray(allSubCategories) || allSubCategories.some(sc => sc === null)) {
     console.warn("⚠️ Invalid subcategory data:", allSubCategories);
@@ -490,43 +544,81 @@ const onSubmit = async (data) => {
     };
 
     const payload = {
-      ...data,
-      la_id: row?.la_id || data.la_id,
-      project_id_fk: data.project_id_fk?.value || data.project_id_fk,
-      la_land_status_fk: data.la_land_status_fk?.value || data.la_land_status_fk,
-      type_of_land: data.type_of_land?.value || data.type_of_land,
-      sub_category_of_land: data.sub_category_of_land?.value || data.sub_category_of_land,
+        ...data,
+        id: data.sub_category_of_land?.value, 
+        la_id: row?.la_id || data.la_id, 
+        project_id_fk: data.project_id_fk?.value || data.project_id_fk,
+        la_land_status_fk: data.la_land_status_fk?.value || data.la_land_status_fk,
+        type_of_land: data.type_of_land?.value || data.type_of_land,
+        la_sub_category_fk: data.la_sub_category_fk, 
+        sub_category_of_land:
+          data.sub_category_of_land?.label || data.sub_category_of_land?.value || data.sub_category_of_land,
 
-      // ✅ Convert numbers properly
-      area_acquired: sanitizeNumber(data.area_acquired),
-      area_to_be_acquired: sanitizeNumber(data.area_to_be_acquired),
-      area_of_plot: sanitizeNumber(data.area_of_plot),
-      jm_fee_amount: sanitizeNumber(data.jm_fee_amount),
-      chainage_from: sanitizeNumber(data.chainage_from),
-      chainage_to: sanitizeNumber(data.chainage_to),
-      latitude: sanitizeNumber(data.latitude),
-      longitude: sanitizeNumber(data.longitude),
+        // numeric/date cleaning
+        area_acquired: sanitizeNumber(data.area_acquired),
+        area_to_be_acquired: sanitizeNumber(data.area_to_be_acquired),
+        area_of_plot: sanitizeNumber(data.area_of_plot),
+        jm_fee_amount: sanitizeNumber(data.jm_fee_amount),
+        chainage_from: sanitizeNumber(data.chainage_from),
+        chainage_to: sanitizeNumber(data.chainage_to),
+        latitude: sanitizeNumber(data.latitude),
+        longitude: sanitizeNumber(data.longitude),
 
-      // ✅ Nullify dates if empty
-      proposal_submission_date_to_collector: sanitizeDate(data.proposal_submission_date_to_collector),
-      jm_fee_letter_received_date: sanitizeDate(data.jm_fee_letter_received_date),
-      jm_fee_paid_date: sanitizeDate(data.jm_fee_paid_date),
-      jm_start_date: sanitizeDate(data.jm_start_date),
-      jm_completion_date: sanitizeDate(data.jm_completion_date),
-      jm_sheet_date_to_sdo: sanitizeDate(data.jm_sheet_date_to_sdo),
-    };
-console.log("🚀 Clean Payload:", JSON.stringify(payload, null, 2));
+        proposal_submission_date_to_collector: sanitizeDate(data.proposal_submission_date_to_collector),
+        jm_fee_letter_received_date: sanitizeDate(data.jm_fee_letter_received_date),
+        jm_fee_paid_date: sanitizeDate(data.jm_fee_paid_date),
+        jm_start_date: sanitizeDate(data.jm_start_date),
+        jm_completion_date: sanitizeDate(data.jm_completion_date),
+        jm_sheet_date_to_sdo: sanitizeDate(data.jm_sheet_date_to_sdo),
+      };
 
+      const formData = new FormData();
 
-    console.log("🚀 Clean Payload:", payload);
+    // append simple fields
+    Object.entries(payload).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== "") {
+        formData.append(key, val);
+      }
+    });
+
+    // ✅ append attachments like old JSP names
+    if (Array.isArray(data.attachments)) {
+      data.attachments.forEach((att, index) => {
+        const file = att.laFiles?.[0] || null;
+        const fileType = att.la_file_typess?.value || att.la_file_typess || "";
+        const docName = att.laDocumentNames || "";
+        const existingFileName = att.laDocumentFileNames || "";
+
+        if (file) {
+          // new file selected
+          formData.append("laFiles", file);
+        } else {
+          // no new file — preserve old one
+          formData.append("laFiles", new File([], ""));
+        }
+
+        formData.append("la_file_typess", fileType);
+        formData.append("laDocumentNames", docName);
+        formData.append("laDocumentFileNames", existingFileName);
+      });
+    }
+
+    console.log("📦 Final FormData being sent:");
+    for (let [key, val] of formData.entries()) {
+      if (key === "laFilesList") formData.delete(key);
+      console.log(`➡️ ${key}:`, val);
+    }
 
     const endpoint = isEdit
       ? `${API_BASE_URL}/land-acquisition/update-land-acquisition`
       : `${API_BASE_URL}/land-acquisition/add-land-acquisition`;
 
-    const res = await axios.post(endpoint, payload, { withCredentials: true });
-    console.log("📥 Response:", res.data);
+    const res = await axios.post(endpoint, formData, {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
+    console.log("📥 Response:", res.data);
     if (res.data === true) {
       alert(`✅ Land Acquisition ${isEdit ? "updated" : "added"} successfully!`);
       navigate("/updateforms/land-acquisition");
@@ -1387,7 +1479,7 @@ if (!Array.isArray(allSubCategories)) {
                                           <tr key={item.id}>
                                             <td>
                                               <Controller
-                                                name={`attachments.${index}.la_file_types`}
+                                                name={`attachments.${index}.la_file_typess`}
                                                 control={control}
                                                 render={({ field }) => (
                                                   <Select
@@ -1424,12 +1516,15 @@ if (!Array.isArray(allSubCategories)) {
                                                   {...register(`attachments.${index}.laFiles`)}
                                                   className={styles["file-upload-input"]}
                                                 />
-                                                {watch(`attachments.${index}.laFiles`)?.[0]?.name && (
+                                                {(
+                                                  watch(`attachments.${index}.laFiles`)?.[0]?.name ||
+                                                  watch(`attachments.${index}.laDocumentFileNames`)
+                                                ) && (
                                                   <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569" }}>
-                                                    Selected: {watch(`attachments.${index}.laFiles`)[0].name}
+                                                    {watch(`attachments.${index}.laFiles`)?.[0]?.name ||
+                                                    watch(`attachments.${index}.laDocumentFileNames`)}
                                                   </p>
                                                 )}
-
                                               </div>
 
                                             </td>
@@ -1462,7 +1557,7 @@ if (!Array.isArray(allSubCategories)) {
                                     type="button"
                                     className="btn-2 btn-green"
                                     onClick={() =>
-                                      appendAttachments({ la_file_types: null, laDocumentNames: "", laFiles: "" })
+                                      appendAttachments({ la_file_typess: null, laDocumentNames: "", laFiles: "" })
                                     }
                                   >
                                     <BiListPlus
