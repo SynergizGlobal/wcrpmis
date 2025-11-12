@@ -1,5 +1,5 @@
 .sidebar {
-  width: 60px;
+  width: 70px;
   background-color: var(--primary-fade-color);
   color: white;
   transition: all 0.3s ease;
@@ -11,12 +11,44 @@
 }
 
 .sidebar.open {
-  width: 200px;
+  width: 230px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
 }
 .sidebar .navName{
   display: none;
 }
+
+
+
+/* Dropdown Header (Modules row) */
+.dropdownHeader {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  color: white;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.sidebar:not(.open) .submenu {
+  display: none !important;
+}
+
+.dropdownHeader:hover {
+  background-color: var(--primary-color);
+}
+
+/* Arrow icon */
+.arrow {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+/* When sidebar is collapsed, hide submenu labels */
+.sidebar:not(.open) .submenu li a {
+  padding: 12px 20px; /* keep icon alignment when closed */
+}
+
 .sidebar.open .navName{
   display: flex;
 }
@@ -39,6 +71,35 @@
 
 .sidebar li a:hover {
   background-color: var(--primary-color);
+}
+/* SUBMENU CONTAINER */
+.submenu {
+  display: none;
+  flex-direction: column;
+  background-color: var(--primary-fade-color);
+}
+
+/* Show submenu only when sidebar is open */
+.sidebar.open .submenu {
+  display: flex;
+  margin-left: 30px;
+  background-color: var(--secondary-blue);
+  width: 84%;
+}
+
+/* Each submenu link */
+.submenu li{
+  white-space: break-spaces;
+}
+.submenu li a {
+  padding: 10px; /* indent */
+  font-size: 16px;
+  color: #e4e6fa;
+}
+
+.submenu li a:hover {
+  background-color: var(--primary-color);
+  color: #fff;
 }
 @media(max-width: 767px){
   .sidebar{
