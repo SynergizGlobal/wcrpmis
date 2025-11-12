@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -942,7 +943,7 @@ public class DesignController {
 	}
 	
 	@PostMapping(value = "/add-design")
-	public String addDesign(@RequestBody Design obj,HttpSession session){
+	public String addDesign(@ModelAttribute Design obj,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		try {			
 			//String user_Id = (String) session.getAttribute("USER_ID");
@@ -994,7 +995,7 @@ public class DesignController {
 	}
 	
 	@PostMapping(value = "/update-design")
-	public String updateDesign(@RequestBody Design obj,HttpSession session){
+	public String updateDesign(@ModelAttribute Design obj,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		try{
 			//String user_Id = (String) session.getAttribute("USER_ID");
@@ -1488,7 +1489,7 @@ public class DesignController {
 	}
 	
 	@PostMapping(value = "/upload-designs")
-	public void uploadDesigns(@RequestBody Design design,RedirectAttributes attributes,HttpSession session){
+	public void uploadDesigns(@ModelAttribute Design design,RedirectAttributes attributes,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		String msg = "";String userId = null;
 		try {

@@ -334,7 +334,7 @@ public class IssueController {
 	}
 	
 	@PostMapping(value="/add-issue")
-	public Boolean addIssue(@RequestBody Issue obj,HttpSession session) {
+	public Boolean addIssue(@ModelAttribute Issue obj,HttpSession session) {
 		//ModelAndView model = new ModelAndView();
 		Boolean flag = false;
 		try {
@@ -477,7 +477,7 @@ public class IssueController {
 	}
 	
 	@PostMapping(value="/update-issue")
-	public ResponseEntity<?> updateIssue(@RequestBody Issue obj,HttpSession session) {
+	public ResponseEntity<?> updateIssue(@ModelAttribute Issue obj,HttpSession session) {
 		//ModelAndView model = new ModelAndView();
 		try {
 			//model.setViewName("redirect:/issues");

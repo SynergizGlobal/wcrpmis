@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -239,7 +240,7 @@ public class UtilityShiftingController {
 	}
 	
 	@PostMapping(value = "/ajax/form/add-utility-shifting")
-	public Map<String,List<UtilityShifting>> addUtilityShiftingForm(@RequestBody UtilityShifting obj,HttpSession session) {
+	public Map<String,List<UtilityShifting>> addUtilityShiftingForm(@ModelAttribute UtilityShifting obj,HttpSession session) {
 		Map<String,List<UtilityShifting>> map = new LinkedHashMap<>();
 		List<UtilityShifting> dataList = null;  
 		try {
@@ -518,7 +519,7 @@ public class UtilityShiftingController {
 	}
 	
 	@PostMapping(value="/updateUtilityShifting")
-	public boolean updateUtilityShifting(@RequestBody UtilityShifting obj,HttpSession session) {
+	public boolean updateUtilityShifting(@ModelAttribute UtilityShifting obj,HttpSession session) {
 		//ModelAndView model = new ModelAndView();
 		try {
 			//model.setViewName("redirect:/utilityshifting");
@@ -1018,7 +1019,7 @@ public class UtilityShiftingController {
         return style;
 	}
 	@PostMapping(value = "/upload-utility-shifting")
-	public ResponseEntity<?> uploadUtilityShifting(@RequestBody UtilityShifting obj,RedirectAttributes attributes,HttpSession session){
+	public ResponseEntity<?> uploadUtilityShifting(@ModelAttribute UtilityShifting obj,RedirectAttributes attributes,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		String msg = "";String userId = null;
 		String attributeKey="";

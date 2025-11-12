@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -148,7 +149,7 @@ public class ReportAccessController {
 	}
 	
 	@PostMapping(value = "/update-access-report")
-	public ResponseEntity<?> updateAccessReport(@RequestBody Report obj,HttpSession session){
+	public ResponseEntity<?> updateAccessReport(@ModelAttribute Report obj,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		String attributeKey = "";
 		String attributeMsg = "";

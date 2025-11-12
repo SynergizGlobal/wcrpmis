@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -164,7 +165,7 @@ public class DashboardsAccessController {
 	}
 	
 	@PostMapping(value = "/update-access-dashboard")
-	public Boolean updateAccessDashboard(@RequestBody DashboardObj obj,HttpSession session){
+	public Boolean updateAccessDashboard(@ModelAttribute DashboardObj obj,HttpSession session){
 		Boolean flag = false;
 		try{
 			User uObj = (User) session.getAttribute("user");
