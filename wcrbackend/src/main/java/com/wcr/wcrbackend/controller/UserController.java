@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -323,7 +324,7 @@ public class UserController {
 	}
 	
 	@PostMapping(value="/add-user")
-	public ResponseEntity<?> addUser(@RequestBody User obj,HttpSession session) {
+	public ResponseEntity<?> addUser(@ModelAttribute User obj,HttpSession session) {
 		//ModelAndView model = new ModelAndView();
 		String attributeMsg = null;
 		String attributeKey = null;
@@ -399,7 +400,7 @@ public class UserController {
 	}
 	
 	@PostMapping(value="/update-user")
-	public ResponseEntity<?> updateUser(@RequestBody User obj,HttpSession session) {
+	public ResponseEntity<?> updateUser(@ModelAttribute User obj,HttpSession session) {
 		//ModelAndView model = new ModelAndView();
 		String attributeMsg = null;
 		String attributeKey = null;
@@ -619,7 +620,7 @@ public class UserController {
 	}
 	
 	@PostMapping(value = "/upload-users")
-	public ResponseEntity<?> uploadUsers(@RequestBody User user,HttpSession session){
+	public ResponseEntity<?> uploadUsers(@ModelAttribute User user,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		String fileName = null;
 		String userId = null;String userName = null;

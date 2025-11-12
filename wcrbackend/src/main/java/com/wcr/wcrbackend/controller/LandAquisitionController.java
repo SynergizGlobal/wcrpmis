@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -4890,7 +4891,7 @@ public class LandAquisitionController {
 	}
 
 	@PostMapping("/add-land-acquisition")
-	public boolean addLandAcquisition(@RequestBody LandAcquisition obj, HttpSession session) throws Exception {
+	public boolean addLandAcquisition(@ModelAttribute LandAcquisition obj, HttpSession session) throws Exception {
 		// ModelAndView model = new ModelAndView();
 		// try{
 		// model.setViewName("redirect:/land-acquisition");
@@ -5037,7 +5038,7 @@ public class LandAquisitionController {
 	}
 
 	@PostMapping("/update-land-acquisition")
-	public boolean updateLandAcquisition(@RequestBody LandAcquisition obj, HttpSession session) throws Exception{
+	public boolean updateLandAcquisition(@ModelAttribute LandAcquisition obj, HttpSession session) throws Exception{
 		// ModelAndView model = new ModelAndView();
 		// try{
 
@@ -5174,7 +5175,7 @@ public class LandAquisitionController {
 
 	}
 	@PostMapping("/upload-la")
-	public ResponseEntity<?> uploadLA(@RequestBody LandAcquisition obj,RedirectAttributes attributes,HttpSession session){
+	public ResponseEntity<?> uploadLA(@ModelAttribute LandAcquisition obj,RedirectAttributes attributes,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		String msg = "";
 		String attributeKey ="";

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -143,7 +144,7 @@ public class FormAccessController {
 	 }
 	
 	@PostMapping(value = "/add-form")
-	public Boolean addForm(@RequestBody Form obj,HttpSession session){
+	public Boolean addForm(@ModelAttribute Form obj,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		Boolean flag = false;
 		try{
@@ -166,7 +167,7 @@ public class FormAccessController {
 	}
 	
 	@PostMapping(value = "/update-form")
-	public Boolean updateForm(@RequestBody Form obj,HttpSession session){
+	public Boolean updateForm(@ModelAttribute Form obj,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		Boolean flag = false;
 		try{
@@ -189,7 +190,7 @@ public class FormAccessController {
 	}
 	
 	@PostMapping(value = "/update-access-form")
-	public Boolean updateAccessForm(@RequestBody Form obj,HttpSession session){
+	public Boolean updateAccessForm(@ModelAttribute Form obj,HttpSession session){
 		//ModelAndView model = new ModelAndView();
 		Boolean flag = false;
 		try{

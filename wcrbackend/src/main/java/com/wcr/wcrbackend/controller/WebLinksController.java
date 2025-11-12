@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,7 +52,7 @@ public class WebLinksController {
 	}
 	
 	@PostMapping(value = "/update-web-links")
-	public ResponseEntity<?> updateWebLinks(@RequestBody WebLinks obj){
+	public ResponseEntity<?> updateWebLinks(@ModelAttribute WebLinks obj){
 		//ModelAndView model = new ModelAndView();
 		String attributeKey = "";
 		String attributeMsg = "";
