@@ -1386,7 +1386,7 @@ public class LandAquisitionController {
 
 	@PostMapping("/export-land")
 	public void exportLand(HttpServletRequest request, HttpServletResponse response, HttpSession session,
-			@RequestBody LandAcquisition dObj) {
+			@ModelAttribute LandAcquisition dObj) {
 		// ModelAndView view = new ModelAndView(PageConstants.landAcquisition);
 		List<LandAcquisition> dataList = new ArrayList<LandAcquisition>();
 		List<LandAcquisition> privateIRAList = new ArrayList<LandAcquisition>();
