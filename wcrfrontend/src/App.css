@@ -553,6 +553,9 @@ input{
 .ifNoOverflowHidden:has(.contractForm) .sidebar{
   overflow: initial;
 }
+.sidebar:has(.submenu) .dropdownHeader{
+  background-color: var(--primary-color);
+}
 input[maxlength] {
   padding: 10px 60px 10px 10px;
 }

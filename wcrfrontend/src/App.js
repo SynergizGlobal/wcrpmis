@@ -1,3 +1,5 @@
+import UpdateStructureForm from "./components/UpdateForms/UpdateStructure/UpdateStructureForm/UpdateStructureForm";
+import UpdateStructure from "./components/UpdateForms/UpdateStructure/UpdateStructure";
 import UtilityShiftingForm from "./components/UpdateForms/UtilityShifting/UtilityShiftingForm/UtilityShiftingForm";
 import UtilityShifting from "./components/UpdateForms/UtilityShifting/UtilityShifting";
 import ContractForm from "./components/UpdateForms/Contract/ContractForm/ContractForm";
@@ -74,8 +76,11 @@ function App() {
             <Route path="contract" element={<Contract />}>
               <Route path="add-contract-form" element={<ContractForm />} />
             </Route>
-            <Route path="utilityshifting" element={<UtilityShifting />} >
+            <Route path="utilityshifting" element={<UtilityShifting />}>
               <Route path="add-utility-shifting" element={<UtilityShiftingForm />} />
+            </Route>
+            <Route path="structure-form" element={<UpdateStructure />} >
+              <Route path="get-structure-form" element={<UpdateStructureForm />} />
             </Route>
           </Route>
           <Route path="works" element={<Works />} />

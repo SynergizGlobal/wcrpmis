@@ -45,7 +45,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen, sidebarRef }) {
         {/* Modules Dropdown */}
         <li>
           <div 
-            className={styles.dropdownHeader}
+            className={`dropdownHeader ${styles.dropdownHeader}`}
             onClick={() => setModulesOpen(!modulesOpen)}
           >
             <img src={modulesIcon} width="25" height="25" />
@@ -54,7 +54,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen, sidebarRef }) {
             </div>
 
           {modulesOpen && (
-            <ul className={styles.submenu}>
+            <ul className={`submenu ${styles.submenu}`}>
               <li><NavLink to="/modules/fortnight-meeting">Fortnight Meeting</NavLink></li>
               <li><NavLink to="/modules/drawing-status">Drawing Status</NavLink></li>
               <li><NavLink to="/modules/project-performance">Project Performance Appraisal</NavLink></li>

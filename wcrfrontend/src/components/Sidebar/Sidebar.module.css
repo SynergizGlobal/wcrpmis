@@ -11,7 +11,7 @@
 }
 
 .sidebar.open {
-  width: 230px;
+  width: 240px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
 }
 .sidebar .navName{
@@ -28,6 +28,7 @@
   color: white;
   cursor: pointer;
   gap: 8px;
+  border-bottom: 1px solid #2d3557;
 }
 
 .sidebar:not(.open) .submenu {
@@ -35,6 +36,10 @@
 }
 
 .dropdownHeader:hover {
+  background-color: var(--primary-color);
+}
+
+.dropdownHeader:has(.submenu){
   background-color: var(--primary-color);
 }
 
@@ -51,6 +56,8 @@
 
 .sidebar.open .navName{
   display: flex;
+      font-weight: 600;
+    font-size: 18px;
 }
 .sidebar ul {
   list-style: none;
@@ -59,7 +66,7 @@
 }
 
 .sidebar li a{
-  padding: 15px 20px;
+  padding: 20px;
   cursor: pointer;
   display: flex;
   color: #fff;
@@ -67,6 +74,7 @@
   align-items: center;
   gap: 8px;
   transition: background-color 0.2s ease;
+  border-bottom: 1px solid #2d3557;
 }
 
 .sidebar li a:hover {
@@ -82,9 +90,7 @@
 /* Show submenu only when sidebar is open */
 .sidebar.open .submenu {
   display: flex;
-  margin-left: 30px;
-  background-color: var(--secondary-blue);
-  width: 84%; 
+  /* background-color: var(--secondary-blue); */
 }
 
 /* Each submenu link */
@@ -92,9 +98,10 @@
   white-space: break-spaces;
 }
 .submenu li a {
-  padding: 10px; /* indent */
-  font-size: 16px;
+  padding: 20px; /* indent */
+  font-size: 18px;
   color: #e4e6fa;
+  padding-left: 30px;
 }
 
 .submenu li a:hover {
