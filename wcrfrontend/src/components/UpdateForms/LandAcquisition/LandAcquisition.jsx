@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
-import { CirclePlus } from "lucide-react";
-import { LuCloudDownload } from "react-icons/lu";
+import { CirclePlus, Download } from "lucide-react";
+import { LuCloudDownload, LuUpload, LuDownload } from "react-icons/lu";
 import axios from "axios";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import styles from "./LandAcquisition.module.css";
@@ -32,7 +32,58 @@ export default function LandAcquisition() {
   const [perPage, setPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
 
+  const [showModal, setShowModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+
   const [search, setSearch] = useState("");
+
+  // ✅ Open / Close modal
+  const openModal = () => setShowModal(true);
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedFile(null);
+  };
+
+  // ✅ Handle file selection
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
+
+  // ✅ Submit upload form
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      alert("Please select a file first!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("laUploadFile", selectedFile);
+
+    try {
+      setLoading(true);
+      const res = await axios.post(
+          `${API_BASE_URL}/upload-la`,  
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        }
+      );
+
+      if (res.status === 200) {
+        alert("✅ File uploaded successfully!");
+        closeModal();
+      } else {
+        alert("⚠️ Upload failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("❌ Upload error:", err);
+      alert("❌ Upload failed. Check console for details.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filters linking
   const filterParams = {
@@ -165,6 +216,33 @@ export default function LandAcquisition() {
 
   const totalPages = Math.ceil(totalRows / perPage);
 
+  // another storgae file Download code
+
+  const handleSampleDownload = () => {
+    const fileUrl = "/files/landacquisition/Land_Acquisition_Template.xlsx"; // or any URL
+    const fileName = "Land_Acquisition_Template.xlsx";
+
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  // data export function
+    const exportLA = () => {
+  const form = document.getElementById("exportLandAcquisitionForm");
+
+  document.getElementById("exportLa_land_status_fk").value = landStatus?.value || "";
+  document.getElementById("exportVillage").value = village?.value || "";
+  document.getElementById("exportType_of_land").value = typeOfLand?.value || "";
+  document.getElementById("exportSub_category_of_land").value = subCategory?.value || "";
+  document.getElementById("exportsearchStr").value = search || "";
+
+  form.submit();
+};
+
   return (
     <div className={styles.container}>
       {/* Page Heading */}
@@ -172,10 +250,21 @@ export default function LandAcquisition() {
         <div className="pageHeading">
           <h2>Land Acquisition</h2>
           <div className="rightBtns">
+            <button className="btn-2 transparent-btn" onClick={handleSampleDownload}>
+              <LuDownload size={16} />
+            </button>
+            <button className="btn btn-primary" onClick={openModal}>
+              <LuUpload size={16} /> Upload
+            </button>
             <button className="btn btn-primary" onClick={handleAdd}>
               <CirclePlus size={16} /> Add
             </button>
-            <button className="btn btn-primary">
+            <button className="btn btn-primary"
+             onClick={(e) => {
+                e.preventDefault(); // <-- IMPORTANT
+                exportLA();
+              }}
+             >
               <LuCloudDownload size={16} /> Export
             </button>
           </div>
@@ -186,6 +275,23 @@ export default function LandAcquisition() {
       {!isFormPage && (
         <>
         <div className="innerPage">
+          {/* export hidden form */}
+          <form
+            id="exportLandAcquisitionForm"
+            action={`${API_BASE_URL}/land-acquisition/export-land`}
+            method="POST"
+            target="_blank"
+            style={{ display: "none" }}
+          >
+            <input type="hidden" name="la_land_status_fk" id="exportLa_land_status_fk" />
+            <input type="hidden" name="village" id="exportVillage" />
+            <input type="hidden" name="type_of_land" id="exportType_of_land" />
+            <input type="hidden" name="sub_category_of_land" id="exportSub_category_of_land" />
+            <input type="hidden" name="searchStr" id="exportsearchStr" />
+          </form>
+
+          {/* export hidden form */}
+          
           <div className="filterRow">
             <div className="filterOptions">
               <Select 
@@ -396,6 +502,81 @@ export default function LandAcquisition() {
           </div>
         </div>
         </>
+      )}
+      {/* Modal */}
+      {showModal && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            className="modal-content"
+            style={{
+              background: "#fff",
+              borderRadius: "10px",
+              width: "420px",
+              maxWidth: "90%",
+              padding: "1.5rem",
+              boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
+            }}
+          >
+            <h3 className="text-center mb-2">Upload Land Acquisition File</h3>
+
+            <form onSubmit={handleSubmit} encType="multipart/form-data">
+              <div className="form-group mb-3 center-align">
+                <label className="form-label fw-bold mb-2">Attachment</label>
+                <input
+                  type="file"
+                  id="laUploadFile"
+                  name="laUploadFile"
+                  onChange={handleFileChange}
+                  required
+                  className="form-control"
+                />
+                {selectedFile && (
+                  <p style={{ marginTop: "10px", color: "#475569" }}>
+                    Selected: {selectedFile.name}
+                  </p>
+                )}
+              </div>
+
+              <div
+                className="modal-actions"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-evenly",
+                  marginTop: "1rem",
+                }}
+              >
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ width: "48%" }}
+                  disabled={loading}
+                >
+                  {loading ? "Uploading..." : "Update"}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-white"
+                  style={{ width: "48%" }}
+                  onClick={closeModal}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
       <Outlet />
     </div>

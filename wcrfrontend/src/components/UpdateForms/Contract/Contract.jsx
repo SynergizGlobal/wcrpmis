@@ -48,7 +48,7 @@ export default function Contract() {
     <div className={styles.container}>
       { !isDesignDrawingForm &&(
       <div className="pageHeading">
-        <h2>Update Design & Drawing</h2>
+        <h2>Contract</h2>
         <div  className="rightBtns">
           <button className="btn btn-primary" onClick={handleAdd}>
             <CirclePlus size={16} /> Add
