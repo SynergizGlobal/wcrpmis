@@ -142,6 +142,9 @@ export default function UpdateStructure() {
                   <tr>
                     <td colSpan="8" style={{ textAlign: "center" }}>
                       No records found
+                      <button className="btn btn-sm btn-outline-primary" onClick={() => handleEdit()}>
+                          Edit
+                        </button>
                     </td>
                   </tr>
                 )}
