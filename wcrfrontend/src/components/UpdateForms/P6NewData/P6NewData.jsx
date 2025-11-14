@@ -29,47 +29,21 @@ export default function P6NewData() {
       formState: { errors },
     } = useForm({
       defaultValues: {
-        project_name: "",
-        project_status: "",
-        project_type_id: "",
-        railway_zone: "",
-        plan_head_number: "",
-        financial_years: "",
-        sanctioned_amount: "",
-        sanctioned_commissioning_date: "",
-        division_id: "",
-        section_id: "",
-        pink_book_item_numbers: "",
-        actual_completion_cost: "",
-        actual_completion_date: "",
-        benefits: "",
-        remarks: "",
-        completionCosts: [{ date: "", estimatedCost: "", revisedDate: "" }],
+        project_id_fk: "",
+        contract_id_fk: "",
+        data_date: "",
+        p6dataFile: "",
+        p6dataFile2: "",
+        p6dataFile3: "",
       },
     });
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
-  const fetchProjects = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/projects`, { withCredentials: true });
-      setProjects(res.data || []);
-    } catch (err) {
-      console.error("Error fetching projects:", err);
-    }
-  };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters({ ...filters, [name]: value });
   };
-
-  const handleAdd = () => navigate("projectform");
-  const handleEdit = (project) => navigate("projectform", { state: { project } });
-
-  const isProjectForm = location.pathname.endsWith("/projectform");
 
   const handleBaselineDownload = () => {
     const fileUrl = "/files/landacquisition/P6BaselineFile.xlsx"; // or any URL
@@ -110,7 +84,7 @@ export default function P6NewData() {
   return (
     <div className={styles.container}>
       {/* Top Bar */}
-      { !isProjectForm &&(
+  
       <div className="pageHeading">
         <h2>P6 New Data</h2>
         <div  className="rightBtns">
@@ -123,10 +97,7 @@ export default function P6NewData() {
           &nbsp;
         </div>
       </div>
-      )}
 
-      {!isProjectForm && (
-        <>
           <div className={styles.p6FormCards}>
             <div className={styles.p6FormCardsInner}>
 
@@ -366,12 +337,10 @@ export default function P6NewData() {
 
             </div>
           </div>
-        </>
-      )};
+    
       
       {/* Filters */}
-      {!isProjectForm && (
-        <>    
+     
         
         <div className="innerPage">
           <br />
@@ -463,8 +432,7 @@ export default function P6NewData() {
             </table>
           </div>
         </div>
-        </>
-      )}
+    
       <Outlet />
     </div>
   );
