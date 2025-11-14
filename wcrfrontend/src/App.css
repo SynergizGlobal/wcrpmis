@@ -278,6 +278,9 @@ input:focus, select:focus{
   margin: 15px 0;
   position: relative;
 }
+.flex-2 .form-field{
+  flex: 0 0 46%;
+}
 .flex-4 .form-field{
   flex: 0 0 22%;
 }
