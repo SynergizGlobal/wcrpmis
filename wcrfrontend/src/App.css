@@ -266,7 +266,7 @@ input:focus, select:focus{
 .form-row{
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 0 15px;
   justify-content: space-between;
   align-items: center;
 }
@@ -275,8 +275,11 @@ input:focus, select:focus{
   flex-direction: column;
   gap: 5px;
   flex: 1 0 30%;
-  margin-bottom: 10px;
+  margin: 15px 0;
   position: relative;
+}
+.flex-4 .form-field{
+  flex: 0 0 22%;
 }
 .rupee-field {
   position: relative;

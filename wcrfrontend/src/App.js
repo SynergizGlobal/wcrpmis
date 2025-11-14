@@ -1,3 +1,5 @@
+import ContractorForm from "./components/UpdateForms/Contractor/ContractorForm/ContractorForm";
+import Contractor from "./components/UpdateForms/Contractor/Contractor";
 import UpdateStructureForm from "./components/UpdateForms/UpdateStructure/UpdateStructureForm/UpdateStructureForm";
 import UpdateStructure from "./components/UpdateForms/UpdateStructure/UpdateStructure";
 import UtilityShiftingForm from "./components/UpdateForms/UtilityShifting/UtilityShiftingForm/UtilityShiftingForm";
@@ -81,6 +83,9 @@ function App() {
             </Route>
             <Route path="structure-form" element={<UpdateStructure />} >
               <Route path="get-structure-form" element={<UpdateStructureForm />} />
+            </Route>
+            <Route path="contractor" element={<Contractor />} >
+              <Route path="add-contractor-form" element={<ContractorForm />} />
             </Route>
           </Route>
           <Route path="works" element={<Works />} />
