@@ -1,0 +1,48 @@
+.container {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+.radioRow {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  font-size: 15px;
+  margin-bottom: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.radioLabel {
+  margin-left: 10px;
+}
+
+
+.buttonsRow {
+  margin-top: 20px;
+}
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  justify-content: flex-end;
+}
+.buttonsRow {
+  margin-top: 20px;
+}
+.fieldsSection {
+  margin-top: 20px;
+}
+.searchBtns{
+  display: flex;
+  justify-content: space-between;
+
+}
+
+@media(max-width: 767px){
+  .searchBtns{
+    flex-direction: column;
+    align-items: center;
+  }
+}

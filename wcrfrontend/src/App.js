@@ -1,3 +1,4 @@
+import ModifyActuals from "./components/UpdateForms/ModifyActuals/ModifyActuals";
 import NewActivitiesUpdate from "./components/UpdateForms/NewActivitiesUpdate/NewActivitiesUpdate";
 import P6NewData from "./components/UpdateForms/P6NewData/P6NewData";
 // import ContractorForm from "./components/UpdateForms/Contractor/ContractorForm/ContractorForm";
@@ -91,6 +92,7 @@ function App() {
              </Route> */}
             <Route path="p6-new-data" element={<P6NewData />} />
             <Route path="new-activities-update" element={<NewActivitiesUpdate />} />
+            <Route path="modify-actuals" element={<ModifyActuals />} />
           </Route>
           <Route path="works" element={<Works />} />
           <Route path="admin" element={<Admin />} />
