@@ -1,3 +1,4 @@
+import NewActivitiesUpdate from "./components/UpdateForms/NewActivitiesUpdate/NewActivitiesUpdate";
 import P6NewData from "./components/UpdateForms/P6NewData/P6NewData";
 // import ContractorForm from "./components/UpdateForms/Contractor/ContractorForm/ContractorForm";
 // import Contractor from "./components/UpdateForms/Contractor/Contractor";
@@ -82,13 +83,14 @@ function App() {
             <Route path="utilityshifting" element={<UtilityShifting />}>
               <Route path="add-utility-shifting" element={<UtilityShiftingForm />} />
             </Route>
-            <Route path="structure-form" element={<UpdateStructure />} >
+            <Route path="structure-form" element={<UpdateStructure />}>
               <Route path="get-structure-form" element={<UpdateStructureForm />} />
             </Route>
             {/* <Route path="contractor" element={<Contractor />} >
               <Route path="add-contractor-form" element={<ContractorForm />} />
-            </Route> */}
+             </Route> */}
             <Route path="p6-new-data" element={<P6NewData />} />
+            <Route path="new-activities-update" element={<NewActivitiesUpdate />} />
           </Route>
           <Route path="works" element={<Works />} />
           <Route path="admin" element={<Admin />} />

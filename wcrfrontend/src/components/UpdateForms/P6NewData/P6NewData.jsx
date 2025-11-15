@@ -289,7 +289,7 @@ export default function P6NewData() {
                               <Select
                                 {...field}
                                 classNamePrefix="react-select"
-                                placeholder="Select Date"
+                                placeholder="Select value"
                                 isSearchable
                               />
                             )}

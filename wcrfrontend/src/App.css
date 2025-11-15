@@ -198,6 +198,14 @@ p{
 .btn-primary:hover{
   background-color: var(--primary-fade-color);
 }
+.btn-secondary{
+  background-color: var(--headings-blue);
+  color: #fff;
+  font-weight: 600;
+}
+.btn-secondary:hover{
+  background-color: var(--heading-blue-bg);
+}
 .btn-outline-danger{
   background-color: var(--color-red);
   color: #fff;
@@ -318,6 +326,7 @@ td.rupee-field::before{
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 15px;
   margin: 20px 0;
 }
@@ -641,5 +650,14 @@ input[maxlength] + div{
   }
   .paginationRow{
     flex-direction: column;
+  }
+  .pageHeading .rightBtns.md-none{
+    display: none;
+  }
+  .md-none{
+    display: none;
+  }
+  .flex-4 .form-field {
+      flex: 1 0 46%;
   }
 }
