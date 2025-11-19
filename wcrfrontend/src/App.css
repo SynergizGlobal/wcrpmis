@@ -244,6 +244,21 @@ p{
     background-color: #449d44;
     border-color: #398439;
 }
+.btn-red {
+    color: #fff;
+    background-color: #d9534f;
+}
+.btn-red:hover {
+    background-color: #c9302c;
+}
+.btn-yellow {
+    color: #fff;
+    background-color: #f0ad4e;
+}
+.btn-yellow:hover {
+    color: #fff;
+    background-color: #ec971f;
+}
 input::placeholder {
   color: #000;
 }
