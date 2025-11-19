@@ -5,7 +5,7 @@ import { NavLink } from "react-router-dom";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import api from "../../../../api/axiosInstance";
 import { API_BASE_URL } from "../../../../config";
 
 import { MdOutlineDeleteSweep } from 'react-icons/md';

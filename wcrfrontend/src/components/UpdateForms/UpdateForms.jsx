@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import api from "../../api/axiosInstance";
 import styles from "./UpdateForms.module.css";
 import { API_BASE_URL } from "../../config";
 import { ChevronRight } from "lucide-react";
@@ -38,7 +38,7 @@ export default function UpdateForms() {
 
   const fetchForms = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/forms/api/getUpdateForms`, {
+      const res = await api.get(`${API_BASE_URL}/forms/api/getUpdateForms`, {
         withCredentials: true,
       });
       setForms(res.data);
@@ -94,7 +94,7 @@ const handleNavigation = async(formName, webFormUrl, hasSubMenu = false) => {
   if (lower.includes("dms")) {
     try {
       // Call backend DMS API
-      const res = await axios.get(`${API_BASE_URL}/dms/dms`, {
+      const res = await api.get(`${API_BASE_URL}/dms/dms`, {
         withCredentials: true,
       });
 

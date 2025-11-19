@@ -1,6 +1,6 @@
-import axios from "axios";
+import api from "../../../api/axiosInstance";
 
-axios.interceptors.response.use(
+api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {

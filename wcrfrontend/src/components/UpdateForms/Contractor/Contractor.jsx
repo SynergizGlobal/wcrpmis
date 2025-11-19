@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
+import { RefreshContext } from "../../../context/RefreshContext";
 import Select from "react-select";
 import styles from './Contractor.module.css';
 import { CirclePlus } from "lucide-react";
 import { LuCloudDownload } from "react-icons/lu";
-import axios from "axios";
+import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
 import * as XLSX from "xlsx";
@@ -18,15 +19,16 @@ export default function Contractor() {
   const [contractors, setContractors] = useState([]);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const { refresh } = useContext(RefreshContext);
  
 
   useEffect(() => {
     fetchContractors();
-  }, []);
+  }, [refresh, location]);
 
   const fetchContractors = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/contractors`, { withCredentials: true });
+      const res = await api.get(`${API_BASE_URL}/contractors`, { withCredentials: true });
       setContractors(res.data || []);
     } catch (err) {
       console.error("Error fetching projects:", err);

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
-import axios from "axios";
+import api from "../../../../api/axiosInstance";
 import styles from './DesignDrawingForm.module.css';
 import { API_BASE_URL } from "../../../../config";
 
@@ -81,9 +81,9 @@ export default function DesignDrawingForm() {
         : `${API_BASE_URL}/design/ajax/form/add-design-form`;
 
       if (isEdit) {
-        await axios.put(endpoint, data);
+        await api.put(endpoint, data);
       } else {
-        await axios.post(endpoint, data);
+        await api.post(endpoint, data);
       }
 
       alert("✅ Design saved successfully!");

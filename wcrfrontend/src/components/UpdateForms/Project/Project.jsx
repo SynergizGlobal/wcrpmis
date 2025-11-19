@@ -3,7 +3,7 @@ import Select from "react-select";
 import styles from "./Project.module.css";
 import { CirclePlus } from "lucide-react";
 import { LuCloudDownload } from "react-icons/lu";
-import axios from "axios";
+import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
 
@@ -26,7 +26,7 @@ export default function Project() {
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/projects`, { withCredentials: true });
+      const res = await api.get(`${API_BASE_URL}/projects`, { withCredentials: true });
       setProjects(res.data || []);
     } catch (err) {
       console.error("Error fetching projects:", err);

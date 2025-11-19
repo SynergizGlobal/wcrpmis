@@ -3,7 +3,7 @@ import Select from "react-select";
 import styles from './UtilityShifting.module.css';
 import { CirclePlus } from "lucide-react";
 import { LuCloudDownload, LuUpload, LuDownload } from "react-icons/lu";
-import axios from "axios";
+import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
 
@@ -30,7 +30,7 @@ export default function UtilityShifting() {
 
     const fetchUtilityShiftingId = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/ajax/form/add-utility-shifting`, { withCredentials: true });
+        const res = await api.get(`${API_BASE_URL}/ajax/form/add-utility-shifting`, { withCredentials: true });
         setUtilityShiftingId(res.data || []);
       } catch (err) {
         console.error("Error fetching projects:", err);
@@ -39,7 +39,7 @@ export default function UtilityShifting() {
 
 const fetchFilePath = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/ajax/form/get-utility-shifting/get-utility-shifting`, { withCredentials: true });
+        const res = await api.get(`${API_BASE_URL}/ajax/form/get-utility-shifting/get-utility-shifting`, { withCredentials: true });
         setFilePath(res.data || []);
       } catch (err) {
         console.error("Error fetching projects:", err);

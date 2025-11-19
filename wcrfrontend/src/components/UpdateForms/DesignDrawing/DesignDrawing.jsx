@@ -3,7 +3,7 @@ import Select from "react-select";
 import styles from './DesignDrawing.module.css';
 import { CirclePlus } from "lucide-react";
 import { LuCloudDownload, LuUpload, LuDownload } from "react-icons/lu";
-import axios from "axios";
+import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
 
@@ -29,7 +29,7 @@ export default function DesignDrawing() {
 
     const fetchWcrDrawingNumber = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/design/ajax/getDesignsList?iDisplayStart=0&iDisplayLength=10`, { withCredentials: true });
+        const res = await api.get(`${API_BASE_URL}/design/ajax/getDesignsList?iDisplayStart=0&iDisplayLength=10`, { withCredentials: true });
         setWcrDrawingNumber(res.data || []);
       } catch (err) {
         console.error("Error fetching projects:", err);
@@ -38,7 +38,7 @@ export default function DesignDrawing() {
 
 const fetchUploadedFile = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/design/ajax/getDesignsList?iDisplayStart=0&iDisplayLength=10`, { withCredentials: true });
+        const res = await api.get(`${API_BASE_URL}/design/ajax/getDesignsList?iDisplayStart=0&iDisplayLength=10`, { withCredentials: true });
         setUploadedFile(res.data || []);
       } catch (err) {
         console.error("Error fetching projects:", err);

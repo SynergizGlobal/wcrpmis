@@ -32,7 +32,7 @@
 
 .card{
   width: 100%;
-  flex: 0 0 22%;
+  flex: 1 0 22%;
   position: relative;
   text-align: center;
 }

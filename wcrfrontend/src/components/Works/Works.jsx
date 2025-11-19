@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../api/axiosInstance";
 import GanttBarChart from "../../components/Charts/GanttBarChart/GanttBarChart";
 import { useLocation } from "react-router-dom";
 import styles from './Works.module.css';
@@ -30,7 +30,7 @@ export default function Works() {
         const load = async () => {
           try {
             // Example: adjust endpoint to your backend
-            const { data } = await axios.get(`${API_BASE_URL}/execution/progress`, {
+            const { data } = await api.get(`${API_BASE_URL}/execution/progress`, {
               withCredentials: true,
             });
             // data is expected like:

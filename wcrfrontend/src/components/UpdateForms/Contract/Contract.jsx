@@ -3,7 +3,7 @@ import Select from "react-select";
 import styles from './Contract.module.css';
 import { CirclePlus } from "lucide-react";
 import { LuCloudDownload, LuUpload, LuDownload } from "react-icons/lu";
-import axios from "axios";
+import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
 
@@ -27,7 +27,7 @@ export default function Contract() {
 
     const fetchContract = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/contract`, { withCredentials: true });
+        const res = await api.get(`${API_BASE_URL}/contract`, { withCredentials: true });
         setContract(res.data || []);
       } catch (err) {
         console.error("Error fetching projects:", err);

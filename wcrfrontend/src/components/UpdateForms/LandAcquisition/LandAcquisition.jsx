@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { CirclePlus, Download } from "lucide-react";
 import { LuCloudDownload, LuUpload, LuDownload } from "react-icons/lu";
-import axios from "axios";
+import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import styles from "./LandAcquisition.module.css";
 import { API_BASE_URL } from "../../../config";
@@ -62,7 +62,7 @@ export default function LandAcquisition() {
 
     try {
       setLoading(true);
-      const res = await axios.post(
+      const res = await api.post(
           `${API_BASE_URL}/upload-la`,  
         formData,
         {
@@ -97,7 +97,7 @@ export default function LandAcquisition() {
       const fetchFilters = async (filters = {}) => {
         try {
           // Separate type fetch (always all)
-          const typePromise = axios.post(
+          const typePromise = api.post(
             `${API_BASE_URL}/land-acquisition/ajax/getTypesOfLandsFilterListInLandAcquisition`,
             { village: "", type_of_land: "", sub_category_of_land: "", la_land_status_fk: "" },
             { withCredentials: true }
@@ -112,17 +112,17 @@ export default function LandAcquisition() {
           };
 
           const [statusRes, villageRes, subRes, typeRes] = await Promise.all([
-            axios.post(
+            api.post(
               `${API_BASE_URL}/land-acquisition/ajax/getStatussFilterListInLandAcquisition`,
               dependentFilters,
               { withCredentials: true }
             ),
-            axios.post(
+            api.post(
               `${API_BASE_URL}/land-acquisition/ajax/getVillagesFilterListInLandAcquisition`,
               dependentFilters,
               { withCredentials: true }
             ),
-            axios.post(
+            api.post(
               `${API_BASE_URL}/land-acquisition/ajax/getSubCategoryFilterListInLandAcquisition`,
               dependentFilters,
               { withCredentials: true }
@@ -167,7 +167,7 @@ export default function LandAcquisition() {
   const fetchData = async (page = 1, length = perPage) => {
   setLoading(true);
   try {
-    const res = await axios.post(
+    const res = await api.post(
       `${API_BASE_URL}/land-acquisition/ajax/get-land-acquisition?iDisplayStart=${(page - 1) * length}&iDisplayLength=${length}&sSearch=${search || ""}`,
       filterParams,
       { withCredentials: true } // important for session cookies

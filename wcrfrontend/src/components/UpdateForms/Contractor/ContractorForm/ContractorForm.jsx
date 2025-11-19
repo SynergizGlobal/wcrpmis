@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import api from "../../../../api/axiosInstance";
 import styles from './ContractorForm.module.css';
 import { API_BASE_URL } from "../../../../config";
 
@@ -66,13 +66,13 @@ export default function ContractorForm() {
 
       if (!isEdit) {
         // CREATE
-        await axios.post(`${API_BASE_URL}/contractors`, payload);
+        await api.post(`${API_BASE_URL}/contractors`, payload);
       } else {
         // UPDATE
         const updatedData = { ...payload };
         delete updatedData.contractorId;
 
-        await axios.put(
+        await api.put(
           `${API_BASE_URL}/contractors/${state.contractor.contractorId}`,
           updatedData
         );

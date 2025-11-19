@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import api from "../../../../api/axiosInstance";
 import { Outlet } from 'react-router-dom';
 import styles from './LandAcquisitionForm.module.css';
 import { NavLink } from "react-router-dom";
@@ -175,15 +175,15 @@ export default function LandAcquisitionForm() {
   const loadDropdowns = async () => {
     try {
       const [projectsRes, statusRes, typesRes, subCatsRes, fileTypesRes] = await Promise.all([
-        axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getProjectsList`, {}, { withCredentials: true }),
-        axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaLandStatus`, { withCredentials: true }),
-        axios.post(`${API_BASE_URL}/land-acquisition/form/ajax/getLandsListForLAForm`, {}, { withCredentials: true }),
-        axios.post(
+        api.post(`${API_BASE_URL}/land-acquisition/form/ajax/getProjectsList`, {}, { withCredentials: true }),
+        api.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaLandStatus`, { withCredentials: true }),
+        api.post(`${API_BASE_URL}/land-acquisition/form/ajax/getLandsListForLAForm`, {}, { withCredentials: true }),
+        api.post(
             `${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`,
             { type_of_land: selectedType?.value || "" },
             { withCredentials: true }
           ),
-        axios.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaFileType`, { withCredentials: true }),
+        api.get(`${API_BASE_URL}/land-acquisition/form/ajax/getLaFileType`, { withCredentials: true }),
       ]);
 
       const formatOption = (value, label = value) => ({ value, label });
@@ -311,7 +311,7 @@ useEffect(() => {
       if (!laIdLocal) return;
 
       // 1️⃣ Fetch record details first
-      const res = await axios.post(
+      const res = await api.post(
         `${API_BASE_URL}/land-acquisition/form/ajax/getLandAcquisitionForm`,
         { la_id: laIdLocal },
         { withCredentials: true }
@@ -341,7 +341,7 @@ useEffect(() => {
 
       // 2️⃣ If subcategories not yet loaded, load them for this type
       if (Array.isArray(allSubCategories) && allSubCategories.length === 0 && record.type_of_land) {
-        const subRes = await axios.post(
+        const subRes = await api.post(
           `${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`,
           { type_of_land: record.type_of_land },
           { withCredentials: true }
@@ -380,7 +380,7 @@ useEffect(() => {
 
         // 🔄 Load dynamically if empty
         if (filteredSubs.length === 0) {
-          const subRes = await axios.post(
+          const subRes = await api.post(
             `${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`,
             { type_of_land: record.type_of_land },
             { withCredentials: true }
@@ -463,7 +463,7 @@ useEffect(() => {
   if (!isEdit && selectedType?.value) {
     const fetchSubCategories = async () => {
       try {
-        const res = await axios.post(
+        const res = await api.post(
           `${API_BASE_URL}/land-acquisition/form/ajax/getSubCategorysListForLAForm`,
           { type_of_land: selectedType.value },
           { withCredentials: true }
@@ -613,7 +613,7 @@ const onSubmit = async (data) => {
       ? `${API_BASE_URL}/land-acquisition/update-land-acquisition`
       : `${API_BASE_URL}/land-acquisition/add-land-acquisition`;
 
-    const res = await axios.post(endpoint, formData, {
+    const res = await api.post(endpoint, formData, {
       withCredentials: true,
       headers: { "Content-Type": "multipart/form-data" },
     });
