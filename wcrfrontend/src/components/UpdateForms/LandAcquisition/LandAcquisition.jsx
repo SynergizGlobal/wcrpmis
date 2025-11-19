@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { RefreshContext } from "../../../context/RefreshContext";
 import Select from "react-select";
 import { CirclePlus, Download } from "lucide-react";
 import { LuCloudDownload, LuUpload, LuDownload } from "react-icons/lu";
@@ -13,6 +14,7 @@ import { MdEditNote } from 'react-icons/md';
 export default function LandAcquisition() {
   const location = useLocation();
   const navigate = useNavigate();
+    const { refresh } = useContext(RefreshContext);
 
   // Filters
   const [village, setVillage] = useState(null);
@@ -184,23 +186,23 @@ export default function LandAcquisition() {
   // Fetch all filters on first load
     useEffect(() => {
       fetchFilters(); //will use default empty {}
-    }, []);
+    }, [refresh, location]);
 
     // Fetch filters again when any selection changes (to get dependent values)
     useEffect(() => {
       fetchFilters({ village, typeOfLand, subCategory, landStatus });
-    }, [village, typeOfLand, subCategory, landStatus]);
+    }, [village, typeOfLand, subCategory, landStatus, refresh, location]);
 
     // Fetch data when filters or pagination change
     useEffect(() => {
       fetchData(page, perPage);
-    }, [village, typeOfLand, subCategory, landStatus, search, page, perPage]);
+    }, [village, typeOfLand, subCategory, landStatus, search, page, perPage, refresh, location]);
 
     // Reset dependent dropdowns
     useEffect(() => {
       setSubCategory(null);
       setLandStatus(null);
-    }, [typeOfLand]);
+    }, [typeOfLand, refresh, location]);
 
 
     const clearFilters = () => {
