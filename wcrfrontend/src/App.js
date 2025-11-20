@@ -1,3 +1,5 @@
+import IssuesForm from "./components/UpdateForms/Issues/IssuesForm/IssuesForm";
+import Issues from "./components/UpdateForms/Issues/Issues";
 import ValidateData from "./components/UpdateForms/ValidateData/ValidateData";
 import ModifyActuals from "./components/UpdateForms/ModifyActuals/ModifyActuals";
 import NewActivitiesUpdate from "./components/UpdateForms/NewActivitiesUpdate/NewActivitiesUpdate";
@@ -103,8 +105,10 @@ function App() {
                 <Route path="new-activities-update" element={<NewActivitiesUpdate />} />
                 <Route path="modify-actuals" element={<ModifyActuals />} />
                 <Route path="progress-approval-page" element={<ValidateData />} />
+                <Route path="issues" element={<Issues />} >
+                  <Route path="issuesform" element={<IssuesForm />} />
+                </Route>
               </Route>
-
               <Route path="works" element={<Works />} />
               <Route path="admin" element={<Admin />} />
               <Route path="modules" element={<Modules />} />
