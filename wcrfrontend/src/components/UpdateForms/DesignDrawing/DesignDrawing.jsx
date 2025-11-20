@@ -8,13 +8,7 @@ import { FaSearch } from "react-icons/fa";
 import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { API_BASE_URL } from "../../../config";
-
-/**
- * Updated DesignDrawing component
- * - Backend pagination & filtering for design list
- * - Frontend pagination & search for uploaded files
- * - Clear filters resets both tables' searches & pagination
- */
+import { MdEditNote } from 'react-icons/md';
 
 export default function DesignDrawing() {
 	const location = useLocation();
@@ -35,7 +29,6 @@ export default function DesignDrawing() {
 	const [uploadedPage, setUploadedPage] = useState(1);
 	const [uploadedPerPage, setUploadedPerPage] = useState(10);
 
-	// Filters (shared)
 	const [filters, setFilters] = useState({
 		contract: "",
 		structureType: "",
@@ -43,9 +36,9 @@ export default function DesignDrawing() {
 	});
 
 	const [filterOptions, setFilterOptions] = useState({
-		contract: [],
-		structure: [],
-		drawingType: [],
+	  contract: [],
+	  structureType: [],
+	  drawingType: [],
 	});
 
 	const isDesignDrawingForm = location.pathname.endsWith("/add-design-form");
@@ -70,102 +63,108 @@ export default function DesignDrawing() {
 		uploadedPage * uploadedPerPage
 	);
 
-	// Fetch filter dropdowns (contract / structure / drawingType)
 	useEffect(() => {
-		const fetchFilterData = async () => {
-			const endpoints = {
-				contract: `${API_BASE_URL}/design/ajax/getContractListFilterInDesign`,
-				structure: `${API_BASE_URL}/design/ajax/getStructureListFilterInDesign`,
-				drawingType: `${API_BASE_URL}/design/ajax/getDrawingTypeListFilterInDesign`,
-			};
+	  const fetchFilterData = async () => {
+	    const endpoints = {
+	      contract: `${API_BASE_URL}/design/ajax/getContractListFilterInDesign`,
+	      structureType: `${API_BASE_URL}/design/ajax/getStructureListFilterInDesign`,
+	      drawingType: `${API_BASE_URL}/design/ajax/getDrawingTypeListFilterInDesign`,
+	    };
 
-			for (const [key, url] of Object.entries(endpoints)) {
-				try {
-					const resp = await fetch(url, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({}),
-					});
-					const result = await resp.json();
-					const data = Array.isArray(result) ? result : result.data || result.list || [];
+	    for (const [key, url] of Object.entries(endpoints)) {
+	      try {
+	        const resp = await fetch(url, {
+	          method: "POST",
+	          headers: { "Content-Type": "application/json" },
+	          body: JSON.stringify({}),
+	        });
 
-					setFilterOptions((prev) => ({
-						...prev,
-						[key]: data.map((item) => ({
-							value: item.id ?? item.name ?? item.contractName ?? "",
-							label:
-								item.name ??
-								item.contractName ??
-								item.structureName ??
-								item.drawingTypeName ??
-								"Unknown",
-						})),
-					}));
-				} catch (err) {
-					console.error("Error fetching filter options for", key, err);
-				}
-			}
-		};
+	        const result = await resp.json();
+	        const data = Array.isArray(result)
+	          ? result
+	          : result.data || result.list || [];
 
-		fetchFilterData();
+	        setFilterOptions((prev) => ({
+	          ...prev,
+	          [key]: data.map((item) => ({
+	            value:
+	              item.contract_id ??
+	              item.structure_type_fk ??
+	              item.drawing_type_fk ??
+	              "",
+	            label:
+	              item.contract_id ??
+	              item.structure_type_fk ??
+	              item.drawing_type_fk ??
+	              "Unknown",
+	          })),
+	        }));
+	      } catch (err) {
+	        console.error("Error fetching filter options for", key, err);
+	      }
+	    }
+	  };
+
+	  fetchFilterData();
 	}, [refresh, location]);
 
-	// Fetch designs from backend (paginated)
+
 	const fetchDesigns = useCallback(
-		async (pageNumber = designPage, pageSize = designPerPage, searchText = designSearch, currentFilters = filters) => {
-			setDesignLoading(true);
-			try {
-				const iDisplayStart = (pageNumber - 1) * pageSize;
-				const iDisplayLength = pageSize;
+	  async (
+	    pageNumber = designPage,
+	    pageSize = designPerPage,
+	    searchText = designSearch,
+	    currentFilters = filters
+	  ) => {
+	    setDesignLoading(true);
+	    try {
+	      const iDisplayStart = (pageNumber - 1) * pageSize;
+	      const iDisplayLength = pageSize;
 
-				// Build URL params (DataTables style) + filter fields
-				const params = new URLSearchParams({
-					iDisplayStart,
-					iDisplayLength,
-					sSearch: searchText || "",
-					// include filters - backend may ignore empty values
-					contract: currentFilters.contract || "",
-					structureType: currentFilters.structureType || "",
-					drawingType: currentFilters.drawingType || "",
-				});
+	      const params = new URLSearchParams({
+	        iDisplayStart,
+	        iDisplayLength,
+	        sSearch: searchText || "",
 
-				const res = await api.post(
-					`${API_BASE_URL}/design/ajax/getDesignsList?${params.toString()}`,
-					{},
-					{ withCredentials: true }
-				);
+	        contract_id_fk: currentFilters.contract || "",
+	        structure_type_fk: currentFilters.structureType || "",
+	        drawing_type_fk: currentFilters.drawingType || "",
+	      });
 
-				const d = res.data || {};
-				// Accept multiple possible total fields (iTotalDisplayRecords, iTotalRecords, total)
-				const total =
-					Number(d.iTotalDisplayRecords ?? d.iTotalRecords ?? d.total ?? 0) || 0;
-				const aaData = d.aaData ?? d.data ?? [];
+	      const res = await api.post(
+	        `${API_BASE_URL}/design/ajax/getDesignsList?${params.toString()}`,
+	        {},
+	        { withCredentials: true }
+	      );
 
-				setDesigns(Array.isArray(aaData) ? aaData : []);
-				setDesignTotalRows(total);
-				// ensure UI page is valid (if total reduced)
-				if ((pageNumber - 1) * pageSize >= total && total > 0) {
-					const newPage = Math.max(1, Math.ceil(total / pageSize));
-					setDesignPage(newPage);
-				}
-			} catch (err) {
-				console.error("Error fetching designs list:", err);
-				setDesigns([]);
-				setDesignTotalRows(0);
-			} finally {
-				setDesignLoading(false);
-			}
-		},
-		[designPage, designPerPage, designSearch, filters, refresh, location]
+	      const d = res.data || {};
+	      const total =
+	        Number(d.iTotalDisplayRecords ?? d.iTotalRecords ?? d.total ?? 0) || 0;
+	      const aaData = d.aaData ?? d.data ?? [];
+
+	      setDesigns(Array.isArray(aaData) ? aaData : []);
+	      setDesignTotalRows(total);
+
+	      if ((pageNumber - 1) * pageSize >= total && total > 0) {
+	        const newPage = Math.max(1, Math.ceil(total / pageSize));
+	        setDesignPage(newPage);
+	      }
+	    } catch (err) {
+	      console.error("Error fetching designs list:", err);
+	      setDesigns([]);
+	      setDesignTotalRows(0);
+	    } finally {
+	      setDesignLoading(false);
+	    }
+	  },
+	  [designPage, designPerPage, designSearch, filters, refresh, location]
 	);
 
-	// initial fetch + whenever pagination/filter/search changes
+
 	useEffect(() => {
 		fetchDesigns(designPage, designPerPage, designSearch, filters);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [designPage, designPerPage, designSearch, filters, refresh, location]);
 
-	// Fetch uploaded files (client-side pagination)
 	const fetchUploadedFile = useCallback(async () => {
 		try {
 			const res = await api.post(
@@ -173,10 +172,8 @@ export default function DesignDrawing() {
 				{},
 				{ withCredentials: true }
 			);
-			// expecting array
 			const data = res.data ?? [];
 			setUploadedFile(Array.isArray(data) ? data : data.aaData ?? []);
-			// reset uploaded pagination
 			setUploadedPage(1);
 		} catch (err) {
 			console.error("Error fetching uploaded files:", err);
@@ -188,7 +185,6 @@ export default function DesignDrawing() {
 		fetchUploadedFile();
 	}, [fetchUploadedFile, refresh, location]);
 
-	// Clear filters + both searches + reset pages
 	const clearAllFiltersAndSearch = () => {
 		setFilters({ contract: "", structureType: "", drawingType: "" });
 		setDesignSearch("");
@@ -197,17 +193,14 @@ export default function DesignDrawing() {
 		setUploadedPage(1);
 	};
 
-	// Handle filter change (for react-select we pass direct values)
 	const handleFilterChange = (name, value) => {
 		setFilters((prev) => ({ ...prev, [name]: value }));
 		setDesignPage(1); // reset to first page when filter changes
 	};
 
-	// navigation handlers
 	const handleAdd = () => navigate("add-design-form");
 
 	
-	//Handle Edit
 	
 	const handleEdit = (designId) => {
 	  navigate("add-design-form", { state: { design_id: designId } });
@@ -215,11 +208,9 @@ export default function DesignDrawing() {
 
 	
 	
-	// small helpers for page controls
 	const renderPageButtons = (page, totalPages, setPageFn) => {
 		if (totalPages <= 1) return null;
 
-		// Build visible page numbers like before
 		const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
 			.filter((p) => {
 				if (p <= 2 || p > totalPages - 2) return true;
@@ -434,12 +425,14 @@ export default function DesignDrawing() {
 											<td>{dd.mrvc_drawing_no}</td>
 											<td>{dd.modified_date}</td>
 											<td>
-											  <button
-											    className="btn btn-sm btn-outline-primary"
-											    onClick={() => handleEdit(dd.design_id)}
-											  >
-											    Edit
-											  </button>
+												<button
+													className="btn btn-sm btn-outline-primary"
+													onClick={() => handleEdit(dd.design_id)}
+												>
+													<MdEditNote
+														size="22"
+													/>
+												</button>
 											</td>
 										</tr>
 									))

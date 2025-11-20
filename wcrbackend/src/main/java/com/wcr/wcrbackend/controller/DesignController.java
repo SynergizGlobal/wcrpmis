@@ -319,6 +319,15 @@ public class DesignController {
 			}
 			//Fetch search parameter
 			String searchParameter = request.getParameter("sSearch");
+			
+		    String contractId = request.getParameter("contract_id_fk");
+		    String structureType = request.getParameter("structure_type_fk");
+		    String drawingType = request.getParameter("drawing_type_fk");
+		    
+		    obj.setContract_id_fk(contractId);
+		    obj.setStructure_type_fk(structureType);
+		    obj.setDrawing_type_fk(drawingType);
+
 
 			//Fetch Page display length
 			pageDisplayLength = Integer.valueOf(request.getParameter("iDisplayLength"));

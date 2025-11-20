@@ -1665,15 +1665,10 @@ public class DesignRepository implements IDesignRepo {
 			DrawTypeObj = (Design)jdbcTemplate.queryForObject(qry1, new BeanPropertyRowMapper<Design>(Design.class));			
 			
 			
-			String input = obj.getStructure_type_fk()+"-"+obj.getStructure_id_fk()+"-"+obj.getComponent()+"-"+DrawTypeObj.getDrawing_type_code();
-			String lastFourDigits = input;   
+			designid  = obj.getProject_id_fk() +"-"+obj.getStructure_type_fk()+"-"+obj.getStructure_id_fk()+"-"+obj.getComponent()+"-"+DrawTypeObj.getDrawing_type_code();
+			
 	
 
-
-				String qry2="select CONCAT('"+WorkCodedObj.getWork_code()+"','-"+lastFourDigits+"-',case when len(design_seq_id)=3 then concat('0',design_seq_id) when len(design_seq_id)=2 then concat('00',design_seq_id) when len(design_seq_id)=1 then concat('000',design_seq_id) end) as design_id from(" + 
-						"select (case when (select count(*) from design where left(design_seq_id,2) ='"+WorkCodedObj.getWork_code()+"')>0 then Max(SUBSTRING( design_seq_id , LEN(design_seq_id) -  CHARINDEX('-',REVERSE(design_seq_id)) + 2  , LEN(design_seq_id)  ))+1 else 1 end )as design_seq_id from design where left(design_seq_id,2) ='"+WorkCodedObj.getWork_code()+"') as a";
-						dObj = (Design)jdbcTemplate.queryForObject(qry2, new Object[] {}, new BeanPropertyRowMapper<Design>(Design.class));
-						designid = dObj.getDesign_id();
 			
 		}catch(Exception e){ 
 			e.printStackTrace();
@@ -1698,11 +1693,11 @@ public class DesignRepository implements IDesignRepo {
 			String qry = "INSERT INTO design (project_id_fk,contract_id_fk,department_id_fk,hod,dy_hod,prepared_by_id_fk,consultant_contract_id_fk,proof_consultant_contract_id_fk,"
 					+ "structure_type_fk,drawing_type_fk,contractor_drawing_no,mrvc_drawing_no,division_drawing_no,hq_drawing_no,drawing_title,"
 					+ "gfc_released,remarks," + 
-					"approving_railway,approval_authority_fk,structure_id_fk,required_date,component,design_seq_id,[3pvc]) "
+					"approving_railway,approval_authority_fk,structure_id_fk,required_date,component,design_seq_id,[3pvc],created_by,created_date) "
 					+ "VALUES(:project_id_fk,:contract_id_fk,:department_id_fk,:hod,:dy_hod,:prepared_by_id_fk,:consultant_contract_id_fk,:proof_consultant_contract_id_fk,:structure_type_fk"
 					+ ",:drawing_type_fk,:contractor_drawing_no,:mrvc_drawing_no,:division_drawing_no,:hq_drawing_no,:drawing_title,"
 					+ ":gfc_released,:remarks"
-					+ ",:approving_railway,:approval_authority_fk,:structure_id_fk,:required_date,:component,:design_seq_id,:threepvc)";
+					+ ",:approving_railway,:approval_authority_fk,:structure_id_fk,:required_date,:component,:design_seq_id,:threepvc,:created_by_user_id_fk,CURRENT_TIMESTAMP)";
 			
 			org.springframework.jdbc.core.namedparam.SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
 			org.springframework.jdbc.support.KeyHolder keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
@@ -2082,16 +2077,22 @@ public class DesignRepository implements IDesignRepo {
 		return design_seq_id;
 	}
 	private String getDDExecutives(String project_id) throws Exception {
-		String executives="";
-		try {
-			String qry = "SELECT  STRING_AGG(u.user_id , ',') user_id FROM designexecutives re " + 
-					"LEFT JOIN [user] u on re.executive_user_id_fk = u.user_id left join project w on re.project_id_fk = p.project_id  where project_id=?";
-			executives = (String) jdbcTemplate.queryForObject(qry, new Object[] { project_id }, String.class);
-		} catch (Exception e) {
-			throw new Exception(e);
-		}		
-		return executives;
+	    String executives = "";
+	    try {
+	        String qry = 
+	            "SELECT STRING_AGG(u.user_id, ',') AS user_id " +
+	            "FROM designexecutives re " +
+	            "LEFT JOIN [user] u ON re.executive_user_id_fk = u.user_id " +
+	            "LEFT JOIN project p ON re.project_id_fk = p.project_id " +
+	            "WHERE re.project_id_fk = ?";
+	        
+	        executives = jdbcTemplate.queryForObject(qry, new Object[]{project_id}, String.class);
+	    } catch (Exception e) {
+	        throw new Exception(e);
+	    }
+	    return executives;
 	}
+
 
 	@Override
 	public String updateDesign(Design obj) throws Exception {
