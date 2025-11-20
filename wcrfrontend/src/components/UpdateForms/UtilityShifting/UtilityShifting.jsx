@@ -1,108 +1,635 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Select from "react-select";
 import styles from './UtilityShifting.module.css';
 import { CirclePlus } from "lucide-react";
-import { LuCloudDownload, LuUpload, LuDownload } from "react-icons/lu";
+import { LuCloudDownload, LuUpload, LuDownload, LuSearch } from "react-icons/lu";
+import { MdEditNote } from "react-icons/md";
 import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
 
 export default function UtilityShifting() {
-
   const location = useLocation();
-      const navigate = useNavigate();
-      const [utilityShiftingId, setUtilityShiftingId] = useState([]);
-      const [filePath, setFilePath] = useState([]);
-      const [filters, setFilters] = useState({
-        location: "",
-        category: "",
-        utilityType: "",
-        status: "",
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+  const [utilityShiftingList, setUtilityShiftingList] = useState([]);
+  const [uploadedFilesList, setUploadedFilesList] = useState([]);
+  const [filteredUploadedFiles, setFilteredUploadedFiles] = useState([]);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState({ type: '', text: '' });
+  const [loading, setLoading] = useState(false);
+  const [filterOptions, setFilterOptions] = useState({
+    location: [],
+    category: [],
+    utilityType: [],
+    status: []
+  });
+  const [filtersLoading, setFiltersLoading] = useState({
+    location: false,
+    category: false,
+    utilityType: false,
+    status: false
+  });
+  const [pagination, setPagination] = useState({
+    pageNumber: 1,
+    pageDisplayLength: 10,
+    totalRecords: 0,
+    totalDisplayRecords: 0
+  });
+  const [uploadPagination, setUploadPagination] = useState({
+    pageNumber: 1,
+    pageDisplayLength: 10,
+    totalRecords: 0
+  });
+  const [filters, setFilters] = useState({
+    location: "",
+    category: "",
+    utilityType: "",
+    status: "",
+  });
+  const [searchParameter, setSearchParameter] = useState("");
+  const [uploadSearchParameter, setUploadSearchParameter] = useState("");
+
+  useEffect(() => {
+    fetchFilterOptions();
+    fetchUtilityShiftingList();
+    fetchUploadedFilesList();
+  }, []);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, pageNumber: 1 }));
+  }, [filters.location, filters.category, filters.utilityType, filters.status]);
+
+  // Fetch data when pagination, search, or filters change
+  useEffect(() => {
+    fetchUtilityShiftingList();
+  }, [pagination.pageNumber, pagination.pageDisplayLength, searchParameter, filters]);
+
+  // Filter uploaded files when search changes
+  useEffect(() => {
+    filterUploadedFiles();
+  }, [uploadSearchParameter, uploadedFilesList, uploadPagination.pageNumber, uploadPagination.pageDisplayLength]);
+
+  const filterUploadedFiles = () => {
+    let filtered = uploadedFilesList;
+    
+    // Apply search filter
+    if (uploadSearchParameter) {
+      const searchLower = uploadSearchParameter.toLowerCase();
+      filtered = filtered.filter(file => 
+        (file.filePath && file.filePath.toLowerCase().includes(searchLower)) ||
+        (file.status && file.status.toLowerCase().includes(searchLower)) ||
+        (file.remarks && file.remarks.toLowerCase().includes(searchLower)) ||
+        (file.uploaded_by_user_id_fk && file.uploaded_by_user_id_fk.toLowerCase().includes(searchLower)) ||
+        (file.uploaded_on && file.uploaded_on.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    // Update pagination total
+    setUploadPagination(prev => ({
+      ...prev,
+      totalRecords: filtered.length
+    }));
+    
+    // Apply pagination
+    const startIndex = (uploadPagination.pageNumber - 1) * uploadPagination.pageDisplayLength;
+    const endIndex = startIndex + uploadPagination.pageDisplayLength;
+    setFilteredUploadedFiles(filtered.slice(startIndex, endIndex));
+  };
+
+  const fetchFilterOptions = async () => {
+    try {
+      // Set all filters to loading state
+      setFiltersLoading({
+        location: true,
+        category: true,
+        utilityType: true,
+        status: true
       });
-  
-    useEffect(() => {
-      fetchUtilityShiftingId();
-    }, []);
-  
-     useEffect(() => {
-      fetchFilePath();
-    }, []);
 
-    const fetchUtilityShiftingId = async () => {
-      try {
-        const res = await api.get(`${API_BASE_URL}/ajax/form/add-utility-shifting`, { withCredentials: true });
-        setUtilityShiftingId(res.data || []);
-      } catch (err) {
-        console.error("Error fetching projects:", err);
+      const filterEndpoints = [
+        { key: 'location', url: '/ajax/getLocationListFilter', backendField: 'location_name' },
+        { key: 'category', url: '/ajax/getUtilityCategoryListFilter', backendField: 'utility_category_fk' },
+        { key: 'utilityType', url: '/ajax/getUtilityTypeListFilter', backendField: 'utility_type_fk' },
+        { key: 'status', url: '/ajax/getStatusListFilter', backendField: 'shifting_status_fk' }
+      ];
+
+      const requests = filterEndpoints.map(async (endpoint) => {
+        try {
+          // Send empty object as request body since backend expects @RequestBody
+          const response = await api.post(
+            `${API_BASE_URL}/utility-shifting${endpoint.url}`, 
+            {}, // Empty request body
+            { 
+              withCredentials: true,
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            }
+          );
+
+          console.log(`✅ ${endpoint.key} filter raw response:`, {
+            endpoint: endpoint.url,
+            data: response.data,
+            dataLength: response.data?.length || 0
+          });
+
+          if (response.data && Array.isArray(response.data)) {
+            const options = response.data.map(item => {
+              let label = '';
+              let value = '';
+
+              // Handle different possible field names in the response
+              switch (endpoint.key) {
+                case 'location':
+                  label = item.location_name || item.name || item.location_fk || 'Unknown Location';
+                  value = item.location_id || item.location_name || item.location_fk || '';
+                  break;
+                case 'category':
+                  label = item.utility_category_name || item.category_name || item.name || item.utility_category_fk || 'Unknown Category';
+                  value = item.utility_category_id || item.id || item.utility_category_fk || '';
+                  break;
+                case 'utilityType':
+                  label = item.utility_type_name || item.type_name || item.name || item.utility_type_fk || 'Unknown Type';
+                  value = item.utility_type_id || item.id || item.utility_type_fk || '';
+                  break;
+                case 'status':
+                  label = item.shifting_status_name || item.status_name || item.name || item.shifting_status_fk || 'Unknown Status';
+                  value = item.shifting_status_id || item.id || item.shifting_status_fk || '';
+                  break;
+                default:
+                  label = item.name || item.label || item.description || 'Unknown';
+                  value = item.id || item.value || item.code || '';
+              }
+
+              if (!value && value !== 0) {
+                console.warn(`Invalid value for ${endpoint.key}:`, item);
+                return null;
+              }
+
+              return { 
+                label: label.toString(), 
+                value: value.toString() 
+              };
+            }).filter(option => option !== null);
+
+            console.log(`✅ ${endpoint.key} transformed options:`, options);
+
+            const optionsWithEmpty = [
+              { value: "", label: `Select ${endpoint.key}` },
+              ...options
+            ];
+
+            return { key: endpoint.key, options: optionsWithEmpty };
+          } else {
+            console.warn(`⚠️ ${endpoint.key} response is not an array:`, response.data);
+            return { 
+              key: endpoint.key, 
+              options: [{ value: "", label: `Select ${endpoint.key}` }] 
+            };
+          }
+        } catch (error) {
+          console.error(`❌ Error fetching ${endpoint.key} options:`, error);
+          return { 
+            key: endpoint.key, 
+            options: [{ value: "", label: `Select ${endpoint.key}` }] 
+          };
+        }
+      });
+
+      const results = await Promise.all(requests);
+      
+      // Update filter options state
+      const newFilterOptions = { ...filterOptions };
+      results.forEach(result => {
+        newFilterOptions[result.key] = result.options;
+      });
+      setFilterOptions(newFilterOptions);
+
+      console.log("✅ Final filter options:", newFilterOptions);
+
+    } catch (error) {
+      console.error("❌ Error fetching filter options:", error);
+    } finally {
+      setFiltersLoading({
+        location: false,
+        category: false,
+        utilityType: false,
+        status: false
+      });
+    }
+  };
+
+  const fetchUtilityShiftingList = async () => {
+    try {
+      setLoading(true);
+      
+      // Calculate start index for backend (iDisplayStart)
+      const startIndex = (pagination.pageNumber - 1) * pagination.pageDisplayLength;
+      
+      // Prepare request body with filter parameters (as JSON)
+      const requestBody = {
+        // Map filters to backend expected field names in the UtilityShifting object
+        location_name: filters.location || '',
+        utility_category_fk: filters.category || '', 
+        utility_type_fk: filters.utilityType || '',
+        shifting_status_fk: filters.status || ''
+      };
+
+      // Prepare query parameters for pagination
+      const queryParams = new URLSearchParams({
+        iDisplayStart: startIndex.toString(),
+        iDisplayLength: pagination.pageDisplayLength.toString(),
+        sSearch: searchParameter || ''
+      });
+
+      console.log("📡 Fetching utility shifting list with:", {
+        queryParams: queryParams.toString(),
+        requestBody: requestBody
+      });
+
+      const response = await api.post(
+        `${API_BASE_URL}/utility-shifting/ajax/getUtilityShiftingList?${queryParams.toString()}`, 
+        requestBody, // Send filters in request body
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      console.log("✅ Utility shifting list response:", {
+        dataCount: response.data?.aaData?.length || 0,
+        totalRecords: response.data?.iTotalRecords || 0,
+        data: response.data?.aaData || []
+      });
+
+      if (response.data) {
+        setUtilityShiftingList(response.data.aaData || []);
+        setPagination(prev => ({
+          ...prev,
+          totalRecords: response.data.iTotalRecords || 0,
+          totalDisplayRecords: response.data.iTotalDisplayRecords || 0
+        }));
       }
-    };
-
-const fetchFilePath = async () => {
-      try {
-        const res = await api.get(`${API_BASE_URL}/ajax/form/get-utility-shifting/get-utility-shifting`, { withCredentials: true });
-        setFilePath(res.data || []);
-      } catch (err) {
-        console.error("Error fetching projects:", err);
+    } catch (err) {
+      console.error("❌ Error fetching utility shifting list:", err);
+      if (err.response) {
+        console.error("Response error:", err.response.data);
+        console.error("Response status:", err.response.status);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters({ ...filters, [name]: value });
+  const fetchUploadedFilesList = async () => {
+    try {
+      const response = await api.post(
+        `${API_BASE_URL}/utility-shifting/ajax/getUtilityShiftingUploadsList`, 
+        {}, 
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      console.log("✅ Uploaded files list response:", response.data);
+
+      if (response.data && Array.isArray(response.data)) {
+        setUploadedFilesList(response.data);
+      }
+    } catch (err) {
+      console.error("❌ Error fetching uploaded files list:", err);
+      if (err.response) {
+        console.error("Response error:", err.response.data);
+      }
+    }
+  };
+
+  // Download handler for Utility Shifting template
+  const handleSampleDownload = () => {
+    const fileUrl = "/files/utilityshifting/Utility_Shifting_Template.xlsx";
+    const fileName = "Utility_Shifting_Template.xlsx";
+
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  // Handle Upload button click
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Handle file selection and upload
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      setUploadMessage({
+        type: 'error',
+        text: 'Please upload an Excel file (.xlsx or .xls)'
+      });
+      return;
+    }
+
+    // Validate file size (e.g., 10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadMessage({
+        type: 'error',
+        text: 'File size should be less than 10MB'
+      });
+      return;
+    }
+
+    await uploadUtilityShiftingFile(file);
+  };
+
+  // Upload file to backend
+  const uploadUtilityShiftingFile = async (file) => {
+    setUploadLoading(true);
+    setUploadMessage({ type: '', text: '' });
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      console.log('Uploading file:', file.name, 'Size:', file.size);
+
+      const response = await api.post(
+        `${API_BASE_URL}/utility-shifting/upload-utility-shifting`,
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 60000
+        }
+      );
+
+      console.log('Upload response:', response.data);
+
+      // Handle the response
+      if (response.data) {
+        const responseData = response.data;
+        
+        if (responseData.success) {
+          setUploadMessage({
+            type: 'success',
+            text: responseData.success
+          });
+          // Refresh data after successful upload
+          fetchUtilityShiftingList();
+          fetchUploadedFilesList();
+        } 
+        else if (responseData.error) {
+          setUploadMessage({
+            type: 'error',
+            text: responseData.error
+          });
+        }
+        else {
+          const keys = Object.keys(responseData);
+          let foundMessage = false;
+          
+          for (const key of keys) {
+            const value = responseData[key];
+            if (value && typeof value === 'string') {
+              if (value.includes('success') || value.includes('uploaded') || value.includes('records')) {
+                setUploadMessage({
+                  type: 'success',
+                  text: value
+                });
+                fetchUtilityShiftingList();
+                fetchUploadedFilesList();
+                foundMessage = true;
+                break;
+              } else if (value.includes('error') || value.includes('fail') || value.includes('wrong')) {
+                setUploadMessage({
+                  type: 'error',
+                  text: value
+                });
+                foundMessage = true;
+                break;
+              }
+            }
+          }
+          
+          if (!foundMessage) {
+            const firstKey = keys[0];
+            if (firstKey) {
+              setUploadMessage({
+                type: 'info',
+                text: responseData[firstKey]
+              });
+            }
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      
+      let errorMessage = 'Upload failed! Please try again.';
+      
+      if (error.response) {
+        console.log('Error response:', error.response.data);
+        
+        const serverError = error.response.data;
+        
+        if (typeof serverError === 'object') {
+          if (serverError.error) {
+            errorMessage = serverError.error;
+          } else if (serverError.message) {
+            errorMessage = serverError.message;
+          } else {
+            const keys = Object.keys(serverError);
+            if (keys.length > 0) {
+              errorMessage = serverError[keys[0]];
+            }
+          }
+        } else if (typeof serverError === 'string') {
+          errorMessage = serverError;
+        }
+      } else if (error.request) {
+        errorMessage = 'No response from server. Please check your connection.';
+      } else {
+        errorMessage = error.message;
+      }
+      
+      setUploadMessage({
+        type: 'error',
+        text: errorMessage
+      });
+    } finally {
+      setUploadLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleFilterChange = (name, value) => {
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchParameter(e.target.value);
+  };
+
+  const handleUploadSearchChange = (e) => {
+    setUploadSearchParameter(e.target.value);
+    setUploadPagination(prev => ({ ...prev, pageNumber: 1 }));
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, pageNumber: newPage }));
+  };
+
+  const handleUploadPageChange = (newPage) => {
+    setUploadPagination(prev => ({ ...prev, pageNumber: newPage }));
+  };
+
+  const handlePageSizeChange = (e) => {
+    const newSize = parseInt(e.target.value);
+    setPagination(prev => ({ ...prev, pageDisplayLength: newSize, pageNumber: 1 }));
+  };
+
+  const handleUploadPageSizeChange = (e) => {
+    const newSize = parseInt(e.target.value);
+    setUploadPagination(prev => ({ ...prev, pageDisplayLength: newSize, pageNumber: 1 }));
   };
 
   const handleAdd = () => navigate("add-utility-shifting");
-  const handleEdit = (project) => navigate("add-utility-shifting", { state: { utilityShiftingId } });
+  
+  // Updated handleEdit function to navigate with utility_shifting_id
+  const handleEdit = (utilityShifting) => navigate("add-utility-shifting", { 
+    state: { 
+      utility_shifting_id: utilityShifting.utility_shifting_id,
+      design: utilityShifting 
+    } 
+  });
+
+  // Fixed clear filters function
+  const handleClearFilters = () => {
+    setFilters({
+      location: "",
+      category: "",
+      utilityType: "",
+      status: "",
+    });
+    setSearchParameter("");
+    setPagination(prev => ({ ...prev, pageNumber: 1 }));
+    // No need to call fetchUtilityShiftingList() here
+    // The useEffect will handle it automatically due to filters state change
+  };
+
+  const handleClearUploadSearch = () => {
+    setUploadSearchParameter("");
+    setUploadPagination(prev => ({ ...prev, pageNumber: 1 }));
+  };
 
   const isUtilityShiftingForm = location.pathname.endsWith("/add-utility-shifting");
 
+  // Calculate pagination values
+  const totalPages = Math.ceil(pagination.totalRecords / pagination.pageDisplayLength);
+  const startRecord = (pagination.pageNumber - 1) * pagination.pageDisplayLength + 1;
+  const endRecord = Math.min(pagination.pageNumber * pagination.pageDisplayLength, pagination.totalRecords);
+
+  // Calculate uploaded files pagination values
+  const uploadTotalPages = Math.ceil(uploadPagination.totalRecords / uploadPagination.pageDisplayLength);
+  const uploadStartRecord = (uploadPagination.pageNumber - 1) * uploadPagination.pageDisplayLength + 1;
+  const uploadEndRecord = Math.min(uploadPagination.pageNumber * uploadPagination.pageDisplayLength, uploadPagination.totalRecords);
+
   return (
     <div className={styles.container}>
-     { !isUtilityShiftingForm &&(
-      <div className="pageHeading">
-        <h2>Utility Shifting</h2>
-        <div  className="rightBtns">
-          <button className="btn-2 transparent-btn">
+      {!isUtilityShiftingForm && (
+        <div className="pageHeading">
+          <h2>Utility Shifting</h2>
+          <div className="rightBtns">
+            {/* Download button */}
+            <button className="btn-2 transparent-btn" onClick={handleSampleDownload}>
               <LuDownload size={16} />
             </button>
-          <button className="btn btn-primary">
-            <LuUpload size={16} /> Upload
-          </button>
-          <button className="btn btn-primary" onClick={handleAdd}>
-            <CirclePlus size={16} /> Add
-          </button>
-          <button className="btn btn-primary">
-            <LuCloudDownload size={16} /> Export
-          </button>
+            
+            {/* Upload button with hidden file input */}
+            <button 
+              className="btn btn-primary" 
+              onClick={handleUploadClick}
+              disabled={uploadLoading}
+            >
+              {uploadLoading ? (
+                <>
+                  <div className="spinner-border spinner-border-sm me-2" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <LuUpload size={16} /> Upload
+                </>
+              )}
+            </button>
+            
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".xlsx,.xls"
+              style={{ display: 'none' }}
+            />
+            
+            <button className="btn btn-primary" onClick={handleAdd}>
+              <CirclePlus size={16} /> Add
+            </button>
+            <button className="btn btn-primary">
+              <LuCloudDownload size={16} /> Export
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+      
+      {/* Upload Message */}
+      {uploadMessage.text && (
+        <div className={`alert ${uploadMessage.type === 'success' ? 'alert-success' : uploadMessage.type === 'error' ? 'alert-danger' : 'alert-info'} mt-3`}>
+          <div dangerouslySetInnerHTML={{ __html: uploadMessage.text }} />
+        </div>
       )}
       
       {/* Filters */}
       {!isUtilityShiftingForm && (
-        
         <div className="innerPage">
           <div className={styles.filterRow}>
-            {Object.keys(filters).map((key) => {
-              const options = [
-                { value: "", label: `Select ${key}` },
-                { value: "demo1", label: `${key} 1` },
-                { value: "demo2", label: `${key} 2` },
-              ];
-
-              return (
-                <div className="filterOptions" key={key}>
+            <div className={styles.filterControls}>
+              {Object.keys(filters).map((key) => (
+                <div className={`filterOptions ${styles.filterOption}`} key={key}>
                   <Select
-                    options={options}
+                    options={filterOptions[key]}
                     classNamePrefix="react-select"
-                    value={options.find((opt) => opt.value === filters[key])}
+                    value={filterOptions[key].find((opt) => opt.value === filters[key])}
                     onChange={(selectedOption) =>
-                      handleFilterChange({
-                        target: { name: key, value: selectedOption.value },
-                      })
+                      handleFilterChange(key, selectedOption?.value || "")
                     }
-                    placeholder={`Select ${key}`}
+                    placeholder={
+                      filtersLoading[key] 
+                        ? `Loading ${key}...` 
+                        : `Select ${key}`
+                    }
+                    isDisabled={filtersLoading[key]}
                     isSearchable
+                    isLoading={filtersLoading[key]}
                     styles={{
                       control: (base) => ({
                         ...base,
@@ -121,107 +648,248 @@ const fetchFilePath = async () => {
                       }),
                       menu: (base) => ({
                         ...base,
-                        zIndex: 9999, // prevents clipping inside modals or cards
+                        zIndex: 9999,
                       }),
                     }}
                   />
                 </div>
-              );
-            })}
-            <button className="btn btn-2 btn-primary">Clear Filters</button>
-          </div>
-          <div className={`dataTable ${styles.tableWrapper}`}>
-            <table className={styles.designTable}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Description</th>
-                  <th>Utility type</th>
-                  <th>Custodian</th>
-                  <th>HOD</th>
-                  <th>Execution agency</th>
-                  <th>Status</th>
-                  <th>Last Update</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {utilityShiftingId.length > 0 ? (
-                  utilityShiftingId.map((us, index) => (
-                    <tr key={index}>
-                      <td>{us.utility_shifting_id}</td>
-                      <td>{us.utility_description}</td>
-                      <td>{us.utility_type_fk}</td>
-                      <td>{us.custodian}</td>
-                      <td>{us.designation}</td>
-                      <td>{us.execution_agency_fk}</td>
-                      <td>{us.shifting_status_fk}</td>
-                      <td>{us.modified_date}</td>
-                      <td>
-                        <button className="btn btn-sm btn-outline-primary" onClick={() => handleEdit(us)}>
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="9" style={{ textAlign: "center" }}>
-                      No records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+              
+              <button className={`btn btn-outline-secondary ${styles.clearFilterBtn}`} onClick={handleClearFilters}>
+                <span className={styles.clearFilterIcon}>×</span>
+                Clear Filters
+              </button>
+            </div>
 
-<br />
-<br />
-                  {/* Uploded Design Data table */}
-
-           { !isUtilityShiftingForm &&(
-            <div className="pageHeading">
-              <h2>Uploded Utility Shifting Data</h2>
-              <div  className="rightBtns">
-                <button className="btn-2 transparent-btn hidden">
-                    <LuDownload size={16} />
-                  </button>
+            {/* Search Box - Moved to right side */}
+            <div className={styles.searchContainer}>
+              <div className={styles.searchBox}>
+                <LuSearch className={styles.searchIcon} size={18} />
+                <input
+                  type="text"
+                  placeholder="Search utility shifting..."
+                  value={searchParameter}
+                  onChange={handleSearchChange}
+                  className={`form-control ${styles.searchInput}`}
+                />
               </div>
             </div>
-            )}
-
-          <div className={`dataTable ${styles.tableWrapper}`}>
-            <table className={styles.uploadedDesignTable}>
-              <thead>
-                <tr>
-                  <th>Uploaded File</th>
-                  <th>Status</th>
-                  <th>Remarks</th>
-                  <th>Uploaded by</th>
-                  <th>Uploaded On</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filePath.length > 0 ? (
-                  filePath.map((uf, index) => (
-                    <tr key={index}>
-                      <td>{uf.filePath}</td>
-                      <td>{uf.status}</td>
-                      <td>{uf.remarks}</td>
-                      <td>{uf.uploaded_by_user_id_fk}</td>
-                      <td>{uf.uploaded_on}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="8" style={{ textAlign: "center" }}>
-                      No records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
           </div>
+          
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center p-3">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-2">Loading utility shifting data...</p>
+            </div>
+          )}
+          
+          {/* Main Data Table */}
+          {!loading && (
+            <>
+              <div className={`dataTable ${styles.tableWrapper}`}>
+                <table className={styles.designTable}>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Description</th>
+                      <th>Utility Type</th>
+                      <th>Custodian</th>
+                      <th>HOD</th>
+                      <th>Execution Agency</th>
+                      <th>Status</th>
+                      <th>Last Update</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {utilityShiftingList.length > 0 ? (
+                      utilityShiftingList.map((us, index) => (
+                        <tr key={index}>
+                          <td>{us.utility_shifting_id}</td>
+                          <td>{us.utility_description}</td>
+                          <td>{us.utility_type_fk}</td>
+                          <td>{us.custodian}</td>
+                          <td>{us.user_name}</td>
+                          <td>{us.execution_agency_fk}</td>
+                          <td>{us.shifting_status_fk}</td>
+                          <td>{us.modified_date}</td>
+                          <td>
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => handleEdit(us)}
+                            >
+                              <MdEditNote size="22" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="9" style={{ textAlign: "center" }}>
+                          No records found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {utilityShiftingList.length > 0 && (
+                <div className={styles.pagination}>
+                  <div className={styles.paginationInfo}>
+                    Showing {startRecord} to {endRecord} of {pagination.totalRecords} entries
+                  </div>
+                  <div className={styles.paginationControls}>
+                    <button 
+                      className="btn btn-sm btn-outline-primary"
+                      disabled={pagination.pageNumber === 1}
+                      onClick={() => handlePageChange(pagination.pageNumber - 1)}
+                    >
+                      Previous
+                    </button>
+                    <span className={styles.pageNumber}>
+                      Page {pagination.pageNumber} of {totalPages}
+                    </span>
+                    <button 
+                      className="btn btn-sm btn-outline-primary"
+                      disabled={pagination.pageNumber === totalPages}
+                      onClick={() => handlePageChange(pagination.pageNumber + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className={styles.pageSize}>
+                    <select 
+                      value={pagination.pageDisplayLength} 
+                      onChange={handlePageSizeChange}
+                      className="form-select form-select-sm"
+                    >
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              <br />
+              <br />
+              
+              {/* Uploaded Utility Shifting Data table */}
+              <div className="pageHeading">
+                <h2>Uploaded Utility Shifting Data</h2>
+                <div className="rightBtns">
+                  <button className="btn-2 transparent-btn hidden">
+                    <LuDownload size={16} />
+                  </button>
+                </div>
+              </div>
+			  <br />
+              {/* Uploaded Files Search Bar - Positioned after the heading */}
+              <div className={styles.uploadSearchSection}>
+                <div className={styles.uploadSearchContainer}>
+                  <div className={styles.uploadSearchBox}>
+                    <LuSearch className={styles.uploadSearchIcon} size={18} />
+                    <input
+                      type="text"
+                      placeholder="Search uploaded files"
+                      value={uploadSearchParameter}
+                      onChange={handleUploadSearchChange}
+                      className={`form-control ${styles.uploadSearchInput}`}
+                    />
+                    {uploadSearchParameter && (
+                      <button 
+                        className={styles.clearUploadSearchBtn}
+                        onClick={handleClearUploadSearch}
+                        title="Clear search"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className={`dataTable ${styles.tableWrapper}`}>
+                <table className={styles.uploadedDesignTable}>
+                  <thead>
+                    <tr>
+                      <th>Uploaded File</th>
+                      <th>Status</th>
+                      <th>Remarks</th>
+                      <th>Uploaded By</th>
+                      <th>Uploaded On</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUploadedFiles.length > 0 ? (
+                      filteredUploadedFiles.map((uf, index) => (
+                        <tr key={index}>
+                          <td>{uf.filePath}</td>
+                          <td>{uf.status}</td>
+                          <td>{uf.remarks}</td>
+                          <td>{uf.uploaded_by_user_id_fk}</td>
+                          <td>{uf.uploaded_on}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: "center" }}>
+                          {uploadedFilesList.length === 0 ? 'No uploaded files found' : 'No files match your search'}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Uploaded Files Pagination */}
+              {uploadedFilesList.length > 0 && (
+                <div className={styles.pagination}>
+                  <div className={styles.paginationInfo}>
+                    Showing {uploadStartRecord} to {uploadEndRecord} of {uploadPagination.totalRecords} entries
+                    {uploadSearchParameter && ` (filtered from ${uploadedFilesList.length} total entries)`}
+                  </div>
+                  <div className={styles.paginationControls}>
+                    <button 
+                      className="btn btn-sm btn-outline-primary"
+                      disabled={uploadPagination.pageNumber === 1}
+                      onClick={() => handleUploadPageChange(uploadPagination.pageNumber - 1)}
+                    >
+                      Previous
+                    </button>
+                    <span className={styles.pageNumber}>
+                      Page {uploadPagination.pageNumber} of {uploadTotalPages}
+                    </span>
+                    <button 
+                      className="btn btn-sm btn-outline-primary"
+                      disabled={uploadPagination.pageNumber === uploadTotalPages}
+                      onClick={() => handleUploadPageChange(uploadPagination.pageNumber + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className={styles.pageSize}>
+                    <select 
+                      value={uploadPagination.pageDisplayLength} 
+                      onChange={handleUploadPageSizeChange}
+                      className="form-select form-select-sm"
+                    >
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
       <Outlet />
