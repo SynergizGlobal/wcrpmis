@@ -706,7 +706,6 @@ public class DesignRepository implements IDesignRepo {
 					+"LEFT OUTER JOIN contract c ON d.contract_id_fk = c.contract_id "
 					+"LEFT OUTER JOIN project p  ON d.project_id_fk  =  p.project_id "
 					+ " where design_id is not null";
-				
 			int arrSize = 0;
 			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
 				qry = qry + " and d.project_id_fk = ?";
