@@ -581,8 +581,8 @@ export default function UtilityShiftingForm() {
                     <Select
                       {...field}
                       options={dropdownData.impactedElementList?.map(item => ({
-                        value: item.id || item.impacted_element,
-                        label: item.name || item.impacted_element
+                        value: item.impacted_element,
+                        label: item.impacted_element
                       })) || []}
                       classNamePrefix="react-select"
                       placeholder="Select Impacted Element"
