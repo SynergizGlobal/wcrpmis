@@ -15,7 +15,6 @@ export default function DesignDrawing() {
 	const navigate = useNavigate();
 	const { refresh } = useContext(RefreshContext);
 
-	// DESIGN list (backend-paginated)
 	const [designs, setDesigns] = useState([]);
 	const [designTotalRows, setDesignTotalRows] = useState(0);
 	const [designPage, setDesignPage] = useState(1);
@@ -23,16 +22,15 @@ export default function DesignDrawing() {
 	const [designLoading, setDesignLoading] = useState(false);
 	const [designSearch, setDesignSearch] = useState("");
 
-	// UPLOADED FILES (client-side)
 	const [uploadedFile, setUploadedFile] = useState([]);
 	const [uploadedSearch, setUploadedSearch] = useState("");
 	const [uploadedPage, setUploadedPage] = useState(1);
 	const [uploadedPerPage, setUploadedPerPage] = useState(10);
 
 	const [filters, setFilters] = useState({
-		contract: "",
-		structureType: "",
-		drawingType: "",
+	  contract: "",
+	  structureType: "",
+	  drawingType: "",
 	});
 
 	const [filterOptions, setFilterOptions] = useState({
@@ -41,14 +39,13 @@ export default function DesignDrawing() {
 	  drawingType: [],
 	});
 
+
 	const isDesignDrawingForm = location.pathname.endsWith("/add-design-form");
 
-	// Helper to compute total pages
 	const designTotalPages = Math.max(1, Math.ceil(designTotalRows / designPerPage));
 	const uploadedFiltered = uploadedFile.filter((uf) => {
 		if (!uploadedSearch) return true;
 		const s = uploadedSearch.toLowerCase();
-		// search a few fields
 		return (
 			(uf.filePath || "").toString().toLowerCase().includes(s) ||
 			(uf.status || "").toString().toLowerCase().includes(s) ||
@@ -62,51 +59,91 @@ export default function DesignDrawing() {
 		(uploadedPage - 1) * uploadedPerPage,
 		uploadedPage * uploadedPerPage
 	);
-
-	useEffect(() => {
-	  const fetchFilterData = async () => {
-	    const endpoints = {
-	      contract: `${API_BASE_URL}/design/ajax/getContractListFilterInDesign`,
-	      structureType: `${API_BASE_URL}/design/ajax/getStructureListFilterInDesign`,
-	      drawingType: `${API_BASE_URL}/design/ajax/getDrawingTypeListFilterInDesign`,
-	    };
-
-	    for (const [key, url] of Object.entries(endpoints)) {
-	      try {
-	        const resp = await fetch(url, {
-	          method: "POST",
-	          headers: { "Content-Type": "application/json" },
-	          body: JSON.stringify({}),
-	        });
-
-	        const result = await resp.json();
-	        const data = Array.isArray(result)
-	          ? result
-	          : result.data || result.list || [];
-
-	        setFilterOptions((prev) => ({
-	          ...prev,
-	          [key]: data.map((item) => ({
-	            value:
-	              item.contract_id ??
-	              item.structure_type_fk ??
-	              item.drawing_type_fk ??
-	              "",
-	            label:
-	              item.contract_id ??
-	              item.structure_type_fk ??
-	              item.drawing_type_fk ??
-	              "Unknown",
-	          })),
-	        }));
-	      } catch (err) {
-	        console.error("Error fetching filter options for", key, err);
-	      }
-	    }
+	
+	
+	const loadContractOptions = async (selected = "") => {
+	  const params = {
+	    contract_id_fk: filters.contract,
+	    structure_type_fk: filters.structureType,
+	    drawing_type_fk: filters.drawingType,
 	  };
 
-	  fetchFilterData();
-	}, [refresh, location]);
+	  const res = await api.post(
+	    `${API_BASE_URL}/design/ajax/getContractListFilterInDesign`,
+	    params
+	  );
+
+	  const data = res.data || [];
+
+	  setFilterOptions(prev => ({
+	    ...prev,
+	    contract: data.map(val => ({
+	      value: val.contract_id_fk,
+	      label: val.contract_short_name
+	        ? `${val.contract_id_fk} - ${val.contract_short_name}`
+	        : val.contract_id_fk,
+	    })),
+	  }));
+	};
+
+	
+	const loadStructureOptions = async (selected = "") => {
+	  if (filters.structureType !== "") return; // same as JSP "if empty"
+
+	  const params = {
+	    contract_id_fk: filters.contract,
+	    structure_type_fk: filters.structureType,
+	    drawing_type_fk: filters.drawingType,
+	  };
+
+	  const res = await api.post(
+	    `${API_BASE_URL}/design/ajax/getStructureListFilterInDesign`,
+	    params
+	  );
+
+	  const data = res.data || [];
+
+	  setFilterOptions(prev => ({
+	    ...prev,
+	    structureType: data.map(val => ({
+	      value: val.structure_type_fk,
+	      label: val.structure_type_fk,
+	    })),
+	  }));
+	};
+
+	
+	const loadDrawingOptions = async (selected = "") => {
+	  if (filters.drawingType !== "") return;
+
+	  const params = {
+	    contract_id_fk: filters.contract,
+	    structure_type_fk: filters.structureType,
+	    drawing_type_fk: filters.drawingType,
+	  };
+
+	  const res = await api.post(
+	    `${API_BASE_URL}/design/ajax/getDrawingTypeListFilterInDesign`,
+	    params
+	  );
+
+	  const data = res.data || [];
+
+	  setFilterOptions(prev => ({
+	    ...prev,
+	    drawingType: data.map(val => ({
+	      value: val.drawing_type_fk,
+	      label: val.drawing_type_fk,
+	    })),
+	  }));
+	};
+
+useEffect(() => {
+  loadContractOptions();      
+  loadStructureOptions();     
+  loadDrawingOptions();       
+}, []);
+
 
 
 	const fetchDesigns = useCallback(
@@ -193,10 +230,36 @@ export default function DesignDrawing() {
 		setUploadedPage(1);
 	};
 
-	const handleFilterChange = (name, value) => {
-		setFilters((prev) => ({ ...prev, [name]: value }));
-		setDesignPage(1); // reset to first page when filter changes
+	const handleFilterChange = async (name, value) => {
+	  let updated = { ...filters, [name]: value };
+
+	  if (name === "contract") {
+	    updated.structureType = "";
+	    updated.drawingType = "";
+	    setFilters(updated);
+
+	    await loadStructureOptions();
+	    await loadDrawingOptions();
+	    fetchDesigns(1, designPerPage, designSearch, updated);
+	    return;
+	  }
+
+	  if (name === "structureType") {
+	    updated.drawingType = "";
+	    setFilters(updated);
+
+	    await loadDrawingOptions();
+	    fetchDesigns(1, designPerPage, designSearch, updated);
+	    return;
+	  }
+
+	  if (name === "drawingType") {
+	    setFilters(updated);
+	    fetchDesigns(1, designPerPage, designSearch, updated);
+	    return;
+	  }
 	};
+
 
 	const handleAdd = () => navigate("add-design-form");
 
@@ -257,7 +320,58 @@ export default function DesignDrawing() {
 			</>
 		);
 	};
+	
+	const [showModal, setShowModal] = useState(false);
+	const [selectedFile, setSelectedFile] = useState(null);
+	const [loading, setLoading] = useState(false);
+	// ✅ Handle file selection
+	const handleFileChange = (e) => {
+	  setSelectedFile(e.target.files[0]);
+	};
 
+	// ✅ Open / Close modal
+	const openModal = () => setShowModal(true);
+	const closeModal = () => {
+	  setShowModal(false);
+	  setSelectedFile(null);
+	};
+	
+	// ✅ Submit upload form
+	 const handleSubmit = async (e) => {
+	   e.preventDefault();
+	   if (!selectedFile) {
+	     alert("Please select a file first!");
+	     return;
+	   }
+
+	   const formData = new FormData();
+	   formData.append("laUploadFile", selectedFile);
+
+	   try {
+	     setLoading(true);
+	     const res = await api.post(
+	         `${API_BASE_URL}/upload-la`,  
+	       formData,
+	       {
+	         headers: { "Content-Type": "multipart/form-data" },
+	         withCredentials: true,
+	       }
+	     );
+
+	     if (res.status === 200) {
+	       alert("✅ File uploaded successfully!");
+	       closeModal();
+	     } else {
+	       alert("⚠️ Upload failed. Please try again.");
+	     }
+	   } catch (err) {
+	     console.error("❌ Upload error:", err);
+	     alert("❌ Upload failed. Check console for details.");
+	   } finally {
+	     setLoading(false);
+	   }
+	 };
+	
 	return (
 		<div className={styles.container}>
 			{/* Top Bar */}
@@ -268,7 +382,7 @@ export default function DesignDrawing() {
 						<button className="btn-2 transparent-btn">
 							<LuDownload size={16} />
 						</button>
-						<button className="btn btn-primary">
+						<button className="btn btn-primary" onClick={openModal}>
 							<LuUpload size={16} /> Upload
 						</button>
 						<button className="btn btn-primary" onClick={handleAdd}>
@@ -572,6 +686,81 @@ export default function DesignDrawing() {
 					</div>
 				</div>
 			)}
+			
+			{showModal && (
+			        <div
+			          className="modal-overlay"
+			          style={{
+			            position: "fixed",
+			            inset: 0,
+			            background: "rgba(0,0,0,0.5)",
+			            display: "flex",
+			            alignItems: "center",
+			            justifyContent: "center",
+			            zIndex: 9999,
+			          }}
+			        >
+			          <div
+			            className="modal-content"
+			            style={{
+			              background: "#fff",
+			              borderRadius: "10px",
+			              width: "420px",
+			              maxWidth: "90%",
+			              padding: "1.5rem",
+			              boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
+			            }}
+			          >
+			            <h3 className="text-center mb-2">Upload Land Acquisition File</h3>
+
+			            <form onSubmit={handleSubmit} encType="multipart/form-data">
+			              <div className="form-group mb-3 center-align">
+			                <label className="form-label fw-bold mb-2">Attachment</label>
+			                <input
+			                  type="file"
+			                  id="laUploadFile"
+			                  name="laUploadFile"
+			                  onChange={handleFileChange}
+			                  required
+			                  className="form-control"
+			                />
+			                {selectedFile && (
+			                  <p style={{ marginTop: "10px", color: "#475569" }}>
+			                    Selected: {selectedFile.name}
+			                  </p>
+			                )}
+			              </div>
+
+			              <div
+			                className="modal-actions"
+			                style={{
+			                  display: "flex",
+			                  justifyContent: "space-evenly",
+			                  marginTop: "1rem",
+			                }}
+			              >
+			                <button
+			                  type="submit"
+			                  className="btn btn-primary"
+			                  style={{ width: "48%" }}
+			                  disabled={loading}
+			                >
+			                  {loading ? "Uploading..." : "Update"}
+			                </button>
+
+			                <button
+			                  type="button"
+			                  className="btn btn-white"
+			                  style={{ width: "48%" }}
+			                  onClick={closeModal}
+			                >
+			                  Cancel
+			                </button>
+			              </div>
+			            </form>
+			          </div>
+			        </div>
+			      )}
 
 			<Outlet />
 		</div>

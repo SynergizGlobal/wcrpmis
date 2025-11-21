@@ -273,7 +273,6 @@ export default function DesignDrawingForm() {
 	    );
 	  };
 
-	  // Normalize dd-MM-yyyy -> yyyy-MM-dd
 	  const normalizeDate = (raw) => {
 	    if (!raw) return "";
 	    if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) {
