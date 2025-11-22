@@ -28,15 +28,15 @@ export default function DesignDrawing() {
 	const [uploadedPerPage, setUploadedPerPage] = useState(10);
 
 	const [filters, setFilters] = useState({
-	  contract: "",
-	  structureType: "",
-	  drawingType: "",
+		contract: "",
+		structureType: "",
+		drawingType: "",
 	});
 
 	const [filterOptions, setFilterOptions] = useState({
-	  contract: [],
-	  structureType: [],
-	  drawingType: [],
+		contract: [],
+		structureType: [],
+		drawingType: [],
 	});
 
 
@@ -59,142 +59,142 @@ export default function DesignDrawing() {
 		(uploadedPage - 1) * uploadedPerPage,
 		uploadedPage * uploadedPerPage
 	);
-	
-	
+
+
 	const loadContractOptions = async (selected = "") => {
-	  const params = {
-	    contract_id_fk: filters.contract,
-	    structure_type_fk: filters.structureType,
-	    drawing_type_fk: filters.drawingType,
-	  };
+		const params = {
+			contract_id_fk: filters.contract,
+			structure_type_fk: filters.structureType,
+			drawing_type_fk: filters.drawingType,
+		};
 
-	  const res = await api.post(
-	    `${API_BASE_URL}/design/ajax/getContractListFilterInDesign`,
-	    params
-	  );
+		const res = await api.post(
+			`${API_BASE_URL}/design/ajax/getContractListFilterInDesign`,
+			params
+		);
 
-	  const data = res.data || [];
+		const data = res.data || [];
 
-	  setFilterOptions(prev => ({
-	    ...prev,
-	    contract: data.map(val => ({
-	      value: val.contract_id_fk,
-	      label: val.contract_short_name
-	        ? `${val.contract_id_fk} - ${val.contract_short_name}`
-	        : val.contract_id_fk,
-	    })),
-	  }));
+		setFilterOptions(prev => ({
+			...prev,
+			contract: data.map(val => ({
+				value: val.contract_id_fk,
+				label: val.contract_short_name
+					? `${val.contract_id_fk} - ${val.contract_short_name}`
+					: val.contract_id_fk,
+			})),
+		}));
 	};
 
-	
+
 	const loadStructureOptions = async (selected = "") => {
-	  if (filters.structureType !== "") return; // same as JSP "if empty"
+		if (filters.structureType !== "") return; // same as JSP "if empty"
 
-	  const params = {
-	    contract_id_fk: filters.contract,
-	    structure_type_fk: filters.structureType,
-	    drawing_type_fk: filters.drawingType,
-	  };
+		const params = {
+			contract_id_fk: filters.contract,
+			structure_type_fk: filters.structureType,
+			drawing_type_fk: filters.drawingType,
+		};
 
-	  const res = await api.post(
-	    `${API_BASE_URL}/design/ajax/getStructureListFilterInDesign`,
-	    params
-	  );
+		const res = await api.post(
+			`${API_BASE_URL}/design/ajax/getStructureListFilterInDesign`,
+			params
+		);
 
-	  const data = res.data || [];
+		const data = res.data || [];
 
-	  setFilterOptions(prev => ({
-	    ...prev,
-	    structureType: data.map(val => ({
-	      value: val.structure_type_fk,
-	      label: val.structure_type_fk,
-	    })),
-	  }));
+		setFilterOptions(prev => ({
+			...prev,
+			structureType: data.map(val => ({
+				value: val.structure_type_fk,
+				label: val.structure_type_fk,
+			})),
+		}));
 	};
 
-	
+
 	const loadDrawingOptions = async (selected = "") => {
-	  if (filters.drawingType !== "") return;
+		if (filters.drawingType !== "") return;
 
-	  const params = {
-	    contract_id_fk: filters.contract,
-	    structure_type_fk: filters.structureType,
-	    drawing_type_fk: filters.drawingType,
-	  };
+		const params = {
+			contract_id_fk: filters.contract,
+			structure_type_fk: filters.structureType,
+			drawing_type_fk: filters.drawingType,
+		};
 
-	  const res = await api.post(
-	    `${API_BASE_URL}/design/ajax/getDrawingTypeListFilterInDesign`,
-	    params
-	  );
+		const res = await api.post(
+			`${API_BASE_URL}/design/ajax/getDrawingTypeListFilterInDesign`,
+			params
+		);
 
-	  const data = res.data || [];
+		const data = res.data || [];
 
-	  setFilterOptions(prev => ({
-	    ...prev,
-	    drawingType: data.map(val => ({
-	      value: val.drawing_type_fk,
-	      label: val.drawing_type_fk,
-	    })),
-	  }));
+		setFilterOptions(prev => ({
+			...prev,
+			drawingType: data.map(val => ({
+				value: val.drawing_type_fk,
+				label: val.drawing_type_fk,
+			})),
+		}));
 	};
 
-useEffect(() => {
-  loadContractOptions();      
-  loadStructureOptions();     
-  loadDrawingOptions();       
-}, []);
+	useEffect(() => {
+		loadContractOptions();
+		loadStructureOptions();
+		loadDrawingOptions();
+	}, []);
 
 
 
 	const fetchDesigns = useCallback(
-	  async (
-	    pageNumber = designPage,
-	    pageSize = designPerPage,
-	    searchText = designSearch,
-	    currentFilters = filters
-	  ) => {
-	    setDesignLoading(true);
-	    try {
-	      const iDisplayStart = (pageNumber - 1) * pageSize;
-	      const iDisplayLength = pageSize;
+		async (
+			pageNumber = designPage,
+			pageSize = designPerPage,
+			searchText = designSearch,
+			currentFilters = filters
+		) => {
+			setDesignLoading(true);
+			try {
+				const iDisplayStart = (pageNumber - 1) * pageSize;
+				const iDisplayLength = pageSize;
 
-	      const params = new URLSearchParams({
-	        iDisplayStart,
-	        iDisplayLength,
-	        sSearch: searchText || "",
+				const params = new URLSearchParams({
+					iDisplayStart,
+					iDisplayLength,
+					sSearch: searchText || "",
 
-	        contract_id_fk: currentFilters.contract || "",
-	        structure_type_fk: currentFilters.structureType || "",
-	        drawing_type_fk: currentFilters.drawingType || "",
-	      });
+					contract_id_fk: currentFilters.contract || "",
+					structure_type_fk: currentFilters.structureType || "",
+					drawing_type_fk: currentFilters.drawingType || "",
+				});
 
-	      const res = await api.post(
-	        `${API_BASE_URL}/design/ajax/getDesignsList?${params.toString()}`,
-	        {},
-	        { withCredentials: true }
-	      );
+				const res = await api.post(
+					`${API_BASE_URL}/design/ajax/getDesignsList?${params.toString()}`,
+					{},
+					{ withCredentials: true }
+				);
 
-	      const d = res.data || {};
-	      const total =
-	        Number(d.iTotalDisplayRecords ?? d.iTotalRecords ?? d.total ?? 0) || 0;
-	      const aaData = d.aaData ?? d.data ?? [];
+				const d = res.data || {};
+				const total =
+					Number(d.iTotalDisplayRecords ?? d.iTotalRecords ?? d.total ?? 0) || 0;
+				const aaData = d.aaData ?? d.data ?? [];
 
-	      setDesigns(Array.isArray(aaData) ? aaData : []);
-	      setDesignTotalRows(total);
+				setDesigns(Array.isArray(aaData) ? aaData : []);
+				setDesignTotalRows(total);
 
-	      if ((pageNumber - 1) * pageSize >= total && total > 0) {
-	        const newPage = Math.max(1, Math.ceil(total / pageSize));
-	        setDesignPage(newPage);
-	      }
-	    } catch (err) {
-	      console.error("Error fetching designs list:", err);
-	      setDesigns([]);
-	      setDesignTotalRows(0);
-	    } finally {
-	      setDesignLoading(false);
-	    }
-	  },
-	  [designPage, designPerPage, designSearch, filters, refresh, location]
+				if ((pageNumber - 1) * pageSize >= total && total > 0) {
+					const newPage = Math.max(1, Math.ceil(total / pageSize));
+					setDesignPage(newPage);
+				}
+			} catch (err) {
+				console.error("Error fetching designs list:", err);
+				setDesigns([]);
+				setDesignTotalRows(0);
+			} finally {
+				setDesignLoading(false);
+			}
+		},
+		[designPage, designPerPage, designSearch, filters, refresh, location]
 	);
 
 
@@ -231,46 +231,46 @@ useEffect(() => {
 	};
 
 	const handleFilterChange = async (name, value) => {
-	  let updated = { ...filters, [name]: value };
+		let updated = { ...filters, [name]: value };
 
-	  if (name === "contract") {
-	    updated.structureType = "";
-	    updated.drawingType = "";
-	    setFilters(updated);
+		if (name === "contract") {
+			updated.structureType = "";
+			updated.drawingType = "";
+			setFilters(updated);
 
-	    await loadStructureOptions();
-	    await loadDrawingOptions();
-	    fetchDesigns(1, designPerPage, designSearch, updated);
-	    return;
-	  }
+			await loadStructureOptions();
+			await loadDrawingOptions();
+			fetchDesigns(1, designPerPage, designSearch, updated);
+			return;
+		}
 
-	  if (name === "structureType") {
-	    updated.drawingType = "";
-	    setFilters(updated);
+		if (name === "structureType") {
+			updated.drawingType = "";
+			setFilters(updated);
 
-	    await loadDrawingOptions();
-	    fetchDesigns(1, designPerPage, designSearch, updated);
-	    return;
-	  }
+			await loadDrawingOptions();
+			fetchDesigns(1, designPerPage, designSearch, updated);
+			return;
+		}
 
-	  if (name === "drawingType") {
-	    setFilters(updated);
-	    fetchDesigns(1, designPerPage, designSearch, updated);
-	    return;
-	  }
+		if (name === "drawingType") {
+			setFilters(updated);
+			fetchDesigns(1, designPerPage, designSearch, updated);
+			return;
+		}
 	};
 
 
 	const handleAdd = () => navigate("add-design-form");
 
-	
-	
+
+
 	const handleEdit = (designId) => {
-	  navigate("add-design-form", { state: { design_id: designId } });
+		navigate("add-design-form", { state: { design_id: designId } });
 	};
 
-	
-	
+
+
 	const renderPageButtons = (page, totalPages, setPageFn) => {
 		if (totalPages <= 1) return null;
 
@@ -320,60 +320,73 @@ useEffect(() => {
 			</>
 		);
 	};
-	
+
 	const [showModal, setShowModal] = useState(false);
 	const [selectedFile, setSelectedFile] = useState(null);
 	const [loading, setLoading] = useState(false);
 	// ✅ Handle file selection
 	const handleFileChange = (e) => {
-	  setSelectedFile(e.target.files[0]);
+		setSelectedFile(e.target.files[0]);
 	};
 
 	// ✅ Open / Close modal
 	const openModal = () => setShowModal(true);
 	const closeModal = () => {
-	  setShowModal(false);
-	  setSelectedFile(null);
+		setShowModal(false);
+		setSelectedFile(null);
 	};
-	
-	// ✅ Submit upload form
-	 const handleSubmit = async (e) => {
-	   e.preventDefault();
-	   if (!selectedFile) {
-	     alert("Please select a file first!");
-	     return;
-	   }
+	const handleUploadSubmit = async (e) => {
+	    e.preventDefault();
 
-	   const formData = new FormData();
-	   formData.append("laUploadFile", selectedFile);
+	    if (!selectedFile) return alert("Select a file!");
 
-	   try {
-	     setLoading(true);
-	     const res = await api.post(
-	         `${API_BASE_URL}/upload-la`,  
-	       formData,
-	       {
-	         headers: { "Content-Type": "multipart/form-data" },
-	         withCredentials: true,
-	       }
-	     );
+	    const formData = new FormData();
+	    formData.append("designFile", selectedFile);
+	    formData.append("uploadedFile", selectedFile.name);
 
-	     if (res.status === 200) {
-	       alert("✅ File uploaded successfully!");
-	       closeModal();
-	     } else {
-	       alert("⚠️ Upload failed. Please try again.");
-	     }
-	   } catch (err) {
-	     console.error("❌ Upload error:", err);
-	     alert("❌ Upload failed. Check console for details.");
-	   } finally {
-	     setLoading(false);
-	   }
-	 };
-	
+	    try {
+	        setLoading(true);
+	        await api.post(`${API_BASE_URL}/design/upload-designs`, formData, { withCredentials: true });
+	        alert("Upload successful!");
+	        closeModal();
+	    } catch (err) {
+	        alert("Upload failed.");
+	        console.error(err);
+	    } finally {
+	        setLoading(false);
+	    }
+	};
+
+
+	const handleExport = () => {
+		const form = document.getElementById("exportDesignForm");
+
+		document.getElementById("exportContract_id_fk").value = filters.contract || "";
+		document.getElementById("exportStructure_type_fk").value = filters.structureType || "";
+		document.getElementById("exportDrawing_type_fk").value = filters.drawingType || "";
+		document.getElementById("exportsearchStr").value = designSearch || "";
+
+		form.submit();
+	};
+
+
+
+
 	return (
 		<div className={styles.container}>
+			{/* Hidden Export Form MUST be outside condition */}
+			<form
+				id="exportDesignForm"
+				action={`${API_BASE_URL}/design/export-design`}
+				method="POST"
+				target="_blank"
+				style={{ display: "none" }}
+			>
+				<input type="hidden" name="contract_id_fk" id="exportContract_id_fk" />
+				<input type="hidden" name="structure_type_fk" id="exportStructure_type_fk" />
+				<input type="hidden" name="drawing_type_fk" id="exportDrawing_type_fk" />
+				<input type="hidden" name="searchStr" id="exportsearchStr" />
+			</form>
 			{/* Top Bar */}
 			{!isDesignDrawingForm && (
 				<div className="pageHeading">
@@ -388,12 +401,21 @@ useEffect(() => {
 						<button className="btn btn-primary" onClick={handleAdd}>
 							<CirclePlus size={16} /> Add
 						</button>
-						<button className="btn btn-primary">
+						<button
+							className="btn btn-primary"
+							onClick={(e) => {
+								e.preventDefault();
+								handleExport();
+							}}
+						>
 							<LuCloudDownload size={16} /> Export
 						</button>
+
 					</div>
 				</div>
 			)}
+
+
 
 			{/* Filters */}
 			{!isDesignDrawingForm && (
@@ -686,81 +708,82 @@ useEffect(() => {
 					</div>
 				</div>
 			)}
-			
+
 			{showModal && (
-			        <div
-			          className="modal-overlay"
-			          style={{
-			            position: "fixed",
-			            inset: 0,
-			            background: "rgba(0,0,0,0.5)",
-			            display: "flex",
-			            alignItems: "center",
-			            justifyContent: "center",
-			            zIndex: 9999,
-			          }}
-			        >
-			          <div
-			            className="modal-content"
-			            style={{
-			              background: "#fff",
-			              borderRadius: "10px",
-			              width: "420px",
-			              maxWidth: "90%",
-			              padding: "1.5rem",
-			              boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
-			            }}
-			          >
-			            <h3 className="text-center mb-2">Upload Land Acquisition File</h3>
+				<div
+					className="modal-overlay"
+					style={{
+						position: "fixed",
+						inset: 0,
+						background: "rgba(0,0,0,0.5)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						zIndex: 9999,
+					}}
+				>
+					<div
+						className="modal-content"
+						style={{
+							background: "#fff",
+							borderRadius: "10px",
+							width: "420px",
+							maxWidth: "90%",
+							padding: "1.5rem",
+							boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
+						}}
+					>
+						<h3 className="text-center mb-2">Upload Designs</h3>
 
-			            <form onSubmit={handleSubmit} encType="multipart/form-data">
-			              <div className="form-group mb-3 center-align">
-			                <label className="form-label fw-bold mb-2">Attachment</label>
-			                <input
-			                  type="file"
-			                  id="laUploadFile"
-			                  name="laUploadFile"
-			                  onChange={handleFileChange}
-			                  required
-			                  className="form-control"
-			                />
-			                {selectedFile && (
-			                  <p style={{ marginTop: "10px", color: "#475569" }}>
-			                    Selected: {selectedFile.name}
-			                  </p>
-			                )}
-			              </div>
+						<form onSubmit={handleUploadSubmit} encType="multipart/form-data">
+							<div className="form-group mb-3 center-align">
+								<label className="form-label fw-bold mb-2">Attachment</label>
+								<input
+									type="file"
+									id="designFile"
+									name="designFile"
+									accept=".xls, .xlsx"
+									onChange={handleFileChange}
+									required
+									className="form-control"
+								/>
+								{selectedFile && (
+									<p style={{ marginTop: "10px", color: "#475569" }}>
+										Selected: {selectedFile.name}
+									</p>
+								)}
+							</div>
 
-			              <div
-			                className="modal-actions"
-			                style={{
-			                  display: "flex",
-			                  justifyContent: "space-evenly",
-			                  marginTop: "1rem",
-			                }}
-			              >
-			                <button
-			                  type="submit"
-			                  className="btn btn-primary"
-			                  style={{ width: "48%" }}
-			                  disabled={loading}
-			                >
-			                  {loading ? "Uploading..." : "Update"}
-			                </button>
+							<div
+								className="modal-actions"
+								style={{
+									display: "flex",
+									justifyContent: "space-evenly",
+									marginTop: "1rem",
+								}}
+							>
+								<button
+									type="submit"
+									className="btn btn-primary"
+									style={{ width: "48%" }}
+									disabled={loading}
+								>
+									{loading ? "Uploading..." : "Update"}
+								</button>
 
-			                <button
-			                  type="button"
-			                  className="btn btn-white"
-			                  style={{ width: "48%" }}
-			                  onClick={closeModal}
-			                >
-			                  Cancel
-			                </button>
-			              </div>
-			            </form>
-			          </div>
-			        </div>
-			      )}
+								<button
+									type="button"
+									className="btn btn-white"
+									style={{ width: "48%" }}
+									onClick={closeModal}
+								>
+									Cancel
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
 
 			<Outlet />
 		</div>

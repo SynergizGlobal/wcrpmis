@@ -1062,7 +1062,7 @@ public class DesignController {
 	
 
 	@PostMapping(value = "/export-design")
-	public ResponseEntity<?> exportDesign(HttpServletRequest request, HttpServletResponse response,HttpSession session,@RequestBody Design design,RedirectAttributes attributes){
+	public ResponseEntity<?> exportDesign(HttpServletRequest request, HttpServletResponse response,HttpSession session,@ModelAttribute Design design,RedirectAttributes attributes){
 		//ModelAndView view = new ModelAndView(PageConstants.designGrid);
 		List<Design> dataList = new ArrayList<Design>();
 		List<Design> dataRevisionsList = new ArrayList<Design>();
