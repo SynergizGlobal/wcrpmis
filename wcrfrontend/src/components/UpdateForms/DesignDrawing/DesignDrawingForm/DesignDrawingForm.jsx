@@ -346,9 +346,6 @@ export default function DesignDrawingForm() {
 	]);
 
 
-
-	
-	
 	const normalizeSelectFields = (data, fields) => {
 	  fields.forEach((field) => {
 	    if (data[field] && typeof data[field] === "object") {

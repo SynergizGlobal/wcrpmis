@@ -88,7 +88,7 @@ export default function DesignDrawing() {
 
 
 	const loadStructureOptions = async (selected = "") => {
-		if (filters.structureType !== "") return; // same as JSP "if empty"
+		if (filters.structureType !== "") return;
 
 		const params = {
 			contract_id_fk: filters.contract,
@@ -324,12 +324,12 @@ export default function DesignDrawing() {
 	const [showModal, setShowModal] = useState(false);
 	const [selectedFile, setSelectedFile] = useState(null);
 	const [loading, setLoading] = useState(false);
-	// ✅ Handle file selection
+	//  Handle file selection
 	const handleFileChange = (e) => {
 		setSelectedFile(e.target.files[0]);
 	};
 
-	// ✅ Open / Close modal
+	//  Open / Close modal
 	const openModal = () => setShowModal(true);
 	const closeModal = () => {
 		setShowModal(false);

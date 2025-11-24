@@ -1073,7 +1073,6 @@ public class DesignController {
 			userId = uObj.getUserId();
 			userName = uObj.getUserName();
 			
-			
 			//view.setViewName("redirect:/design");
 			dataList = designService.getDesigns(design); 
 			dataRevisionsList = designService.getDesignRevisions(design);  
