@@ -1327,6 +1327,8 @@ public class UtilityShiftingRepo implements IUtilityShiftingRepo {
 					+ "LEFT OUTER JOIN project p ON us.project_id_fk  = p.project_id "
 					+ "where utility_shifting_id =? " ;
 			
+			
+			
 			int arrSize = 2;
 			
 			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
@@ -1393,8 +1395,7 @@ public class UtilityShiftingRepo implements IUtilityShiftingRepo {
 	@Override
 	public boolean updateUtilityShifting(UtilityShifting obj) throws Exception {
 		boolean flag = false;
-		//TransactionDefinition def = new DefaultTransactionDefinition();
-		//TransactionStatus status = transactionManager.getTransaction(def);
+		
 		int checkCnt=checkUtilityAnyColumnUpdate(obj);
 		try {
 			NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());			 
