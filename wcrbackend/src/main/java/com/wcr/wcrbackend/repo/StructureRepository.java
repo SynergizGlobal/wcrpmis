@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.wcr.wcrbackend.DTO.FullStructureResponse;
+import com.wcr.wcrbackend.DTO.ProjectStructureSummaryDto;
 import com.wcr.wcrbackend.DTO.StructureNameDto;
 import com.wcr.wcrbackend.DTO.StructureSummaryDto;
 import com.wcr.wcrbackend.DTO.StructureTypeDto;
@@ -143,16 +144,30 @@ public class StructureRepository implements IStructureRepository {
     }
 
     @Override
-    public List<String> getProjectsWithStructures() {
+    public List<ProjectStructureSummaryDto> getAllProjectSummaries() {
+
         String sql = """
-            SELECT DISTINCT project_id_fk 
+            SELECT project_id_fk, structure_type_fk, COUNT(*) AS total
             FROM structure
+            GROUP BY project_id_fk, structure_type_fk
             ORDER BY project_id_fk
         """;
 
-        return jdbcTemplate.queryForList(sql, String.class);
-    }
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
 
+        Map<String, ProjectStructureSummaryDto> map = new LinkedHashMap<>();
+
+        for (Map<String, Object> row : rows) {
+            String projectId = (String) row.get("project_id_fk");
+            String type = (String) row.get("structure_type_fk");
+            Long count = ((Number) row.get("total")).longValue();
+
+            map.computeIfAbsent(projectId, ProjectStructureSummaryDto::new)
+               .addType(type, count);
+        }
+
+        return new ArrayList<>(map.values());
+    }
 
 
 }

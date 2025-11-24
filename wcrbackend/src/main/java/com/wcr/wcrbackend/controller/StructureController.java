@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wcr.wcrbackend.DTO.FullStructureResponse;
 import com.wcr.wcrbackend.DTO.Project;
+import com.wcr.wcrbackend.DTO.ProjectStructureSummaryDto;
 import com.wcr.wcrbackend.DTO.SaveStructureRequest;
 import com.wcr.wcrbackend.DTO.StructureSaveRequest;
 import com.wcr.wcrbackend.DTO.StructureSummaryDto;
@@ -35,9 +36,6 @@ import lombok.RequiredArgsConstructor;
 public class StructureController {
 
     private final StructureService structureService;
-    
-    @Autowired
-    private ProjectService projectService;
 
     @GetMapping("/summary/{projectId}")
     public List<StructureSummaryDto> getStructureSummary(@PathVariable String projectId) {
@@ -47,11 +45,6 @@ public class StructureController {
     @GetMapping("/full/{projectId}")
     public FullStructureResponse getFullStructure(@PathVariable String projectId) {
         return structureService.getFullStructureData(projectId);
-    }
-
-    @GetMapping("/project/{projectId}")
-    public List<Map<String, Object>> getStructures(@PathVariable String projectId) {
-        return structureService.getStructures(projectId);
     }
     
     @GetMapping("/types")
@@ -81,38 +74,12 @@ public class StructureController {
         structureService.deleteStructureType(projectId, type);
         return ResponseEntity.ok("Structure Type deleted successfully");
     }
-
     
-    @GetMapping("/summary/all")
-    public ResponseEntity<?> getAllProjectSummaries() throws Exception {
-
-        List<Project> projects = projectService.getProjects();  // ✔ using your existing service
-
-        List<Map<String, Object>> result = new ArrayList<>();
-
-        for (Project p : projects) {
-
-            String projectId = p.getProject_id();      // ✔ correct getter
-            String projectName = p.getProject_name();  // ✔ correct getter
-
-            List<StructureSummaryDto> summary =
-                    structureService.getStructureTypeSummary(projectId);
-
-            Map<String, Object> row = new HashMap<>();
-            row.put("projectId", projectId);
-            row.put("projectName", projectName);
-            row.put("structureTypes", summary);
-
-            result.add(row);
-        }
-
-        return ResponseEntity.ok(result);
+    @GetMapping("/allProjectSummaries")
+    public List<ProjectStructureSummaryDto> getAllProjectSummaries() {
+        return structureService.getAllProjectSummaries();
     }
-    
-    @GetMapping("/projectsWithStructures")
-    public List<String> getProjectsWithStructures() {
-        return structureService.getProjectsWithStructures();
-    }
+
     
 }
 

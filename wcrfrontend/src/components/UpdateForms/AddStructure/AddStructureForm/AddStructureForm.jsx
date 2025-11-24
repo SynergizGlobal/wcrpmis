@@ -14,15 +14,14 @@
 	  const structureData = state?.structureData || null;
 	  const isEdit = Boolean(structureData);
 	  const [allTypes, setAllTypes] = useState([]);
+	  const [expandedIndex, setExpandedIndex] = useState(null);
 
 	    const { refresh } = useContext(RefreshContext);
 	  
 	  const [projectOptions, setProjectOptions] = useState([]);
-	  
-	  const typeOptions = allTypes;
 	
 	
-	  const { control, handleSubmit, watch, register, setValue } = useForm({
+	  const { control, handleSubmit, watch, setValue } = useForm({
 		defaultValues: {
 		      project: "",
 		      structureTypes: [
@@ -34,33 +33,13 @@
 		    }
 	  });
 	  
-	  const {
-	      fields: typeFields,
-	      append: addType,
-	      remove: removeType
-	    } = useFieldArray({
+	  const { fields: typeFields, append: addType, remove: removeType } =
+	    useFieldArray({
 	      control,
 	      name: "structureTypes"
 	    });
 	
 	  const project = watch("project");
-	  const structureType = watch("structureType");
-	  const structureRows = watch("structureRows");
-	
-	  // Add Row
-	  const addRow = () => {
-	    setValue("structureRows", [
-	      ...structureRows,
-	      { structureId: "", structureName: "" }
-	    ]);
-	  };
-	
-	  // Delete Row
-	  const deleteRow = (index) => {
-	    const updated = [...structureRows];
-	    updated.splice(index, 1);
-	    setValue("structureRows", updated);
-	  };
 	  
 	  useEffect(() => {
 	    if (isEdit && structureData) {
@@ -167,33 +146,36 @@
 	                  {/* STRUCTURE TYPE DROPDOWN */}
 	                  <label>Structure Type :</label>
 					  <div className="d-flex w-100 gap-20 align-center">
-					  {/* 🔹 IF EDIT MODE → show text, NOT dropdown */}
+	
 					  {isEdit && type.type !== "" ? (
-					    // EXISTING structure type → show read-only text
 					    <input
 					      type="text"
 					      value={type.type}
-					      disabled
+					      readOnly
+						  onClick={() => setExpandedIndex(typeIndex)}
 					      className={`w-100 ${styles.readonlyInput}`}
-					      style={{ background: "#f5f5f5", fontWeight: "600" }}
+					       style={{ background: "#f5f5f5", fontWeight: "600", cursor: "pointer" }}
 					    />
 					  ) : (
 					    // NEW structure type → show dropdown
-					    <Controller
-					      name={`structureTypes.${typeIndex}.type`}
-					      control={control}
-					      render={({ field }) => (
-					        <Select
-					          {...field}
-							  className="w-100"
-					          options={allTypes}
-					          placeholder="Select Structure Type"
-					        />
-					      )}
-					    />
+						<Controller
+						  name={`structureTypes.${typeIndex}.type`}
+						  control={control}
+						  render={({ field }) => (
+						    <Select
+						      {...field}
+						      options={allTypes}
+						      placeholder="Select Structure Type"
+						      onChange={(val) => {
+						        field.onChange(val);
+						        setExpandedIndex(typeIndex);   // show table after selecting
+						      }}
+						    />
+						  )}
+						/>
 					  )}
 					   
-		                {/* REMOVE STRUCTURE TYPE BUTTON */}
+		                {/* DELETE STRUCTURE TYPE BUTTON */}
 						<button
 						  type="button"
 						  className={styles.deleteBtn}
@@ -221,12 +203,9 @@
 					  </div>	                  
 	
 	                  {/* SHOW NESTED ROWS ONLY WHEN STRUCTURE TYPE SELECTED */}
-	                  {watch(`structureTypes.${typeIndex}.type`) && (
-	                    <NestedRows
-	                      control={control}
-	                      typeIndex={typeIndex}
-	                    />
-	                  )}
+					  {expandedIndex === typeIndex && (
+					      <NestedRows control={control} typeIndex={typeIndex} />
+					  )}
 	                </div>
 	              ))}
 	

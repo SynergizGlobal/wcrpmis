@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.wcr.wcrbackend.DTO.FullStructureResponse;
+import com.wcr.wcrbackend.DTO.ProjectStructureSummaryDto;
 import com.wcr.wcrbackend.DTO.StructureNameDto;
 import com.wcr.wcrbackend.DTO.StructureSummaryDto;
 
@@ -25,7 +26,7 @@ public interface IStructureRepository {
 	    
 	    void deleteStructureType(String projectId, String type);
 	    
-	    List<String> getProjectsWithStructures();
+	    List<ProjectStructureSummaryDto> getAllProjectSummaries();
 	    
     
     

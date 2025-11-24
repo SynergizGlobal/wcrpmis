@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import com.wcr.wcrbackend.DTO.FullStructureResponse;
+import com.wcr.wcrbackend.DTO.ProjectStructureSummaryDto;
 import com.wcr.wcrbackend.DTO.SaveStructureRequest;
 import com.wcr.wcrbackend.DTO.StructureNameDto;
 import com.wcr.wcrbackend.DTO.StructureSaveRequest;
@@ -37,21 +38,7 @@ public class StructureService {
     public List<String> getAllStructureTypes() {
         return structureRepository.getAllStructureTypes();
     }
-    
-	/*
-	 * public void saveStructure(SaveStructureRequest req) {
-	 * 
-	 * String projectId = req.getProject(); // this matches frontend "project"
-	 * 
-	 * for (StructureTypeDto typeDto : req.getStructureTypes()) { String type =
-	 * typeDto.getType();
-	 * 
-	 * for (StructureNameDto row : typeDto.getRows()) {
-	 * 
-	 * structureRepository.insertStructure( row.getStructureName(), // name
-	 * projectId, // project type // structure type ); } } }
-	 */
-    
+   
     // SAVE or UPDATE Logic
     public void saveOrUpdate(StructureSaveRequest req) {
 
@@ -89,9 +76,8 @@ public class StructureService {
         structureRepository.deleteStructureType(projectId, type);
     }
 
-    
-    public List<String> getProjectsWithStructures() {
-        return structureRepository.getProjectsWithStructures();
+    public List<ProjectStructureSummaryDto> getAllProjectSummaries() {
+        return structureRepository.getAllProjectSummaries();
     }
 
 

@@ -13,31 +13,52 @@ export default function AddStructure() {
   const location = useLocation();
   const navigate = useNavigate();
   const { refresh } = useContext(RefreshContext);
-  const [structures, setStructures] = useState([]);
   const [search, setSearch] = useState("");
    const [page, setPage] = useState(1);
    const [perPage, setPerPage] = useState(10);
    const [projects, setProjects] = useState([]);
-   const [structureSummary, setStructureSummary] = useState([]);
-   const [displayRows, setDisplayRows] = useState([]);
    const [allProjectSummaries, setAllProjectSummaries] = useState([]);
 
   const [filters, setFilters] = useState({
     project: "",
   });
+  
+  const filteredProjects = filters.project
+    ? allProjectSummaries.filter(p => p.projectId === filters.project)
+    : allProjectSummaries;
+	
+	const searchedProjects = filteredProjects.filter(p => {
+	  const text = search.toLowerCase();
 
+	  const matchProject = p.projectId.toLowerCase().includes(text);
+
+	  const matchStructureTypes = p.structureTypes
+	    .map(t => `${t.structureType} ${t.count}`)
+	    .join(" ")
+	    .toLowerCase()
+	    .includes(text);
+
+	  return matchProject || matchStructureTypes;
+	});
+
+  // pagination values computed from filteredProjects
+  const totalRecords = searchedProjects.length;
+  const totalPages = Math.ceil(totalRecords / perPage);
+
+  const paginatedRows = searchedProjects.slice(
+    (page - 1) * perPage,
+    page * perPage
+  );
+  
   useEffect(() => {
-    fetchStructures();
+    api.get(`${API_BASE_URL}/structures/allProjectSummaries`)
+      .then(res => {
+        setAllProjectSummaries(res.data);
+        console.log("All project summaries:", res.data);
+      })
+      .catch(err => console.error("Error loading summaries:", err));
   }, [refresh, location]);
 
-  const fetchStructures = async () => {
-    try {
-      const res = await api.get(`${API_BASE_URL}/Structures`, { withCredentials: true });
-      setStructures(res.data || []);
-    } catch (err) {
-      console.error("Error fetching Structure:", err);
-    }
-  };
   
   useEffect(() => {
     api.get(`${API_BASE_URL}/projects/api/getProjects`)
@@ -47,51 +68,13 @@ export default function AddStructure() {
       })
       .catch(err => console.error(err));
   }, [refresh, location]);
-
-
-  useEffect(() => {
-	fetchStructureSummary();
-  }, [refresh, location])
-  const fetchStructureSummary = async (projectId) => {
-    if (!projectId) {
-      setStructureSummary([]);
-      return;
-    }
-
-    try {
-      const res = await api.get(`${API_BASE_URL}/structures/summary/${projectId}`);
-	  console.log(" Structure summary API response:", res.data);
-      setStructureSummary(res.data);
-    } catch (err) {
-      console.error("Error fetching structure summary:", err);
-    }
-  };
-
-
+  
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters({ ...filters, [name]: value });
   };
-  
-  const filteredStructure = structures.filter((s) => {
-      const text = search.toLowerCase();
 
-      return (
-        s.project?.toLowerCase().includes(text) ||
-        s.Structures?.toLowerCase().includes(text) 
-      );
-    });
-  
-  // Pagination logic
-    const totalRecords = filteredStructure.length;
-    const totalPages = Math.ceil(totalRecords / perPage);
-
-    // Slice data according to page & perPage
-    const paginatedStructures = filteredStructure.slice(
-      (page - 1) * perPage,
-      page * perPage
-    );
 
   const handleAdd = () => navigate("addstructureform");
   const handleEdit = async (projectId) => {
@@ -163,9 +146,6 @@ export default function AddStructure() {
 				    handleFilterChange({
 				      target: { name: key, value: selectedOption.value },
 				    });
-
-				    // Load summary for selected project
-				    fetchStructureSummary(selectedOption.value);
 				  }
 		          }
 		          placeholder="Select Project"
@@ -201,16 +181,19 @@ export default function AddStructure() {
 		  	              </select>
 		  	              <span> entries</span>
 		  	            </div>
-		           <div className={styles.searchWrapper}>
-		             <input
-		               type="text"
-		               placeholder="Search"
-		               value={search}
-		               onChange={(e) => setSearch(e.target.value)}
-		               className={styles.searchInput}
-		             />
-		             <span className={styles.searchIcon}>🔍</span>
-		           </div>
+						<div className={styles.searchWrapper}>
+						  <input
+						    type="text"
+						    placeholder="Search project"
+						    value={search}
+						    onChange={(e) => {
+						      setPage(1);
+						      setSearch(e.target.value);
+						    }}
+						    className={styles.searchInput}
+						  />
+						  <span className={styles.searchIcon}>🔍</span>
+						</div>
 		         </div>
           <div className={`dataTable ${styles.tableWrapper}`}>
             <table className={styles.projectTable}>
@@ -221,57 +204,61 @@ export default function AddStructure() {
                   <th>Action</th>
                 </tr>
               </thead>
-			  <tbody> 
-			  <tr> 
-			  <td> {filters.project ? filters.project : "Please select a project"} 
-			  </td> 
-			  <td> 
-			  {structureSummary.length > 0 ? ( 
-				structureSummary.map((item, i) => ( 
-				<div key={i}> 
-				{item.structureType} - {item.count} 
-				</div> 
-			     )) 
-			      ) : ( 
-				<span>No structure types</span> )} 
-			  </td> 
-			  <td>
-			   {filters.project && ( 
-				<button className="btn btn-sm btn-outline-primary" 
-				onClick={() => handleEdit(filters.project)} > 
-				<MdEditNote size={28} /> </button> )} 
-				</td> 
-				</tr> 
-				</tbody>
+			  <tbody>
+			    {paginatedRows.map((project, index) => (
+			      <tr key={index}>
+			        <td>{project.projectId}</td>
+
+			        <td>
+			          {project.structureTypes.length > 0 ? (
+			            project.structureTypes.map((st, i) => (
+			              <div key={i}>{st.structureType} - {st.count}</div>
+			            ))
+			          ) : (
+			            <span>No structure types</span>
+			          )}
+			        </td>
+
+			        <td>
+			          <button
+			            className="btn btn-sm btn-outline-primary"
+			            onClick={() => handleEdit(project.projectId)}
+			          >
+			            <MdEditNote size={28} />
+			          </button>
+			        </td>
+			      </tr>
+			    ))}
+			  </tbody>
             </table>
           </div>
 		  {/* PAGINATION */}
-		   <div className={styles.paginationBar}>
-		     <span>
-		       {totalRecords === 0
-		         ? "0 - 0"
-		         : `${(page - 1) * perPage + 1} - ${Math.min(page * perPage, totalRecords)}`}
-		       {" "}of {totalRecords}
-		     </span>
+		  <div className={styles.paginationBar}>
+		    <span>
+		      {totalRecords === 0
+		        ? "0 - 0"
+		        : `${(page - 1) * perPage + 1} - ${Math.min(page * perPage, totalRecords)}`}
+		      {" "}of {totalRecords}
+		    </span>
 
-		     <div className={styles.paginationBtns}>
-		       <button
-		         onClick={() => page > 1 && setPage(page - 1)}
-		         disabled={page === 1}
-		       >
-		         {"<"}
-		       </button>
+		    <div className={styles.paginationBtns}>
+		      <button
+		        onClick={() => page > 1 && setPage(page - 1)}
+		        disabled={page === 1}
+		      >
+		        {"<"}
+		      </button>
 
-		       <button className={styles.activePage}>{page}</button>
+		      <button className={styles.activePage}>{page}</button>
 
-		       <button
-		         onClick={() => page < totalPages && setPage(page + 1)}
-		         disabled={page === totalPages}
-		       >
-		         {">"}
-		       </button>
-		     </div>
-		   </div>
+		      <button
+		        onClick={() => page < totalPages && setPage(page + 1)}
+		        disabled={page === totalPages}
+		      >
+		        {">"}
+		      </button>
+		    </div>
+		  </div>
         </div>
       )}
         <Outlet />
