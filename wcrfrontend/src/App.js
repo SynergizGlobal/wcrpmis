@@ -1,3 +1,5 @@
+import UserForm from "./components/Admin/Users/UserForm/UserForm";
+import Users from "./components/Admin/Users/Users";
 import AddStructureForm from "./components/UpdateForms/AddStructure/AddStructureForm/AddStructureForm";
 import AddStructure from "./components/UpdateForms/AddStructure/AddStructure";
 import IssuesForm from "./components/UpdateForms/Issues/IssuesForm/IssuesForm";
@@ -101,22 +103,26 @@ function App() {
 
                 <Route path="contractor" element={<Contractor />}>
                   <Route path="add-contractor-form" element={<ContractorForm />} />
-                </Route>
+                  </Route>
 				
 				<Route path="structure" element={<AddStructure />} >
 	             <Route path="addstructureform" element={<AddStructureForm />} />
-				</Route>
+                </Route>
 
                 <Route path="p6-new-data" element={<P6NewData />} />
                 <Route path="new-activities-update" element={<NewActivitiesUpdate />} />
                 <Route path="modify-actuals" element={<ModifyActuals />} />
                 <Route path="progress-approval-page" element={<ValidateData />} />
-                <Route path="issues" element={<Issues />} >
+                <Route path="issues" element={<Issues />}>
                   <Route path="issuesform" element={<IssuesForm />} />
                 </Route>
               </Route>
               <Route path="works" element={<Works />} />
-              <Route path="admin" element={<Admin />} />
+              <Route path="admin" element={<Admin />} >
+                <Route path="users" element={<Users />} >
+                  <Route path="userform" element={<UserForm />} />
+                </Route>
+              </Route>
               <Route path="modules" element={<Modules />} />
               <Route path="reports" element={<Reports />} />
               <Route path="documents" element={<Documents />} />

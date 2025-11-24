@@ -1,0 +1,44 @@
+.container {
+  background-color: #fff;
+  border-radius: 8px;
+  height: 100%;
+}
+.file-upload-label-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0284c7;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  opacity: 1;
+}
+
+.file-upload-label-icon:hover {
+  background-color: #0369a1;
+  transform: scale(1.03);
+}
+
+.file-upload-input {
+  display: none;
+}
+.tablesContainer{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.permissionCard{
+  border: 1px solid #000;
+  flex: 1 0 24%;
+}
+.permissionCard h3{
+  background-color: var(--primary-fade-color);
+  color: #fff;
+  padding: 10px;
+  margin: 0;
+}
+.cardInput{
+  padding: 10px;
+}
