@@ -552,8 +552,42 @@ export default function UtilityShifting() {
   const uploadStartRecord = (uploadPagination.pageNumber - 1) * uploadPagination.pageDisplayLength + 1;
   const uploadEndRecord = Math.min(uploadPagination.pageNumber * uploadPagination.pageDisplayLength, uploadPagination.totalRecords);
 
+  const exportUtilityShifting = () => {
+    // Extract current filter values from React state
+    const {
+      location_name,
+      utility_category_fk,
+      utility_type_fk,
+      shifting_status_fk
+    } = filters;
+
+    // Fill hidden form inputs
+    document.getElementById("exportLocation_name").value = location_name || "";
+    document.getElementById("exportUtility_category_fk").value = utility_category_fk || "";
+    document.getElementById("exportUtility_type_fk").value = utility_type_fk || "";
+    document.getElementById("exportShifting_status_fk").value = shifting_status_fk || "";
+
+    // Submit hidden form
+    document.getElementById("exportUtilityShiftingForm").submit();
+  };
+
+
+  
   return (
     <div className={styles.container}>
+	<form
+	  id="exportUtilityShiftingForm"
+	  action={`${API_BASE_URL}/utility-shifting/export-utility-shifting`}
+	  method="POST"
+	  style={{ display: "none" }}
+	>
+	  <input type="hidden" id="exportLocation_name" name="location_name" />
+	  <input type="hidden" id="exportUtility_category_fk" name="utility_category_fk" />
+	  <input type="hidden" id="exportUtility_type_fk" name="utility_type_fk" />
+	  <input type="hidden" id="exportShifting_status_fk" name="shifting_status_fk" />
+	</form>
+
+
       {!isUtilityShiftingForm && (
         <div className="pageHeading">
           <h2>Utility Shifting</h2>
@@ -594,9 +628,9 @@ export default function UtilityShifting() {
             <button className="btn btn-primary" onClick={handleAdd}>
               <CirclePlus size={16} /> Add
             </button>
-            <button className="btn btn-primary">
-              <LuCloudDownload size={16} /> Export
-            </button>
+			<button className="btn btn-primary" onClick={exportUtilityShifting}>
+			  <LuCloudDownload size={16} /> Export
+			</button>
           </div>
         </div>
       )}

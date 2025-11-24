@@ -24,3 +24,19 @@
 .file-upload-input {
   display: none;
 }
+
+.readOnlyInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.readOnlyInput:focus {
+  outline: none;
+  border-color: #d1d5db;
+  box-shadow: none;
+}
