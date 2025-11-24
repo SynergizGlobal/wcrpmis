@@ -1,3 +1,5 @@
+import AddStructureForm from "./components/UpdateForms/AddStructure/AddStructureForm/AddStructureForm";
+import AddStructure from "./components/UpdateForms/AddStructure/AddStructure";
 import IssuesForm from "./components/UpdateForms/Issues/IssuesForm/IssuesForm";
 import Issues from "./components/UpdateForms/Issues/Issues";
 import ValidateData from "./components/UpdateForms/ValidateData/ValidateData";
@@ -100,6 +102,10 @@ function App() {
                 <Route path="contractor" element={<Contractor />}>
                   <Route path="add-contractor-form" element={<ContractorForm />} />
                 </Route>
+				
+				<Route path="structure" element={<AddStructure />} >
+	             <Route path="addstructureform" element={<AddStructureForm />} />
+				</Route>
 
                 <Route path="p6-new-data" element={<P6NewData />} />
                 <Route path="new-activities-update" element={<NewActivitiesUpdate />} />
