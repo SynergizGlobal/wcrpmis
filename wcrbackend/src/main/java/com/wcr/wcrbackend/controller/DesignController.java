@@ -1073,6 +1073,7 @@ public class DesignController {
 			userId = uObj.getUserId();
 			userName = uObj.getUserName();
 			
+			
 			//view.setViewName("redirect:/design");
 			dataList = designService.getDesigns(design); 
 			dataRevisionsList = designService.getDesignRevisions(design);  
@@ -1108,9 +1109,9 @@ public class DesignController {
 		        cell1.setCellStyle(whiteStyle);
 				cell1.setCellValue("Unique ID of the Work");
 				
-	        	Cell cell3 = headingRowFirst.createCell(1);
-		        cell3.setCellStyle(whiteStyle);
-				cell3.setCellValue("");
+//	        	Cell cell3 = headingRowFirst.createCell(1);
+//		        cell3.setCellStyle(whiteStyle);
+//				cell3.setCellValue("");
 				
 	        	Cell cell4 = headingRowFirst.createCell(2);
 		        cell4.setCellStyle(whiteStyle);
@@ -1210,7 +1211,7 @@ public class DesignController {
 		        
 	            XSSFRow headingRow = sheet.createRow(1);
 	        	//String headerString = "PMIS Drawing No,Work ID,Approving Railway,Department,HOD,Dy HOD,Structure,Structure ID,Component,Prepared By,Contract ID,Consultant ,Proof Consultant ID,Drawing Type,Approval Authority,Required Date,GFC Release Date,Drawing Title,Agency Drawing No,MRVC Drawing No,Division Drawing No,HQ Drawing No,Stage,Submtted by,Submitted to,Purpose of Submission/Remarks,Submitted Date,Remarks";
-	        	String headerString = "PMIS Drawing No,Work ID, Contract ID, Approving Railway, Structure Type, Structure, Component, Consultant, Proof Consultant, 3PV Consultant, Prepared By, Drawing Type, Approval Authority, Required Date, GFC Approval Date, Drawing Title, Agency Drawing No., MRVC Drawing No., Division Drawing No., HQ Drawing No., Stage, Submitted By, Submitted To, Purpose of Submission/Remarks, Submitted Date, Remarks";
+	        	String headerString = "PMIS Drawing No, Contract ID, Approving Railway, Structure Type, Structure, Component, Consultant, Proof Consultant, 3PV Consultant, Prepared By, Drawing Type, Approval Authority, Required Date, GFC Approval Date, Drawing Title, Agency Drawing No., MRVC Drawing No., Division Drawing No., HQ Drawing No., Stage, Submitted By, Submitted To, Purpose of Submission/Remarks, Submitted Date, Remarks";
 	            String[] firstHeaderStringArr = headerString.split("\\,");
 	            
 	            for (int i = 0; i < firstHeaderStringArr.length; i++) {		        	
@@ -1228,9 +1229,9 @@ public class DesignController {
 					cell.setCellValue(obj.getDesign_seq_id());
 					
 					
-	                cell = row.createCell(c++);
-					cell.setCellStyle(sectionStyle);
-					cell.setCellValue(obj.getWork_id_fk());
+//	                cell = row.createCell(c++);
+//					cell.setCellStyle(sectionStyle);
+//					cell.setCellValue(obj.getWork_id_fk());
 					
 					cell = row.createCell(c++);
 					cell.setCellStyle(sectionStyle);
@@ -1512,6 +1513,8 @@ public class DesignController {
 			design.setDesignation(userDesignation);
 			//model.setViewName("redirect:/design");
 			
+			
+			
 			if(!StringUtils.isEmpty(design.getDesignFile())){
 				MultipartFile multipartFile = design.getDesignFile();
 				// Creates a workbook object from the uploaded excelfile
@@ -1524,6 +1527,9 @@ public class DesignController {
 						//System.out.println(uploadFilesSheet.getSheetName());
 						//header row
 						XSSFRow headerRow = designsDrawingsSheet.getRow(1);
+						
+						
+						
 						//checking given file format
 						if(headerRow != null)
 						{
@@ -1595,10 +1601,13 @@ public class DesignController {
 						if(headerRow.getCell(0).getStringCellValue().trim().equals("PMIS Drawing No"))
 						{
 							count = uploadDesigns(design,userId,userName);
+				
 						}
 						else
 						{
 							count = uploadDesignsFirst(design,userId,userName);
+							
+					
 						}
 						if(count > 0) {
 							
@@ -1678,215 +1687,215 @@ public class DesignController {
 	 */
 	
 	public int uploadDesigns(Design obj, String userId, String userName) throws Exception {
-		Design design = null;
-		List<Design> designsList = new ArrayList<Design>();
-		
-		Writer w = null;
-		int count = 0;
-		try {	
-			MultipartFile excelfile = obj.getDesignFile();
-			if (!StringUtils.isEmpty(excelfile) && excelfile.getSize() > 0 ){
-				XSSFWorkbook workbook = new XSSFWorkbook(excelfile.getInputStream());
-				int sheetsCount = workbook.getNumberOfSheets();
-				if(sheetsCount > 0) {
-					XSSFSheet designsDrawingsSheet = workbook.getSheetAt(0);
-					XSSFSheet designsRevisionSheet = workbook.getSheetAt(1);
-						
-					DataFormatter formatter = new DataFormatter(); //creating formatter using the default locale
-					for(int i = 2; i <= designsDrawingsSheet.getLastRowNum();i++){
-						int v = designsDrawingsSheet.getLastRowNum();
-						XSSFRow row = designsDrawingsSheet.getRow(i);
+	    System.out.println("uploadDesigns method in ****************************");
+	    int count = 0;
+	    XSSFWorkbook workbook = null;
+	    try {
+	        MultipartFile excelfile = obj.getDesignFile();
+	        if (excelfile == null || excelfile.getSize() == 0) {
+	            return 0;
+	        }
 
-						design = new Design();
-						String val = null;
-						if(!StringUtils.isEmpty(row)) {
-						
-							val = formatter.formatCellValue(row.getCell(0)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setDesign_seq_id(val);}
-							
-							val = formatter.formatCellValue(row.getCell(1)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setWork_id_fk(val);}
-							
-							val = formatter.formatCellValue(row.getCell(2)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setContract_id_fk(val);}									
-							
-							
-							val = formatter.formatCellValue(row.getCell(3)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setApproving_railway(val);}
-							
-							val = formatter.formatCellValue(row.getCell(4)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setStructure_type_fk(val);}	
-							
-							val = formatter.formatCellValue(row.getCell(5)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setStructure_id_fk(val);}
-							
-							val = formatter.formatCellValue(row.getCell(6)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setComponent(val);}	
-							
-							val = formatter.formatCellValue(row.getCell(7)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setConsultant_contract_id_fk(val);}										
-							
-							val = formatter.formatCellValue(row.getCell(8)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setProof_consultant_contract_id_fk(val);}
-							
-							val = formatter.formatCellValue(row.getCell(9)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setThreepvc(val);}	
-							
-							val = formatter.formatCellValue(row.getCell(10)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setPrepared_by_id_fk(val);}								
-							
-							
-							val = formatter.formatCellValue(row.getCell(11)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setDrawing_type_fk(val);}
-							
+	        workbook = new XSSFWorkbook(excelfile.getInputStream());
+	        int sheetsCount = workbook.getNumberOfSheets();
+	        if (sheetsCount <= 0) return 0;
 
-							val = formatter.formatCellValue(row.getCell(12)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setApproval_authority_fk(val);}
-							
-							val = formatter.formatCellValue(row.getCell(13)).trim();
-							if(!StringUtils.isEmpty(val)) { 
-								if(val.contains("/")) {
-									LocalDate receivedDate = LocalDate.parse(val, DateTimeFormatter.ofPattern("M/dd/yy"));
-									val = receivedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")); 
-								}
-								design.setRequired_date(val);}
-							
-							val = formatter.formatCellValue(row.getCell(14)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setGfc_released(val);}	
-														
-							
-							val = formatter.formatCellValue(row.getCell(15)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setDrawing_title(val);}	
-														
-							
-							val = formatter.formatCellValue(row.getCell(16)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setContractor_drawing_no(val);}
-							
-							val = formatter.formatCellValue(row.getCell(17)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setMrvc_drawing_no(val);}
-							
-							val = formatter.formatCellValue(row.getCell(18)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setDivision_drawing_no(val);}								
-							
-							val = formatter.formatCellValue(row.getCell(19)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setHq_drawing_no(val);}											
-							
-													
-							
-							val = formatter.formatCellValue(row.getCell(20)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setStage_fk(val);}										
-						
-							val = formatter.formatCellValue(row.getCell(21)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setSubmitted_by(val);}
-							
-							val = formatter.formatCellValue(row.getCell(22)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setSubmitted_to(val);}
-							
-							val = formatter.formatCellValue(row.getCell(23)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setSubmission_purpose(val);}
-							
-							val = formatter.formatCellValue(row.getCell(24)).trim();
-							if(!StringUtils.isEmpty(val)) { 
-								design.setSubmitted_date(val);}
-							
-							val = formatter.formatCellValue(row.getCell(25)).trim();
-							if(!StringUtils.isEmpty(val)) { 
-								design.setGfc_released(val);}
-							
-							val = formatter.formatCellValue(row.getCell(26)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setRemarks(val);}
-							
-							design.setGfc_released(DateParser.parse(design.getGfc_released()));
-							design.setSubmitted_date(DateParser.parse(design.getSubmitted_date()));
-							design.setRequired_date(DateParser.parse(design.getRequired_date()));
-							designsList.add(design);
-							
-						}
-						
-					}
-						Design designRevision = null;
-												
-						List<Design> pObjList = new ArrayList<Design>();
-						
-						for(int i1 = 1; i1 <= designsRevisionSheet.getLastRowNum();i1++)
-						{
-							int v1 = designsRevisionSheet.getLastRowNum();
-							XSSFRow row1 = designsRevisionSheet.getRow(i1);
+	        XSSFSheet designsDrawingsSheet = workbook.getSheetAt(0);
+	        XSSFSheet designsRevisionSheet = (sheetsCount > 1) ? workbook.getSheetAt(1) : null;
 
-							designRevision = new Design();
-							String val1 = null;
-							if(!StringUtils.isEmpty(row1)) {
-								
-								val1 = formatter.formatCellValue(row1.getCell(0)).trim();
-								if(!StringUtils.isEmpty(val1)) { designRevision.setMrvc_drawing_no(val1);}								
-							
-								val1 = formatter.formatCellValue(row1.getCell(1)).trim();
-								if(!StringUtils.isEmpty(val1)) { designRevision.setRevision(val1);}
-								
-								val1 = formatter.formatCellValue(row1.getCell(2)).trim();
-								if(!StringUtils.isEmpty(val1)) { designRevision.setDrawing_no(val1);}
-								
-								val1 = formatter.formatCellValue(row1.getCell(3)).trim();
-								if(!StringUtils.isEmpty(val1)) { designRevision.setCorrespondence_letter_no(val1);}
-								
-								val1 = formatter.formatCellValue(row1.getCell(4)).trim();
-								if(!StringUtils.isEmpty(val1)) { designRevision.setRevision_date(val1);}
-								
-								val1 = formatter.formatCellValue(row1.getCell(5)).trim();
-								if(!StringUtils.isEmpty(val1)) { designRevision.setRevision_status(val1);}
-								
-								
-								val1 = formatter.formatCellValue(row1.getCell(6)).trim();
-								if(!StringUtils.isEmpty(val1)) { designRevision.setRemarks(val1);}		
-								
-								val1 = formatter.formatCellValue(row1.getCell(7)).trim();
-								if(!StringUtils.isEmpty(val1)) { designRevision.setUpload_file(val1);}
-								
-								pObjList.add(designRevision);
+	        DataFormatter formatter = new DataFormatter();
+	        List<Design> designsList = new ArrayList<>();
 
-								
-							}
-						}
-						
-						//if(!StringUtils.isEmpty(design.getMrvc_drawing_no())) 
-						//{
-	
-							design.setDesignRevisions(pObjList);
-						//}
-						
-						boolean flag = design.checkNullOrEmpty();
-						
-						if(!flag) {
-							designsList.add(design);
-						}
-					
-					
-					if(!designsList.isEmpty() && designsList != null){
-						count  = designService.uploadDesignsNew(designsList);
-					}
-				}
-				workbook.close();
-			}
-				
-		} catch (Exception e) {
-			e.printStackTrace();
-			logger.error("uploadDesigns() : "+e.getMessage());
-			throw new Exception(e);	
-		}finally{
-		    try{
-		        if ( w != null)
-		        	w.close( );
-		    }catch ( IOException e){
-		    	e.printStackTrace();
-		    	logger.error("uploadDesigns() : "+e.getMessage());
-		    	throw new Exception(e);
-		    }
-		}
-		
-		return count;
+	        
+	        if (designsDrawingsSheet != null) {
+	            for (int i = 2; i <= designsDrawingsSheet.getLastRowNum(); i++) {
+	                XSSFRow row = designsDrawingsSheet.getRow(i);
+	                if (row == null) continue;
+
+	                Design design = new Design();
+	                String val;
+
+	                val = formatter.formatCellValue(row.getCell(0)).trim();
+	                if (StringUtils.hasText(val)) design.setDesign_seq_id(val);
+
+	                val = formatter.formatCellValue(row.getCell(1)).trim();
+	                if (StringUtils.hasText(val)) design.setContract_id_fk(val);
+
+	                val = formatter.formatCellValue(row.getCell(2)).trim();
+	                if (StringUtils.hasText(val)) design.setApproving_railway(val);
+
+	                val = formatter.formatCellValue(row.getCell(3)).trim();
+	                if (StringUtils.hasText(val)) design.setStructure_type_fk(val);
+
+	                val = formatter.formatCellValue(row.getCell(4)).trim();
+	                if (StringUtils.hasText(val)) design.setStructure_id_fk(val);
+
+	                val = formatter.formatCellValue(row.getCell(5)).trim();
+	                if (StringUtils.hasText(val)) design.setComponent(val);
+
+	                val = formatter.formatCellValue(row.getCell(6)).trim();
+	                if (StringUtils.hasText(val)) design.setConsultant_contract_id_fk(val);
+
+	                val = formatter.formatCellValue(row.getCell(7)).trim();
+	                if (StringUtils.hasText(val)) design.setProof_consultant_contract_id_fk(val);
+
+	                val = formatter.formatCellValue(row.getCell(8)).trim();
+	                if (StringUtils.hasText(val)) design.setThreepvc(val);
+
+	                val = formatter.formatCellValue(row.getCell(9)).trim();
+	                if (StringUtils.hasText(val)) design.setPrepared_by_id_fk(val);
+
+	                val = formatter.formatCellValue(row.getCell(10)).trim();
+	                if (StringUtils.hasText(val)) design.setDrawing_type_fk(val);
+
+	                val = formatter.formatCellValue(row.getCell(11)).trim();
+	                if (StringUtils.hasText(val)) design.setApproval_authority_fk(val);
+
+	                
+	                val = formatter.formatCellValue(row.getCell(12)).trim();
+	                if (StringUtils.hasText(val)) {
+	                    if (val.contains("/")) {
+	                        LocalDate receivedDate = LocalDate.parse(val, DateTimeFormatter.ofPattern("M/dd/yy"));
+	                        val = receivedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+	                    }
+	                    design.setRequired_date(val);
+	                }
+
+	                
+	                val = formatter.formatCellValue(row.getCell(13)).trim();
+	                if (StringUtils.hasText(val)) {
+	                    if (val.contains("/")) {
+	                        LocalDate receivedDate = LocalDate.parse(val, DateTimeFormatter.ofPattern("M/dd/yy"));
+	                        val = receivedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+	                    }
+	                    design.setGfc_released(val);
+	                }
+
+	                val = formatter.formatCellValue(row.getCell(14)).trim();
+	                if (StringUtils.hasText(val)) design.setDrawing_title(val);
+
+	                val = formatter.formatCellValue(row.getCell(15)).trim();
+	                if (StringUtils.hasText(val)) design.setContractor_drawing_no(val);
+
+	                val = formatter.formatCellValue(row.getCell(16)).trim();
+	                if (StringUtils.hasText(val)) design.setMrvc_drawing_no(val);
+
+	                val = formatter.formatCellValue(row.getCell(17)).trim();
+	                if (StringUtils.hasText(val)) design.setDivision_drawing_no(val);
+
+	                val = formatter.formatCellValue(row.getCell(18)).trim();
+	                if (StringUtils.hasText(val)) design.setHq_drawing_no(val);
+
+	                val = formatter.formatCellValue(row.getCell(19)).trim();
+	                if (StringUtils.hasText(val)) design.setStage_fk(val);
+
+	                val = formatter.formatCellValue(row.getCell(20)).trim();
+	                if (StringUtils.hasText(val)) design.setSubmitted_by(val);
+
+	                val = formatter.formatCellValue(row.getCell(21)).trim();
+	                if (StringUtils.hasText(val)) design.setSubmitted_to(val);
+
+	                val = formatter.formatCellValue(row.getCell(22)).trim();
+	                if (StringUtils.hasText(val)) design.setSubmission_purpose(val);
+
+	                val = formatter.formatCellValue(row.getCell(23)).trim();
+	                if (StringUtils.hasText(val)) design.setSubmitted_date(val);
+
+	                val = formatter.formatCellValue(row.getCell(24)).trim();
+	                if (StringUtils.hasText(val)) design.setRemarks(val);
+
+	                
+	                design.setGfc_released(DateParser.parse(design.getGfc_released()));
+	                design.setSubmitted_date(DateParser.parse(design.getSubmitted_date()));
+	                design.setRequired_date(DateParser.parse(design.getRequired_date()));
+
+	                
+	                if (!design.checkNullOrEmpty()) {
+	                    designsList.add(design);
+	                }
+	            } 
+	        }
+
+	        // 2) Read revisions sheet and group by design_seq_id
+	        Map<String, List<Design>> revisionMap = new HashMap<>();
+	        if (designsRevisionSheet != null) {
+	            for (int i1 = 1; i1 <= designsRevisionSheet.getLastRowNum(); i1++) {
+	                XSSFRow row1 = designsRevisionSheet.getRow(i1);
+	                if (row1 == null) continue;
+
+	                String seqKey = formatter.formatCellValue(row1.getCell(0)).trim();
+	                if (!StringUtils.hasText(seqKey)) continue;
+
+	                Design rev = new Design();
+	                rev.setDesign_seq_id(seqKey);
+
+	                String tmp = formatter.formatCellValue(row1.getCell(1)).trim();
+	                if (StringUtils.hasText(tmp)) rev.setRevision(tmp);
+
+	                tmp = formatter.formatCellValue(row1.getCell(2)).trim();
+	                if (StringUtils.hasText(tmp)) rev.setDrawing_no(tmp);
+
+	                tmp = formatter.formatCellValue(row1.getCell(3)).trim();
+	                if (StringUtils.hasText(tmp)) rev.setCorrespondence_letter_no(tmp);
+
+	                tmp = formatter.formatCellValue(row1.getCell(4)).trim();
+	                if (StringUtils.hasText(tmp)) rev.setRevision_date(tmp);
+
+	                tmp = formatter.formatCellValue(row1.getCell(5)).trim();
+	                if (StringUtils.hasText(tmp)) rev.setRevision_status(tmp);
+
+	                tmp = formatter.formatCellValue(row1.getCell(6)).trim();
+	                if (StringUtils.hasText(tmp)) rev.setRemarks(tmp);
+
+	                tmp = formatter.formatCellValue(row1.getCell(7)).trim();
+	                if (StringUtils.hasText(tmp)) rev.setUpload_file(tmp);
+	                
+	                tmp = formatter.formatCellValue(row1.getCell(8)).trim();
+	                if (StringUtils.hasText(tmp)) rev.setCurrent(tmp);
+
+	                revisionMap.computeIfAbsent(seqKey, k -> new ArrayList<>()).add(rev);
+	            }
+	        }
+
+
+	        for (Design d : designsList) {
+	            String seq = d.getDesign_seq_id();
+	            if (StringUtils.hasText(seq) && revisionMap.containsKey(seq)) {
+	                d.setDesignRevisions(revisionMap.get(seq));
+	            } else {
+	                d.setDesignRevisions(new ArrayList<>());
+	            }
+	        }
+
+	        // 4) Call upload service once
+	        if (!designsList.isEmpty()) {
+	            count = designService.uploadDesignsNew(designsList);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        logger.error("uploadDesigns() : " + e.getMessage(), e);
+	        throw new Exception(e);
+	    } finally {
+	        try {
+	            if (workbook != null) workbook.close();
+	        } catch (IOException ex) {
+	            logger.error("Error closing workbook: " + ex.getMessage(), ex);
+	        }
+	    }
+	    return count;
 	}
+
 	
 	public int uploadDesignsFirst(Design obj, String userId, String userName) throws Exception {
+		
+		
+		System.out.println("uploadDesignsFirst method in ****************************");
+		System.out.println("uploadDesignsFirst method in ****************************");
+		System.out.println("uploadDesignsFirst method in ****************************");
+		System.out.println("uploadDesignsFirst method in ****************************");
+
+		
 		Design design = null;
 		List<Design> designsList = new ArrayList<Design>();
 		
@@ -1894,7 +1903,7 @@ public class DesignController {
 		int count = 0;
 		try {	
 			MultipartFile excelfile = obj.getDesignFile();
-			// Creates a workbook object from the uploaded excelfile
+
 			if (!StringUtils.isEmpty(excelfile) && excelfile.getSize() > 0 ){
 				XSSFWorkbook workbook = new XSSFWorkbook(excelfile.getInputStream());
 				int sheetsCount = workbook.getNumberOfSheets();
@@ -1902,101 +1911,115 @@ public class DesignController {
 					XSSFSheet designsDrawingsSheet = workbook.getSheetAt(0);
 					XSSFSheet designsRevisionSheet = workbook.getSheetAt(1);
 						
-					DataFormatter formatter = new DataFormatter(); //creating formatter using the default locale
+					DataFormatter formatter = new DataFormatter(); 
 					for(int i = 2; i < designsDrawingsSheet.getLastRowNum();i++){
 						int v = designsDrawingsSheet.getLastRowNum();
 						XSSFRow row = designsDrawingsSheet.getRow(i);
 						design = new Design();
 						String val = null;
 						if(!StringUtils.isEmpty(row)) {								
+//							val = formatter.formatCellValue(row.getCell(0)).trim();
+//							if(!StringUtils.isEmpty(val)) { design.setWork_id_fk(val);}
+							
+							// 0 - contract_id_fk
 							val = formatter.formatCellValue(row.getCell(0)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setWork_id_fk(val);}
+							if (!StringUtils.isEmpty(val)) { design.setContract_id_fk(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(1)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setContract_id_fk(val);}									
-							
+							if (!StringUtils.isEmpty(val)) { design.setApproving_railway(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(2)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setApproving_railway(val);}
+							if (!StringUtils.isEmpty(val)) { design.setStructure_type_fk(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(3)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setStructure_type_fk(val);}	
+							if (!StringUtils.isEmpty(val)) { design.setStructure_id_fk(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(4)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setStructure_id_fk(val);}
+							if (!StringUtils.isEmpty(val)) { design.setComponent(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(5)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setComponent(val);}	
+							if (!StringUtils.isEmpty(val)) { design.setConsultant_contract_id_fk(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(6)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setConsultant_contract_id_fk(val);}										
+							if (!StringUtils.isEmpty(val)) { design.setProof_consultant_contract_id_fk(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(7)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setProof_consultant_contract_id_fk(val);}
+							if (!StringUtils.isEmpty(val)) { design.setThreepvc(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(8)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setThreepvc(val);}	
+							if (!StringUtils.isEmpty(val)) { design.setPrepared_by_id_fk(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(9)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setPrepared_by_id_fk(val);}								
-							
+							if (!StringUtils.isEmpty(val)) { design.setDrawing_type_fk(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(10)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setDrawing_type_fk(val);}								
+							if (!StringUtils.isEmpty(val)) { design.setApproval_authority_fk(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(11)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setApproval_authority_fk(val);}
+							if (!StringUtils.isEmpty(val)) { 
+							    if (val.contains("/")) {
+							        LocalDate receivedDate = LocalDate.parse(val, DateTimeFormatter.ofPattern("M/dd/yy"));
+							        val = receivedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+							    }
+							    design.setRequired_date(val);
+							}
+
 							
 							val = formatter.formatCellValue(row.getCell(12)).trim();
-							if(!StringUtils.isEmpty(val)) { 
-								if(val.contains("/")) {
-									LocalDate receivedDate = LocalDate.parse(val, DateTimeFormatter.ofPattern("M/dd/yy"));
-									val = receivedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")); 
-								}
-								design.setRequired_date(val);}
+							if (!StringUtils.isEmpty(val)) { design.setGfc_released(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(13)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setGfc_released(val);}	
+							if (!StringUtils.isEmpty(val)) { design.setDrawing_title(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(14)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setDrawing_title(val);}								
+							if (!StringUtils.isEmpty(val)) { design.setContractor_drawing_no(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(15)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setContractor_drawing_no(val);}
+							if (!StringUtils.isEmpty(val)) { design.setMrvc_drawing_no(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(16)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setMrvc_drawing_no(val);}
+							if (!StringUtils.isEmpty(val)) { design.setDivision_drawing_no(val); }
+
 							
 							val = formatter.formatCellValue(row.getCell(17)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setDivision_drawing_no(val);}								
-							
+							if (!StringUtils.isEmpty(val)) { design.setHq_drawing_no(val); }
+
 							val = formatter.formatCellValue(row.getCell(18)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setHq_drawing_no(val);}											
-							
-													
-							
+							if (!StringUtils.isEmpty(val)) { design.setStage_fk(val); }
+
 							val = formatter.formatCellValue(row.getCell(19)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setStage_fk(val);}										
-						
+							if (!StringUtils.isEmpty(val)) { design.setSubmitted_by(val); }
+
 							val = formatter.formatCellValue(row.getCell(20)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setSubmitted_by(val);}
-							
+							if (!StringUtils.isEmpty(val)) { design.setSubmitted_to(val); }
+
 							val = formatter.formatCellValue(row.getCell(21)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setSubmitted_to(val);}
-							
+							if (!StringUtils.isEmpty(val)) { design.setSubmission_purpose(val); }
+
 							val = formatter.formatCellValue(row.getCell(22)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setSubmission_purpose(val);}
-							
+							if (!StringUtils.isEmpty(val)) { design.setSubmitted_date(val); }
+
 							val = formatter.formatCellValue(row.getCell(23)).trim();
-							if(!StringUtils.isEmpty(val)) { 
-								design.setSubmitted_date(val);}
-							
+							if (!StringUtils.isEmpty(val)) { design.setGfc_released(val); }
+
 							val = formatter.formatCellValue(row.getCell(24)).trim();
-							if(!StringUtils.isEmpty(val)) { 
-								design.setGfc_released(val);}
-							
-							val = formatter.formatCellValue(row.getCell(25)).trim();
-							if(!StringUtils.isEmpty(val)) { design.setRemarks(val);}
+							if (!StringUtils.isEmpty(val)) { design.setRemarks(val); }
+
 							
 							design.setGfc_released(DateParser.parse(design.getGfc_released()));
 							design.setSubmitted_date(DateParser.parse(design.getSubmitted_date()));

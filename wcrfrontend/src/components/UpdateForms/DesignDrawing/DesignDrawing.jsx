@@ -38,9 +38,21 @@ export default function DesignDrawing() {
 		structureType: [],
 		drawingType: [],
 	});
-
-
 	const isDesignDrawingForm = location.pathname.endsWith("/add-design-form");
+
+	
+	const handleSampleDownload = () => {
+	    const fileUrl = "/files/designDrawing/Designs_Drawings.xlsx"; 
+	    const fileName = "Designs_Drawings.xlsx";
+	 
+	    const link = document.createElement("a");
+	    link.href = fileUrl;
+	    link.setAttribute("download", fileName);
+	    document.body.appendChild(link);
+	    link.click();
+	    link.remove();
+	  };
+
 
 	const designTotalPages = Math.max(1, Math.ceil(designTotalRows / designPerPage));
 	const uploadedFiltered = uploadedFile.filter((uf) => {
@@ -286,6 +298,9 @@ export default function DesignDrawing() {
 				return acc;
 			}, []);
 
+			
+
+			
 		return (
 			<>
 				<button
@@ -349,9 +364,11 @@ export default function DesignDrawing() {
 	        await api.post(`${API_BASE_URL}/design/upload-designs`, formData, { withCredentials: true });
 	        alert("Upload successful!");
 	        closeModal();
+			window.location.reload();
 	    } catch (err) {
 	        alert("Upload failed.");
 	        console.error(err);
+			window.location.reload();
 	    } finally {
 	        setLoading(false);
 	    }
@@ -392,7 +409,7 @@ export default function DesignDrawing() {
 				<div className="pageHeading">
 					<h2>Update Design & Drawing</h2>
 					<div className="rightBtns">
-						<button className="btn-2 transparent-btn">
+						<button className="btn-2 transparent-btn" onClick={handleSampleDownload}>
 							<LuDownload size={16} />
 						</button>
 						<button className="btn btn-primary" onClick={openModal}>
@@ -674,7 +691,20 @@ export default function DesignDrawing() {
 								{uploadedPageSlice.length > 0 ? (
 									uploadedPageSlice.map((uf, index) => (
 										<tr key={uf.id ?? index}>
-											<td>{uf.uploaded_file}</td>
+										<td>
+										  {uf.uploaded_file ? (
+										    <a
+										      href={`http://localhost:8080/wrpmis/DESIGN_REVISION_FILES/${uf.uploaded_file}`}
+										      target="_blank"
+										      rel="noopener noreferrer"
+										      style={{ color: "blue", textDecoration: "underline" }}
+										    >
+										      {uf.uploaded_file}
+										    </a>
+										  ) : (
+										    ""
+										  )}
+										</td>
 											<td>{uf.status}</td>
 											<td>{uf.remarks}</td>
 											<td>{uf.uploaded_by_user_id_fk}</td>

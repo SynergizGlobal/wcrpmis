@@ -1521,10 +1521,23 @@ public class DesignRepository implements IDesignRepo {
 	public List<Design> getDesignUploadsList(Design obj) throws Exception {
 		List<Design> objsList = null;
 		try {
-			String qry = "SELECT design_data_id, uploaded_file, dd.status, dd.remarks, uploaded_by_user_id_fk, FORMAT(uploaded_on,'dd-MM-yyyy  hh:mm ss') as uploaded_on "
-					+ ",uploaded_on as date from design_data dd " 
-					+ "left join [user] u ON dd.uploaded_by_user_id_fk = u.user_id "
-					+ "where design_data_id is not null order by FORMAT(uploaded_on,'%y-%m-%d %H : %i : %s') desc ";
+			String qry = "SELECT \r\n"
+					+ "    dd.design_data_id,\r\n"
+					+ "    dd.uploaded_file,\r\n"
+					+ "    dd.status,\r\n"
+					+ "    dd.remarks,\r\n"
+					+ "    dd.uploaded_by_user_id_fk,\r\n"
+					+ "    dd.uploaded_on,\r\n"
+					+ "    dd.uploaded_on AS date\r\n"
+					+ "FROM \r\n"
+					+ "    design_data dd\r\n"
+					+ "LEFT JOIN \r\n"
+					+ "    [user] u ON dd.uploaded_by_user_id_fk = u.user_id\r\n"
+					+ "WHERE \r\n"
+					+ "    dd.design_data_id IS NOT NULL\r\n"
+					+ "ORDER BY \r\n"
+					+ "    dd.uploaded_on DESC;\r\n"
+					+ "";
 			
 		    objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Design>(Design.class));
 
@@ -2621,187 +2634,182 @@ public class DesignRepository implements IDesignRepo {
 		}
 		return flag;
 	}
+	
+	private String isNull(String v) {
+	    return (v == null || v.trim().isEmpty()) ? null : v.trim();
+	}
 
+
+	/**
+	 * Uploads/updates designs and their revisions.
+	 * This method is transactional: if anything fails, the whole set is rolled back.
+	 */
 	@Override
 	public int uploadDesignsNew(List<Design> designsList) throws Exception {
-		int count = 0;
-		boolean flag = false;
-		Connection con = null;
-		PreparedStatement stmt = null;
-		try {
-			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
-			String qry = "INSERT INTO design (project_id_fk,contract_id_fk,department_id_fk,hod,dy_hod,prepared_by_id_fk,consultant_contract_id_fk,proof_consultant_contract_id_fk,"
-					+ "structure_type_fk,drawing_type_fk,contractor_drawing_no,mrvc_drawing_no,division_drawing_no,hq_drawing_no,drawing_title,"
-					+ "gfc_released,remarks," + 
-					"approving_railway,approval_authority_fk,structure_id_fk,required_date,component,design_seq_id,[3pvc]) "
-					+ "VALUES(:project_id_fk,:contract_id_fk,:department_id_fk,:hod,:dy_hod,:prepared_by_id_fk,:consultant_contract_id_fk,:proof_consultant_contract_id_fk,:structure_type_fk"
-					+ ",:drawing_type_fk,:mrvc_drawing_no,:mrvc_drawing_no,:division_drawing_no,:hq_drawing_no,:drawing_title,"
-					+ ":gfc_released,:remarks,"
-					+ ":approving_railway,:approval_authority_fk,:structure_id_fk,:required_date,:component,:design_seq_id,:threepvc)";
-			
-			String updateQry = "UPDATE design set contract_id_fk= :contract_id_fk, approving_railway= :approving_railway, department_id_fk= :department_id_fk,hod= :hod,"
-					+ "dy_hod= :dy_hod,structure_type_fk= :structure_type_fk,structure_id_fk= :structure_id_fk,prepared_by_id_fk= :prepared_by_id_fk ,consultant_contract_id_fk= :consultant_contract_id_fk,"
-					+ "proof_consultant_contract_id_fk= :proof_consultant_contract_id_fk,drawing_type_fk= :drawing_type_fk,drawing_title= :drawing_title,approval_authority_fk= :approval_authority_fk,"
-					+ "required_date=:required_date,contractor_drawing_no= :contractor_drawing_no,mrvc_drawing_no= :mrvc_drawing_no,division_drawing_no= :division_drawing_no,"
-					+ "hq_drawing_no= :hq_drawing_no,gfc_released= :gfc_released,remarks=:remarks,modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP,[3pvc]=:Threepvc where design_seq_id= :design_seq_id ";
-			for (Design obj : designsList) {
-				
-				if(!StringUtils.isEmpty(obj.getConsultant_contract_id_fk())) {
-				String[] splitStr=obj.getConsultant_contract_id_fk().split(" - "); 
-				obj.setConsultant_contract_id_fk(splitStr[0]);
-				}
-				
-				if(!StringUtils.isEmpty(obj.getProof_consultant_contract_id_fk())) {
-				String[] splitStr1=obj.getProof_consultant_contract_id_fk().split(" - "); 
-				obj.setProof_consultant_contract_id_fk(splitStr1[0]);
-				}
-				
-				
-				
-				/*String department = null;
-				if(!StringUtils.isEmpty(obj.getDepartment_id_fk())) { 
-				  String deptqry ="SELECT department from department where department_name = ?"; 
-				  department = (String)jdbcTemplate.queryForObject( deptqry,new Object[]{obj.getDepartment_id_fk()} ,String.class); 
-				}
-				obj.setDepartment_id_fk(department);*/
-				//String hod = getHod(obj.getHod());
-				//String dyHod = getDyHod(obj.getDy_hod());
-				//obj.setHod(hod);obj.setDy_hod(dyHod);
-				if(!StringUtils.isEmpty(obj.getPrepared_by_id_fk())) {
-					String preparedByQry = "INSERT INTO design_prepared_by (prepared_by) SELECT * FROM (SELECT ? AS tmp " + 
-							"WHERE NOT EXISTS ( SELECT prepared_by FROM design_prepared_by WHERE prepared_by = ?  )) as tmp";
-					jdbcTemplate.update( preparedByQry, new Object[] {obj.getPrepared_by_id_fk(),obj.getPrepared_by_id_fk()});
-				}
-				
-				/*if(!StringUtils.isEmpty(obj.getStructure_type_fk())) {
-					String stQry = "INSERT INTO structure_type (structure_type) SELECT * FROM (SELECT ?) AS tmp "
-							+ "WHERE NOT EXISTS ( SELECT structure_type FROM structure_type WHERE structure_type = ? offset 0 rows  fetch next 1 rows only )";
-					jdbcTemplate.update( stQry, new Object[] {obj.getStructure_type_fk(),obj.getStructure_type_fk()});
-				}*/
-				
-				if(!StringUtils.isEmpty(obj.getDrawing_type_fk())) {
-					String dtQry = "INSERT INTO drawing_type (drawing_type) SELECT * FROM (SELECT ? AS tmp "
-							+ "WHERE NOT EXISTS ( SELECT drawing_type FROM drawing_type WHERE drawing_type = ? )) as tmp";
-					jdbcTemplate.update( dtQry, new Object[] {obj.getDrawing_type_fk(),obj.getDrawing_type_fk()});
-				}
-				
-				String designId = obj.getDesign_seq_id();
-				if(!StringUtils.isEmpty(designId)) {
-					obj.setDesign_id(getDesignId(obj));
-					SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
-				    count = namedParamJdbcTemplate.update(updateQry, paramSource);
-				    if(count > 0) {
-						 flag = true;
-						 String deleteQryForDesignStatus = "UPDATE design_status set latest = 'No' where design_id_fk = :design_id";		 
-						 paramSource = new BeanPropertySqlParameterSource(obj);		 
-						 count = namedParamJdbcTemplate.update(deleteQryForDesignStatus, paramSource);
-					}
-				}else {
-					
-					String design_seq_id = getAutoGeneratedDesignId(obj);
-					obj.setDesign_seq_id(design_seq_id);
-					
-					SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
-				    KeyHolder keyHolder = new GeneratedKeyHolder();
-				    count = namedParamJdbcTemplate.update(qry, paramSource, keyHolder);
-				    designId = null;
-					if(count > 0) {
-						 designId = String.valueOf(keyHolder.getKey().intValue());
-						 obj.setDesign_id(getDesignId(obj));
-						 flag = true;
-					}
-				}
-				
-				
-				if(flag) {
-					con = jdbcTemplate.getDataSource().getConnection();
-					String qryDesignRevision = "INSERT INTO design_status (design_id_fk, stage_fk, submitted_by, submitted_to, submitted_date, submssion_purpose, latest) VALUES(?,?,?,?,?,?,?)";
-					stmt = con.prepareStatement(qryDesignRevision); 				
-					String stage_fk = obj.getStage_fk();
-					String submitted_date = obj.getSubmitted_date();
-					String submitted_by = obj.getSubmitted_by();
-					String submitted_to = obj.getSubmitted_to();
-					String submssion_purpose = obj.getSubmission_purpose();
-					if( !StringUtils.isEmpty(stage_fk)) {
-							int k = 1;
-							stmt.setString(k++, obj.getDesign_id());
-							stmt.setString(k++,!StringUtils.isEmpty(stage_fk)?stage_fk:null);
-							stmt.setString(k++,!StringUtils.isEmpty(submitted_by)?submitted_by:null);
-							stmt.setString(k++,!StringUtils.isEmpty(submitted_to)?submitted_to:null);
-							stmt.setString(k++,DateParser.parse(!StringUtils.isEmpty(submitted_date)?submitted_date:null));
-							stmt.setString(k++,!StringUtils.isEmpty(submssion_purpose)?submssion_purpose:null);
-							stmt.setString(k++,(CommonConstants.YES ));
-							stmt.addBatch();
-					}
-					stmt.executeBatch();
-					DBConnectionHandler.closeJDBCResoucrs(con, stmt, null);
-				}
-				
-			
-				
-				if(!StringUtils.isEmpty(obj.getDesignRevisions())) {
-					String qryDesignRevision = "INSERT INTO design_revisions (design_id_fk,revision,revision_date,drawing_no,correspondence_letter_no,upload_file,"
-							+ "revision_status_fk,[current],remarks) VALUES(?,?,?,?,?,?,?,?,?)";
-					
+	    if (designsList == null || designsList.isEmpty()) return 0;
 
-					int[] counts = jdbcTemplate.batchUpdate(qryDesignRevision,
-				            new BatchPreparedStatementSetter() {
-								@Override
-								public void setValues(PreparedStatement ps, int i) throws SQLException {
-									try {	
-										obj.setDesign_id(getDesignIdByNo(obj.getDesignRevisions().get(i).getMrvc_drawing_no()));
-										SqlParameterSource paramSource1 = new BeanPropertySqlParameterSource(obj);
-										String deleteQry = "DELETE from design_revisions where design_id_fk = :design_id";		 
-										paramSource1 = new BeanPropertySqlParameterSource(obj);		 
-										int count = namedParamJdbcTemplate.update(deleteQry, paramSource1);											
-										
-										String revision = obj.getDesignRevisions().get(i).getRevision();
-										String revision_date = obj.getDesignRevisions().get(i).getRevision_date();
-										String drawing_no = obj.getDesignRevisions().get(i).getDrawing_no();
-										String correspondence_letter_no = obj.getDesignRevisions().get(i).getCorrespondence_letter_no();
-										String upload_file = obj.getDesignRevisions().get(i).getUpload_file();
-										String revision_status_fk = obj.getDesignRevisions().get(i).getRevision_status_fk();
-										String remarks = obj.getDesignRevisions().get(i).getRemarks();
-										String current = obj.getDesignRevisions().get(i).getCurrent();
-										String pmisdrawingno = obj.getDesignRevisions().get(i).getMrvc_drawing_no();
-										
-										
-										int k = 1;
-										//ps.setString(k++, obj.getDesign_id());
-										ps.setString(k++,getDesignIdByNo(pmisdrawingno));
-										ps.setString(k++,!StringUtils.isEmpty(revision)?revision:null);
-										ps.setString(k++,!StringUtils.isEmpty(revision_date)?revision_date:null);
-										ps.setString(k++,!StringUtils.isEmpty(drawing_no)?drawing_no:null);
-										ps.setString(k++,!StringUtils.isEmpty(correspondence_letter_no)?correspondence_letter_no:null);
-										ps.setString(k++,!StringUtils.isEmpty(upload_file)?upload_file:null);
-										ps.setString(k++,!StringUtils.isEmpty(revision_status_fk)?revision_status_fk:null);
-										ps.setString(k++,!StringUtils.isEmpty(current)?current:null);
-										ps.setString(k++,!StringUtils.isEmpty(remarks)?remarks:null);
-									
-									} catch (Exception e) {
-										
-									}
-								}
-								@Override
-								public int getBatchSize() {
-									return obj.getDesignRevisions().size();
-							}
-					  });
-					
-					
-				}					
-				
-				
-			
-				 
-			}
-			count = designsList.size();
-		}catch(Exception e){ 
-			e.printStackTrace();
-			throw new Exception(e);
-		}
-		return count;
-	}	
+	    int processed = 0;
+	    NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
+
+	    String insertDesignSql = "INSERT INTO design (project_id_fk,contract_id_fk,department_id_fk,hod,dy_hod,prepared_by_id_fk,consultant_contract_id_fk,proof_consultant_contract_id_fk,"
+	            + "structure_type_fk,drawing_type_fk,contractor_drawing_no,mrvc_drawing_no,division_drawing_no,hq_drawing_no,drawing_title,"
+	            + "gfc_released,remarks,approving_railway,approval_authority_fk,structure_id_fk,required_date,component,design_seq_id,[3pvc]) "
+	            + "VALUES(:project_id_fk,:contract_id_fk,:department_id_fk,:hod,:dy_hod,:prepared_by_id_fk,:consultant_contract_id_fk,:proof_consultant_contract_id_fk,:structure_type_fk"
+	            + ",:drawing_type_fk,:contractor_drawing_no,:mrvc_drawing_no,:division_drawing_no,:hq_drawing_no,:drawing_title,"
+	            + ":gfc_released,:remarks,:approving_railway,:approval_authority_fk,:structure_id_fk,:required_date,:component,:design_seq_id,:threepvc)";
+
+	    String updateDesignSql = "UPDATE design set contract_id_fk= :contract_id_fk, approving_railway= :approving_railway, department_id_fk= :department_id_fk,hod= :hod,"
+	            + "dy_hod= :dy_hod,structure_type_fk= :structure_type_fk,structure_id_fk= :structure_id_fk,prepared_by_id_fk= :prepared_by_id_fk ,consultant_contract_id_fk= :consultant_contract_id_fk,"
+	            + "proof_consultant_contract_id_fk= :proof_consultant_contract_id_fk,drawing_type_fk= :drawing_type_fk,drawing_title= :drawing_title,approval_authority_fk= :approval_authority_fk,"
+	            + "required_date=:required_date,contractor_drawing_no= :contractor_drawing_no,mrvc_drawing_no= :mrvc_drawing_no,division_drawing_no= :division_drawing_no,"
+	            + "hq_drawing_no= :hq_drawing_no,gfc_released= :gfc_released,remarks=:remarks,modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP,[3pvc]=:threepvc where design_seq_id= :design_seq_id ";
+
+	    
+	    String insertRevisionSql = "INSERT INTO design_revisions (design_id_fk, revision, revision_date, drawing_no, correspondence_letter_no, upload_file, revision_status_fk, [current], remarks) "
+	            + "VALUES (?,?,?,?,?,?,?,?,?)";
+
+	    for (Design obj : designsList) {
+	        
+	        if (!StringUtils.isEmpty(obj.getConsultant_contract_id_fk())) {
+	            String[] splitStr = obj.getConsultant_contract_id_fk().split(" - ");
+	            obj.setConsultant_contract_id_fk(splitStr[0]);
+	        }
+	        if (!StringUtils.isEmpty(obj.getProof_consultant_contract_id_fk())) {
+	            String[] splitStr1 = obj.getProof_consultant_contract_id_fk().split(" - ");
+	            obj.setProof_consultant_contract_id_fk(splitStr1[0]);
+	        }
+
+	        
+	        if (!StringUtils.isEmpty(obj.getDrawing_type_fk())) {
+	            String dtQry = "INSERT INTO drawing_type (drawing_type) SELECT * FROM (SELECT ? AS tmp "
+	                    + "WHERE NOT EXISTS ( SELECT drawing_type FROM drawing_type WHERE drawing_type = ? )) as tmp";
+	            jdbcTemplate.update(dtQry, new Object[]{obj.getDrawing_type_fk(), obj.getDrawing_type_fk()});
+	        }
+
+	        
+	        if (!StringUtils.isEmpty(obj.getPrepared_by_id_fk())) {
+	            String preparedByQry = "INSERT INTO design_prepared_by (prepared_by) SELECT * FROM (SELECT ? AS tmp "
+	                    + "WHERE NOT EXISTS ( SELECT prepared_by FROM design_prepared_by WHERE prepared_by = ?  )) as tmp";
+	            jdbcTemplate.update(preparedByQry, new Object[]{obj.getPrepared_by_id_fk(), obj.getPrepared_by_id_fk()});
+	        }
+
+	        
+	        String seqId = obj.getDesign_seq_id();
+	        int rowsAffected = 0;
+	        if (StringUtils.hasText(seqId)) {
+	            
+	            SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+	            rowsAffected = namedParamJdbcTemplate.update(updateDesignSql, paramSource);
+	            if (rowsAffected == 0) {
+	                
+	                String newSeq = getAutoGeneratedDesignId(obj); 
+	                obj.setDesign_seq_id(newSeq);
+	                paramSource = new BeanPropertySqlParameterSource(obj);
+	                KeyHolder kh = new GeneratedKeyHolder();
+	                rowsAffected = namedParamJdbcTemplate.update(insertDesignSql, paramSource, kh);
+	                if (rowsAffected > 0) {
+	                    
+	                    String generatedKey = String.valueOf(kh.getKey().intValue());
+	                    obj.setDesign_id(getDesignId(obj)); 
+	                }
+	            } else {
+	                
+	                obj.setDesign_id(getDesignId(obj));
+	            }
+	        } else {
+	            
+	            String newSeq = getAutoGeneratedDesignId(obj);
+	            obj.setDesign_seq_id(newSeq);
+	            SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+	            KeyHolder kh = new GeneratedKeyHolder();
+	            rowsAffected = namedParamJdbcTemplate.update(insertDesignSql, paramSource, kh);
+	            if (rowsAffected > 0) {
+	                obj.setDesign_id(getDesignId(obj));
+	            }
+	        }
+
+	        if (rowsAffected > 0) {
+	            processed++;
+
+	            obj.setDesign_id(obj.getDesign_id()); 
+	            if (StringUtils.hasText(obj.getStage_fk())) {
+	                String updateStatusLatest = "UPDATE design_status SET latest = 'No' WHERE design_id_fk = :design_id";
+	                SqlParameterSource psStatus = new BeanPropertySqlParameterSource(obj);
+	                namedParamJdbcTemplate.update(updateStatusLatest, psStatus);
+
+	                try (Connection con = jdbcTemplate.getDataSource().getConnection();
+	                     PreparedStatement stmt = con.prepareStatement("INSERT INTO design_status (design_id_fk, stage_fk, submitted_by, submitted_to, submitted_date, submssion_purpose, latest) VALUES(?,?,?,?,?,?,?)")) {
+
+	                    int k = 1;
+	                    stmt.setString(k++, obj.getDesign_id());
+	                    stmt.setString(k++, isNull(obj.getStage_fk()));
+	                    stmt.setString(k++, isNull(obj.getSubmitted_by()));
+	                    stmt.setString(k++, isNull(obj.getSubmitted_to()));
+	                    stmt.setString(k++, DateParser.parse(isNull(obj.getSubmitted_date())));
+	                    stmt.setString(k++, isNull(obj.getSubmission_purpose()));
+	                    stmt.setString(k++, CommonConstants.YES);
+	                    stmt.addBatch();
+	                    stmt.executeBatch();
+	                } catch (SQLException ex) {
+	                    throw ex;
+	                }
+	            }
+
+	            List<Design> revisions = obj.getDesignRevisions();
+	            if (revisions != null && !revisions.isEmpty()) {
+
+	            	String designIdFk = obj.getDesign_id();
+	                if (!StringUtils.hasText(designIdFk)) {
+	                    designIdFk = getDesignIdByNo(obj.getDesign_seq_id());
+	                    obj.setDesign_id_fk(designIdFk);
+	                }
+	                if (!StringUtils.hasText(designIdFk)) {
+	                    throw new Exception("Design ID not found for seq: " + obj.getDesign_seq_id());
+	                }
+
+	                String deleteRev = "DELETE FROM design_revisions WHERE design_id_fk = :design_id_fk";
+	                SqlParameterSource delParams = new BeanPropertySqlParameterSource(obj);
+	                namedParamJdbcTemplate.update(deleteRev, delParams);
+
+	                final String finalDesignId = designIdFk;
+	                jdbcTemplate.batchUpdate(insertRevisionSql, new BatchPreparedStatementSetter() {
+	                    @Override
+	                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+	                        Design rev = revisions.get(i);
+	                        int kk = 1;
+	                        ps.setString(kk++, finalDesignId);
+	                        ps.setString(kk++, isNull(rev.getRevision()));
+	                        ps.setString(kk++, isNull(rev.getRevision_date()));
+	                        ps.setString(kk++, isNull(rev.getDrawing_no()));
+	                        ps.setString(kk++, isNull(rev.getCorrespondence_letter_no()));
+	                        ps.setString(kk++, isNull(rev.getUpload_file()));
+	                        ps.setString(kk++, isNull(rev.getRevision_status()));
+	                        ps.setString(kk++, isNull(rev.getCurrent()));
+	                        ps.setString(kk++, isNull(rev.getRemarks()));
+	                    }
+
+	                    @Override
+	                    public int getBatchSize() {
+	                        return revisions.size();
+	                    }
+	                });
+	            } 
+	        } 
+	    } 
+
+	    return processed;
+	}
+
+	
+	private String getDesignIdByNo(String designSeqId) {
+	    try {
+	        String qry = "select design_id from design where design_seq_id = ?";
+	        return jdbcTemplate.queryForObject(qry, new Object[]{designSeqId}, String.class);
+	    } catch (Exception e) {
+	        return null;
+	    }
+	}
+	
 	
 	private String getDesignId(Design obj){
 		Design dObj = null;
@@ -2818,18 +2826,7 @@ public class DesignRepository implements IDesignRepo {
 		}
 	}
 	
-	private String getDesignIdByNo(String pmisdrawingno) throws Exception
-	{
-		String design_id=null;
-		try {
-				String qry ="select design_id from design where design_seq_id=?";
-				design_id = (String) jdbcTemplate.queryForObject(qry, new Object[] { pmisdrawingno }, String.class);
-			
-		} catch (Exception e) {
-			throw new Exception(e);
-		}		
-		return design_id;
-	}
+
 
 	@Override
 	public boolean updateDesignStatusBulk(Design obj) throws Exception {

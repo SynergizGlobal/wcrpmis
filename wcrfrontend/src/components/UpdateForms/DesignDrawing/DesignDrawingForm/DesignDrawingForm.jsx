@@ -909,18 +909,20 @@ export default function DesignDrawingForm() {
 													    />
 
 													    {/* Show NEW filename OR EXISTING filename */}
-													    {watch(`revisionDetailsFields.${index}.uploadFiles`)?.[0]?.name ? (
-													      <p>{watch(`revisionDetailsFields.${index}.uploadFiles`)[0].name}</p>
-													    ) : watch(`revisionDetailsFields.${index}.uploadFileNames`) ? (
-													      <p>
-													        <a 
-													          href={`/wrpmis/DESIGN_REVISION_FILES/${watch(`revisionDetails.${index}.uploadFileNames`)}`} 
-													          target="_blank"
-													        >
-													          {watch(`revisionDetailsFields.${index}.uploadFileNames`)}
-													        </a>
-													      </p>
-													    ) : null}
+														{watch(`revisionDetailsFields.${index}.uploadFiles`)?.[0]?.name ? (
+														  <p>{watch(`revisionDetailsFields.${index}.uploadFiles`)[0].name}</p>
+														) : watch(`revisionDetailsFields.${index}.uploadFileNames`) ? (
+														  <p>
+														    <a
+														      href={`/wrpmis/DESIGN_REVISION_FILES/${watch(`revisionDetailsFields.${index}.uploadFileNames`)}`}
+														      target="_blank"
+														      rel="noopener noreferrer"
+														    >
+														      {watch(`revisionDetailsFields.${index}.uploadFileNames`)}
+														    </a>
+														  </p>
+														) : null}
+
 
 													  </div>
 													</td>
