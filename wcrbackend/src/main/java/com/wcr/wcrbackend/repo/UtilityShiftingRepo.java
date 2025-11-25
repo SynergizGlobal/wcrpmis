@@ -1409,189 +1409,244 @@ public class UtilityShiftingRepo implements IUtilityShiftingRepo {
 	}
 	@Override
 	public boolean updateUtilityShifting(UtilityShifting obj) throws Exception {
-		boolean flag = false;
-		
-		int checkCnt=checkUtilityAnyColumnUpdate(obj);
-		try {
-			NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());			 
-			String qry = "UPDATE utility_shifting SET project_id_fk=:project_id_fk, identification=:identification, location_name=:location_name,"
-					+ "reference_number=:reference_number, utility_description=:utility_description, utility_type_fk=:utility_type_fk, utility_category_fk=:utility_category_fk,"
-					+ " owner_name=:owner_name, execution_agency_fk=:execution_agency_fk, contract_id_fk=:contract_id_fk, start_date=:start_date, scope=:scope, completed=:completed,"
-					+ " shifting_status_fk=:shifting_status_fk, shifting_completion_date=:shifting_completion_date, remarks=:remarks, latitude=:latitude,longitude=:longitude,"
-					+ " impacted_contract_id_fk=:impacted_contract_id_fk, requirement_stage_fk=:requirement_stage_fk, planned_completion_date=:planned_completion_date, unit_fk=:unit_fk,"
-					+ "modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP,"
-					+ "hod_user_id_fk=:hod_user_id_fk,custodian=:custodian,executed_by=:executed_by,impacted_element=:impacted_element,affected_structures=:affected_structures,chainage=:chainage "
-					+ " WHERE id = :id";		 
-			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
-			int count = template.update(qry, paramSource);			
-			if(count > 0) {
-				flag = true;
-			}
-			if(flag) {
+	    boolean flag = false;
 
-				String deleteProgressDataQry = "delete from utility_shifting_progress where utility_shifting_id = :utility_shifting_id";
-				
-				UtilityShifting fileObj = new UtilityShifting();
-				fileObj.setUtility_shifting_id(obj.getId());
-				paramSource = new BeanPropertySqlParameterSource(obj);	
-				template.update(deleteProgressDataQry, paramSource);
-								
-				
-				if(!StringUtils.isEmpty(obj.getProgress_dates()) && obj.getProgress_dates().length > 0) {
-					obj.setProgress_dates(CommonMethods.replaceEmptyByNullInSringArray(obj.getProgress_dates()));
-				}
-				if(!StringUtils.isEmpty(obj.getProgress_of_works()) && obj.getProgress_of_works().length > 0) {
-					obj.setProgress_of_works(CommonMethods.replaceEmptyByNullInSringArray(obj.getProgress_of_works()));
-				}
-				
-				String[] progressDates = obj.getProgress_dates();
-				String[] progressOfWorks = obj.getProgress_of_works();					
-				
-				String insertQry = "INSERT INTO utility_shifting_progress"
-						+ "(progress_date, progress_of_work, utility_shifting_id)"
-						+ "VALUES"
-						+ "(?,?,?)";
-				
-				int[] counts = jdbcTemplate.batchUpdate(insertQry,
-			            new BatchPreparedStatementSetter() {			                 
-			                @Override
-			                public void setValues(PreparedStatement ps, int i) throws SQLException {	
-			                	int k = 1;
-								ps.setString(k++, progressDates.length > 0 ?DateParser.parse(progressDates[i]):null);
-								ps.setString(k++, progressOfWorks.length > 0 ?progressOfWorks[i]:null);
-								ps.setString(k++, obj.getUtility_shifting_id());
-			                }
-			                @Override  
-			                public int getBatchSize() {		                	
-			                	int arraySize = 0;
-			    				if(!StringUtils.isEmpty(obj.getProgress_dates()) && obj.getProgress_dates().length > 0) {
-			    					obj.setProgress_dates(CommonMethods.replaceEmptyByNullInSringArray(obj.getProgress_dates()));
-			    					if(arraySize < obj.getProgress_dates().length) {
-			    						arraySize = obj.getProgress_dates().length;
-			    					}
-			    				}
-			    				if(!StringUtils.isEmpty(obj.getProgress_of_works()) && obj.getProgress_of_works().length > 0) {
-			    					obj.setProgress_of_works(CommonMethods.replaceEmptyByNullInSringArray(obj.getProgress_of_works()));
-			    					if(arraySize < obj.getProgress_of_works().length) {
-			    						arraySize = obj.getProgress_of_works().length;
-			    					}
-			    				}
-			                    return arraySize;
-			                }
-			            });	
-				
-				
-				String deleteFilesQry = "delete from utility_shifting_files where utility_shifting_id = :id";
-				
-				UtilityShifting fileObj1 = new UtilityShifting();
-				fileObj1.setUtility_shifting_id(obj.getId());
-				paramSource = new BeanPropertySqlParameterSource(obj);	
-				template.update(deleteFilesQry, paramSource);
-								
-				int arraySize = 0;
-				if(!StringUtils.isEmpty(obj.getAttachment_file_types()) && obj.getAttachment_file_types().length > 0) {
-					obj.setAttachment_file_types(CommonMethods.replaceEmptyByNullInSringArray(obj.getAttachment_file_types()));
-					if(arraySize < obj.getAttachment_file_types().length) {
-						arraySize = obj.getAttachment_file_types().length;
-					}
-				}
-				if(!StringUtils.isEmpty(obj.getAttachmentNames()) && obj.getAttachmentNames().length > 0) {
-					obj.setAttachmentNames(CommonMethods.replaceEmptyByNullInSringArray(obj.getAttachmentNames()));
-					if(arraySize < obj.getAttachmentNames().length) {
-						arraySize = obj.getAttachmentNames().length;
-					}
-				}
-				if (!StringUtils.isEmpty(obj.getUtilityShiftingFiles()) && obj.getUtilityShiftingFiles().size() > 0) {
-					if (arraySize < obj.getUtilityShiftingFiles().size()) {
-						arraySize = obj.getUtilityShiftingFiles().size();
-					}
-				}		
-				
-				String fileQry = "INSERT INTO utility_shifting_files (name,attachment,utility_shifting_id,utility_shifting_file_type_fk)VALUES(:name,:attachment,:utility_shifting_id,:utility_shifting_file_type)";
-				
-				List<MultipartFile> usFiles = obj.getUtilityShiftingFiles();
+	    int checkCnt = checkUtilityAnyColumnUpdate(obj);
+	    try {
+	        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
+	        String qry = "UPDATE utility_shifting SET project_id_fk=:project_id_fk, identification=:identification, location_name=:location_name,"
+	                + "reference_number=:reference_number, utility_description=:utility_description, utility_type_fk=:utility_type_fk, utility_category_fk=:utility_category_fk,"
+	                + " owner_name=:owner_name, execution_agency_fk=:execution_agency_fk, contract_id_fk=:contract_id_fk, start_date=:start_date, scope=:scope, completed=:completed,"
+	                + " shifting_status_fk=:shifting_status_fk, shifting_completion_date=:shifting_completion_date, remarks=:remarks, latitude=:latitude,longitude=:longitude,"
+	                + " impacted_contract_id_fk=:impacted_contract_id_fk, requirement_stage_fk=:requirement_stage_fk, planned_completion_date=:planned_completion_date, unit_fk=:unit_fk,"
+	                + "modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP,"
+	                + "hod_user_id_fk=:hod_user_id_fk,custodian=:custodian,executed_by=:executed_by,impacted_element=:impacted_element,affected_structures=:affected_structures,chainage=:chainage "
+	                + " WHERE id = :id";
 
-				String[] attachmentfiletypes = obj.getAttachment_file_types();
-				String[] attachmentNames = obj.getAttachmentNames();
-				String[] attachmentFileNames = obj.getAttachmentFileNames();
-				
-				for (int i = 0; i < arraySize; i++) {
-					MultipartFile multipartFile = obj.getUtilityShiftingFiles().get(i);
-					if ((null != multipartFile && !multipartFile.isEmpty() && multipartFile.getSize() > 0)
-							|| (!StringUtils.isEmpty(obj.getAttachmentNames()) && obj.getAttachmentNames().length > 0 
-									&& !StringUtils.isEmpty(obj.getAttachmentNames()[i]) && !StringUtils.isEmpty(obj.getAttachmentNames()[i].trim()) )) {
-					
-							String saveDirectory = CommonConstants2.UTILITY_SHIFTING_FILE_SAVING_PATH;
-							String fileName_new = attachmentFileNames.length > 0?attachmentFileNames[i]:null;
-							if (null != multipartFile && !multipartFile.isEmpty()) {
-								String fileName = attachmentNames[i];
-								DateFormat df = new SimpleDateFormat("ddMMYY-HHmm");
-								fileName_new = "UtilityShifting-"+obj.getUtility_shifting_id() +"-"+ df.format(new Date()) +"."+ fileName.split("\\.")[1];
-								FileUploads.singleFileSaving(multipartFile, saveDirectory, fileName_new);
-							}
-							
-							UtilityShifting fileObj11 = new UtilityShifting();
-							fileObj11.setName(attachmentNames[i]);
-							fileObj11.setAttachment(fileName_new);
-							fileObj11.setUtility_shifting_id(obj.getId());
-							fileObj11.setUtility_shifting_file_type(attachmentfiletypes[i]);
-							paramSource = new BeanPropertySqlParameterSource(fileObj11);	
-							template.update(fileQry, paramSource);
-						}
-					}
-					FormHistory formHistory = new FormHistory();
-					formHistory.setCreated_by_user_id_fk(obj.getCreated_by_user_id_fk());
-					formHistory.setUser(obj.getDesignation()+" - "+obj.getUser_name());
-					formHistory.setModule_name_fk("Utility Shifting");
-					formHistory.setForm_name("Update Utility Shifting");
-					formHistory.setForm_action_type("Update");
-					formHistory.setForm_details("Utility Shifting "+obj.getUtility_shifting_id() + " Updated");
-					formHistory.setProject_id_fk(obj.getProject_id_fk());
-					formHistory.setContract_id_fk(obj.getContract_id_fk());
-					
-					boolean history_flag = formsHistoryDao.saveFormHistory(formHistory);
-					
-				
-					/********************************************************************************/
-					
-					if(checkCnt>0)
-					{
-					
-						String messageQry = "INSERT INTO messages (message,user_id_fk,redirect_url,created_date,message_type)"
-								+ "VALUES" + "(:message,:user_id_fk,:redirect_url,CURRENT_TIMESTAMP,:message_type)";	
-						String executives=getUtilityExecutives(obj.getProject_id_fk());
-						String [] SplitStr=executives.split(",");
-							
-						for(int i=0;i<SplitStr.length;i++)
-						{
-							Messages msgObj = new Messages();
-							msgObj.setUser_id_fk(SplitStr[i]);
-							msgObj.setMessage("A new Utility Shifting against "+obj.getProject_id_fk()+" has been updated");
-							msgObj.setRedirect_url("/get-utility-shifting/"+obj.getUtility_shifting_id());
-							msgObj.setMessage_type("Utility Shifting");	
-							BeanPropertySqlParameterSource paramSource1 = new BeanPropertySqlParameterSource(msgObj);
-							template.update(messageQry, paramSource1);						
-						}	
-						
-						Messages msgObj = new Messages();
-						msgObj.setUser_id_fk(obj.getHod_user_id_fk());
-						msgObj.setMessage("A new Utility Shifting against "+obj.getProject_id_fk()+" has been updated");
-						msgObj.setRedirect_url("/get-utility-shifting/"+obj.getUtility_shifting_id());
-						msgObj.setMessage_type("Utility Shifting");	
-						BeanPropertySqlParameterSource paramSource1 = new BeanPropertySqlParameterSource(msgObj);
-						template.update(messageQry, paramSource1);						
-					
-					}
-				
-			}
-			//transactionManager.commit(status);
-		}catch(Exception e){ 
-			e.printStackTrace();
-			//transactionManager.rollback(status);
-			throw new Exception(e);
-		}
-		return flag;
+	        BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+	        int count = template.update(qry, paramSource);
+	        if (count > 0) {
+	            flag = true;
+	        }
+
+	        if (flag) {
+
+	            // ----------------- PROGRESS DETAILS -----------------
+	            String deleteProgressDataQry = "delete from utility_shifting_progress where utility_shifting_id = :utility_shifting_id";
+
+	            UtilityShifting fileObj = new UtilityShifting();
+	            fileObj.setUtility_shifting_id(obj.getId());
+	            paramSource = new BeanPropertySqlParameterSource(obj);
+	            template.update(deleteProgressDataQry, paramSource);
+
+	            if (!StringUtils.isEmpty(obj.getProgress_dates()) && obj.getProgress_dates().length > 0) {
+	                obj.setProgress_dates(CommonMethods.replaceEmptyByNullInSringArray(obj.getProgress_dates()));
+	            }
+	            if (!StringUtils.isEmpty(obj.getProgress_of_works()) && obj.getProgress_of_works().length > 0) {
+	                obj.setProgress_of_works(CommonMethods.replaceEmptyByNullInSringArray(obj.getProgress_of_works()));
+	            }
+
+	            String[] progressDates = obj.getProgress_dates();
+	            String[] progressOfWorks = obj.getProgress_of_works();
+
+	            String insertQry = "INSERT INTO utility_shifting_progress"
+	                    + "(progress_date, progress_of_work, utility_shifting_id)"
+	                    + "VALUES"
+	                    + "(?,?,?)";
+
+	            int[] counts = jdbcTemplate.batchUpdate(insertQry,
+	                    new BatchPreparedStatementSetter() {
+	                        @Override
+	                        public void setValues(PreparedStatement ps, int i) throws SQLException {
+	                            int k = 1;
+	                            ps.setString(k++, progressDates.length > 0 ? DateParser.parse(progressDates[i]) : null);
+	                            ps.setString(k++, progressOfWorks.length > 0 ? progressOfWorks[i] : null);
+	                            ps.setString(k++, obj.getUtility_shifting_id());
+	                        }
+
+	                        @Override
+	                        public int getBatchSize() {
+	                            int arraySize = 0;
+	                            if (!StringUtils.isEmpty(obj.getProgress_dates()) && obj.getProgress_dates().length > 0) {
+	                                obj.setProgress_dates(CommonMethods.replaceEmptyByNullInSringArray(obj.getProgress_dates()));
+	                                if (arraySize < obj.getProgress_dates().length) {
+	                                    arraySize = obj.getProgress_dates().length;
+	                                }
+	                            }
+	                            if (!StringUtils.isEmpty(obj.getProgress_of_works()) && obj.getProgress_of_works().length > 0) {
+	                                obj.setProgress_of_works(CommonMethods.replaceEmptyByNullInSringArray(obj.getProgress_of_works()));
+	                                if (arraySize < obj.getProgress_of_works().length) {
+	                                    arraySize = obj.getProgress_of_works().length;
+	                                }
+	                            }
+	                            return arraySize;
+	                        }
+	                    });
+
+	            // ----------------- FILES: DELETE OLD -----------------
+	            String deleteFilesQry = "delete from utility_shifting_files where utility_shifting_id = :id";
+
+	            UtilityShifting fileObj1 = new UtilityShifting();
+	            fileObj1.setUtility_shifting_id(obj.getId());
+	            paramSource = new BeanPropertySqlParameterSource(obj);
+	            template.update(deleteFilesQry, paramSource);
+
+	            // ----------------- FILES: INSERT NEW (FIXED) -----------------
+	            int arraySize = 0;
+
+	            // Normalize and get max size from attachment_file_types
+	            if (!StringUtils.isEmpty(obj.getAttachment_file_types())
+	                    && obj.getAttachment_file_types().length > 0) {
+	                obj.setAttachment_file_types(
+	                        CommonMethods.replaceEmptyByNullInSringArray(obj.getAttachment_file_types()));
+	                if (arraySize < obj.getAttachment_file_types().length) {
+	                    arraySize = obj.getAttachment_file_types().length;
+	                }
+	            }
+
+	            // Normalize and get max size from attachmentNames
+	            if (!StringUtils.isEmpty(obj.getAttachmentNames())
+	                    && obj.getAttachmentNames().length > 0) {
+	                obj.setAttachmentNames(
+	                        CommonMethods.replaceEmptyByNullInSringArray(obj.getAttachmentNames()));
+	                if (arraySize < obj.getAttachmentNames().length) {
+	                    arraySize = obj.getAttachmentNames().length;
+	                }
+	            }
+
+	            // Get max size from files list
+	            if (!StringUtils.isEmpty(obj.getUtilityShiftingFiles())
+	                    && obj.getUtilityShiftingFiles().size() > 0) {
+	                if (arraySize < obj.getUtilityShiftingFiles().size()) {
+	                    arraySize = obj.getUtilityShiftingFiles().size();
+	                }
+	            }
+
+	            // Also consider attachmentFileNames length
+	            if (!StringUtils.isEmpty(obj.getAttachmentFileNames())
+	                    && obj.getAttachmentFileNames().length > 0) {
+	                if (arraySize < obj.getAttachmentFileNames().length) {
+	                    arraySize = obj.getAttachmentFileNames().length;
+	                }
+	            }
+
+	            String fileQry = "INSERT INTO utility_shifting_files "
+	                    + "(name,attachment,utility_shifting_id,utility_shifting_file_type_fk) "
+	                    + "VALUES(:name,:attachment,:utility_shifting_id,:utility_shifting_file_type)";
+
+	            List<MultipartFile> usFiles = obj.getUtilityShiftingFiles();
+	            String[] attachmentfiletypes = obj.getAttachment_file_types();
+	            String[] attachmentNames = obj.getAttachmentNames();
+	            String[] attachmentFileNames = obj.getAttachmentFileNames();
+
+	            for (int i = 0; i < arraySize; i++) {
+
+	                MultipartFile multipartFile = (usFiles != null && usFiles.size() > i)
+	                        ? usFiles.get(i)
+	                        : null;
+
+	                String type = (attachmentfiletypes != null && attachmentfiletypes.length > i)
+	                        ? attachmentfiletypes[i]
+	                        : null;
+
+	                String name = (attachmentNames != null && attachmentNames.length > i)
+	                        ? attachmentNames[i]
+	                        : null;
+
+	                String fileName_new = (attachmentFileNames != null && attachmentFileNames.length > i)
+	                        ? attachmentFileNames[i]
+	                        : null;
+
+	                // Skip row if nothing meaningful is present
+	                boolean hasFile = multipartFile != null && !multipartFile.isEmpty() && multipartFile.getSize() > 0;
+	                boolean hasName = name != null && !name.trim().isEmpty();
+
+	                if (!hasFile && !hasName) {
+	                    continue;
+	                }
+
+	                String saveDirectory = CommonConstants2.UTILITY_SHIFTING_FILE_SAVING_PATH;
+
+	                if (hasFile) {
+	                    // if name doesn't contain extension, fallback to original file name
+	                    String baseName = (name != null && name.contains("."))
+	                            ? name
+	                            : multipartFile.getOriginalFilename();
+
+	                    DateFormat df = new SimpleDateFormat("ddMMYY-HHmm");
+	                    // safe split
+	                    String ext = "";
+	                    if (baseName != null && baseName.contains(".")) {
+	                        String[] parts = baseName.split("\\.");
+	                        ext = parts[parts.length - 1];
+	                    }
+	                    fileName_new = "UtilityShifting-" + obj.getUtility_shifting_id()
+	                            + "-" + df.format(new Date())
+	                            + (ext.isEmpty() ? "" : "." + ext);
+
+	                    FileUploads.singleFileSaving(multipartFile, saveDirectory, fileName_new);
+	                }
+
+	                UtilityShifting fileObj11 = new UtilityShifting();
+	                fileObj11.setName(name);
+	                fileObj11.setAttachment(fileName_new);
+	                fileObj11.setUtility_shifting_id(obj.getId());
+	                fileObj11.setUtility_shifting_file_type(type);
+
+	                BeanPropertySqlParameterSource paramSourceFiles =
+	                        new BeanPropertySqlParameterSource(fileObj11);
+	                template.update(fileQry, paramSourceFiles);
+	            }
+
+	            // ----------------- FORM HISTORY -----------------
+	            FormHistory formHistory = new FormHistory();
+	            formHistory.setCreated_by_user_id_fk(obj.getCreated_by_user_id_fk());
+	            formHistory.setUser(obj.getDesignation() + " - " + obj.getUser_name());
+	            formHistory.setModule_name_fk("Utility Shifting");
+	            formHistory.setForm_name("Update Utility Shifting");
+	            formHistory.setForm_action_type("Update");
+	            formHistory.setForm_details("Utility Shifting " + obj.getUtility_shifting_id() + " Updated");
+	            formHistory.setProject_id_fk(obj.getProject_id_fk());
+	            formHistory.setContract_id_fk(obj.getContract_id_fk());
+
+	            boolean history_flag = formsHistoryDao.saveFormHistory(formHistory);
+
+	            // ----------------- MESSAGES IF ANY COLUMN CHANGED -----------------
+	            if (checkCnt > 0) {
+
+	                String messageQry = "INSERT INTO messages (message,user_id_fk,redirect_url,created_date,message_type)"
+	                        + "VALUES" + "(:message,:user_id_fk,:redirect_url,CURRENT_TIMESTAMP,:message_type)";
+	                String executives = getUtilityExecutives(obj.getProject_id_fk());
+	                String[] SplitStr = executives.split(",");
+
+	                for (int i = 0; i < SplitStr.length; i++) {
+	                    Messages msgObj = new Messages();
+	                    msgObj.setUser_id_fk(SplitStr[i]);
+	                    msgObj.setMessage("A new Utility Shifting against " + obj.getProject_id_fk() + " has been updated");
+	                    msgObj.setRedirect_url("/get-utility-shifting/" + obj.getUtility_shifting_id());
+	                    msgObj.setMessage_type("Utility Shifting");
+	                    BeanPropertySqlParameterSource paramSource1 = new BeanPropertySqlParameterSource(msgObj);
+	                    template.update(messageQry, paramSource1);
+	                }
+
+	                Messages msgObj = new Messages();
+	                msgObj.setUser_id_fk(obj.getHod_user_id_fk());
+	                msgObj.setMessage("A new Utility Shifting against " + obj.getProject_id_fk() + " has been updated");
+	                msgObj.setRedirect_url("/get-utility-shifting/" + obj.getUtility_shifting_id());
+	                msgObj.setMessage_type("Utility Shifting");
+	                BeanPropertySqlParameterSource paramSource1 = new BeanPropertySqlParameterSource(msgObj);
+	                template.update(messageQry, paramSource1);
+	            }
+	        }
+	        //transactionManager.commit(status);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        //transactionManager.rollback(status);
+	        throw new Exception(e);
+	    }
+	    return flag;
 	}
+
 	private int checkUtilityAnyColumnUpdate(UtilityShifting obj) throws Exception {
 		int checkCnt=0;
 		List<UtilityShifting> objsList = null;

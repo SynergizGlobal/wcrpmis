@@ -323,7 +323,6 @@ export default function UtilityShiftingForm() {
 
     // Prefill select fields using robust helper
     Object.entries(selectFieldMappings).forEach(([field, config]) => {
-      // design may contain both a field and top-level label (legacy)
       const designValue = design[field] ?? design[config.valueKey];
       if (designValue !== undefined && designValue !== null) {
         prefillSelectField(field, config, design);
@@ -349,7 +348,6 @@ export default function UtilityShiftingForm() {
           label: `${projectOption.project_id_fk} - ${projectOption.project_name}`
         });
       } else if (projectId) {
-        // Fallback if no exact match found
         setValue('project_id_fk', {
           value: projectId,
           label: projectName ? `${projectId} - ${projectName}` : String(projectId)
@@ -371,7 +369,6 @@ export default function UtilityShiftingForm() {
 
     simpleFields.forEach(field => {
       if (design[field] !== undefined && design[field] !== null) {
-        // Convert date fields from dd-MM-yyyy to yyyy-MM-dd
         if (field.includes('date') || field === 'identification') {
           setValue(field, convertToHTMLDate(design[field]));
         } else {
@@ -382,13 +379,11 @@ export default function UtilityShiftingForm() {
 
     // Prefill progress details if available
     if (design.utilityShiftingProgressDetailsList && Array.isArray(design.utilityShiftingProgressDetailsList)) {
-      // Clear existing progress details first
       setTimeout(() => {
         progressDetailsFields.forEach((_, index) => {
           removeProgressDetails(index);
         });
         
-        // Add progress details from API response
         design.utilityShiftingProgressDetailsList.forEach((progress) => {
           appendProgressDetails({
             progress_dates: convertToHTMLDate(progress.progress_date),
@@ -401,20 +396,16 @@ export default function UtilityShiftingForm() {
     // Prefill attachments if available (uses exact key utility_shifting_file_type)
     if (design.utilityShiftingFilesList && Array.isArray(design.utilityShiftingFilesList)) {
       setTimeout(() => {
-        // clear current rows
         attachmentsFields.forEach((_, index) => removeAttachments(index));
 
         design.utilityShiftingFilesList.forEach((attachment) => {
-          // the backend gives correct key: utility_shifting_file_type
           const apiFileType = attachment.utility_shifting_file_type;
 
-          // find match from dropdown
           const fileTypeOption = dropdownData.utilityshiftingfiletypeList?.find(
             (item) =>
               item.utility_shifting_file_type?.toString() === apiFileType?.toString()
           );
 
-          // build react-select option
           const selectOption = fileTypeOption
             ? {
                 value: fileTypeOption.utility_shifting_file_type,
@@ -424,16 +415,28 @@ export default function UtilityShiftingForm() {
             ? { value: apiFileType, label: apiFileType }
             : "";
 
-          // append prefilled row
+          // 🔥 include attachmentFileNames (server-stored file name)
           appendAttachments({
             attachment_file_types: selectOption,
             attachmentNames: attachment.name || "",
+            attachmentFileNames: attachment.attachment || attachment.uploaded_file || "",
             utilityShiftingFiles: "", // file already uploaded
           });
         });
       }, 100);
     }
-  }, [dropdownData, setValue, convertToHTMLDate, removeProgressDetails, appendProgressDetails, progressDetailsFields, removeAttachments, appendAttachments, attachmentsFields, prefillSelectField]);
+  }, [
+    dropdownData,
+    setValue,
+    convertToHTMLDate,
+    removeProgressDetails,
+    appendProgressDetails,
+    progressDetailsFields,
+    removeAttachments,
+    appendAttachments,
+    attachmentsFields,
+    prefillSelectField
+  ]);
 
   // Helper function to convert array to Select options
   const convertToOptions = useCallback((dataArray = [], valueKey = "id", labelKey = "name", formatLabel = null) => {
@@ -444,7 +447,7 @@ export default function UtilityShiftingForm() {
     }));
   }, []);
 
-  // Submit Handler
+  // Submit Handler - FIXED FOR UPDATE AND FILE ATTACHMENTS
   const onSubmit = async (data) => {
     try {
       setFormLoading(true);
@@ -499,20 +502,62 @@ export default function UtilityShiftingForm() {
         });
       }
 
-      // Add attachments
+      // 🔥 FIX: Handle attachments properly with all required arrays
       if (data.attachments && Array.isArray(data.attachments)) {
-        data.attachments.forEach((item) => {
+        const attachmentFileTypes = [];
+        const attachmentNames = [];
+        const attachmentFileNames = [];
+
+        data.attachments.forEach((item, index) => {
+          // Collect data for arrays - ensure we always have values
           if (item.attachment_file_types && item.attachment_file_types.value) {
-            formData.append(`attachment_file_types`, item.attachment_file_types.value);
-          }
-          
-          if (item.attachmentNames) {
-            formData.append(`attachmentNames`, item.attachmentNames);
+            attachmentFileTypes.push(item.attachment_file_types.value);
+          } else {
+            attachmentFileTypes.push('');
           }
 
-          // Handle actual file upload - only if it's a new file
+          if (item.attachmentNames) {
+            attachmentNames.push(item.attachmentNames);
+          } else {
+            attachmentNames.push('');
+          }
+
+          // For attachmentFileNames - use actual file name if available, otherwise use attachmentNames
+          if (item.utilityShiftingFiles && item.utilityShiftingFiles.length > 0) {
+            attachmentFileNames.push(item.utilityShiftingFiles[0].name);
+          } else if (item.attachmentNames) {
+            attachmentFileNames.push(item.attachmentNames);
+          } else {
+            attachmentFileNames.push('');
+          }
+
+          // Handle actual file upload
           if (item.utilityShiftingFiles && item.utilityShiftingFiles.length > 0) {
             formData.append(`utilityShiftingFiles`, item.utilityShiftingFiles[0]);
+          }
+        });
+
+        // 🔥 CRITICAL: Append all three arrays that backend expects
+        attachmentFileTypes.forEach((type) => {
+          formData.append('attachment_file_types', type || '');
+        });
+
+        attachmentNames.forEach((name) => {
+          formData.append('attachmentNames', name || '');
+        });
+
+        attachmentFileNames.forEach((fileName) => {
+          formData.append('attachmentFileNames', fileName || '');
+        });
+
+        console.log("📎 Attachment Arrays Sent:", {
+          fileTypes: attachmentFileTypes,
+          names: attachmentNames,
+          fileNames: attachmentFileNames,
+          lengths: {
+            fileTypes: attachmentFileTypes.length,
+            names: attachmentNames.length,
+            fileNames: attachmentFileNames.length
           }
         });
       }
@@ -523,9 +568,18 @@ export default function UtilityShiftingForm() {
         formData.append('work_code', workCode);
       }
 
-      // Add utility_shifting_id for edit mode
-      if (isEdit && editData?.utility_shifting_id) {
+      // 🔥 CRITICAL FIX: Send both IDs for update
+      if (isEdit && editData) {
+        // Send the primary key ID (for WHERE clause in UPDATE)
+        formData.append('id', editData.id);
+        
+        // Send the business ID (for progress, files, messages)
         formData.append('utility_shifting_id', editData.utility_shifting_id);
+        
+        console.log("🆔 Sending IDs for update:", {
+          id: editData.id,
+          utility_shifting_id: editData.utility_shifting_id
+        });
       }
 
       console.log("FormData entries:");
@@ -558,7 +612,6 @@ export default function UtilityShiftingForm() {
       setFormLoading(false);
     }
   };
-
   if (loading) {
     return <div className={styles.container}>Loading form data...</div>;
   }
@@ -963,7 +1016,6 @@ export default function UtilityShiftingForm() {
                               name={`attachments.${index}.attachment_file_types`}
                               control={control}
                               render={({ field }) => {
-                                // Normalize field.value to a proper option object so react-select won't break
                                 const normalizedValue = field.value && typeof field.value === 'object'
                                   ? field.value
                                   : (field.value ? { value: field.value, label: String(field.value) } : null);
@@ -981,7 +1033,6 @@ export default function UtilityShiftingForm() {
                                     isSearchable
                                     isClearable
                                     onChange={(selectedOption) => {
-                                      // always call onChange with an option object
                                       field.onChange(selectedOption);
                                     }}
                                   />
@@ -995,6 +1046,11 @@ export default function UtilityShiftingForm() {
                               {...register(`attachments.${index}.attachmentNames`)}
                               className="form-control"
                               placeholder="File Name"
+                            />
+                            {/* Hidden field for server-side file name (attachmentFileNames) */}
+                            <input
+                              type="hidden"
+                              {...register(`attachments.${index}.attachmentFileNames`)}
                             />
                           </td>
                           <td>
@@ -1051,7 +1107,8 @@ export default function UtilityShiftingForm() {
                     appendAttachments({
                       attachment_file_types: "",
                       attachmentNames: "",
-                      utilityShiftingFiles: ""
+                      utilityShiftingFiles: "",
+                      attachmentFileNames: ""
                     })
                   }
                 >

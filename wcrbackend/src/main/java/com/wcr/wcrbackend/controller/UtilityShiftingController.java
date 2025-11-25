@@ -565,6 +565,8 @@ public class UtilityShiftingController {
 	@PostMapping(value="/updateUtilityShifting")
 	public boolean updateUtilityShifting(@ModelAttribute UtilityShifting obj,HttpSession session) {
 		//ModelAndView model = new ModelAndView();
+		
+	
 		try {
 			//model.setViewName("redirect:/utilityshifting");
 
@@ -588,7 +590,7 @@ public class UtilityShiftingController {
 			obj.setCreated_by_user_id_fk(user_Id);
 			
 			boolean flag = utilityShiftingService.updateUtilityShifting(obj);
-			return flag;
+			return flag;  
 		} catch (Exception e) {
 			//attributes.addFlashAttribute("error", commonError);
 			logger.error("updateUtilityShifting : " + e.getMessage());
@@ -608,7 +610,7 @@ public class UtilityShiftingController {
 		return objsList;
 	}
 	@PostMapping(value = "/export-utility-shifting")
-	public ResponseEntity<?> exportUtilityShifting(HttpServletRequest request, HttpServletResponse response,HttpSession session,@RequestBody UtilityShifting dObj,RedirectAttributes attributes){
+	public ResponseEntity<?> exportUtilityShifting(HttpServletRequest request, HttpServletResponse response,HttpSession session,@ModelAttribute UtilityShifting dObj,RedirectAttributes attributes){
 		//ModelAndView view = new ModelAndView(PageConstants.utilityShifting);
 		List<UtilityShifting> dataList = new ArrayList<UtilityShifting>();
 		
