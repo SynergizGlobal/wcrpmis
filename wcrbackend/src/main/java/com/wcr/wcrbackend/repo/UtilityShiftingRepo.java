@@ -1317,17 +1317,32 @@ public class UtilityShiftingRepo implements IUtilityShiftingRepo {
 	public UtilityShifting getUtilityShifting(UtilityShifting obj) throws Exception{
 		UtilityShifting sobj = null;
 		try {
-			String qry = "SELECT distinct s.*,(select executive_user_id_fk from utility_shifting_executives re where s.project_id_fk = re.project_id_fk and executive_user_id_fk = ?) as executive_user_id_fk,FORMAT(identification,'dd-MM-yyyy') as identification,FORMAT(start_date,'dd-MM-yyyy') as start_date,"
-					+ "FORMAT(planned_completion_date,'dd-MM-yyyy') as planned_completion_date,FORMAT(shifting_completion_date,'dd-MM-yyyy') as shifting_completion_date,"
-					+ "p.project_name,c.contract_short_name,p.project_id as project_id_fk,"
-					+ "s.hod_user_id_fk,custodian,executed_by,impacted_element,affected_structures,chainage "
-					+ "from utility_shifting s "
-					+ "LEFT OUTER JOIN contract c ON s.impacted_contract_id_fk  = c.contract_id "
-					+ "left join utility_shifting_executives us on c.project_id_fk = us.project_id_fk  "
-					+ "LEFT OUTER JOIN project p ON us.project_id_fk  = p.project_id "
-					+ "where utility_shifting_id =? " ;
-			
-			
+			String qry = "SELECT DISTINCT " +
+				    "s.*, " +
+				    "(SELECT executive_user_id_fk " +
+				    " FROM utility_shifting_executives re " +
+				    " WHERE s.project_id_fk = re.project_id_fk " +
+				    " AND executive_user_id_fk = ?) as executive_user_id_fk, " +
+				    "FORMAT(identification, 'dd-MM-yyyy') as identification, " +
+				    "FORMAT(start_date, 'dd-MM-yyyy') as start_date, " +
+				    "FORMAT(planned_completion_date, 'dd-MM-yyyy') as planned_completion_date, " +
+				    "FORMAT(shifting_completion_date, 'dd-MM-yyyy') as shifting_completion_date, " +
+				    "p.project_name, " +
+				    "c.contract_short_name, " +
+				    "p.project_id as project_id_fk, " +
+				    "s.hod_user_id_fk, " +
+				    "custodian, " +
+				    "executed_by, " +
+				    "impacted_element, " +
+				    "affected_structures, " +
+				    "chainage, " +
+				    "u.user_name as user_name " +
+				    "FROM utility_shifting s " +
+				    "LEFT OUTER JOIN contract c ON s.impacted_contract_id_fk = c.contract_id " +
+				    "LEFT OUTER JOIN project p ON s.project_id_fk = p.project_id " +
+				    "LEFT OUTER JOIN [USER] u ON u.user_id = s.hod_user_id_fk " +
+				    "LEFT OUTER JOIN utility_shifting_executives us ON c.project_id_fk = us.project_id_fk " +
+				    "WHERE utility_shifting_id = ?";
 			
 			int arrSize = 2;
 			

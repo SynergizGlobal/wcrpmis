@@ -1,5 +1,4 @@
-// UtilityShiftingForm.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
@@ -7,15 +6,15 @@ import api from "../../../../api/axiosInstance";
 import styles from './UtilityShiftingForm.module.css';
 
 import { API_BASE_URL } from "../../../../config";
-import { MdAttachment, MdOutlineDeleteSweep } from 'react-icons/md';
-import { BiListPlus } from 'react-icons/bi';
-import { RiAttachment2 } from 'react-icons/ri';
+import { MdOutlineDeleteSweep } from "react-icons/md";
+import { BiListPlus } from "react-icons/bi";
+import { RiAttachment2 } from "react-icons/ri";
 
 export default function UtilityShiftingForm() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const isEdit = Boolean(state?.design);
-  const utilityShiftingId = state?.design?.utility_shifting_id;
+  const [isPrefilled, setIsPrefilled] = useState(false);
 
   const [dropdownData, setDropdownData] = useState({
     projectsList: [],
@@ -36,7 +35,7 @@ export default function UtilityShiftingForm() {
 
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
-  const [prefillData, setPrefillData] = useState(null);
+  const [editData, setEditData] = useState(null);
 
   const {
     register,
@@ -44,7 +43,6 @@ export default function UtilityShiftingForm() {
     handleSubmit,
     setValue,
     watch,
-    reset,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -88,6 +86,16 @@ export default function UtilityShiftingForm() {
     name: "attachments",
   });
 
+  // Helper function to convert dd-MM-yyyy to yyyy-MM-dd
+  const convertToHTMLDate = useCallback((dateString) => {
+    if (!dateString) return "";
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`; // yyyy-MM-dd
+    }
+    return dateString;
+  }, []);
+
   // Fetch dropdown data
   useEffect(() => {
     const fetchDropdownData = async () => {
@@ -109,160 +117,332 @@ export default function UtilityShiftingForm() {
     fetchDropdownData();
   }, []);
 
-  // Fetch prefill data if editing
+  // Fetch edit data when in edit mode
   useEffect(() => {
-    const fetchPrefillData = async () => {
-      if (isEdit && utilityShiftingId) {
+    const fetchEditData = async () => {
+      if (isEdit && state?.design?.utility_shifting_id && !editData) {
         try {
           setLoading(true);
           const response = await api.post(
             `${API_BASE_URL}/utility-shifting/ajax/form/get-utility-shifting/get-utility-shifting`,
             {
-              utility_shifting_id: utilityShiftingId
+              utility_shifting_id: state.design.utility_shifting_id
             }
           );
-          setPrefillData(response.data);
+          setEditData(response.data);
+          console.log("Edit data structure:", response.data);
         } catch (err) {
-          console.error("❌ Error fetching prefill data:", err);
-          alert("Error loading utility shifting data");
+          console.error("❌ Error fetching edit data:", err);
+          alert("Error loading edit data");
         } finally {
           setLoading(false);
         }
       }
     };
 
-    if (isEdit) {
-      fetchPrefillData();
-    }
-  }, [isEdit, utilityShiftingId]);
+    fetchEditData();
+  }, [isEdit, state, editData]);
 
-  // Prefill form when both dropdown data and prefill data are available
+  // Prefill form with edit data - ONLY ONCE when both editData and dropdownData are available
   useEffect(() => {
-    if (isEdit && prefillData && Object.keys(dropdownData).length > 0) {
-      prefillForm();
+    if (isEdit && editData && Object.keys(dropdownData).length > 0 && !isPrefilled) {
+      prefillFormData(editData);
+      setIsPrefilled(true);
     }
-  }, [isEdit, prefillData, dropdownData]);
+  }, [editData, dropdownData, isEdit, isPrefilled]);
 
-  const prefillForm = () => {
-    if (!prefillData) return;
+  // Improved helper to prefilling select fields
+  const prefillSelectField = useCallback((fieldName, config, design) => {
+    if (!config || !config.data || design === undefined || design === null) return;
 
-    const design = prefillData;
+    const { data, valueKey, labelKey, formatLabel, getDesignLabel } = config;
+
+    console.log(`🔍 Prefilling ${fieldName}:`, { 
+      designValue: design[fieldName], 
+      valueKeyValue: design[valueKey],
+      availableOptions: data 
+    });
+
+    // Get design value - try multiple possible field names
+    let designValue = design[fieldName] ?? design[valueKey];
     
-    // Format date from dd-MM-yyyy to yyyy-MM-dd
-    const formatDateForInput = (dateString) => {
-      if (!dateString) return '';
-      const parts = dateString.split('-');
-      if (parts.length === 3) {
-        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    // Special handling for project_id_fk - check common alternative field names
+    if (fieldName === 'project_id_fk' && !designValue) {
+      designValue = design.project_id || design.projectId || design.project_id_fk;
+    }
+
+    if (designValue === undefined || designValue === null) {
+      console.log(`❌ No value found for ${fieldName}`);
+      return;
+    }
+
+    console.log(`🎯 Looking for match for ${fieldName} with value:`, designValue);
+
+    // Find option by matching valueKey
+    const option = data?.find(item => {
+      const itemVal = item?.[valueKey];
+      try {
+        if (itemVal !== undefined && designValue !== undefined && 
+            itemVal?.toString() === designValue?.toString()) {
+          console.log(`✅ Found match for ${fieldName}:`, item);
+          return true;
+        }
+      } catch (e) {
+        console.log(`❌ Error comparing values for ${fieldName}:`, e);
       }
-      return dateString;
+      return false;
+    });
+
+    if (option) {
+      const labelCandidate = getDesignLabel ? getDesignLabel(design) 
+                            : (formatLabel ? formatLabel(option) 
+                            : (option[labelKey] ?? String(option[valueKey])));
+
+      // Ensure label is a primitive string/number
+      const label = (labelCandidate && typeof labelCandidate === 'object')
+        ? String(labelCandidate[labelKey] ?? labelCandidate.value ?? '')
+        : String(labelCandidate ?? '');
+
+      const value = option[valueKey];
+      setValue(fieldName, { value, label });
+      console.log(`✅ Successfully prefilled ${fieldName}:`, { value, label });
+    } else {
+      console.warn(`❌ No option found for ${fieldName} with value:`, designValue);
+      console.log('Available options:', data);
+      
+      // Fallback: create option from design data
+      let fallbackLabel = null;
+      if (getDesignLabel) {
+        try { fallbackLabel = getDesignLabel(design); } catch (e) { fallbackLabel = null; }
+      }
+      if (!fallbackLabel && labelKey && design && design[labelKey]) fallbackLabel = design[labelKey];
+      if (!fallbackLabel && designValue !== undefined) fallbackLabel = designValue;
+
+      const safeLabel = (fallbackLabel && typeof fallbackLabel === 'object')
+        ? String(fallbackLabel[labelKey] ?? fallbackLabel.value ?? '')
+        : String(fallbackLabel ?? '');
+
+      const safeValue = (designValue !== undefined && typeof designValue !== 'object') 
+        ? designValue 
+        : (design && design[valueKey] ? design[valueKey] : '');
+
+      if (safeValue && safeLabel) {
+        setValue(fieldName, {
+          value: safeValue,
+          label: safeLabel
+        });
+        console.log(`🔄 Used fallback for ${fieldName}:`, { value: safeValue, label: safeLabel });
+      }
+    }
+  }, [setValue]);
+
+  // Prefill form data function
+  const prefillFormData = useCallback((design) => {
+    if (!design) return;
+
+    console.log("Prefilling form with data:", design);
+    console.log("Available HOD options:", dropdownData.utilityHODList);
+
+    // Define select field mappings for proper prefill
+    const selectFieldMappings = {
+      'project_id_fk': { 
+        data: dropdownData.projectsList, 
+        valueKey: 'project_id_fk', 
+        labelKey: 'project_name',
+        formatLabel: (item) => `${item.project_id_fk} - ${item.project_name}`,
+        getDesignLabel: (d) => {
+          // Try to get project name from various possible fields
+          const projectName = d.project_name || d.projectName || d.project_name_fk;
+          const projectId = d.project_id_fk || d.project_id || d.projectId;
+          
+          if (projectName && projectId) {
+            return `${projectId} - ${projectName}`;
+          } else if (projectName) {
+            return projectName;
+          } else if (projectId) {
+            return String(projectId);
+          }
+          return '';
+        }
+      },
+      'execution_agency_fk': { 
+        data: dropdownData.utilityExecutionAgencyList, 
+        valueKey: 'execution_agency_fk', 
+        labelKey: 'execution_agency_fk' 
+      },
+      'hod_user_id_fk': { 
+        data: dropdownData.utilityHODList || [], 
+        valueKey: 'hod_user_id_fk', 
+        labelKey: 'user_name',
+        getDesignLabel: (d) => d.user_name || d.hod_user_id_fk
+      },
+      'utility_type_fk': { 
+        data: dropdownData.utilityTypeList, 
+        valueKey: 'utility_type_fk', 
+        labelKey: 'utility_type_fk' 
+      },
+      'impacted_contract_id_fk': { 
+        data: dropdownData.impactedContractsList, 
+        valueKey: 'contract_id_fk', 
+        labelKey: 'contract_short_name',
+        formatLabel: (item) => `${item.contract_id_fk} - ${item.contract_short_name}`
+      },
+      'requirement_stage_fk': { 
+        data: dropdownData.reqStageList, 
+        valueKey: 'requirement_stage_fk', 
+        labelKey: 'requirement_stage_name' 
+      },
+      'unit_fk': { 
+        data: dropdownData.unitList, 
+        valueKey: 'unit_fk', 
+        labelKey: 'unit_fk' 
+      },
+      'shifting_status_fk': { 
+        data: dropdownData.statusList, 
+        valueKey: 'shifting_status_fk', 
+        labelKey: 'shifting_status_fk' 
+      },
+      'impacted_element': { 
+        data: dropdownData.impactedElementList, 
+        valueKey: 'impacted_element', 
+        labelKey: 'impacted_element'
+      }
     };
 
-    // Reset form first
-    reset();
+    // Debug project data specifically
+    console.log("🔍 PROJECT DEBUG:", {
+      designProjectIdFk: design.project_id_fk,
+      designProjectId: design.project_id,
+      designProjectName: design.project_name,
+      designAllKeys: Object.keys(design),
+      availableProjects: dropdownData.projectsList?.map(p => ({ 
+        id: p.project_id_fk, 
+        name: p.project_name 
+      }))
+    });
 
-    // Prefill select fields
-    const selectFields = {
-      project_id_fk: { data: dropdownData.projectsList, valueKey: 'project_id_fk', labelKey: 'project_id_fk' },
-      execution_agency_fk: { data: dropdownData.utilityExecutionAgencyList, valueKey: 'execution_agency_fk', labelKey: 'execution_agency_fk' },
-      hod_user_id_fk: { data: dropdownData.utilityHODList, valueKey: 'hod_user_id_fk', labelKey: 'user_name' },
-      utility_type_fk: { data: dropdownData.utilityTypeList, valueKey: 'utility_type_fk', labelKey: 'utility_type_fk' },
-      impacted_contract_id_fk: { data: dropdownData.impactedContractsList, valueKey: 'contract_id_fk', labelKey: 'contract_short_name' },
-      requirement_stage_fk: { data: dropdownData.reqStageList, valueKey: 'requirement_stage_fk', labelKey: 'requirement_stage_name' },
-      unit_fk: { data: dropdownData.unitList, valueKey: 'unit_fk', labelKey: 'unit_fk' },
-      shifting_status_fk: { data: dropdownData.statusList, valueKey: 'shifting_status_fk', labelKey: 'shifting_status_fk' },
-      impacted_element: { data: dropdownData.impactedElementList, valueKey: 'impacted_element', labelKey: 'impacted_element' }
-    };
+    // Prefill select fields using robust helper
+    Object.entries(selectFieldMappings).forEach(([field, config]) => {
+      // design may contain both a field and top-level label (legacy)
+      const designValue = design[field] ?? design[config.valueKey];
+      if (designValue !== undefined && designValue !== null) {
+        prefillSelectField(field, config, design);
+      }
+    });
 
-    Object.entries(selectFields).forEach(([field, config]) => {
-      if (design[field] && config.data) {
-        const option = config.data.find(item => 
-          String(item[config.valueKey]) === String(design[field])
-        );
-        if (option) {
-          setValue(field, {
-            value: option[config.valueKey],
-            label: option[config.labelKey] || String(option[config.valueKey])
-          });
+    // Manual project prefill as a fallback
+    if (design.project_id_fk || design.project_id) {
+      const projectId = design.project_id_fk || design.project_id;
+      const projectName = design.project_name || '';
+      
+      const projectOption = dropdownData.projectsList?.find(
+        project => project.project_id_fk?.toString() === projectId?.toString()
+      );
+      
+      if (projectOption) {
+        setValue('project_id_fk', {
+          value: projectOption.project_id_fk,
+          label: `${projectOption.project_id_fk} - ${projectOption.project_name}`
+        });
+        console.log("✅ Manually prefilled project:", {
+          value: projectOption.project_id_fk,
+          label: `${projectOption.project_id_fk} - ${projectOption.project_name}`
+        });
+      } else if (projectId) {
+        // Fallback if no exact match found
+        setValue('project_id_fk', {
+          value: projectId,
+          label: projectName ? `${projectId} - ${projectName}` : String(projectId)
+        });
+        console.log("🔄 Used project fallback:", {
+          value: projectId,
+          label: projectName ? `${projectId} - ${projectName}` : String(projectId)
+        });
+      }
+    }
+
+    // Prefill simple fields with date conversion
+    const simpleFields = [
+      'utility_description', 'location_name', 'custodian', 'identification',
+      'reference_number', 'executed_by', 'chainage', 'latitude', 'longitude',
+      'affected_structures', 'planned_completion_date', 'scope', 'completed',
+      'start_date', 'shifting_completion_date', 'remarks'
+    ];
+
+    simpleFields.forEach(field => {
+      if (design[field] !== undefined && design[field] !== null) {
+        // Convert date fields from dd-MM-yyyy to yyyy-MM-dd
+        if (field.includes('date') || field === 'identification') {
+          setValue(field, convertToHTMLDate(design[field]));
+        } else {
+          setValue(field, design[field]);
         }
       }
     });
 
-    // Prefill simple fields
-    const simpleFields = [
-      { field: 'utility_description', value: design.utility_description },
-      { field: 'location_name', value: design.location_name },
-      { field: 'custodian', value: design.custodian },
-      { field: 'identification', value: formatDateForInput(design.identification) },
-      { field: 'reference_number', value: design.reference_number },
-      { field: 'executed_by', value: design.executed_by },
-      { field: 'chainage', value: design.chainage },
-      { field: 'latitude', value: design.latitude },
-      { field: 'longitude', value: design.longitude },
-      { field: 'affected_structures', value: design.affected_structures },
-      { field: 'planned_completion_date', value: formatDateForInput(design.planned_completion_date) },
-      { field: 'scope', value: design.scope },
-      { field: 'completed', value: design.completed },
-      { field: 'start_date', value: formatDateForInput(design.start_date) },
-      { field: 'shifting_completion_date', value: formatDateForInput(design.shifting_completion_date) },
-      { field: 'remarks', value: design.remarks }
-    ];
-
-    simpleFields.forEach(({ field, value }) => {
-      if (value !== undefined && value !== null) {
-        setValue(field, value);
-      }
-    });
-
-    // Prefill progress details
-    if (design.utilityShiftingProgressDetailsList && design.utilityShiftingProgressDetailsList.length > 0) {
-      // Clear any existing progress details
-      progressDetailsFields.forEach((_, index) => {
-        removeProgressDetails(index);
-      });
-
-      // Add progress details
-      design.utilityShiftingProgressDetailsList.forEach((progress, index) => {
-        appendProgressDetails({
-          progress_dates: formatDateForInput(progress.progress_date),
-          progress_of_works: progress.progress_of_work
+    // Prefill progress details if available
+    if (design.utilityShiftingProgressDetailsList && Array.isArray(design.utilityShiftingProgressDetailsList)) {
+      // Clear existing progress details first
+      setTimeout(() => {
+        progressDetailsFields.forEach((_, index) => {
+          removeProgressDetails(index);
         });
-      });
+        
+        // Add progress details from API response
+        design.utilityShiftingProgressDetailsList.forEach((progress) => {
+          appendProgressDetails({
+            progress_dates: convertToHTMLDate(progress.progress_date),
+            progress_of_works: progress.progress_of_work
+          });
+        });
+      }, 100);
     }
 
-    // Prefill attachments
-    if (design.utilityShiftingFilesList && design.utilityShiftingFilesList.length > 0) {
-      // Clear any existing attachments
-      attachmentsFields.forEach((_, index) => {
-        removeAttachments(index);
-      });
+    // Prefill attachments if available (uses exact key utility_shifting_file_type)
+    if (design.utilityShiftingFilesList && Array.isArray(design.utilityShiftingFilesList)) {
+      setTimeout(() => {
+        // clear current rows
+        attachmentsFields.forEach((_, index) => removeAttachments(index));
 
-      // Add attachments
-      design.utilityShiftingFilesList.forEach((attachment) => {
-        const fileTypeOption = dropdownData.utilityshiftingfiletypeList?.find(
-          item => item.utility_shifting_file_type === attachment.utility_shifting_file_type
-        );
+        design.utilityShiftingFilesList.forEach((attachment) => {
+          // the backend gives correct key: utility_shifting_file_type
+          const apiFileType = attachment.utility_shifting_file_type;
 
-        appendAttachments({
-          attachment_file_types: fileTypeOption ? {
-            value: fileTypeOption.utility_shifting_file_type,
-            label: fileTypeOption.utility_shifting_file_type
-          } : null,
-          attachmentNames: attachment.name,
-          utilityShiftingFiles: null // Files can't be pre-filled for security reasons
+          // find match from dropdown
+          const fileTypeOption = dropdownData.utilityshiftingfiletypeList?.find(
+            (item) =>
+              item.utility_shifting_file_type?.toString() === apiFileType?.toString()
+          );
+
+          // build react-select option
+          const selectOption = fileTypeOption
+            ? {
+                value: fileTypeOption.utility_shifting_file_type,
+                label: fileTypeOption.utility_shifting_file_type,
+              }
+            : apiFileType
+            ? { value: apiFileType, label: apiFileType }
+            : "";
+
+          // append prefilled row
+          appendAttachments({
+            attachment_file_types: selectOption,
+            attachmentNames: attachment.name || "",
+            utilityShiftingFiles: "", // file already uploaded
+          });
         });
-      });
+      }, 100);
     }
-  };
+  }, [dropdownData, setValue, convertToHTMLDate, removeProgressDetails, appendProgressDetails, progressDetailsFields, removeAttachments, appendAttachments, attachmentsFields, prefillSelectField]);
 
   // Helper function to convert array to Select options
-  const convertToOptions = (dataArray = [], valueKey = "id", labelKey = "name", formatLabel = null) => {
+  const convertToOptions = useCallback((dataArray = [], valueKey = "id", labelKey = "name", formatLabel = null) => {
     if (!Array.isArray(dataArray)) return [];
     return dataArray.map(item => ({
       value: item[valueKey],
       label: formatLabel ? formatLabel(item) : `${item[valueKey]} - ${item[labelKey] || item.project_name || item.contract_name || item.utility_description || String(item[valueKey])}`
     }));
-  };
+  }, []);
 
   // Submit Handler
   const onSubmit = async (data) => {
@@ -300,39 +480,39 @@ export default function UtilityShiftingForm() {
       };
 
       Object.entries(selectFields).forEach(([key, value]) => {
-        if (value && value.value) {
+        if (value && value.value !== undefined) {
           formData.append(key, value.value);
-        } else if (value) {
+        } else if (value !== undefined && value !== null) {
           formData.append(key, value);
         }
       });
 
-      // Add progress details
+      // Add progress details as arrays
       if (data.progressDetails && Array.isArray(data.progressDetails)) {
-        data.progressDetails.forEach((item, index) => {
+        data.progressDetails.forEach((item) => {
           if (item.progress_dates) {
-            formData.append(`progressDetails[${index}].progress_dates`, item.progress_dates);
+            formData.append(`progress_dates`, item.progress_dates);
           }
           if (item.progress_of_works) {
-            formData.append(`progressDetails[${index}].progress_of_works`, item.progress_of_works);
+            formData.append(`progress_of_works`, item.progress_of_works);
           }
         });
       }
 
       // Add attachments
       if (data.attachments && Array.isArray(data.attachments)) {
-        data.attachments.forEach((item, index) => {
+        data.attachments.forEach((item) => {
           if (item.attachment_file_types && item.attachment_file_types.value) {
-            formData.append(`attachments[${index}].attachment_file_types`, item.attachment_file_types.value);
+            formData.append(`attachment_file_types`, item.attachment_file_types.value);
           }
           
           if (item.attachmentNames) {
-            formData.append(`attachments[${index}].attachmentNames`, item.attachmentNames);
+            formData.append(`attachmentNames`, item.attachmentNames);
           }
 
-          // Handle actual file upload
+          // Handle actual file upload - only if it's a new file
           if (item.utilityShiftingFiles && item.utilityShiftingFiles.length > 0) {
-            formData.append(`attachments[${index}].utilityShiftingFiles`, item.utilityShiftingFiles[0]);
+            formData.append(`utilityShiftingFiles`, item.utilityShiftingFiles[0]);
           }
         });
       }
@@ -344,8 +524,8 @@ export default function UtilityShiftingForm() {
       }
 
       // Add utility_shifting_id for edit mode
-      if (isEdit && prefillData?.utility_shifting_id) {
-        formData.append('utility_shifting_id', prefillData.utility_shifting_id);
+      if (isEdit && editData?.utility_shifting_id) {
+        formData.append('utility_shifting_id', editData.utility_shifting_id);
       }
 
       console.log("FormData entries:");
@@ -353,7 +533,6 @@ export default function UtilityShiftingForm() {
         console.log(pair[0] + ': ', pair[1]);
       }
 
-      // CORRECTED ENDPOINT - Added /utility-shifting prefix for update
       const endpoint = isEdit 
         ? `${API_BASE_URL}/utility-shifting/updateUtilityShifting`
         : `${API_BASE_URL}/utility-shifting/addUtilityShifting`;
@@ -394,42 +573,29 @@ export default function UtilityShiftingForm() {
         </div>
         <div className="innerPage">
           <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
-            
             {/* Row 1 */}
             <div className="form-row">
               <div className="form-field">
                 <label>Project</label>
-                {isEdit ? (
-                  // Read-only display in edit mode
-                  <input
-                    type="text"
-                    value={watch("project_id_fk")?.label || ""}
-                    readOnly
-                    className={styles.readOnlyInput}
-                    placeholder="Project"
-                  />
-                ) : (
-                  // Editable dropdown in add mode
-                  <Controller
-                    name="project_id_fk"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        {...field}
-                        options={convertToOptions(
-                          dropdownData.projectsList, 
-                          "project_id_fk", 
-                          "project_name",
-                          (item) => `${item.project_id_fk} - ${item.project_name}`
-                        )}
-                        classNamePrefix="react-select"
-                        placeholder="Select Project"
-                        isSearchable
-                        isLoading={loading}
-                      />
-                    )}
-                  />
-                )}
+                <Controller
+                  name="project_id_fk"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      options={convertToOptions(
+                        dropdownData.projectsList, 
+                        "project_id_fk", 
+                        "project_name",
+                        (item) => `${item.project_id_fk} - ${item.project_name}`
+                      )}
+                      classNamePrefix="react-select"
+                      placeholder="Select Project"
+                      isSearchable
+                      isLoading={loading}
+                    />
+                  )}
+                />
               </div>
 
               <div className="form-field">
@@ -466,7 +632,7 @@ export default function UtilityShiftingForm() {
                       {...field}
                       options={dropdownData.utilityHODList?.map(item => ({
                         value: item.hod_user_id_fk,
-                        label: item.user_name
+                        label: item.user_name || `User ${item.hod_user_id_fk}`
                       })) || []}
                       classNamePrefix="react-select"
                       placeholder="Select HOD"
@@ -699,7 +865,7 @@ export default function UtilityShiftingForm() {
               <div className="form-field">
                 <label>Completion Date</label>
                 <input {...register("shifting_completion_date")} type="date" placeholder="Select Completion Date" />
-              </div>
+              </div>    
             </div>
 
             {/* Progress Details Section */}
@@ -715,38 +881,46 @@ export default function UtilityShiftingForm() {
                     </tr>
                   </thead>
                   <tbody>
-                    {progressDetailsFields.map((item, index) => (
-                      <tr key={item.id}>
-                        <td>
-                          <input
-                            type="date"
-                            {...register(`progressDetails.${index}.progress_dates`)}
-                            className="form-control"
-                          />
-                        </td>
-                        <td>
-                          <textarea
-                            {...register(`progressDetails.${index}.progress_of_works`)}
-                            style={{ width: "100%" }}
-                            maxLength={1000}
-                            rows="3"
-                            placeholder="Enter progress details"
-                          ></textarea>
-                          <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
-                            {watch(`progressDetails.${index}.progress_of_works`)?.length || 0}/1000
-                          </div>
-                        </td>
-                        <td className="text-center d-flex align-center justify-content-center">
-                          <button
-                            type="button"
-                            className="btn btn-outline-danger"
-                            onClick={() => removeProgressDetails(index)}
-                          >
-                            <MdOutlineDeleteSweep size="26" />
-                          </button>
+                    {progressDetailsFields.length > 0 ? (
+                      progressDetailsFields.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>
+                            <input
+                              type="date"
+                              {...register(`progressDetails.${index}.progress_dates`)}
+                              className="form-control"
+                            />
+                          </td>
+                          <td>
+                            <textarea
+                              {...register(`progressDetails.${index}.progress_of_works`)}
+                              style={{ width: "100%" }}
+                              maxLength={1000}
+                              rows="3"
+                              placeholder="Enter progress details"
+                            ></textarea>
+                            <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                              {watch(`progressDetails.${index}.progress_of_works`)?.length || 0}/1000
+                            </div>
+                          </td>
+                          <td className="text-center d-flex align-center justify-content-center">
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger"
+                              onClick={() => removeProgressDetails(index)}
+                            >
+                              <MdOutlineDeleteSweep size="26" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="3" className="text-center text-muted">
+                          No progress details added yet.
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -755,7 +929,12 @@ export default function UtilityShiftingForm() {
                 <button
                   type="button"
                   className="btn-2 btn-green"
-                  onClick={() => appendProgressDetails({ progress_dates: "", progress_of_works: "" })}
+                  onClick={() =>
+                    appendProgressDetails({
+                      progress_dates: "",
+                      progress_of_works: "",
+                    })
+                  }
                 >
                   <BiListPlus size="24" />
                 </button>
@@ -776,65 +955,90 @@ export default function UtilityShiftingForm() {
                     </tr>
                   </thead>
                   <tbody>
-                    {attachmentsFields.map((item, index) => (
-                      <tr key={item.id}>
-                        <td>
-                          <Controller
-                            name={`attachments.${index}.attachment_file_types`}
-                            control={control}
-                            render={({ field }) => (
-                              <Select
-                                {...field}
-                                options={dropdownData.utilityshiftingfiletypeList?.map(item => ({
-                                  value: item.utility_shifting_file_type,
-                                  label: item.utility_shifting_file_type
-                                })) || []}
-                                classNamePrefix="react-select"
-                                placeholder="Select File Type"
-                                isSearchable
-                                isClearable
-                              />
-                            )}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            {...register(`attachments.${index}.attachmentNames`)}
-                            className="form-control"
-                            placeholder="File Name"
-                          />
-                        </td>
-                        <td>
-                          <div className={styles["file-upload-wrapper"]}>
-                            <label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
-                              <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
-                              Upload File
-                            </label>
-                            <input
-                              id={`file-${index}`}
-                              type="file"
-                              {...register(`attachments.${index}.utilityShiftingFiles`)}
-                              className={styles["file-upload-input"]}
+                    {attachmentsFields.length > 0 ? (
+                      attachmentsFields.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>
+                            <Controller
+                              name={`attachments.${index}.attachment_file_types`}
+                              control={control}
+                              render={({ field }) => {
+                                // Normalize field.value to a proper option object so react-select won't break
+                                const normalizedValue = field.value && typeof field.value === 'object'
+                                  ? field.value
+                                  : (field.value ? { value: field.value, label: String(field.value) } : null);
+
+                                return (
+                                  <Select
+                                    {...field}
+                                    value={normalizedValue}
+                                    options={dropdownData.utilityshiftingfiletypeList?.map(item => ({
+                                      value: item.utility_shifting_file_type,
+                                      label: item.utility_shifting_file_type
+                                    })) || []}
+                                    classNamePrefix="react-select"
+                                    placeholder="Select File Type"
+                                    isSearchable
+                                    isClearable
+                                    onChange={(selectedOption) => {
+                                      // always call onChange with an option object
+                                      field.onChange(selectedOption);
+                                    }}
+                                  />
+                                );
+                              }}
                             />
-                            {watch(`attachments.${index}.utilityShiftingFiles`)?.[0]?.name && (
-                              <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569" }}>
-                                Selected: {watch(`attachments.${index}.utilityShiftingFiles`)[0].name}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="text-center d-flex align-center justify-content-center">
-                          <button
-                            type="button"
-                            className="btn btn-outline-danger"
-                            onClick={() => removeAttachments(index)}
-                          >
-                            <MdOutlineDeleteSweep size="26" />
-                          </button>
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              {...register(`attachments.${index}.attachmentNames`)}
+                              className="form-control"
+                              placeholder="File Name"
+                            />
+                          </td>
+                          <td>
+                            <div className={styles["file-upload-wrapper"]}>
+                              <label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
+                                <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
+                                Upload File
+                              </label>
+                              <input
+                                id={`file-${index}`}
+                                type="file"
+                                {...register(`attachments.${index}.utilityShiftingFiles`)}
+                                className={styles["file-upload-input"]}
+                              />
+                              {watch(`attachments.${index}.utilityShiftingFiles`)?.[0]?.name && (
+                                <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569" }}>
+                                  Selected: {watch(`attachments.${index}.utilityShiftingFiles`)[0].name}
+                                </p>
+                              )}
+                              {isEdit && !watch(`attachments.${index}.utilityShiftingFiles`)?.[0] && editData?.utilityShiftingFilesList?.[index] && (
+                                <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569", fontStyle: "italic" }}>
+                                  File already uploaded: {editData.utilityShiftingFilesList[index].attachment || editData.utilityShiftingFilesList[index].uploaded_file || ''}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="text-center d-flex align-center justify-content-center">
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger"
+                              onClick={() => removeAttachments(index)}
+                            >
+                              <MdOutlineDeleteSweep size="26" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="text-center text-muted">
+                          No attachments added yet.
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -843,7 +1047,13 @@ export default function UtilityShiftingForm() {
                 <button
                   type="button"
                   className="btn-2 btn-green"
-                  onClick={() => appendAttachments({ attachment_file_types: "", attachmentNames: "", utilityShiftingFiles: "" })}
+                  onClick={() =>
+                    appendAttachments({
+                      attachment_file_types: "",
+                      attachmentNames: "",
+                      utilityShiftingFiles: ""
+                    })
+                  }
                 >
                   <BiListPlus size="24" />
                 </button>
