@@ -61,10 +61,23 @@ export default function UtilityShifting() {
     setPagination(prev => ({ ...prev, pageNumber: 1 }));
   }, [filters.location, filters.category, filters.utilityType, filters.status]);
 
-  // Fetch data when pagination, search, or filters change
+  // Fetch data when pagination or filters change
   useEffect(() => {
     fetchUtilityShiftingList();
-  }, [pagination.pageNumber, pagination.pageDisplayLength, searchParameter, filters]);
+  }, [pagination.pageNumber, pagination.pageDisplayLength, filters]);
+
+  // Search with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (pagination.pageNumber === 1) {
+        fetchUtilityShiftingList();
+      } else {
+        setPagination(prev => ({ ...prev, pageNumber: 1 }));
+      }
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [searchParameter]);
 
   // Filter uploaded files when search changes
   useEffect(() => {
@@ -82,7 +95,8 @@ export default function UtilityShifting() {
         (file.status && file.status.toLowerCase().includes(searchLower)) ||
         (file.remarks && file.remarks.toLowerCase().includes(searchLower)) ||
         (file.uploaded_by_user_id_fk && file.uploaded_by_user_id_fk.toLowerCase().includes(searchLower)) ||
-        (file.uploaded_on && file.uploaded_on.toLowerCase().includes(searchLower))
+        (file.uploaded_on && file.uploaded_on.toLowerCase().includes(searchLower)) ||
+        (file.uploaded_file && file.uploaded_file.toLowerCase().includes(searchLower))
       );
     }
     
@@ -237,7 +251,7 @@ export default function UtilityShifting() {
         shifting_status_fk: filters.status || ''
       };
 
-      // Prepare query parameters for pagination
+      // Prepare query parameters for pagination and search
       const queryParams = new URLSearchParams({
         iDisplayStart: startIndex.toString(),
         iDisplayLength: pagination.pageDisplayLength.toString(),
@@ -246,7 +260,8 @@ export default function UtilityShifting() {
 
       console.log("📡 Fetching utility shifting list with:", {
         queryParams: queryParams.toString(),
-        requestBody: requestBody
+        requestBody: requestBody,
+        searchParameter: searchParameter
       });
 
       const response = await api.post(
@@ -263,7 +278,8 @@ export default function UtilityShifting() {
       console.log("✅ Utility shifting list response:", {
         dataCount: response.data?.aaData?.length || 0,
         totalRecords: response.data?.iTotalRecords || 0,
-        data: response.data?.aaData || []
+        searchUsed: searchParameter,
+        returnedRecords: response.data?.aaData?.length || 0
       });
 
       if (response.data) {
@@ -531,8 +547,6 @@ export default function UtilityShifting() {
     });
     setSearchParameter("");
     setPagination(prev => ({ ...prev, pageNumber: 1 }));
-    // No need to call fetchUtilityShiftingList() here
-    // The useEffect will handle it automatically due to filters state change
   };
 
   const handleClearUploadSearch = () => {
@@ -571,7 +585,6 @@ export default function UtilityShifting() {
     document.getElementById("exportUtilityShiftingForm").submit();
   };
 
-
   
   return (
     <div className={styles.container}>
@@ -586,7 +599,6 @@ export default function UtilityShifting() {
 	  <input type="hidden" id="exportUtility_type_fk" name="utility_type_fk" />
 	  <input type="hidden" id="exportShifting_status_fk" name="shifting_status_fk" />
 	</form>
-
 
       {!isUtilityShiftingForm && (
         <div className="pageHeading">
@@ -776,6 +788,7 @@ export default function UtilityShifting() {
                 <div className={styles.pagination}>
                   <div className={styles.paginationInfo}>
                     Showing {startRecord} to {endRecord} of {pagination.totalRecords} entries
+                    {searchParameter && ` (filtered by: "${searchParameter}")`}
                   </div>
                   <div className={styles.paginationControls}>
                     <button 
@@ -836,15 +849,6 @@ export default function UtilityShifting() {
                       onChange={handleUploadSearchChange}
                       className={`form-control ${styles.uploadSearchInput}`}
                     />
-                    {uploadSearchParameter && (
-                      <button 
-                        className={styles.clearUploadSearchBtn}
-                        onClick={handleClearUploadSearch}
-                        title="Clear search"
-                      >
-                        ×
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -864,7 +868,19 @@ export default function UtilityShifting() {
                     {filteredUploadedFiles.length > 0 ? (
                       filteredUploadedFiles.map((uf, index) => (
                         <tr key={index}>
-                          <td>{uf.filePath}</td>
+                          <td>
+                            {uf.uploaded_file ? (
+                              <a
+                                href={`/UTILITY_UPLOADED_FILES/${uf.uploaded_file}`}
+                                download
+                                style={{ color: "blue", textDecoration: "underline" }}
+                              >
+                                {uf.uploaded_file}
+                              </a>
+                            ) : (
+                              ""
+                            )}
+                          </td>
                           <td>{uf.status}</td>
                           <td>{uf.remarks}</td>
                           <td>{uf.uploaded_by_user_id_fk}</td>

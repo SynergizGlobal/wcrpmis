@@ -482,13 +482,20 @@ export default function UtilityShiftingForm() {
         'impacted_element': data.impacted_element
       };
 
-      Object.entries(selectFields).forEach(([key, value]) => {
-        if (value && value.value !== undefined) {
-          formData.append(key, value.value);
-        } else if (value !== undefined && value !== null) {
-          formData.append(key, value);
-        }
-      });
+	  Object.entries(selectFields).forEach(([key, value]) => {
+	    // Only append if value exists and has a valid value
+	    if (value && value.value !== undefined && value.value !== null && value.value !== '') {
+	      formData.append(key, value.value);
+	    }
+	    // Special handling for shifting_status_fk - don't send if empty
+	    else if (key === 'shifting_status_fk') {
+	      // Don't append anything if status is empty
+	      console.log('Skipping empty shifting_status_fk');
+	    }
+	    else if (value !== undefined && value !== null && value !== '') {
+	      formData.append(key, value);
+	    }
+	  });
 
       // Add progress details as arrays
       if (data.progressDetails && Array.isArray(data.progressDetails)) {
@@ -646,6 +653,7 @@ export default function UtilityShiftingForm() {
                       placeholder="Select Project"
                       isSearchable
                       isLoading={loading}
+					  isDisabled={isEdit}
                     />
                   )}
                 />
