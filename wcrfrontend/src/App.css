@@ -464,10 +464,7 @@ input{
   right: 5px;
   top: 7px;
 }
-.dataTable{
-  overflow-x: auto;
-  /* overflow: visible !important; */
-}
+
 .dataTable table{
   width: 100%;
   border: 1px solid #ccc;
@@ -675,4 +672,7 @@ input[maxlength] + div{
   .flex-4 .form-field {
       flex: 1 0 46%;
   }
+  .dataTable{
+      overflow-x: auto;
+    }
 }

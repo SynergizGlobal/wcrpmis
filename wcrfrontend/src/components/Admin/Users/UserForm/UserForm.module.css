@@ -28,6 +28,25 @@
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
+  justify-content: space-between;
+}
+.tablesContainerInner{
+  display: flex;
+  align-items: center;
+  flex: 1 0 24%;
+}
+.incrementTableWrapper{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.fullWidthBlock {
+  width: 100%;
+  flex: 0 0 100%;
+  display: block;
+  margin-top: 20px;
 }
 .permissionCard{
   border: 1px solid #000;
@@ -41,4 +60,18 @@
 }
 .cardInput{
   padding: 10px;
+}
+.tableWrapper thead tr th:nth-child(2), .tableWrapper thead tr th:nth-child(3){
+  width: 46%;
+}
+.tableWrapper tbody tr td:nth-child(1), .tableWrapper tbody tr td:nth-child(4){
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media(max-width: 992px) {
+  .projectTable thead tr th{
+    min-width: 100px;
+  }
 }

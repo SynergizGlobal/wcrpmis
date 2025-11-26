@@ -7,6 +7,8 @@ import styles from "./UserForm.module.css";
 import { API_BASE_URL } from "../../../../config";
 
 import { RiAttachment2 } from 'react-icons/ri';
+import { MdOutlineDeleteSweep } from 'react-icons/md';
+import { BiListPlus } from 'react-icons/bi';
 
 export default function UserForm() {
     
@@ -47,7 +49,18 @@ export default function UserForm() {
     "Land Acquisition": ["Village List", "Compensation", "Survey"],
     "Utility Shifting": ["Waterline", "Powerline", "OFC"],
     Works: ["Earthwork", "Bridges", "Track", "Utilities"],
+    "Execution & Monitoring": [
+        "Progress Updates",
+        "Daily Logs",
+        "Increment Slips",
+        "Inspection Records"
+      ],
   };
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "executionMonitoringRows",
+  });
 
   // Checkbox state: which modules are enabled
   const [enabledModules, setEnabledModules] = useState([]);
@@ -67,10 +80,21 @@ export default function UserForm() {
       const copy = { ...moduleAccess };
       delete copy[moduleName];
       setModuleAccess(copy);
+
+      if (moduleName === "Execution & Monitoring") {
+      remove(); // remove all rows
+    }
+
     } else {
       setEnabledModules([...enabledModules, moduleName]);
+    if (moduleName === "Execution & Monitoring" && fields.length === 0) {
+      append({
+        structure: null,
+        subItems: [],
+      });
     }
-  };
+  }
+};
 
   // Handle multi-select submenu choice
   const handleSubMenuChange = (moduleName, selectedOptions) => {
@@ -259,26 +283,134 @@ export default function UserForm() {
                 {/* ============================ MODULE TABLES ============================ */}
                 <div className={styles.tablesContainer}>
                   {enabledModules.map((module) => (
-                    <div className={styles.permissionCard} key={module}>
-                      <h3>{module} Permission</h3>
-                      <div className={styles.cardInput}>
-                        <Select
-                          isMulti
-                          options={MODULES[module].map((s) => ({ value: s, label: s }))}
-                          value={moduleAccess[module] || []}
-                          onChange={(selected) => handleSubMenuChange(module, selected)}
-                          placeholder="Select sub menus (leave empty for full access)"
-                        />
-                      </div>
+                    <div
+                      key={module}
+                      className={
+                        module === "Execution & Monitoring"
+                          ? styles.fullWidthBlock
+                          : styles.tablesContainerInner
+                      }
+                    >
 
-                      {/* <p className={styles.note}>
-                        {moduleAccess[module]?.length
-                          ? "✔ User will only see selected sub-menus."
-                          : "✔ No selection → user gets FULL access to this module."}
-                      </p> */}
+
+                      {/* Show submenu card for all modules except Execution & Monitoring */}
+                      {module !== "Execution & Monitoring" && (
+                        <div className={styles.permissionCard}>
+                          <h3>{module} Permission</h3>
+
+                          <div className={styles.cardInput}>
+                            <Select
+                              isMulti
+                              options={MODULES[module].map((s) => ({ value: s, label: s }))}
+                              value={moduleAccess[module] || []}
+                              onChange={(selected) => handleSubMenuChange(module, selected)}
+                              placeholder="Select sub menus (leave empty for full access)"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Execution & Monitoring – only show increment table */}
+                    <div className="form-row">
+                      {module === "Execution & Monitoring" && (
+                          <div className={styles.incrementTableWrapper}>
+                            <h3>Structure Permission</h3>
+                          <div className={`dataTable w-100 ${styles.tableWrapper}`}>
+                            <table className={styles.incrementTable}>
+                              <thead>
+                                <tr>
+                                  <th>#</th>
+                                  <th>Select Structure</th>
+                                  <th>Sub Items (Multi Select)</th>
+                                  <th>Action</th>
+                                </tr>
+                              </thead>
+
+                              <tbody>
+                                {fields.map((row, index) => (
+                                  <tr key={row.id}>
+                                    <td>{index + 1}</td>
+
+                                    <td style={{ width: "250px" }}>
+                                      <Controller
+                                        name={`executionMonitoringRows.${index}.structure`}
+                                        control={control}
+                                        render={({ field }) => (
+                                          <Select
+                                            {...field}
+                                            options={[
+                                              { value: "Bridge", label: "Bridge" },
+                                              { value: "Station", label: "Station" },
+                                              { value: "Platform", label: "Platform" },
+                                              { value: "Track", label: "Track" },
+                                            ]}
+                                            placeholder="Select Structure"
+                                          />
+                                        )}
+                                      />
+                                    </td>
+
+                                    <td style={{ width: "350px" }}>
+                                      <Controller
+                                        name={`executionMonitoringRows.${index}.subItems`}
+                                        control={control}
+                                        render={({ field }) => (
+                                          <Select
+                                            {...field}
+                                            isMulti
+                                            closeMenuOnSelect={false}
+                                            options={[
+                                              { value: "Pier", label: "Pier" },
+                                              { value: "Girder", label: "Girder" },
+                                              { value: "Foundation", label: "Foundation" },
+                                              { value: "Slab", label: "Slab" },
+                                              { value: "Retaining Wall", label: "Retaining Wall" },
+                                            ]}
+                                            placeholder="Select multiple sub items"
+                                          />
+                                        )}
+                                      />
+                                    </td>
+
+                                    <td>
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline-danger"
+                                        onClick={() => remove(index)}
+                                      >
+                                        <MdOutlineDeleteSweep
+                                          size="26"
+                                        />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <br />
+
+                          <button
+                            type="button"
+                            className="btn-2 btn-green"
+                            onClick={() =>
+                              append({
+                                structure: null,
+                                subItems: [],
+                              })
+                            }
+                          >
+                            <BiListPlus
+                              size="24"
+                            />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     </div>
                   ))}
                 </div>
+
               </form>
             </div>
       </div>
