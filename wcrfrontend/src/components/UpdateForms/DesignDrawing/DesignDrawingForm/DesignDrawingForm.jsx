@@ -15,7 +15,7 @@ export default function DesignDrawingForm() {
 
 	const navigate = useNavigate();
 	const { state } = useLocation();
-	const designId = state?.design_id;    
+	const designId = state?.design_id;
 
 	const isEdit = Boolean(designId);
 	const [projectOptions, setProjectOptions] = useState([]);
@@ -35,58 +35,58 @@ export default function DesignDrawingForm() {
 	const [asBuiltStatusOptions, setAsBuiltStatusOptions] = useState([]);
 
 	const {
-	    register,
-	    control,
-	    handleSubmit,
-	    setValue,
-	    watch,
-	    reset,
-	    formState: { errors },
+		register,
+		control,
+		handleSubmit,
+		setValue,
+		watch,
+		reset,
+		formState: { errors },
 	} = useForm({
-	    defaultValues: {
-	        project_id_fk: "",
-	        approving_railway: "",
-	        structure_type_fk: "",
-	        structure_id_fk: "",
-	        component: "",
-	        contract_id_fk: "",
-	        prepared_by_id_fk: "",
-	        consultant_contract_id_fk: "",
-	        proof_consultant_contract_id_fk: "",
-	        threepvc: "",
-	        drawing_type_fk: "",
-	        approval_authority_fk: "",
-	        required_date: "",
-	        gfc_released: "",
-	        drawing_title: "",
-	        contractor_drawing_no: "",
-	        mrvc_drawing_no: "",
-	        division_drawing_no: "",
-	        hq_drawing_no: "",
-	        revisionDetailsFields: [
-	            {
-	                revisions: "",
-	                drawing_nos: "",
-	                correspondence_letter_nos: "",
-	                revision_dates: "",
-	                revision_status_fks: "",
-	                remarkss: "",
-	                uploadFileNames: "",
-	                current: "",
-	            }
-	        ],
-	        remarks: "",
-	    },
+		defaultValues: {
+			project_id_fk: "",
+			approving_railway: "",
+			structure_type_fk: "",
+			structure_id_fk: "",
+			component: "",
+			contract_id_fk: "",
+			prepared_by_id_fk: "",
+			consultant_contract_id_fk: "",
+			proof_consultant_contract_id_fk: "",
+			threepvc: "",
+			drawing_type_fk: "",
+			approval_authority_fk: "",
+			required_date: "",
+			gfc_released: "",
+			drawing_title: "",
+			contractor_drawing_no: "",
+			mrvc_drawing_no: "",
+			division_drawing_no: "",
+			hq_drawing_no: "",
+			revisionDetailsFields: [
+				{
+					revisions: "",
+					drawing_nos: "",
+					correspondence_letter_nos: "",
+					revision_dates: "",
+					revision_status_fks: "",
+					remarkss: "",
+					uploadFileNames: "",
+					current: "",
+				}
+			],
+			remarks: "",
+		},
 	});
 
 	const {
-	  fields: revisionDetailsFields,
-	  append: appendRevisionDetails,
-	  remove: removeRevisionDetails,
-	  replace
+		fields: revisionDetailsFields,
+		append: appendRevisionDetails,
+		remove: removeRevisionDetails,
+		replace
 	} = useFieldArray({
-	  control,
-	  name: "revisionDetailsFields",
+		control,
+		name: "revisionDetailsFields",
 	});
 
 
@@ -105,9 +105,9 @@ export default function DesignDrawingForm() {
 				// Project Dropdown
 				setProjectOptions(
 					data.projectsList?.map(p => ({
-						value: p.project_id,	
+						value: p.project_id,
 						label: `${p.project_id}${p.project_name ? " - " + p.project_name : ""}`,
-						work_code: p.work_code  
+						work_code: p.work_code
 					})) || []
 				);
 
@@ -170,10 +170,10 @@ export default function DesignDrawingForm() {
 
 				// Revision Statuses
 				setRevisionStatusOptions(
-				  data.revisionStatuses?.map(r => ({
-				    value: r.revision_status,
-				    label: r.revision_status
-				  })) || []
+					data.revisionStatuses?.map(r => ({
+						value: r.revision_status,
+						label: r.revision_status
+					})) || []
 				);
 
 
@@ -232,290 +232,290 @@ export default function DesignDrawingForm() {
 	const [designDetails, setDesignDetails] = useState(null);
 
 	useEffect(() => {
-	  if (!isEdit || !designId) return;
+		if (!isEdit || !designId) return;
 
-	  fetch(`${API_BASE_URL}/design/ajax/form/get-design/designDetails`, {
-	    method: "POST",
-	    headers: { "Content-Type": "application/json" },
-	    body: JSON.stringify({ design_id: designId }),
-	  })
-	    .then((res) => res.json())
-	    .then((data) => {
-	      console.log("Full Design Details:", data);   
-	      setDesignDetails(data);
-	    });
+		fetch(`${API_BASE_URL}/design/ajax/form/get-design/designDetails`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ design_id: designId }),
+		})
+			.then((res) => res.json())
+			.then((data) => {
+				console.log("Full Design Details:", data);
+				setDesignDetails(data);
+			});
 	}, [designId, isEdit]);
 
 	useEffect(() => {
-	  if (!isEdit || !designDetails) return;
+		if (!isEdit || !designDetails) return;
 
-	  const optionsLoaded =
-	    projectOptions.length &&
-	    approvingRailwayOptions.length &&
-	    structureTypeOptions.length &&
-	    structureOptions.length &&
-	    drawingTypeOptions.length &&
-	    approvalAuthorityOptions.length &&
-	    preparedByOptions.length &&
-	    contractOptions.length;
+		const optionsLoaded =
+			projectOptions.length &&
+			approvingRailwayOptions.length &&
+			structureTypeOptions.length &&
+			structureOptions.length &&
+			drawingTypeOptions.length &&
+			approvalAuthorityOptions.length &&
+			preparedByOptions.length &&
+			contractOptions.length;
 
-	  if (!optionsLoaded) return;
+		if (!optionsLoaded) return;
 
-	  const d = designDetails;
+		const d = designDetails;
 
-	  // Helper to match dropdown values
-	  const findOption = (options, value) => {
-	    if (!value) return null;
-	    const clean = String(value).trim().toUpperCase();
-	    return (
-	      options.find(o => String(o.value).trim().toUpperCase() === clean) ||
-	      { value: clean, label: clean }
-	    );
-	  };
+		// Helper to match dropdown values
+		const findOption = (options, value) => {
+			if (!value) return null;
+			const clean = String(value).trim().toUpperCase();
+			return (
+				options.find(o => String(o.value).trim().toUpperCase() === clean) ||
+				{ value: clean, label: clean }
+			);
+		};
 
-	  const normalizeDate = (raw) => {
-	    if (!raw) return "";
-	    if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) {
-	      const [dd, mm, yyyy] = raw.split("-");
-	      return `${yyyy}-${mm}-${dd}`;
-	    }
-	    return raw.substring(0, 10);
-	  };
+		const normalizeDate = (raw) => {
+			if (!raw) return "";
+			if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) {
+				const [dd, mm, yyyy] = raw.split("-");
+				return `${yyyy}-${mm}-${dd}`;
+			}
+			return raw.substring(0, 10);
+		};
 
-	  const values = {
-	    component: d.component || "",
-	    consultant_contract_id_fk: d.consultant_contract_id_fk || "",
-	    proof_consultant_contract_id_fk: d.proof_consultant_contract_id_fk || "",
-	    threepvc: d.threepvc || "",
-	    drawing_title: d.drawing_title || "",
-	    remarks: d.remarks || "",
-	    contractor_drawing_no: d.contractor_drawing_no || "",
-	    mrvc_drawing_no: d.mrvc_drawing_no || "",
-	    division_drawing_no: d.division_drawing_no || "",
-	    hq_drawing_no: d.hq_drawing_no || "",
+		const values = {
+			component: d.component || "",
+			consultant_contract_id_fk: d.consultant_contract_id_fk || "",
+			proof_consultant_contract_id_fk: d.proof_consultant_contract_id_fk || "",
+			threepvc: d.threepvc || "",
+			drawing_title: d.drawing_title || "",
+			remarks: d.remarks || "",
+			contractor_drawing_no: d.contractor_drawing_no || "",
+			mrvc_drawing_no: d.mrvc_drawing_no || "",
+			division_drawing_no: d.division_drawing_no || "",
+			hq_drawing_no: d.hq_drawing_no || "",
 
-	    required_date: normalizeDate(d.required_date),
-	    gfc_released: normalizeDate(d.gfc_released),
-	  };
+			required_date: normalizeDate(d.required_date),
+			gfc_released: normalizeDate(d.gfc_released),
+		};
 
-	  // ------------------------
-	  // Dropdown Prefill
-	  // ------------------------
-	  values.project_id_fk = findOption(projectOptions, d.project_id_fk);
-	  values.approving_railway = findOption(approvingRailwayOptions, d.approving_railway);
-	  values.structure_type_fk = findOption(structureTypeOptions, d.structure_type_fk);
-	  values.structure_id_fk = findOption(structureOptions, d.structure_id_fk);
-	  values.drawing_type_fk = findOption(drawingTypeOptions, d.drawing_type_fk);
-	  values.approval_authority_fk = findOption(approvalAuthorityOptions, d.approval_authority_fk);
-	  values.prepared_by_id_fk = findOption(preparedByOptions, d.prepared_by_id_fk);
-	  values.contract_id_fk = findOption(contractOptions, d.contract_id_fk);
+		// ------------------------
+		// Dropdown Prefill
+		// ------------------------
+		values.project_id_fk = findOption(projectOptions, d.project_id_fk);
+		values.approving_railway = findOption(approvingRailwayOptions, d.approving_railway);
+		values.structure_type_fk = findOption(structureTypeOptions, d.structure_type_fk);
+		values.structure_id_fk = findOption(structureOptions, d.structure_id_fk);
+		values.drawing_type_fk = findOption(drawingTypeOptions, d.drawing_type_fk);
+		values.approval_authority_fk = findOption(approvalAuthorityOptions, d.approval_authority_fk);
+		values.prepared_by_id_fk = findOption(preparedByOptions, d.prepared_by_id_fk);
+		values.contract_id_fk = findOption(contractOptions, d.contract_id_fk);
 
 
-	  reset(values);
+		reset(values);
 
-	// Revision Table
-	  if (Array.isArray(d.designRevisions) && d.designRevisions.length > 0) {
-	    const cleaned = d.designRevisions.map((r, i) => ({
-	      revisions: r.revision || `R${i + 1}`,
-	      drawing_nos: r.drawing_no || "",
-	      correspondence_letter_nos: r.correspondence_letter_no || "",
-	      revision_dates: normalizeDate(r.revision_date),
-	      revision_status: r.revision_status_fk || "",
-	      remarkss: r.remarks || "",
-	      uploadFileNames: r.upload_file || "",
-	      uploadFiles: null, 
-	      current: r.current === "Y" || r.current === true,
-	    }));
+		// Revision Table
+		if (Array.isArray(d.designRevisions) && d.designRevisions.length > 0) {
+			const cleaned = d.designRevisions.map((r, i) => ({
+				revisions: r.revision || `R${i + 1}`,
+				drawing_nos: r.drawing_no || "",
+				correspondence_letter_nos: r.correspondence_letter_no || "",
+				revision_dates: normalizeDate(r.revision_date),
+				revision_status: r.revision_status_fk || "",
+				remarkss: r.remarks || "",
+				uploadFileNames: r.upload_file || "",
+				uploadFiles: null,
+				current: r.current === "Y" || r.current === true,
+			}));
 
-	    replace(cleaned);
-	  }
+			replace(cleaned);
+		}
 
 	}, [
-	  isEdit,
-	  designDetails,
-	  projectOptions,
-	  approvingRailwayOptions,
-	  structureTypeOptions,
-	  structureOptions,
-	  drawingTypeOptions,
-	  approvalAuthorityOptions,
-	  preparedByOptions,
-	  contractOptions,
-	  reset,
-	  replace
+		isEdit,
+		designDetails,
+		projectOptions,
+		approvingRailwayOptions,
+		structureTypeOptions,
+		structureOptions,
+		drawingTypeOptions,
+		approvalAuthorityOptions,
+		preparedByOptions,
+		contractOptions,
+		reset,
+		replace
 	]);
 
 
 	const normalizeSelectFields = (data, fields) => {
-	  fields.forEach((field) => {
-	    if (data[field] && typeof data[field] === "object") {
-	      data[field] = data[field]?.value || "";
-	    }
-	  });
+		fields.forEach((field) => {
+			if (data[field] && typeof data[field] === "object") {
+				data[field] = data[field]?.value || "";
+			}
+		});
 	};
 
 
 
 	const onSubmitSave = async (data) => {
-	  try {
-	    console.log("Saving Design:", data);
+		try {
+			console.log("Saving Design:", data);
 
-	    const formData = new FormData();
+			const formData = new FormData();
 
-	    // Normalize selects
-	    normalizeSelectFields(data, [
-	      "project_id_fk",
-	      "approving_railway",
-	      "structure_type_fk",
-	      "structure_id_fk",
-	      "drawing_type_fk",
-	      "approval_authority_fk",
-	      "contract_id_fk",
-	      "prepared_by_id_fk",
-	    ]);
-	    const workCodeValue = data.project_id_fk;
+			// Normalize selects
+			normalizeSelectFields(data, [
+				"project_id_fk",
+				"approving_railway",
+				"structure_type_fk",
+				"structure_id_fk",
+				"drawing_type_fk",
+				"approval_authority_fk",
+				"contract_id_fk",
+				"prepared_by_id_fk",
+			]);
+			const workCodeValue = data.project_id_fk;
 
-	    formData.append("work_code", workCodeValue);
+			formData.append("work_code", workCodeValue);
 
-	    console.log("WORK CODE SENT:", workCodeValue);
+			console.log("WORK CODE SENT:", workCodeValue);
 
-	    // Append all normal fields except revision rows
-	    Object.keys(data).forEach((key) => {
-	      if (key !== "revisionDetails" && data[key] != null) {
-	        formData.append(key, data[key]);
-	      }
-	    });
+			// Append all normal fields except revision rows
+			Object.keys(data).forEach((key) => {
+				if (key !== "revisionDetails" && data[key] != null) {
+					formData.append(key, data[key]);
+				}
+			});
 
-	    // REVISION rows (ADD MODE File REQUIRED)
-	    data.revisionDetailsFields.forEach((item) => {
-	      formData.append("revisions", item.revisions || "");
-	      formData.append("drawing_nos", item.drawing_nos || "");
-	      formData.append("correspondence_letter_nos", item.correspondence_letter_nos || "");
+			// REVISION rows (ADD MODE File REQUIRED)
+			data.revisionDetailsFields.forEach((item) => {
+				formData.append("revisions", item.revisions || "");
+				formData.append("drawing_nos", item.drawing_nos || "");
+				formData.append("correspondence_letter_nos", item.correspondence_letter_nos || "");
 
-	      formData.append(
-	        "revision_dates",
-	        item.revision_dates
-	          ? new Date(item.revision_dates).toISOString().slice(0, 10)
-	          : ""
-	      );
+				formData.append(
+					"revision_dates",
+					item.revision_dates
+						? new Date(item.revision_dates).toISOString().slice(0, 10)
+						: ""
+				);
 
-	      formData.append("revision_status_fks", item.revision_status || "");
-	      formData.append("remarkss", item.remarkss || "");
-	      formData.append("currents", item.current ? "Y" : "N");
+				formData.append("revision_status_fks", item.revision_status || "");
+				formData.append("remarkss", item.remarkss || "");
+				formData.append("currents", item.current ? "Y" : "N");
 
-	      // Upload file must be present
-	      if (!item.uploadFiles?.length) {
-	        alert("Please upload a file for each revision row.");
-	        throw new Error("Missing file");
-	      }
+				// Upload file must be present
+				if (!item.uploadFiles?.length) {
+					alert("Please upload a file for each revision row.");
+					throw new Error("Missing file");
+				}
 
-	      const file = item.uploadFiles[0];
-	      formData.append("uploadFiles", file);
-	      formData.append("uploadFileNames", file.name);
-	    });
+				const file = item.uploadFiles[0];
+				formData.append("uploadFiles", file);
+				formData.append("uploadFileNames", file.name);
+			});
 
-	    // API call
-	    const response = await fetch(`${API_BASE_URL}/design/add-design`, {
-	      method: "POST",
-	      body: formData,
-	      credentials: "include",
-	    });
+			// API call
+			const response = await fetch(`${API_BASE_URL}/design/add-design`, {
+				method: "POST",
+				body: formData,
+				credentials: "include",
+			});
 
-	    if (!response.ok) {
-	      alert("Save Failed!");
-	      return;
-	    }
+			if (!response.ok) {
+				alert("Save Failed!");
+				return;
+			}
 
-	    alert("Design Saved Successfully!");
-	    navigate("/updateforms/design");
+			alert("Design Saved Successfully!");
+			navigate("/updateforms/design");
 
-	  } catch (err) {
-	    console.error("Save Error:", err);
-	  }
+		} catch (err) {
+			console.error("Save Error:", err);
+		}
 	};
 
-	
-	
+
+
 	const onSubmitUpdate = async (data) => {
-	  try {
-	    console.log("Updating Design:", data);
+		try {
+			console.log("Updating Design:", data);
 
-	    const formData = new FormData();
+			const formData = new FormData();
 
-	    // Required fields
-	    formData.append("design_id", designId);
-	    formData.append("design_seq_id", designDetails?.design_seq_id || "");
+			// Required fields
+			formData.append("design_id", designId);
+			formData.append("design_seq_id", designDetails?.design_seq_id || "");
 
-	    // Normalize select fields
-	    normalizeSelectFields(data, [
-	      "project_id_fk",
-	      "approving_railway",
-	      "structure_type_fk",
-	      "structure_id_fk",
-	      "drawing_type_fk",
-	      "approval_authority_fk",
-	      "contract_id_fk",
-	      "prepared_by_id_fk",
-	    ]);
+			// Normalize select fields
+			normalizeSelectFields(data, [
+				"project_id_fk",
+				"approving_railway",
+				"structure_type_fk",
+				"structure_id_fk",
+				"drawing_type_fk",
+				"approval_authority_fk",
+				"contract_id_fk",
+				"prepared_by_id_fk",
+			]);
 
-	    // Simple fields
-	    Object.keys(data).forEach((key) => {
-	      if (key !== "revisionDetails" && key !== "revisionDetailsFields") {
-	        if (data[key] != null) formData.append(key, data[key]);
-	      }
-	    });
+			// Simple fields
+			Object.keys(data).forEach((key) => {
+				if (key !== "revisionDetails" && key !== "revisionDetailsFields") {
+					if (data[key] != null) formData.append(key, data[key]);
+				}
+			});
 
-	    // ===== EXACT FORMAT THAT BACKEND EXPECTS =====
-		data.revisionDetailsFields.forEach((item) => {
-		  
-		  formData.append("revisions", item.revisions || "");
-		  formData.append("drawing_nos", item.drawing_nos || "");
-		  formData.append("correspondence_letter_nos", item.correspondence_letter_nos || "");
+			// ===== EXACT FORMAT THAT BACKEND EXPECTS =====
+			data.revisionDetailsFields.forEach((item) => {
 
-		  formData.append(
-		    "revision_dates",
-		    item.revision_dates
-		      ? new Date(item.revision_dates).toISOString().slice(0, 10)
-		      : ""
-		  );
+				formData.append("revisions", item.revisions || "");
+				formData.append("drawing_nos", item.drawing_nos || "");
+				formData.append("correspondence_letter_nos", item.correspondence_letter_nos || "");
 
-		  formData.append("revision_status_fks", item.revision_status || "");
-		  formData.append("remarkss", item.remarkss || "");
-		  formData.append("currents", item.current ? "Y" : "N");
+				formData.append(
+					"revision_dates",
+					item.revision_dates
+						? new Date(item.revision_dates).toISOString().slice(0, 10)
+						: ""
+				);
 
-		  // ALWAYS append uploadFiles and uploadFileNames
-		  if (item.uploadFiles?.length > 0) {
-		    const file = item.uploadFiles[0];
-		    formData.append("uploadFiles", file);
-		    formData.append("uploadFileNames", file.name);
-		  } 
-		  else {
-		    // IMPORTANT — send placeholders to keep arrays aligned
-		    formData.append("uploadFiles", new Blob([]), "");  // empty file
-		    formData.append("uploadFileNames", item.uploadFileNames || "");
-		  }
+				formData.append("revision_status_fks", item.revision_status || "");
+				formData.append("remarkss", item.remarkss || "");
+				formData.append("currents", item.current ? "Y" : "N");
 
-		});
+				// ALWAYS append uploadFiles and uploadFileNames
+				if (item.uploadFiles?.length > 0) {
+					const file = item.uploadFiles[0];
+					formData.append("uploadFiles", file);
+					formData.append("uploadFileNames", file.name);
+				}
+				else {
+					// IMPORTANT — send placeholders to keep arrays aligned
+					formData.append("uploadFiles", new Blob([]), "");  // empty file
+					formData.append("uploadFileNames", item.uploadFileNames || "");
+				}
+
+			});
 
 
-	    // API call
-	    const response = await fetch(`${API_BASE_URL}/design/update-design`, {
-	      method: "POST",
-	      body: formData,
-	      credentials: "include",
-	    });
+			// API call
+			const response = await fetch(`${API_BASE_URL}/design/update-design`, {
+				method: "POST",
+				body: formData,
+				credentials: "include",
+			});
 
-	    if (!response.ok) {
-	      alert("Update Failed!");
-	      return;
-	    }
+			if (!response.ok) {
+				alert("Update Failed!");
+				return;
+			}
 
-	    alert("Design Updated Successfully!");
-	    navigate("/updateforms/design");
+			alert("Design Updated Successfully!");
+			navigate("/updateforms/design");
 
-	  } catch (err) {
-	    console.error("Update Error:", err);
-	  }
+		} catch (err) {
+			console.error("Update Error:", err);
+		}
 	};
 
 
@@ -529,8 +529,8 @@ export default function DesignDrawingForm() {
 					</h2>
 				</div>
 				<div className="innerPage">
-				<form onSubmit={handleSubmit(isEdit ? onSubmitUpdate : onSubmitSave)} 
-				      encType="multipart/form-data">
+					<form onSubmit={handleSubmit(isEdit ? onSubmitUpdate : onSubmitSave)}
+						encType="multipart/form-data">
 
 						<h6 className="d-flex justify-content-center mt-1 mb-2">Work Details</h6>
 
@@ -538,28 +538,28 @@ export default function DesignDrawingForm() {
 						<div className="form-row">
 							{/* ===================== PROJECT ===================== */}
 							<div className="form-field">
-							  <label>Project <span className="red">*</span></label>
+								<label>Project <span className="red">*</span></label>
 
-							  <Controller
-							    name="project_id_fk"
-							    control={control}
-							    rules={{ required: true }}
-							    render={({ field }) => (
-							      <Select
-							        {...field}
-							        options={projectOptions}
-							        classNamePrefix="react-select"
-							        placeholder="Select Project"
-							        isSearchable
-							        onChange={(selected) => {
-							          field.onChange(selected);
-							        }}
-							      />
-							    )}
-							  />
+								<Controller
+									name="project_id_fk"
+									control={control}
+									rules={{ required: true }}
+									render={({ field }) => (
+										<Select
+											{...field}
+											options={projectOptions}
+											classNamePrefix="react-select"
+											placeholder="Select Project"
+											isSearchable
+											onChange={(selected) => {
+												field.onChange(selected);
+											}}
+										/>
+									)}
+								/>
 
 
-							  {errors.project_id_fk && <span className="red">Required</span>}
+								{errors.project_id_fk && <span className="red">Required</span>}
 							</div>
 
 
@@ -625,12 +625,12 @@ export default function DesignDrawingForm() {
 
 							{/* ===================== COMPONENT ===================== */}
 							<div className="form-field">
-							  <label>Component</label>
-							  <input
-							    {...register("component")}
-							    type="text"
-							    placeholder="Enter Component"
-							  />
+								<label>Component</label>
+								<input
+									{...register("component")}
+									type="text"
+									placeholder="Enter Component"
+								/>
 							</div>
 
 
@@ -672,32 +672,32 @@ export default function DesignDrawingForm() {
 
 							{/* ===================== CONSULTANT ===================== */}
 							<div className="form-field">
-							  <label>Consultant</label>
-							  <input
-							    {...register("consultant_contract_id_fk")}
-							    type="text"
-							    placeholder="Enter Consultant"
-							  />
+								<label>Consultant</label>
+								<input
+									{...register("consultant_contract_id_fk")}
+									type="text"
+									placeholder="Enter Consultant"
+								/>
 							</div>
 
 							{/* ===================== PROOF CONSULTANT ===================== */}
 							<div className="form-field">
-							  <label>Proof Consultant</label>
-							  <input
-							    {...register("proof_consultant_contract_id_fk")}
-							    type="text"
-							    placeholder="Enter Proof Consultant"
-							  />
+								<label>Proof Consultant</label>
+								<input
+									{...register("proof_consultant_contract_id_fk")}
+									type="text"
+									placeholder="Enter Proof Consultant"
+								/>
 							</div>
 
 							{/* ===================== 3PVC ===================== */}
 							<div className="form-field">
-							  <label>3PVC</label>
-							  <input
-							    {...register("threepvc")}
-							    type="text"
-							    placeholder="Enter 3PVC"
-							  />
+								<label>3PVC</label>
+								<input
+									{...register("threepvc")}
+									type="text"
+									placeholder="Enter 3PVC"
+								/>
 							</div>
 
 
@@ -823,7 +823,7 @@ export default function DesignDrawingForm() {
 															disabled={isEdit}
 															{...register(`revisionDetailsFields.${index}.revisions`)}
 															className="form-control"
-															value={(`R${index + 1}`)} 
+															value={(`R${index + 1}`)}
 														/>
 													</td>
 													<td>
@@ -863,26 +863,26 @@ export default function DesignDrawingForm() {
 														)}
 													</td>
 													<td>
-													  <select
-													    {...register(`revisionDetailsFields.${index}.revision_status`, {
-													      required: "required",
-													    })}
-													    className="form-control"
-													    defaultValue={item.revision_status || ""}
-													  >
-													    <option value="">Select Status</option>
-													    {revisionStatusOptions.map((opt) => (
-													      <option key={opt.value} value={opt.value}>
-													        {opt.label}
-													      </option>
-													    ))}
-													  </select>
+														<select
+															{...register(`revisionDetailsFields.${index}.revision_status`, {
+																required: "required",
+															})}
+															className="form-control"
+															defaultValue={item.revision_status || ""}
+														>
+															<option value="">Select Status</option>
+															{revisionStatusOptions.map((opt) => (
+																<option key={opt.value} value={opt.value}>
+																	{opt.label}
+																</option>
+															))}
+														</select>
 
-													  {errors.revisionDetailsFields?.[index]?.revision_status && (
-													    <span className="red">
-													      {errors.revisionDetailsFields[index].revision_status.message}
-													    </span>
-													  )}
+														{errors.revisionDetailsFields?.[index]?.revision_status && (
+															<span className="red">
+																{errors.revisionDetailsFields[index].revision_status.message}
+															</span>
+														)}
 													</td>
 
 
@@ -896,35 +896,35 @@ export default function DesignDrawingForm() {
 														/>
 													</td>
 													<td>
-													  <div className={styles["file-upload-wrapper"]}>
-													    <label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
-													      <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
-													    </label>
+														<div className={styles["file-upload-wrapper"]}>
+															<label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
+																<RiAttachment2 size={20} style={{ marginRight: "6px" }} />
+															</label>
 
-													    <input
-													      id={`file-${index}`}
-													      type="file"
-													      {...register(`revisionDetailsFields.${index}.uploadFiles`)}
-													      className={styles["file-upload-input"]}
-													    />
+															<input
+																id={`file-${index}`}
+																type="file"
+																{...register(`revisionDetailsFields.${index}.uploadFiles`)}
+																className={styles["file-upload-input"]}
+															/>
 
-													    {/* Show NEW filename OR EXISTING filename */}
-														{watch(`revisionDetailsFields.${index}.uploadFiles`)?.[0]?.name ? (
-														  <p>{watch(`revisionDetailsFields.${index}.uploadFiles`)[0].name}</p>
-														) : watch(`revisionDetailsFields.${index}.uploadFileNames`) ? (
-														  <p>
-														    <a
-														      href={`/wrpmis/DESIGN_REVISION_FILES/${watch(`revisionDetailsFields.${index}.uploadFileNames`)}`}
-														      target="_blank"
-														      rel="noopener noreferrer"
-														    >
-														      {watch(`revisionDetailsFields.${index}.uploadFileNames`)}
-														    </a>
-														  </p>
-														) : null}
+															{/* Show NEW filename OR EXISTING filename */}
+															{watch(`revisionDetailsFields.${index}.uploadFiles`)?.[0]?.name ? (
+																<p>{watch(`revisionDetailsFields.${index}.uploadFiles`)[0].name}</p>
+															) : watch(`revisionDetailsFields.${index}.uploadFileNames`) ? (
+																<p>
+																	<a
+																		href={`/wrpmis/DESIGN_REVISION_FILES/${watch(`revisionDetailsFields.${index}.uploadFileNames`)}`}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																	>
+																		{watch(`revisionDetailsFields.${index}.uploadFileNames`)}
+																	</a>
+																</p>
+															) : null}
 
 
-													  </div>
+														</div>
 													</td>
 
 													<td>
@@ -949,8 +949,8 @@ export default function DesignDrawingForm() {
 											))
 										) : (
 											<tr>
-												<td colSpan="4" className="text-center text-muted">
-													No completion cost rows added yet.
+												<td colSpan="9" className="text-center text-muted">
+													No Revision Details Rows Added yet.
 												</td>
 											</tr>
 										)}
@@ -1003,17 +1003,17 @@ export default function DesignDrawingForm() {
 
 						{/* Buttons */}
 						<div className="form-post-buttons">
-						  <button type="submit" className="btn btn-primary">
-						    {isEdit ? "Update" : "Save"}
-						  </button>
+							<button type="submit" className="btn btn-primary">
+								{isEdit ? "Update" : "Save"}
+							</button>
 
-						  <button
-						    type="button"
-						    className="btn btn-white"
-						    onClick={() => navigate(-1)}
-						  >
-						    Cancel
-						  </button>
+							<button
+								type="button"
+								className="btn btn-white"
+								onClick={() => navigate(-1)}
+							>
+								Cancel
+							</button>
 						</div>
 
 					</form>

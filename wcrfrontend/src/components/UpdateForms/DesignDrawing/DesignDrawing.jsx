@@ -40,18 +40,18 @@ export default function DesignDrawing() {
 	});
 	const isDesignDrawingForm = location.pathname.endsWith("/add-design-form");
 
-	
+
 	const handleSampleDownload = () => {
-	    const fileUrl = "/files/designDrawing/Designs_Drawings.xlsx"; 
-	    const fileName = "Designs_Drawings.xlsx";
-	 
-	    const link = document.createElement("a");
-	    link.href = fileUrl;
-	    link.setAttribute("download", fileName);
-	    document.body.appendChild(link);
-	    link.click();
-	    link.remove();
-	  };
+		const fileUrl = "/files/designDrawing/Designs_Drawings.xlsx";
+		const fileName = "Designs_Drawings.xlsx";
+
+		const link = document.createElement("a");
+		link.href = fileUrl;
+		link.setAttribute("download", fileName);
+		document.body.appendChild(link);
+		link.click();
+		link.remove();
+	};
 
 
 	const designTotalPages = Math.max(1, Math.ceil(designTotalRows / designPerPage));
@@ -298,9 +298,9 @@ export default function DesignDrawing() {
 				return acc;
 			}, []);
 
-			
 
-			
+
+
 		return (
 			<>
 				<button
@@ -351,27 +351,27 @@ export default function DesignDrawing() {
 		setSelectedFile(null);
 	};
 	const handleUploadSubmit = async (e) => {
-	    e.preventDefault();
+		e.preventDefault();
 
-	    if (!selectedFile) return alert("Select a file!");
+		if (!selectedFile) return alert("Select a file!");
 
-	    const formData = new FormData();
-	    formData.append("designFile", selectedFile);
-	    formData.append("uploadedFile", selectedFile.name);
+		const formData = new FormData();
+		formData.append("designFile", selectedFile);
+		formData.append("uploadedFile", selectedFile.name);
 
-	    try {
-	        setLoading(true);
-	        await api.post(`${API_BASE_URL}/design/upload-designs`, formData, { withCredentials: true });
-	        alert("Upload successful!");
-	        closeModal();
+		try {
+			setLoading(true);
+			await api.post(`${API_BASE_URL}/design/upload-designs`, formData, { withCredentials: true });
+			alert("Upload successful!");
+			closeModal();
 			window.location.reload();
-	    } catch (err) {
-	        alert("Upload failed.");
-	        console.error(err);
+		} catch (err) {
+			alert("Upload failed.");
+			console.error(err);
 			window.location.reload();
-	    } finally {
-	        setLoading(false);
-	    }
+		} finally {
+			setLoading(false);
+		}
 	};
 
 
@@ -547,7 +547,7 @@ export default function DesignDrawing() {
 							</div>
 						</div>
 
-						<table className={styles.designTable} style={{ width: "100%", marginTop: 8 }}>
+						<table className={styles.designTable} style={{ width: "100%", marginTop: 8, textAlign: "center" }}>
 							<thead>
 								<tr>
 									<th>PMIS Drawing No.</th>
@@ -677,7 +677,7 @@ export default function DesignDrawing() {
 							</div>
 						</div>
 
-						<table className={styles.uploadedDesignTable} style={{ width: "100%", marginTop: 8 }}>
+						<table className={styles.uploadedDesignTable} style={{ width: "100%", marginTop: 8, textAlign: "center" }}>
 							<thead>
 								<tr>
 									<th>Uploaded File</th>
@@ -691,20 +691,20 @@ export default function DesignDrawing() {
 								{uploadedPageSlice.length > 0 ? (
 									uploadedPageSlice.map((uf, index) => (
 										<tr key={uf.id ?? index}>
-										<td>
-										  {uf.uploaded_file ? (
-										    <a
-										      href={`http://localhost:8080/wrpmis/DESIGN_REVISION_FILES/${uf.uploaded_file}`}
-										      target="_blank"
-										      rel="noopener noreferrer"
-										      style={{ color: "blue", textDecoration: "underline" }}
-										    >
-										      {uf.uploaded_file}
-										    </a>
-										  ) : (
-										    ""
-										  )}
-										</td>
+											<td>
+												{uf.uploaded_file ? (
+													<a
+														href={`/DESIGN_REVISION_FILES/${uf.uploaded_file}`}
+														download
+														style={{ color: "blue", textDecoration: "underline" }}
+													>
+														{uf.uploaded_file}
+													</a>
+												) : (
+													""
+												)}
+											</td>
+
 											<td>{uf.status}</td>
 											<td>{uf.remarks}</td>
 											<td>{uf.uploaded_by_user_id_fk}</td>

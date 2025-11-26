@@ -2653,10 +2653,10 @@ public class DesignRepository implements IDesignRepo {
 
 	    String insertDesignSql = "INSERT INTO design (project_id_fk,contract_id_fk,department_id_fk,hod,dy_hod,prepared_by_id_fk,consultant_contract_id_fk,proof_consultant_contract_id_fk,"
 	            + "structure_type_fk,drawing_type_fk,contractor_drawing_no,mrvc_drawing_no,division_drawing_no,hq_drawing_no,drawing_title,"
-	            + "gfc_released,remarks,approving_railway,approval_authority_fk,structure_id_fk,required_date,component,design_seq_id,[3pvc]) "
+	            + "gfc_released,remarks,approving_railway,approval_authority_fk,structure_id_fk,required_date,component,design_seq_id,[3pvc],created_date) "
 	            + "VALUES(:project_id_fk,:contract_id_fk,:department_id_fk,:hod,:dy_hod,:prepared_by_id_fk,:consultant_contract_id_fk,:proof_consultant_contract_id_fk,:structure_type_fk"
 	            + ",:drawing_type_fk,:contractor_drawing_no,:mrvc_drawing_no,:division_drawing_no,:hq_drawing_no,:drawing_title,"
-	            + ":gfc_released,:remarks,:approving_railway,:approval_authority_fk,:structure_id_fk,:required_date,:component,:design_seq_id,:threepvc)";
+	            + ":gfc_released,:remarks,:approving_railway,:approval_authority_fk,:structure_id_fk,:required_date,:component,:design_seq_id,:threepvc,CURRENT_TIMESTAMP)";
 
 	    String updateDesignSql = "UPDATE design set contract_id_fk= :contract_id_fk, approving_railway= :approving_railway, department_id_fk= :department_id_fk,hod= :hod,"
 	            + "dy_hod= :dy_hod,structure_type_fk= :structure_type_fk,structure_id_fk= :structure_id_fk,prepared_by_id_fk= :prepared_by_id_fk ,consultant_contract_id_fk= :consultant_contract_id_fk,"
