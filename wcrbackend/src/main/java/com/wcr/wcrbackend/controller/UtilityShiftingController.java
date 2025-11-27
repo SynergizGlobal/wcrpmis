@@ -1064,10 +1064,10 @@ public class UtilityShiftingController {
         
         return style;
 	}
-	///////
+
 	@PostMapping(value = "/upload-utility-shifting")
     public ResponseEntity<?> uploadUtilityShifting(
-            @RequestParam("file") MultipartFile file, // Changed to @RequestParam
+            @RequestParam("file") MultipartFile file,
             HttpSession session) {
         
         String msg = "";
@@ -1119,7 +1119,8 @@ public class UtilityShiftingController {
                                 boolean tempFlag = false;
                                 for (int i = 0; i < columnSize; i++) {
                                     columnName = headerRow.getCell(i).getStringCellValue().trim();
-                                    if (i == 0 && "Utility ID".equalsIgnoreCase(fileFormat.get(i).trim()) && columnName.equals("Project") && !columnName.equals(fileFormat.get(i).trim())) {
+                                    if (i == 0 && "Utility ID".equalsIgnoreCase(fileFormat.get(i).trim()) && columnName.equals("Project") 
+                                    		&& !columnName.equals(fileFormat.get(i).trim())) {
                                         tempFlag = true;
                                     }
                                     if (tempFlag) {
@@ -1203,9 +1204,22 @@ public class UtilityShiftingController {
 
                         if (count > 0) {
                             attributeKey = "success";
-                            attributeMsg = "<i class='fa fa-check'></i>&nbsp;" + count + "<span style='color:green;'> records Uploaded successfully.</span>";
-                            msg = count + " records Uploaded successfully.";
-
+                            String columnName = headerRow.getCell(0).getStringCellValue().trim();
+                            if( columnName.equals("Utility ID"))
+                            {
+                            	attributeMsg = "<i class='fa fa-check'></i>&nbsp;" + count + "<span style='color:green;'> records updated successfully.</span>";
+                            	msg = count + " records Uploaded successfully.";}
+                            else if(columnName.equals("Project"))
+                            {
+                            	attributeMsg = "<i class='fa fa-check'></i>&nbsp;" + count + "<span style='color:green;'> records Added successfully.</span>";
+                                msg = count + " records Added successfully.";
+                            }
+                            else
+                            {
+                            	attributeMsg = "<i class='fa fa-check'></i>&nbsp;" + count + "<span style='color:green;'> records Added / updated successfully.</span>";
+                                msg = count + " records Added / updated successfully.";
+                            }
+                            
                             // Save form history
                             FormHistory formHistory = new FormHistory();
                             formHistory.setCreated_by_user_id_fk(obj.getCreated_by_user_id_fk());
@@ -1260,256 +1274,7 @@ public class UtilityShiftingController {
         
         return ResponseEntity.ok(Map.of(attributeKey, attributeMsg));
     }
-//	@PostMapping(value = "/upload-utility-shifting")
-//	public ResponseEntity<?> uploadUtilityShifting(@ModelAttribute UtilityShifting obj,RedirectAttributes attributes,HttpSession session){
-//		//ModelAndView model = new ModelAndView();
-//		String msg = "";String userId = null;
-//		String attributeKey="";
-//		String attributeMsg = "";
-//		try {
-//			User uObj = (User) session.getAttribute("user");
-//			userId = uObj.getUserId();
-//			String userName = uObj.getUserName();
-//			String userDesignation = uObj.getDesignation();
-//			
-//			obj.setCreated_by_user_id_fk(userId);
-//			obj.setUser_id(userId);
-//			obj.setUser_name(userName);
-//			obj.setDesignation(userDesignation);
-//			//model.setViewName("redirect:/utilityshifting");
-//			
-//			if(!StringUtils.isEmpty(obj.getUtilityFile())){
-//				MultipartFile multipartFile = obj.getUtilityFile();
-//				// Creates a workbook object from the uploaded excelfile
-//				if (multipartFile.getSize() > 0){					
-//					XSSFWorkbook workbook = new XSSFWorkbook(multipartFile.getInputStream());
-//					// Creates a worksheet object representing the first sheet
-//					int sheetsCount = workbook.getNumberOfSheets();
-//					if(sheetsCount > 0) {
-//						XSSFSheet laSheet = workbook.getSheetAt(0);
-//						//System.out.println(uploadFilesSheet.getSheetName());
-//						//header row
-//						XSSFRow headerRow = laSheet.getRow(0);
-//						//checking given file format
-//						if(headerRow != null){
-//							List<String> fileFormat = FileFormatModel.getUtilityShiftingFileFormat();	
-//							int columnSize = fileFormat.size();
-//							int noOfColumns = headerRow.getLastCellNum();
-//							String columnName = headerRow.getCell(0).getStringCellValue().trim();
-//							if(!columnName.equalsIgnoreCase(fileFormat.get(0).trim()) &&  columnName.equals("Project")) {
-//								columnSize = columnSize - 1;
-//							}
-//							if(noOfColumns == columnSize){
-//								boolean tempFlag = false;
-//								for (int i = 0; i < columnSize;i++) {
-//				                	//System.out.println(headerRow.getCell(i).getStringCellValue().trim());
-//				                	//if(!fileFormat.get(i).trim().equals(headerRow.getCell(i).getStringCellValue().trim())){
-//									columnName = headerRow.getCell(i).getStringCellValue().trim();
-//									if(i == 0 && "Utility ID".equalsIgnoreCase(fileFormat.get(i).trim()) && columnName.equals("Project") && !columnName.equals(fileFormat.get(i).trim())) {
-//										tempFlag = true;
-//									}
-//									if(tempFlag) {i++;}
-//									if(!columnName.equals(fileFormat.get(i).trim()) && !columnName.contains(fileFormat.get(i).trim())){
-//				                		attributes.addFlashAttribute("error",uploadformatError);
-//				                		msg = uploadformatError;
-//				                		obj.setUploaded_by_user_id_fk(userId);
-//				                		obj.setStatus("Fail");
-//				                		obj.setRemarks(msg);
-//										boolean flag = utilityShiftingService.saveUSDataUploadFile(obj);
-//				                		return ResponseEntity.ok(Map.of("error",uploadformatError));
-//				                	}
-//								}
-//							}else{
-//								attributes.addFlashAttribute("error",uploadformatError);
-//								msg = uploadformatError;
-//		                		obj.setUploaded_by_user_id_fk(userId);
-//		                		obj.setStatus("Fail");
-//		                		obj.setRemarks(msg);
-//								boolean flag = utilityShiftingService.saveUSDataUploadFile(obj);
-//								return ResponseEntity.ok(Map.of("error",uploadformatError));
-//							}
-//						}else{
-//							attributes.addFlashAttribute("error",uploadformatError);
-//							msg = uploadformatError;
-//	                		obj.setUploaded_by_user_id_fk(userId);
-//	                		obj.setStatus("Fail");
-//	                		obj.setRemarks(msg);
-//							boolean flag = utilityShiftingService.saveUSDataUploadFile(obj);
-//							return ResponseEntity.ok(Map.of("error",uploadformatError));
-//						}
-//						String[]  result = uploadUtilityShifting(obj,userId,userName);
-//						String errMsg = result[0];String actualVal = "";
-//						int count = 0,row = 0,sheet = 0,subRow = 0;
-//						List<String> fileFormat = FileFormatModel.getUtilityShiftingFileFormat();	
-//						if(!StringUtils.isEmpty(result[1])){count = Integer.parseInt(result[1]);}
-//						if(!StringUtils.isEmpty(result[2])){row = Integer.parseInt(result[2]);}
-//						if(!StringUtils.isEmpty(result[3])){sheet = Integer.parseInt(result[3]);}
-//						if(!StringUtils.isEmpty(result[4])){subRow = Integer.parseInt(result[4]);}
-//						if(!StringUtils.isEmpty(errMsg)){
-//							if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Duplicate entry")) {
-//								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;<b>Work and Utility Shifting Id Mismatch at row: ("+row+")</b> please check and Upload again.</span>");
-//								attributeKey = "error";
-//								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;<b>Work and Utility Shifting Id Mismatch at row: ("+row+")</b> please check and Upload again.</span>";
-//								msg = "Work and Utility Shifting Id Mismatch at row: "+row;
-//							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Data truncated")) {
-//								actualVal = Integer.toString(subRow);
-//								if(sheet == 1) {subRow = row; 
-//									String error = "Data truncated";
-//									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
-//								} 
-//								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
-//								attributeKey = "error";
-//								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
-//								
-//								msg = "Incorrect value identified in Sheet: "+sheet+" at row: "+actualVal;
-//							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Cannot add or update a child row")) {
-//								actualVal = Integer.toString(subRow);
-//								if(sheet == 1) {subRow = row;
-//									String error = "Cannot add or update a child row";
-//									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
-//								}
-//								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
-//								
-//								attributeKey = "error";
-//								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect Value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
-//								
-//								msg = "Incorrect value identified in Sheet: "+sheet+" at row: "+actualVal;
-//							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Incorrect date value")) {
-//								actualVal = Integer.toString(subRow);
-//								if(sheet == 1) {subRow = row;
-//									String error = "Incorrect date value";
-//									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
-//								}
-//								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect date value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
-//								attributeKey = "error";
-//								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect date value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
-//								
-//								
-//								msg = "Incorrect date value identified in Sheet: "+sheet+" at row: "+actualVal;
-//							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Incorrect integer value")) {
-//								actualVal = Integer.toString(subRow);
-//								if(sheet == 1) {subRow = row; 
-//									String error = "Incorrect integer value";
-//									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
-//								}
-//								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect integer value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
-//								
-//								attributeKey = "error";
-//								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect integer value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
-//								
-//								msg = "Incorrect integer value identified in Sheet: "+sheet+" at row: "+actualVal;
-//							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Incorrect decimal value")) {
-//								actualVal = Integer.toString(subRow);
-//								if(sheet == 1) {subRow = row;
-//									String error = "Incorrect decimal value";
-//									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
-//								}
-//								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect decimal value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
-//								attributeKey = "error";
-//								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Incorrect decimal value identified in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
-//								
-//								msg = "Incorrect decimal value identified in Sheet: "+sheet+" at row: "+actualVal;
-//							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Data too long for column")) {
-//								actualVal = Integer.toString(subRow);
-//								if(sheet == 1) {subRow = row;
-//									String error = "Data too long for column";
-//									actualVal = FileFormatModel.getActualValue(error,errMsg,subRow,fileFormat);
-//								}
-//								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Data too long for value in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>");
-//								
-//								attributeKey = "error";
-//								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;Data too long for value in <b>Sheet: ["+sheet+"]</b> at <b>row: ["+actualVal+"]</b> please check and Upload again.</span>";
-//								
-//								
-//								msg = "Incorrect decimal value identified in Sheet: "+sheet+" at row: "+actualVal;
-//							}else if(!StringUtils.isEmpty(errMsg) && errMsg.contains("Invalid Rows")) {
-//								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;"+errMsg+"</span>");
-//								attributeKey = "error";
-//								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;"+errMsg+"</span>";
-//								
-//								msg = errMsg;
-//							}else {
-//								attributes.addFlashAttribute("error","<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;"+errMsg+"</span>");
-//								attributeKey = "error";
-//								attributeMsg = "<span style='color:red;'><i class='fa fa-warning'></i>&nbsp;"+errMsg+"</span>";
-//								
-//								msg = errMsg;
-//							}
-//						
-//	                		obj.setUploaded_by_user_id_fk(userId);
-//	                		obj.setStatus("Fail");
-//	                		obj.setRemarks(msg);
-//							boolean flag = utilityShiftingService.saveUSDataUploadFile(obj);
-//	                		return ResponseEntity.ok(Map.of(attributeKey, attributeMsg));
-//						}
-//						
-//						if(count > 0) {
-//							attributes.addFlashAttribute("success","<i class='fa fa-check'></i>&nbsp;"+ count + "<span style='color:green;'> records Uploaded successfully.</span>");	
-//							attributeKey = "success";
-//							attributeMsg = "<i class='fa fa-check'></i>&nbsp;"+ count + "<span style='color:green;'> records Uploaded successfully.</span>";
-//							
-//							msg = count + " records Uploaded successfully.";
-//							
-//							FormHistory formHistory = new FormHistory();
-//							formHistory.setCreated_by_user_id_fk(obj.getCreated_by_user_id_fk());
-//							formHistory.setUser(obj.getDesignation()+" - "+obj.getUser_name());
-//							formHistory.setModule_name_fk("Utility Shifting");
-//							formHistory.setForm_name("Upload Utility Shifting");
-//							formHistory.setForm_action_type("Upload");
-//							formHistory.setForm_details( msg);
-//							formHistory.setWork(obj.getWork_id_fk());
-//							//formHistory.setContract(obj.getContract_id_fk());
-//							
-//							boolean history_flag = formsHistoryDao.saveFormHistory(formHistory);
-//							/********************************************************************************/
-//						}else {
-//							attributes.addFlashAttribute("success"," No records found.");	
-//							attributeKey = "success";
-//							attributeMsg = " No records found.";
-//							
-//							msg = " No records found.";
-//						}
-//                		obj.setUploaded_by_user_id_fk(userId);
-//                		obj.setStatus("Success");
-//                		obj.setRemarks(msg);
-//						boolean flag = utilityShiftingService.saveUSDataUploadFile(obj);
-//					}
-//					workbook.close();
-//				}
-//			} else {
-//				attributes.addFlashAttribute("error", "Something went wrong. Please try after some time");
-//				
-//				attributeKey = "error";
-//				attributeMsg = "Something went wrong. Please try after some time";
-//				
-//				msg = "No file exists";
-//				obj.setUploaded_by_user_id_fk(userId);
-//        		obj.setStatus("Fail");
-//        		obj.setRemarks(msg);
-//				boolean flag = utilityShiftingService.saveUSDataUploadFile(obj);
-//			}
-//			
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			attributes.addFlashAttribute("error", "Something went wrong. Please try after some time");
-//			attributeKey = "error";
-//			attributeMsg = "Something went wrong. Please try after some time";
-//			logger.fatal("updateDataDate() : "+e.getMessage());
-//			msg = "Something went wrong. Please try after some time";
-//			obj.setUploaded_by_user_id_fk(userId);
-//    		obj.setStatus("Fail");
-//    		obj.setRemarks(msg);
-//			try {
-//				boolean flag = utilityShiftingService.saveUSDataUploadFile(obj);
-//			} catch (Exception e1) {
-//				attributes.addFlashAttribute("error", "Something went wrong. Please try after some time");
-//				attributeKey = "error";
-//				attributeMsg = "Something went wrong. Please try after some time";
-//				logger.fatal("saveDesignDataUploadFile() : "+e.getMessage());
-//			}
-//		}
-//		return ResponseEntity.ok(Map.of(attributeKey,attributeMsg));
-//	}
+
 	private  String[]  uploadUtilityShifting(UtilityShifting obj, String userId, String userName) throws Exception {
 		UtilityShifting us = null;
 	
@@ -1531,19 +1296,13 @@ public class UtilityShiftingController {
 				if(sheetsCount > 0) {					
 					XSSFSheet laSheet = workbook.getSheetAt(0);
 					
-					FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator(); 
-					WorkbookEvaluatorProvider workbookEvaluatorProvider =
-							   (WorkbookEvaluatorProvider)workbook.getCreationHelper().createFormulaEvaluator();
-					ConditionalFormattingEvaluator cfEvaluator = 
-							   new ConditionalFormattingEvaluator(workbook, workbookEvaluatorProvider);
-					
-					//System.out.println(uploadFilesSheet.getSheetName());
-					//header row
-					//XSSFRow headerRow = uploadFilesSheet.getRow(0);							
+				
+							
 					DataFormatter formatter = new DataFormatter(); //creating formatter using the default locale
 					//System.out.println(uploadFilesSheet.getLastRowNum());
+
+
 					for(int i = 1; i <= laSheet.getLastRowNum();i++){
-						int v = laSheet.getLastRowNum();
 						XSSFRow headerRow = laSheet.getRow(0);
 						String columnName = headerRow.getCell(0).getStringCellValue();
 						XSSFRow row = laSheet.getRow(i);
@@ -1561,16 +1320,13 @@ public class UtilityShiftingController {
 							}
 							
 							val = formatter.formatCellValue(row.getCell(p++)).trim();
-							if(!StringUtils.isEmpty(val)) { us.setProject_name(val);}
-							
-							val = formatter.formatCellValue(row.getCell(p++)).trim();
-							if(!StringUtils.isEmpty(val)) { us.setWork_short_name(val);}
-							
+							if(!StringUtils.isEmpty(val)) { us.setProject_id_fk(val);}
+
 							val = formatter.formatCellValue(row.getCell(p++)).trim();
 							if(!StringUtils.isEmpty(val)) { us.setExecution_agency_fk(val);}
 							
 							val = formatter.formatCellValue(row.getCell(p++)).trim();
-							if(!StringUtils.isEmpty(val)) { us.setDesignation(val);}
+							if(!StringUtils.isEmpty(val)) { us.setHod_user_id_fk(val);}
 							
 							val = formatter.formatCellValue(row.getCell(p++)).trim();
 							if(!StringUtils.isEmpty(val)) { us.setUtility_type_fk(val);}
@@ -1599,7 +1355,7 @@ public class UtilityShiftingController {
 							if(!StringUtils.isEmpty(val)) { us.setExecuted_by(val);}
 							
 							val = formatter.formatCellValue(row.getCell(p++)).trim();
-							if(!StringUtils.isEmpty(val)) { us.setContract_short_name(val);}					
+							if(!StringUtils.isEmpty(val)) { us.setImpacted_contract_id_fk(val);}					
 							
 							
 							val = formatter.formatCellValue(row.getCell(p++)).trim();
@@ -1614,7 +1370,7 @@ public class UtilityShiftingController {
 							//val = formatter.formatCellValue(row.getCell(p++)).trim();
 							//val = formatter.formatCellValue(row.getCell(p++),evaluator,cfEvaluator).trim();
 							val = getCellTypeDateValue(row.getCell(p++));
-							if(!StringUtils.isEmpty(val)) {us.setPlanned_completion_date(val);}							
+							if(!StringUtils.isEmpty(val)) {us.setTarget_date(val);}							
 						
 							val = formatter.formatCellValue(row.getCell(p++)).trim();
 							if(!StringUtils.isEmpty(val)) { 
@@ -1696,8 +1452,8 @@ public class UtilityShiftingController {
 										
 									}
 									
-									val = formatter.formatCellValue(row2.getCell(2)).trim();
-									pObj.setProgress_of_work(val);									
+//									val = formatter.formatCellValue(row2.getCell(2)).trim();
+//									pObj.setProgress_of_work(val);									
 									
 									pObj.setProgress_date(DateParser.parse(pObj.getProgress_date()));
 								
@@ -1709,18 +1465,16 @@ public class UtilityShiftingController {
 							}
 							us.setProcessList(pObjList);
 						}
-				
-						boolean flag = us.checkNullOrEmpty();
-						if(!flag && !StringUtils.isEmpty(us.getWork_short_name()) 
-								 	&& !StringUtils.isEmpty(us.getUtility_type_fk())
-								 		&& !StringUtils.isEmpty(us.getUtility_description())
-								 			&& !StringUtils.isEmpty(us.getDesignation())
-								 				&& !StringUtils.isEmpty(us.getContract_short_name())
-								 					&& !StringUtils.isEmpty(us.getRequirement_stage_fk())
-								 						&& !StringUtils.isEmpty(us.getExecution_agency_fk())) {
+
+						boolean isNull = us.checkNullOrEmpty();
+						if (!isNull && !StringUtils.isEmpty(us.getUtility_type_fk())
+								&& !StringUtils.isEmpty(us.getUtility_description())
+								&& !StringUtils.isEmpty(us.getImpacted_contract_id_fk())
+								&& !StringUtils.isEmpty(us.getRequirement_stage_fk())
+								&& !StringUtils.isEmpty(us.getExecution_agency_fk())) {
 							ussList.add(us);
 						}else {						
-							invalidRows = invalidRows + (i+1) +",";
+							invalidRows = invalidRows + (i-1) +",";
 						}
 					}
 				}
@@ -1734,7 +1488,7 @@ public class UtilityShiftingController {
 				}
 				if(!StringUtils.isEmpty(invalidRows)){					
 					String invalidRowsList = invalidRows.substring(0, invalidRows.length() - 1);
-					result[0] = "Invalid Rows :"+ invalidRowsList + " <br>Required fields: Work, Execution Agency, HOD, Utility Type, Utility Description, Impacted Contract,Requirement stage ";
+					result[0] = "Invalid Rows :"+ invalidRowsList + " <br>Required fields: Execution Agency, HOD, Utility Type, Utility Description, Impacted Contract,Requirement stage ";
 				}
 				workbook.close();
 			}
@@ -1909,7 +1663,7 @@ public class UtilityShiftingController {
 	        
 	        
             XSSFRow headingRow = utilityShiftingSheet.createRow(0);
-            String headerString = "Project ^Work ^Execution Agency ^HOD ^Utility Type ^Utility Description ^Location ^Custodian ^Identification Date ^Reference No. "
+            String headerString = "Project  ^Execution Agency ^HOD ^Utility Type ^Utility Description ^Location ^Custodian ^Identification Date ^Reference No. "
             		+ "^Chainage ^Executed By ^Impacted Contract  ^Requirement stage "
             		+ "^Impacted Element ^Affected Structures  ^Target Date ^Scope ^Completed ^Unit ^Start Date ^Status ^Completetion Date ^Remarks";
             
