@@ -1,0 +1,192 @@
+.container {
+  padding: 20px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #2a2a2a;
+}
+
+.container {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 2px solid var(--primary-color);
+  min-height: 90vh;
+}
+.dashboardMenu {
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  z-index: 10;
+  margin-bottom: 15px;
+}
+
+.menuList {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.menuItem {
+  position: relative;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-size: 14px;
+  border: 2px solid var(--primary-color);
+  border-radius: 5px;
+  color: #000;
+}
+
+.menuItem:hover {
+  background-color: var(--secondary-blue);
+  color: #fff;
+}
+
+.menuItem.active {
+  background-color: var(--secondary-blue);
+  color: #fff;
+}
+
+/* Dropdown Submenu */
+.subMenuList {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--secondary-blue);
+  color: #fff;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 0 0 4px 4px;
+  min-width: 220px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 20;
+}
+
+.subMenuItem {
+  padding: 10px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.subMenuItem:hover {
+  background-color: var(--primary-color);
+}
+.menuLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* arrow beside submenu item */
+.arrow {
+  font-size: 10px;
+  transition: transform 0.3s ease;
+  display: inline-block;
+  margin-left: 4px;
+}
+
+/* rotate arrow when open */
+.arrowOpen {
+  transform: rotate(180deg);
+}
+
+/* Optional: If using lucide-react ChevronDown */
+.arrowIcon {
+  transition: transform 0.3s ease;
+}
+
+.arrowIcon.arrowOpen {
+  transform: rotate(180deg);
+}
+.pageTitle {
+  font-size: 20px; /* reduced from 30px */
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Responsive View */
+@media (max-width: 767px) {
+  .subMenu {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menuList {
+    /* flex-direction: column; */
+    align-items: stretch;
+  }
+
+  .menuItem {
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .subMenuList {
+    /* position: relative; */
+    box-shadow: none;
+    min-width: unset;
+  }
+}
+
+
+.infoBox {
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed #cccccc;
+}
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-weight: 500;
+  color: #4a4a4a;
+}
+
+.value {
+  font-weight: 400;
+  color: #1b1b1b;
+}
+
+.chartSection {
+  margin-top: 30px;
+  padding: 20px;
+  background: #fafafa;
+  border: 1px solid #e4e4e4;
+  border-radius: 8px;
+}
+
+h1 {
+    font-size: 20px;
+}
+
+.backButton {
+  margin-top: -20px;   /* adjust this value until it looks perfect */
+  z-index: 9999;
+}
+
+.topTabsContainer {
+  display: none !important;
+}
