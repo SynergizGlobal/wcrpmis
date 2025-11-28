@@ -1,3 +1,5 @@
+import DashboardForm from "./components/Admin/Dashboards/DashboardForm/DashboardForm";
+import Dashboards from "./components/Admin/Dashboards/Dashboards";
 import UserForm from "./components/Admin/Users/UserForm/UserForm";
 import Users from "./components/Admin/Users/Users";
 import AddStructureForm from "./components/UpdateForms/AddStructure/AddStructureForm/AddStructureForm";
@@ -105,7 +107,7 @@ function App() {
                   <Route path="add-contractor-form" element={<ContractorForm />} />
                   </Route>
 				
-				<Route path="structure" element={<AddStructure />} >
+				<Route path="structure" element={<AddStructure />}>
 	             <Route path="addstructureform" element={<AddStructureForm />} />
                 </Route>
 
@@ -118,11 +120,14 @@ function App() {
                 </Route>
               </Route>
               <Route path="works" element={<Works />} />
-              <Route path="admin" element={<Admin />} >
-                <Route path="users" element={<Users />} >
+              <Route path="admin" element={<Admin />}>
+                <Route path="users" element={<Users />}>
                   <Route path="userform" element={<UserForm />} />
                 </Route>
-              </Route>
+				<Route path="access-dashboards" element={<Dashboards />} >
+              		<Route path="dashboardform" element={<DashboardForm />} />
+				</Route>
+			  </Route>
               <Route path="modules" element={<Modules />} />
               <Route path="reports" element={<Reports />} />
               <Route path="documents" element={<Documents />} />

@@ -34,6 +34,8 @@ import com.wcr.wcrbackend.common.DBConnectionHandler;
 import com.wcr.wcrbackend.common.DateParser;
 import com.wcr.wcrbackend.common.EMailSender;
 import com.wcr.wcrbackend.common.FileUploads;
+
+import jakarta.transaction.Transactional;
 @Repository
 public class UtilityShiftingRepo implements IUtilityShiftingRepo {
 	public static Logger logger = Logger.getLogger(UtilityShiftingRepo.class);
@@ -1865,192 +1867,197 @@ public class UtilityShiftingRepo implements IUtilityShiftingRepo {
 		}
 		return flag;
 	}
+
+	@Transactional
 	@Override
 	public String[] uploadUtilityShiftingData(List<UtilityShifting> ussList, UtilityShifting us) throws Exception {
 		boolean flag = false;
-		int count = 0,row =1,sheet = 1,subRow = 1;
-		int sheet1 =1;
+		int count = 0, row = 1, sheet = 1, subRow = 1;
+		int sheet1 = 1;
 		String errMsg = null;
-		//TransactionDefinition def = new DefaultTransactionDefinition();
-		//TransactionStatus status = transactionManager.getTransaction(def);
+		// TransactionDefinition def = new DefaultTransactionDefinition();
+		// TransactionStatus status = transactionManager.getTransaction(def);
 		try {
-			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
-			String insertQry  = "INSERT INTO utility_shifting"
-					+ "(utility_shifting_id, project_id_fk,execution_agency_fk,hod_user_id_fk, utility_type_fk, utility_description, "
-					+ "location_name,custodian,identification,reference_number,chainage,executed_by,impacted_contract_id_fk,requirement_stage_fk, "
-					+ "impacted_element,affected_structures,planned_completion_date,scope, completed,unit_fk,start_date,shifting_status_fk, "
-					+ "shifting_completion_date, remarks,created_by,created_date,latitude,longitude) "
-					+ "VALUES "
-					+ "(:utility_shifting_id,:project_id_fk,:execution_agency_fk,:hod_user_id_fk,:utility_type_fk,:utility_description,"
-					+ ":location_name,:custodian,:identification,:reference_number,:chainage,:executed_by,:impacted_contract_id_fk,:requirement_stage_fk,"
-					+ ":impacted_element,:affected_structures,:planned_completion_date,:scope,:completed,:unit_fk,:start_date,:shifting_status_fk,"
-					+ ":shifting_completion_date,:remarks,:created_by_user_id_fk,CURRENT_TIMESTAMP,:latitude,:longitude"
-					+ ")";	
-			
-			String updatetQry = "UPDATE utility_shifting SET  project_id_fk=:project_id_fk, execution_agency_fk=:execution_agency_fk,"
-					+ "hod_user_id_fk=:hod_user_id_fk, utility_type_fk=:utility_type_fk, utility_description=:utility_description, location_name=:location_name,"
-					+ " custodian=:custodian, identification=:identification, reference_number=:reference_number, chainage=:chainage, executed_by=:executed_by, impacted_contract_id_fk=:impacted_contract_id_fk,"
-					+ " requirement_stage_fk=:requirement_stage_fk, impacted_element=:impacted_element, affected_structures=:affected_structures, planned_completion_date=:planned_completion_date,"
-					+ " scope=:scope, completed=:completed, unit_fk=:unit_fk,start_date=:start_date,shifting_status_fk=:shifting_status_fk, "
-					+ " shifting_completion_date=:shifting_completion_date, remarks=:remarks,modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP,latitude=:latitude,longitude=:longitude "
-					+ " WHERE utility_shifting_id = :utility_shifting_id";	
-		
+			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(
+					jdbcTemplate.getDataSource());
+			String insertQry = "INSERT INTO utility_shifting"
+					+ "(utility_shifting_id, project_id_fk, execution_agency_fk, hod_user_id_fk, utility_type_fk, utility_description, "
+					+ "location_name, custodian, identification, reference_number, chainage, executed_by, impacted_contract_id_fk, requirement_stage_fk, "
+					+ "impacted_element, affected_structures, planned_completion_date, scope, completed, unit_fk, start_date, shifting_status_fk, "
+					+ "shifting_completion_date, remarks, created_by, created_date, latitude, longitude) " + "VALUES "
+					+ "(:utility_shifting_id, :project_id_fk, :execution_agency_fk, :hod_user_id_fk, :utility_type_fk, :utility_description, "
+					+ ":location_name, :custodian, :identification, :reference_number, :chainage, :executed_by, :impacted_contract_id_fk, :requirement_stage_fk, "
+					+ ":impacted_element, :affected_structures, :planned_completion_date, :scope, :completed, :unit_fk, :start_date, :shifting_status_fk, "
+					+ ":shifting_completion_date, :remarks, :created_by_user_id_fk, CURRENT_TIMESTAMP, :latitude, :longitude)";
+
+			String updatetQry = "UPDATE utility_shifting SET project_id_fk = :project_id_fk, execution_agency_fk = :execution_agency_fk, "
+					+ "hod_user_id_fk = :hod_user_id_fk, utility_type_fk = :utility_type_fk, utility_description = :utility_description, location_name = :location_name, "
+					+ "custodian = :custodian, identification = :identification, reference_number = :reference_number, chainage = :chainage, executed_by = :executed_by, "
+					+ "impacted_contract_id_fk = :impacted_contract_id_fk, requirement_stage_fk = :requirement_stage_fk, impacted_element = :impacted_element, "
+					+ "affected_structures = :affected_structures, planned_completion_date = :planned_completion_date, scope = :scope, completed = :completed, "
+					+ "unit_fk = :unit_fk, start_date = :start_date, shifting_status_fk = :shifting_status_fk, shifting_completion_date = :shifting_completion_date, "
+					+ "remarks = :remarks, modified_by = :created_by_user_id_fk, modified_date = CURRENT_TIMESTAMP, latitude = :latitude, longitude = :longitude "
+					+ "WHERE utility_shifting_id = :utility_shifting_id";
+
 			for (UtilityShifting obj : ussList) {
-				
-				String work_id = getWorkId(obj);
+
 				String contract_id = getContractId(obj);
 				String hod_user_id = getHodUserId(obj);
-				
-				obj.setProject_id_fk(work_id);
+
+				// obj.setProject_id_fk(work_id);
 				obj.setImpacted_contract_id_fk(contract_id);
 				obj.setHod_user_id_fk(hod_user_id);
-				
-				String work_code = getWorkCode(obj);
-				obj.setWork_code(work_code);
-				
-				if(!StringUtils.isEmpty(obj.getChainage())) {
-					double c1=Double.parseDouble(obj.getChainage());
+
+				if (!StringUtils.isEmpty(obj.getChainage())) {
+					double c1 = Double.parseDouble(obj.getChainage());
 					obj.setProject_id_fk(obj.getProject_id_fk());
-					
-					List<UtilityShifting> getChainageCoordinates=getRRCoordinates(obj);
-					
-					if(!StringUtils.isEmpty(getChainageCoordinates.get(0).getChainage()))
-					{
-					
-						String splitChainage=getChainageCoordinates.get(0).getChainage();
-						String splitChainage1=splitChainage.toString();
-						String[] splitChainage2=splitChainage1.split(",");
-							
-						String splitLatitude=getChainageCoordinates.get(0).getLatitude();
-						String splitLatitude1=splitLatitude.toString();
-						String[] splitLatitude2=splitLatitude1.split(",");
-		            	
-						String splitLongitude=getChainageCoordinates.get(0).getLongitude();
-						String splitLongitude1=splitLongitude.toString();
-						String[] splitLongitude2=splitLongitude1.split(",");                    	
-		            	
-		            	
-						String a1= splitChainage2[0];    String x1=splitLatitude2[0]; String y1=splitLongitude2[0];
-						String b1=splitChainage2[1];	 String x2=splitLatitude2[1]; String y2=splitLongitude2[1];
-		
-						double x3=0;   double y3=0;
-		
-		                x3=Double.parseDouble(x2)+(((c1-Double.parseDouble(b1))/(Double.parseDouble(b1)-Double.parseDouble(a1)))*(Double.parseDouble(x2)-Double.parseDouble(x1)));
-		                y3=Double.parseDouble(y2)+(((c1-Double.parseDouble(b1))/(Double.parseDouble(b1)-Double.parseDouble(a1)))*(Double.parseDouble(y2)-Double.parseDouble(y1)));				
-						
+
+					List<UtilityShifting> getChainageCoordinates = getRRCoordinates(obj);
+
+					if (!StringUtils.isEmpty(getChainageCoordinates.get(0).getChainage())) {
+
+						String splitChainage = getChainageCoordinates.get(0).getChainage();
+						String splitChainage1 = splitChainage.toString();
+						String[] splitChainage2 = splitChainage1.split(",");
+
+						String splitLatitude = getChainageCoordinates.get(0).getLatitude();
+						String splitLatitude1 = splitLatitude.toString();
+						String[] splitLatitude2 = splitLatitude1.split(",");
+
+						String splitLongitude = getChainageCoordinates.get(0).getLongitude();
+						String splitLongitude1 = splitLongitude.toString();
+						String[] splitLongitude2 = splitLongitude1.split(",");
+
+						String a1 = splitChainage2[0];
+						String x1 = splitLatitude2[0];
+						String y1 = splitLongitude2[0];
+						String b1 = splitChainage2[1];
+						String x2 = splitLatitude2[1];
+						String y2 = splitLongitude2[1];
+
+						double x3 = 0;
+						double y3 = 0;
+
+						x3 = Double.parseDouble(x2)
+								+ (((c1 - Double.parseDouble(b1)) / (Double.parseDouble(b1) - Double.parseDouble(a1)))
+										* (Double.parseDouble(x2) - Double.parseDouble(x1)));
+						y3 = Double.parseDouble(y2)
+								+ (((c1 - Double.parseDouble(b1)) / (Double.parseDouble(b1) - Double.parseDouble(a1)))
+										* (Double.parseDouble(y2) - Double.parseDouble(y1)));
+
 						obj.setLatitude(String.valueOf(x3));
 						obj.setLongitude(String.valueOf(y3));
-					}
-					else
-					{
-						
-						String splitLatitude=getChainageCoordinates.get(0).getLatitude();
-						String splitLongitude=getChainageCoordinates.get(0).getLongitude();
-						
+					} else {
+
+						String splitLatitude = getChainageCoordinates.get(0).getLatitude();
+						String splitLongitude = getChainageCoordinates.get(0).getLongitude();
+
 						obj.setLatitude(String.valueOf(splitLatitude));
-						obj.setLongitude(String.valueOf(splitLongitude));					
+						obj.setLongitude(String.valueOf(splitLongitude));
 					}
-				}				
-				
-				
-				
-				
-				
+				}
+
 				String table_name = "utility_shifting";
-				String utility_shifting_id = checkLAIdMethod(obj,table_name);
-				row++;sheet = 1;
-				if(!StringUtils.isEmpty(utility_shifting_id)) {
-					obj.setUtility_shifting_id(utility_shifting_id);					
-					/*if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
-						if(checkWorkinUtility(obj.getProject_id_fk(),obj.getCreated_by_user_id_fk())>0){
-							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
-						    count = namedParamJdbcTemplate.update(updatetQry, paramSource);						
-						}
-					}else{*/
-						SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
-					    count = namedParamJdbcTemplate.update(updatetQry, paramSource);
-					//}
-				}else {		
+				String utility_shifting_id = checkLAIdMethod(obj, table_name);
+				row++;
+				sheet = 1;
+				if (StringUtils.hasText(utility_shifting_id)) {
+					obj.setUtility_shifting_id(utility_shifting_id);
+					/*
+					 * if(!StringUtils.isEmpty(obj) &&
+					 * !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())) {
+					 * if(checkWorkinUtility(obj.getProject_id_fk(),obj.getCreated_by_user_id_fk())>
+					 * 0){ SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+					 * count = namedParamJdbcTemplate.update(updatetQry, paramSource); } }else{
+					 */
+					SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+					count = namedParamJdbcTemplate.update(updatetQry, paramSource);
+					System.out.println("Repo count size after Update: " + count);
+
+					// }
+				} else {
 					String usId = getAutoGeneratedUSId(obj);
 					obj.setUtility_shifting_id(usId);
-					/*if(!StringUtils.isEmpty(obj) &&  !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())){
-						if(checkWorkinUtility(obj.getProject_id_fk(),obj.getCreated_by_user_id_fk())>0){
-							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
-						    count = namedParamJdbcTemplate.update(insertQry, paramSource);					
-						}
-					}else{*/
-						SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
-					    count = namedParamJdbcTemplate.update(insertQry, paramSource);
-					//}					
+					/*
+					 * if(!StringUtils.isEmpty(obj) &&
+					 * !CommonConstants.ROLE_CODE_IT_ADMIN.equals(obj.getUser_role_code())){
+					 * if(checkWorkinUtility(obj.getProject_id_fk(),obj.getCreated_by_user_id_fk())>
+					 * 0){ SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+					 * count = namedParamJdbcTemplate.update(insertQry, paramSource); } }else{
+					 */
+					SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+					count = namedParamJdbcTemplate.update(insertQry, paramSource);
+					// }
 
 				}
-				
-				if(!StringUtils.isEmpty(obj.getProcessList()) && obj.getProcessList().size() > 0) {
+
+				if (!StringUtils.isEmpty(obj.getProcessList()) && obj.getProcessList().size() > 0) {
 					subRow = sheet1;
 					String comInsertQry = "INSERT INTO utility_shifting_progress"
-							+ "( utility_shifting_id, progress_date, progress_of_work) "
-							+ "VALUES"
+							+ "( utility_shifting_id, progress_date, progress_of_work) " + "VALUES"
 							+ "(:utility_shifting_id, :progress_date, :progress_of_work)";
-					
-					String  comUpdateQry  = "UPDATE utility_shifting_progress SET "
+
+					String comUpdateQry = "UPDATE utility_shifting_progress SET "
 							+ " progress_date= :progress_date, progress_of_work= :progress_of_work Where utility_shifting_id = :utility_shifting_id";
-					
+
 					for (UtilityShifting obj1 : obj.getProcessList()) {
 						String table_name1 = "utility_shifting_progress";
-						String rr_id1 = checkLAIdMethod(obj1,table_name1);
-						sheet = 2;subRow++;
-						if(!StringUtils.isEmpty(rr_id1)) {
+						String rr_id1 = checkLAIdMethod(obj1, table_name1);
+						sheet = 2;
+						subRow++;
+						if (!StringUtils.isEmpty(rr_id1)) {
 							obj.setUtility_shifting_id(rr_id1);
 							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj1);
-						    count = namedParamJdbcTemplate.update(comUpdateQry, paramSource);
-						}else {
+							count = namedParamJdbcTemplate.update(comUpdateQry, paramSource);
+						} else {
 							SqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj1);
-						    count = namedParamJdbcTemplate.update(comInsertQry, paramSource);
-						   
+							count = namedParamJdbcTemplate.update(comInsertQry, paramSource);
+
 						}
 					}
 					sheet1 = sheet1 + obj.getProcessList().size();
 				}
 			}
-		   count = ussList.size();
-		   //transactionManager.commit(status);
-		}catch(Exception e){ 
-			//transactionManager.rollback(status);
-			//e.printStackTrace();
-			errMsg = "Something went wrong. Please try with correct data ";			
+			count = ussList.size();
+			// transactionManager.commit(status);
+		} catch (Exception e) {
+			errMsg = "Something went wrong. Please try with correct data ";
 		}
 		String arr[] = new String[5];
 		arr[0] = errMsg;
-	    arr[1] = String.valueOf(count);
-	    arr[2] = String.valueOf(row);
-	    arr[3] = String.valueOf(sheet);
-	    arr[4] = String.valueOf(subRow);
+		arr[1] = String.valueOf(count);
+		arr[2] = String.valueOf(row);
+		arr[3] = String.valueOf(sheet);
+		arr[4] = String.valueOf(subRow);
 		return arr;
 	}
-	
-	private String checkLAIdMethod(UtilityShifting obj,String table_name) throws Exception {
+
+	private String checkLAIdMethod(UtilityShifting obj, String table_name) throws Exception {
 		String usId = null;
 		String column_name = "utility_shifting_id";
 		try {
-			String qry ="select "+column_name+" as utility_shifting_id from "+table_name+" where "+column_name+" = ? " ;
-			List<UtilityShifting> dObjList = jdbcTemplate.query(qry, new Object[] {obj.getUtility_shifting_id()}, new BeanPropertyRowMapper<UtilityShifting>(UtilityShifting.class));
-			if(dObjList != null && dObjList.size() > 0) {
+			String qry = "select " + column_name + " as utility_shifting_id from " + table_name + " where "
+					+ column_name + " = ? ";
+			List<UtilityShifting> dObjList = jdbcTemplate.query(qry, new Object[] { obj.getUtility_shifting_id() },
+					new BeanPropertyRowMapper<UtilityShifting>(UtilityShifting.class));
+			if (dObjList != null && dObjList.size() > 0) {
 				usId = dObjList.get(0).getUtility_shifting_id();
-				if(!StringUtils.isEmpty(obj.getProject_id_fk()) && table_name.equals("utility_shifting")){
+				if (!StringUtils.isEmpty(obj.getProject_id_fk()) && table_name.equals("utility_shifting")) {
 					qry = qry + " and project_id_fk = ? ";
-					dObjList = jdbcTemplate.query(qry, new Object[] {obj.getUtility_shifting_id(),obj.getProject_id_fk()}, new BeanPropertyRowMapper<UtilityShifting>(UtilityShifting.class));
-					if(dObjList != null && dObjList.size() > 0) {
+					dObjList = jdbcTemplate.query(qry,
+							new Object[] { obj.getUtility_shifting_id(), obj.getProject_id_fk() },
+							new BeanPropertyRowMapper<UtilityShifting>(UtilityShifting.class));
+					if (dObjList != null && dObjList.size() > 0) {
 						usId = dObjList.get(0).getUtility_shifting_id();
 					}
 				}
 			}
-		}catch(Exception e){ 
+		} catch (Exception e) {
 			usId = null;
 			throw new Exception(e);
 		}
 		return usId;
 	}
-	
 	private String getWorkId(UtilityShifting obj)throws Exception {
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
