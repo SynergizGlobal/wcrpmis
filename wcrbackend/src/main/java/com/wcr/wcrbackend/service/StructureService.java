@@ -1,5 +1,6 @@
 package com.wcr.wcrbackend.service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,28 +40,68 @@ public class StructureService {
         return structureRepository.getAllStructureTypes();
     }
    
-    // SAVE or UPDATE Logic
+ // SAVE or UPDATE Logic
     public void saveOrUpdate(StructureSaveRequest req) {
 
         String projectId = req.getProject();
+
+        // Get project chainage limits
+        Map<String, BigDecimal> range = structureRepository.getProjectChainage(projectId);
+
+        BigDecimal min = range.get("fromChainage");
+        BigDecimal max = range.get("toChainage");
+
+        if (min == null || max == null) {
+            throw new IllegalArgumentException("Project chainage boundaries not found.");
+        }
 
         for (StructureTypeDto typeDto : req.getStructureTypes()) {
 
             for (StructureNameDto row : typeDto.getRows()) {
 
-                if (row.getStructureId() == null || row.getStructureId().trim().isEmpty()) {
+                BigDecimal from = row.getFromChainage();
+                BigDecimal to   = row.getToChainage();
+
+                /* ---------------------------
+                   CHAINAGE VALIDATION
+                ---------------------------- */
+                if (from != null && from.compareTo(min) < 0) {
+                    throw new IllegalArgumentException(
+                        "From Chainage " + from + " cannot be less than project min " + min
+                    );
+                }
+
+                if (to != null && to.compareTo(max) > 0) {
+                    throw new IllegalArgumentException(
+                        "To Chainage " + to + " cannot exceed project max " + max
+                    );
+                }
+
+                /* ---------------------------
+                   INSERT OR UPDATE
+                ---------------------------- */
+                if (row.getStructureId() == null || row.getStructureId().isBlank()) {
+
                     // INSERT
                     structureRepository.insertStructure(
                         row.getStructureName(),
                         projectId,
-                        typeDto.getType()
+                        typeDto.getType(),
+                        row.getStructureDetails(),
+                        from,
+                        to
                     );
+
                 } else {
-                    // UPDATE EXISTING ROW
+
+                    // UPDATE
                     structureRepository.updateStructure(
                         row.getStructureId(),
                         row.getStructureName(),
-                        typeDto.getType()
+                        typeDto.getType(),
+                        row.getStructureDetails(),
+                        from,
+                        to
                     );
                 }
             }
@@ -78,6 +119,11 @@ public class StructureService {
 
     public List<ProjectStructureSummaryDto> getAllProjectSummaries() {
         return structureRepository.getAllProjectSummaries();
+    }
+
+    
+    public Map<String, BigDecimal> getProjectChainage(String projectId) {
+        return structureRepository.getProjectChainage(projectId);
     }
 
 

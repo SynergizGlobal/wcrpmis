@@ -1,5 +1,6 @@
 package com.wcr.wcrbackend.controller;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,6 +80,12 @@ public class StructureController {
     public List<ProjectStructureSummaryDto> getAllProjectSummaries() {
         return structureService.getAllProjectSummaries();
     }
+    
+    @GetMapping("/project-chainage/{projectId}")
+    public ResponseEntity<Map<String, BigDecimal>> getProjectChainage(@PathVariable String projectId) {
+        return ResponseEntity.ok(structureService.getProjectChainage(projectId));
+    }
+
 
     
 }

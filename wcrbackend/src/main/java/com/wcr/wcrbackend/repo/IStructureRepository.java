@@ -1,5 +1,6 @@
 package com.wcr.wcrbackend.repo;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -18,9 +19,11 @@ public interface IStructureRepository {
 	  
 	  List<String> getAllStructureTypes();
 	  
-	  void insertStructure(String structureName, String projectId, String type);
-	  
-	  void updateStructure(String id, String name, String type);
+	  void insertStructure(String name, String projectId, String type,
+              String details, BigDecimal fromChainage, BigDecimal toChainage);
+
+      void updateStructure(String id, String name, String type,
+              String details, BigDecimal fromChainage, BigDecimal toChainage);
 
 	    void deleteStructure(String structureId);
 	    
@@ -28,6 +31,7 @@ public interface IStructureRepository {
 	    
 	    List<ProjectStructureSummaryDto> getAllProjectSummaries();
 	    
+	    Map<String, BigDecimal> getProjectChainage(String projectId);
     
     
 }
