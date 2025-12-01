@@ -10,7 +10,9 @@ import com.wcr.wcrbackend.DTO.StructureNameDto;
 import com.wcr.wcrbackend.DTO.StructureSummaryDto;
 import com.wcr.wcrbackend.DTO.StructureTypeDto;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +46,17 @@ public class StructureRepository implements IStructureRepository {
 
     @Override
     public List<Map<String, Object>> getStructuresByProject(String projectId) {
-        String sql =
-            "SELECT structure_id, structure_name, structure_type_fk " +
-            "FROM structure " +
-            "WHERE project_id_fk = ?";
+        String sql = """
+            SELECT structure_id,
+                   structure_name,
+                   structure_type_fk,
+                   structure_details,
+                   from_chainage,
+                   to_chainage
+            FROM structure
+            WHERE project_id_fk = ?
+            ORDER BY structure_id
+        """;
 
         return jdbcTemplate.queryForList(sql, projectId);
     }
@@ -67,11 +76,16 @@ public class StructureRepository implements IStructureRepository {
 
         // STEP 2: Get all structures for this project
         String structureSql = """
-            SELECT structure_type_fk, structure_id, structure_name
-            FROM structure
-            WHERE project_id_fk = ?
-            ORDER BY structure_type_fk, structure_id
-        """;
+        	    SELECT structure_type_fk,
+        	           structure_id,
+        	           structure_name,
+        	           structure_details,
+        	           from_chainage,
+        	           to_chainage
+        	    FROM structure
+        	    WHERE project_id_fk = ?
+        	    ORDER BY structure_type_fk, structure_id
+        	""";
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(structureSql, projectId);
 
@@ -82,10 +96,13 @@ public class StructureRepository implements IStructureRepository {
             String type = (String) row.get("structure_type_fk");
             String id = String.valueOf(row.get("structure_id"));
             String name = (String) row.get("structure_name");
+            String details = (String) row.get("structure_details");
+            BigDecimal from = row.get("from_chainage") != null ? (BigDecimal) row.get("from_chainage") : null;
+            BigDecimal to   = row.get("to_chainage")   != null ? (BigDecimal) row.get("to_chainage")   : null;
 
             grouped
                 .computeIfAbsent(type, k -> new ArrayList<>())
-                .add(new StructureNameDto(id, name));
+                .add(new StructureNameDto(id, name, details, from, to));
         }
 
         // STEP 4: Convert to DTO list
@@ -105,25 +122,36 @@ public class StructureRepository implements IStructureRepository {
     }
     
     
-    public void insertStructure(String name, String projectId, String type) {
+    @Override
+    public void insertStructure(String name, String projectId, String type,
+                  String details, BigDecimal fromChainage, BigDecimal toChainage) {
         String sql = """
-            INSERT INTO structure (structure_name, project_id_fk, structure_type_fk)
-            VALUES (?, ?, ?)
+            INSERT INTO structure 
+            (structure_name, project_id_fk, structure_type_fk, 
+             structure_details, from_chainage, to_chainage)
+            VALUES (?, ?, ?, ?, ?, ?)
         """;
 
-        jdbcTemplate.update(sql, name, projectId, type);
+        jdbcTemplate.update(sql, name, projectId, type, details, fromChainage, toChainage);
     }
     
  // UPDATE (structureId required)
     @Override
-    public void updateStructure(String id, String name, String type) {
+    public void updateStructure(String id, String name, String type,
+                                String details, BigDecimal fromChainage, BigDecimal toChainage) {
         String sql = """
             UPDATE structure
-            SET structure_name = ?, structure_type_fk = ?
+            SET structure_name = ?,
+                structure_type_fk = ?,
+                structure_details = ?,
+                from_chainage = ?,
+                to_chainage = ?
             WHERE structure_id = ?
         """;
-        jdbcTemplate.update(sql, name, type, id);
+
+        jdbcTemplate.update(sql, name, type, details, fromChainage, toChainage, id);
     }
+
 
     // DELETE by ID
     @Override
@@ -168,6 +196,23 @@ public class StructureRepository implements IStructureRepository {
 
         return new ArrayList<>(map.values());
     }
+    
+    
+    public Map<String, BigDecimal> getProjectChainage(String projectId) {
+        String sql = """
+            SELECT from_chainage, to_chainage
+            FROM project
+            WHERE project_id = ?
+        """;
+
+        return jdbcTemplate.queryForObject(sql, new Object[]{projectId}, (rs, rowNum) -> {
+            Map<String, BigDecimal> map = new HashMap<>();
+            map.put("fromChainage", rs.getBigDecimal("from_chainage"));
+            map.put("toChainage", rs.getBigDecimal("to_chainage"));
+            return map;
+        });
+    }
+
 
 
 }

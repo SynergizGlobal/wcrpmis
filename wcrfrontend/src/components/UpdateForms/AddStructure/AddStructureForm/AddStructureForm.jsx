@@ -21,13 +21,21 @@
 	  const [projectOptions, setProjectOptions] = useState([]);
 	
 	
-	  const { control, handleSubmit, watch, setValue } = useForm({
+	  const { control, handleSubmit, watch, setValue, register} = useForm({
 		defaultValues: {
 		      project: "",
 		      structureTypes: [
 		        {
 		          type: "",
-		          rows: [{ structureId: "", structureName: "" }]
+				  rows: [
+		              { 
+		                structureId: "", 
+		                structureName: "",
+		                structureDetails: "",
+		                fromChainage: "",
+		                toChainage: ""
+		              }
+		           ]
 		        }
 		      ]
 		    }
@@ -39,7 +47,24 @@
 	      name: "structureTypes"
 	    });
 	
-	  const project = watch("project");
+		const selectedProject = watch("project");
+		const projectId = selectedProject?.value || "";
+	  
+	  const [projectChainage, setProjectChainage] = useState({ from: 0, to: 999999 });
+
+	  useEffect(() => {
+	    if (!projectId) return;
+
+	    api.get(`${API_BASE_URL}/structures/project-chainage/${projectId}`)
+	      .then(res => {
+	        setProjectChainage({
+	          from: res.data.fromChainage,
+	          to: res.data.toChainage
+	        });
+	      })
+	      .catch(err => console.error("Project chainage fetch error", err));
+	  }, [projectId]);
+
 	  
 	  useEffect(() => {
 	    if (isEdit && structureData) {
@@ -90,6 +115,26 @@
 	          rows: t.rows
 	        }))
 	      };
+		  
+		  for (const type of data.structureTypes) {
+		    for (const row of type.rows) {
+
+		      const f = Number(row.fromChainage);
+		      const t = Number(row.toChainage);
+
+		      // Validate From Chainage
+		      if (f < projectChainage.from) {
+		        alert(`From Chainage ${f} must be >= project minimum ${projectChainage.from}`);
+		        return;
+		      }
+
+		      // Validate To Chainage
+		      if (t > projectChainage.to) {
+		        alert(`To Chainage ${t} must be <= project maximum ${projectChainage.to}`);
+		        return;
+		      }
+		    }
+		  }
 
 	      await api.post(`${API_BASE_URL}/structures/saveOrUpdate`, payload);
 
@@ -138,7 +183,7 @@
 	          </div>
 	
 	          {/* SHOW STRUCTURE TYPES ONLY AFTER PROJECT SELECT */}
-	          {project && (
+	          {projectId && (
 	            <div className={styles.typeBox}>
 	              {typeFields.map((type, typeIndex) => (
 	                <div key={type.id} className={styles.typeRow}>
@@ -204,7 +249,7 @@
 	
 	                  {/* SHOW NESTED ROWS ONLY WHEN STRUCTURE TYPE SELECTED */}
 					  {expandedIndex === typeIndex && (
-					      <NestedRows control={control} typeIndex={typeIndex} />
+					      <NestedRows control={control} typeIndex={typeIndex}  projectChainage={projectChainage} register={register}/>
 					  )}
 	                </div>
 	              ))}
@@ -233,7 +278,7 @@
 	               {isEdit ? "UPDATE" : "ADD"}
 	            </button>
 	            <button className="btn btn-white" type="button"
-				onClick={() => navigate("/updateforms/AddStructure")}>
+				onClick={() => navigate("/updateforms/structure")}>
 	              CANCEL
 	            </button>
 	          </div>
@@ -248,78 +293,109 @@
 	  /* ----------------------------------
 	    NESTED ROWS COMPONENT (MUST BE OUTSIDE)
 	  ---------------------------------- */
-	  function NestedRows({ control, typeIndex }) {
-	    const { fields, append, remove } = useFieldArray({
-	      control,
-	      name: `structureTypes.${typeIndex}.rows`,
-	    });
-	
-	    return (
-	      <div className={styles.rowBox}>
-	        <table className={styles.table}>
-	          <thead>
-	            <tr>
-	              <th>Structure Id</th>
-	              <th>Structure Name</th>
-	              <th>Action</th>
-	            </tr>
-	          </thead>
-	
-	          <tbody>
-	            {fields.map((row, rowIndex) => (
-	              <tr key={row.id}>
-	                <td>
-	                  <input
-	                    {...control.register(
-	                      `structureTypes.${typeIndex}.rows.${rowIndex}.structureId`
-	                    )}
-	                    placeholder="Structure Id"
-	                  />
-	                </td>
-	
-	                <td>
-	                  <input
-	                    {...control.register(
-	                      `structureTypes.${typeIndex}.rows.${rowIndex}.structureName`
-	                    )}
-	                    placeholder="Structure Name"
-	                  />
-	                </td>
-	
-	                <td>
-					<button
-					  type="button"
-					  className={styles.deleteBtn}
-					  onClick={async () => {
-					    const rowData = fields[rowIndex];
-	
-					    if (rowData.structureId) {
-					      // backend delete
-					      await api.delete(`${API_BASE_URL}/structures/${rowData.structureId}`);
-					    }
-	
-					    remove(rowIndex);
-					  }}
-					>
-					  X
-					</button>
-	                </td>
-	              </tr>
-	            ))}
-	          </tbody>
-	        </table>
-			<br />
-			<div className={styles.mainRowAddBtn}>
-				<button
-		            type="button"
-		            className={styles.addBtn}
-		            onClick={() =>
-		              append({ structureId: "", structureName: "" })
-		            }
-		          >
-		            +
-		          </button>
-			</div>
-	      </div>
-	    );
-	  }
+	  function NestedRows({ control, typeIndex, projectChainage, register }) {
+	  	    const { fields, append, remove } = useFieldArray({
+	  	      control,
+	  	      name: `structureTypes.${typeIndex}.rows`,
+	  	    });
+
+	  	    return (
+	  	      <div className={styles.rowBox}>
+	  	        <table className={styles.table}>
+	  	          <thead>
+	  	            <tr>
+	  	              <th>Structure Id</th>
+	  	              <th>Structure Name</th>
+	  	              <th>Structure Details</th>
+	  	              <th>From Chainage</th>
+	  	              <th>To Chainage</th>
+	  	              <th>Action</th>
+	  	            </tr>
+	  	          </thead>
+
+	  	          <tbody>
+	  	            {fields.map((row, rowIndex) => (
+	  	              <tr key={row.id}>
+
+	  	                <td>
+	  	                  <input
+	  	                    defaultValue={row.structureId}
+	  	                    {...register(`structureTypes.${typeIndex}.rows.${rowIndex}.structureId`)}
+	  	                  />
+	  	                </td>
+
+	  	                <td>
+	  	                  <input
+	  	                    defaultValue={row.structureName}
+	  	                    {...register(`structureTypes.${typeIndex}.rows.${rowIndex}.structureName`)}
+	  	                  />
+	  	                </td>
+
+	  	                <td>
+	  	                  <input
+	  	                    defaultValue={row.structureDetails}
+	  	                    {...register(`structureTypes.${typeIndex}.rows.${rowIndex}.structureDetails`)}
+	  	                  />
+	  	                </td>
+
+	  	                <td>
+	  					<input
+	  					  type="number"
+	  					  step="0.01"
+	  					  min={projectChainage.from}
+	  					  max={projectChainage.to}
+	  					  {...register(`structureTypes.${typeIndex}.rows.${rowIndex}.fromChainage`)}
+	  					/>
+	  	                </td>
+
+	  	                <td>
+	  					<input
+	  					  type="number"
+	  					  step="0.01"
+	  					  min={projectChainage.from}
+	  					  max={projectChainage.to}
+	  					  {...register(`structureTypes.${typeIndex}.rows.${rowIndex}.toChainage`)}
+	  					/>
+	  	                </td>
+
+	  	                <td>
+	  	                  <button
+	  	                    type="button"
+	  	                    className={styles.deleteBtn}
+	  	                    onClick={async () => {
+	  	                      const rowData = fields[rowIndex];
+	  	                      if (rowData.structureId) {
+	  	                        await api.delete(`${API_BASE_URL}/structures/${rowData.structureId}`);
+	  	                      }
+	  	                      remove(rowIndex);
+	  	                    }}
+	  	                  >
+	  	                    X
+	  	                  </button>
+	  	                </td>
+
+	  	              </tr>
+	  	            ))}
+	  	          </tbody>
+	  	        </table>
+	  			<br />
+	  			<div className={styles.mainRowAddBtn}>
+	  				<button
+	  		            type="button"
+	  		            className={styles.addBtn}
+	  		            onClick={() =>
+	  						append({
+	  						  structureId: "",
+	  						  structureName: "",
+	  						  structureDetails: "",
+	  						  fromChainage: "",
+	  						  toChainage: ""
+	  						})
+	  		            }
+	  		          >
+	  		            +
+	  		          </button>
+	  			</div>
+	  	      </div>
+	  	    );
+	  	  }
