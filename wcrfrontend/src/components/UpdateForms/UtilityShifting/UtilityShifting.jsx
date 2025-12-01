@@ -561,27 +561,26 @@ export default function UtilityShifting() {
   const startRecord = (pagination.pageNumber - 1) * pagination.pageDisplayLength + 1;
   const endRecord = Math.min(pagination.pageNumber * pagination.pageDisplayLength, pagination.totalRecords);
 
-  // Calculate uploaded files pagination values
+ 
   const uploadTotalPages = Math.ceil(uploadPagination.totalRecords / uploadPagination.pageDisplayLength);
   const uploadStartRecord = (uploadPagination.pageNumber - 1) * uploadPagination.pageDisplayLength + 1;
   const uploadEndRecord = Math.min(uploadPagination.pageNumber * uploadPagination.pageDisplayLength, uploadPagination.totalRecords);
 
   const exportUtilityShifting = () => {
-    // Extract current filter values from React state
-    const {
-      location_name,
-      utility_category_fk,
-      utility_type_fk,
-      shifting_status_fk
-    } = filters;
+    
+	const {
+	  location,     
+	  category,   
+	  utilityType,  
+	  status       
+	} = filters;
+   
+	document.getElementById("exportLocation_name").value = location || "";
+	 document.getElementById("exportUtility_category_fk").value = category || "";
+	 document.getElementById("exportUtility_type_fk").value = utilityType || "";
+	 document.getElementById("exportShifting_status_fk").value = status || "";
 
-    // Fill hidden form inputs
-    document.getElementById("exportLocation_name").value = location_name || "";
-    document.getElementById("exportUtility_category_fk").value = utility_category_fk || "";
-    document.getElementById("exportUtility_type_fk").value = utility_type_fk || "";
-    document.getElementById("exportShifting_status_fk").value = shifting_status_fk || "";
-
-    // Submit hidden form
+ 
     document.getElementById("exportUtilityShiftingForm").submit();
   };
 
