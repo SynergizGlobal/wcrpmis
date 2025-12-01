@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import com.wcr.wcrbackend.DTO.Design;
+import com.wcr.wcrbackend.DTO.RevisionCheckDTO;
 import com.wcr.wcrbackend.repo.IDesignRepo;
 
 import jakarta.transaction.Transactional;
@@ -225,14 +227,22 @@ public class DesignService implements IDesignService {
 	}
 	@Override
 	@Transactional
-	public int uploadDesignsNew(List<Design> designsList) throws Exception {
+	public int[] uploadDesignsNew(List<Design> designsList, List<Design> designsRevListupdate, List<Design> designsRevInsert ) throws Exception {
 		// TODO Auto-generated method stub
-		return designRepo.uploadDesignsNew(designsList);
+		return designRepo.uploadDesignsNew(designsList,designsRevListupdate, designsRevInsert);
 	}
 	@Override
 	public boolean updateDesignStatusBulk(Design obj) throws Exception {
 		// TODO Auto-generated method stub
 		return designRepo.updateDesignStatusBulk(obj);
 	}
+	@Override
+	public RevisionCheckDTO revisionCheckUpdateOrInsert(String designSeqId, String revision) throws Exception {
+
+		RevisionCheckDTO  data= designRepo.getRevisionCheckByDesignIdFkAndRevision(designSeqId, revision);
+
+	    return  data;
+	}
+
 
 }

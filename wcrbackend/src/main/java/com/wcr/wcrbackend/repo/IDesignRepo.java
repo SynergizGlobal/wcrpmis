@@ -3,6 +3,7 @@ package com.wcr.wcrbackend.repo;
 import java.util.List;
 
 import com.wcr.wcrbackend.DTO.Design;
+import com.wcr.wcrbackend.DTO.RevisionCheckDTO;
 
 public interface IDesignRepo {
 
@@ -88,8 +89,10 @@ public interface IDesignRepo {
 
 	boolean saveDesignDataUploadFile(Design design) throws Exception;
 
-	int uploadDesignsNew(List<Design> designsList) throws Exception;
+	int[] uploadDesignsNew(List<Design> designsList, List<Design> designsRevListUpdate, List<Design> designsRevListInsert ) throws Exception;
 
 	boolean updateDesignStatusBulk(Design obj) throws Exception;
+	
+	RevisionCheckDTO getRevisionCheckByDesignIdFkAndRevision(String revision, String designIdFk ) throws Exception;
 
 }

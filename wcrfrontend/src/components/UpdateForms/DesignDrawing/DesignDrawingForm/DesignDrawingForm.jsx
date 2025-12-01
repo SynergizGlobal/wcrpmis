@@ -817,15 +817,25 @@ export default function DesignDrawingForm() {
 										{revisionDetailsFields.length > 0 ? (
 											revisionDetailsFields.map((item, index) => (
 												<tr key={item.id}>
-													<td>
-														<input
-															type="text"
-															disabled={isEdit}
-															{...register(`revisionDetailsFields.${index}.revisions`)}
-															className="form-control"
-															value={(`R${index + 1}`)}
-														/>
-													</td>
+												<td>
+												    <span className="form-control-static">
+												        {isEdit
+												            ? (watch(`revisionDetailsFields.${index}.revisions`) || `R${index + 1}`)
+												            : `R${index + 1}`
+												        }
+												    </span>
+
+												    <input
+												        type="hidden"
+												        {...register(`revisionDetailsFields.${index}.revisions`)}
+												        value={
+												            isEdit
+												                ? (watch(`revisionDetailsFields.${index}.revisions`) || `R${index + 1}`)
+												                : `R${index + 1}`
+												        }
+												    />
+												</td>
+
 													<td>
 														<input
 															type="text"

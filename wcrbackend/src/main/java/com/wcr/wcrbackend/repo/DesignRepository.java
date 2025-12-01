@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -24,6 +25,7 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import com.wcr.wcrbackend.DTO.Design;
 import com.wcr.wcrbackend.DTO.FormHistory;
 import com.wcr.wcrbackend.DTO.Messages;
+import com.wcr.wcrbackend.DTO.RevisionCheckDTO;
 import com.wcr.wcrbackend.common.CommonConstants;
 import com.wcr.wcrbackend.common.CommonConstants2;
 import com.wcr.wcrbackend.common.CommonMethods;
@@ -2638,6 +2640,81 @@ public class DesignRepository implements IDesignRepo {
 	private String isNull(String v) {
 	    return (v == null || v.trim().isEmpty()) ? null : v.trim();
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	private int batchInsertRevisions(List<Design> revisionInsert) {
+
+	    String insertRevisionSql =
+	        "INSERT INTO design_revisions ("
+	        + "design_id_fk, revision, revision_date, revision_status_fk, [current], remarks, "
+	        + "drawing_no, correspondence_letter_no, upload_file"
+	        + ") VALUES (?,?,?,?,?,?,?,?,?)";
+
+	   int[] result =  jdbcTemplate.batchUpdate(insertRevisionSql, new BatchPreparedStatementSetter() {
+
+	        @Override
+	        public void setValues(PreparedStatement ps, int i) throws SQLException {
+	            Design rev = revisionInsert.get(i);
+	            int kk = 1;
+
+	            ps.setString(kk++, isNull(rev.getDesign_id_fk()));             // design_id_fk
+	            ps.setString(kk++, isNull(rev.getRevision()));         // revision
+	            ps.setString(kk++, isNull(rev.getRevision_date()));    // revision_date
+	            ps.setString(kk++, isNull(rev.getRevision_status()));  // revision_status_fk
+	            ps.setString(kk++, isNull(rev.getCurrent()));          // current
+	            ps.setString(kk++, isNull(rev.getRemarks()));          // remarks
+	            ps.setString(kk++, isNull(rev.getDrawing_no()));       // drawing_no
+	            ps.setString(kk++, isNull(rev.getCorrespondence_letter_no())); // correspondence_letter_no
+	            ps.setString(kk++, isNull(rev.getUpload_file()));      // upload_file
+	        }
+
+	        @Override
+	        public int getBatchSize() {
+	            return revisionInsert.size();
+	        }
+	    });
+	   
+	   return Arrays.stream(result).sum();
+	}
+	private int batchUpdateRevisions(List<Design> revisionsUpdate) {
+
+	    String updateSql =
+	        "UPDATE design_revisions SET "
+	        + "revision_status_fk = ?, [current] = ?, remarks = ?, "
+	        + "drawing_no = ?, correspondence_letter_no = ?, revision_date = ? "
+	        + "WHERE design_id_fk = ? AND revision = ?";
+
+	   int[] result =  jdbcTemplate.batchUpdate(updateSql, new BatchPreparedStatementSetter() {
+
+	        @Override
+	        public void setValues(PreparedStatement ps, int i) throws SQLException {
+	            Design rev = revisionsUpdate.get(i);
+	            int kk = 1;
+
+	            ps.setString(kk++, isNull(rev.getRevision_status()));        // revision_status_fk
+	            ps.setString(kk++, isNull(rev.getCurrent()));                // current
+	            ps.setString(kk++, isNull(rev.getRemarks()));                // remarks
+	            ps.setString(kk++, isNull(rev.getDrawing_no()));             // drawing_no
+	            ps.setString(kk++, isNull(rev.getCorrespondence_letter_no())); // correspondence_letter_no
+	            ps.setString(kk++, isNull(rev.getRevision_date()));          // revision_date
+	            ps.setString(kk++, rev.getDesign_id_fk());                   // WHERE design_id_fk = ?
+	            ps.setString(kk++, rev.getRevision());                       // WHERE revision = ?
+	        }
+
+	        @Override
+	        public int getBatchSize() {
+	            return revisionsUpdate.size();
+	        }
+	    });
+	   return Arrays.stream(result).sum();
+	}
+
 
 
 	/**
@@ -2645,11 +2722,13 @@ public class DesignRepository implements IDesignRepo {
 	 * This method is transactional: if anything fails, the whole set is rolled back.
 	 */
 	@Override
-	public int uploadDesignsNew(List<Design> designsList) throws Exception {
-	    if (designsList == null || designsList.isEmpty()) return 0;
+	public int[] uploadDesignsNew(List<Design> designsList, List<Design> designRevListUpdate,  List<Design> designRevListInsert) throws Exception {
 
-	    int processed = 0;
+
+		int[] arr = new int[3];
+	    int processed = 0; int revUpdateCount = 0; int revInsertCount = 0;
 	    NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
+	    if(designsList != null && !designsList.isEmpty()){ 
 
 	    String insertDesignSql = "INSERT INTO design (project_id_fk,contract_id_fk,department_id_fk,hod,dy_hod,prepared_by_id_fk,consultant_contract_id_fk,proof_consultant_contract_id_fk,"
 	            + "structure_type_fk,drawing_type_fk,contractor_drawing_no,mrvc_drawing_no,division_drawing_no,hq_drawing_no,drawing_title,"
@@ -2665,8 +2744,7 @@ public class DesignRepository implements IDesignRepo {
 	            + "hq_drawing_no= :hq_drawing_no,gfc_released= :gfc_released,remarks=:remarks,modified_by=:created_by_user_id_fk,modified_date=CURRENT_TIMESTAMP,[3pvc]=:threepvc where design_seq_id= :design_seq_id ";
 
 	    
-	    String insertRevisionSql = "INSERT INTO design_revisions (design_id_fk, revision, revision_date, drawing_no, correspondence_letter_no, upload_file, revision_status_fk, [current], remarks) "
-	            + "VALUES (?,?,?,?,?,?,?,?,?)";
+
 
 	    for (Design obj : designsList) {
 	        
@@ -2755,49 +2833,29 @@ public class DesignRepository implements IDesignRepo {
 	                }
 	            }
 
-	            List<Design> revisions = obj.getDesignRevisions();
-	            if (revisions != null && !revisions.isEmpty()) {
-
-	            	String designIdFk = obj.getDesign_id();
-	                if (!StringUtils.hasText(designIdFk)) {
-	                    designIdFk = getDesignIdByNo(obj.getDesign_seq_id());
-	                    obj.setDesign_id_fk(designIdFk);
-	                }
-	                if (!StringUtils.hasText(designIdFk)) {
-	                    throw new Exception("Design ID not found for seq: " + obj.getDesign_seq_id());
-	                }
-
-	                String deleteRev = "DELETE FROM design_revisions WHERE design_id_fk = :design_id_fk";
-	                SqlParameterSource delParams = new BeanPropertySqlParameterSource(obj);
-	                namedParamJdbcTemplate.update(deleteRev, delParams);
-
-	                final String finalDesignId = designIdFk;
-	                jdbcTemplate.batchUpdate(insertRevisionSql, new BatchPreparedStatementSetter() {
-	                    @Override
-	                    public void setValues(PreparedStatement ps, int i) throws SQLException {
-	                        Design rev = revisions.get(i);
-	                        int kk = 1;
-	                        ps.setString(kk++, finalDesignId);
-	                        ps.setString(kk++, isNull(rev.getRevision()));
-	                        ps.setString(kk++, isNull(rev.getRevision_date()));
-	                        ps.setString(kk++, isNull(rev.getDrawing_no()));
-	                        ps.setString(kk++, isNull(rev.getCorrespondence_letter_no()));
-	                        ps.setString(kk++, isNull(rev.getUpload_file()));
-	                        ps.setString(kk++, isNull(rev.getRevision_status()));
-	                        ps.setString(kk++, isNull(rev.getCurrent()));
-	                        ps.setString(kk++, isNull(rev.getRemarks()));
-	                    }
-
-	                    @Override
-	                    public int getBatchSize() {
-	                        return revisions.size();
-	                    }
-	                });
-	            } 
+	           
 	        } 
-	    } 
+	    }
+    	arr[0] = processed;
+	    }
+	    
+	    if (designRevListUpdate != null && !designRevListUpdate.isEmpty()) {
+	    	revUpdateCount  = batchUpdateRevisions(designRevListUpdate);
+	    	arr[1] = revUpdateCount;
+	    }
+	    
 
-	    return processed;
+
+	    if (designRevListInsert != null && !designRevListInsert.isEmpty()) {
+	    	revInsertCount  = batchInsertRevisions(designRevListInsert);
+	    	arr[2] = revInsertCount;
+
+	    }
+
+
+
+	    return arr;
+	    
 	}
 
 	
@@ -2809,6 +2867,45 @@ public class DesignRepository implements IDesignRepo {
 	        return null;
 	    }
 	}
+	
+	private String getRevisionByDesignIdFkAndRevision(String revision,String designIdFk ) {
+		try {
+			String qry = "select distinct revision from design_revisions where design_id_fk = ? and revision = ?";
+			return jdbcTemplate.queryForObject(qry, new Object[] {designIdFk,revision}, String.class);
+			
+		}
+		catch (Exception e) {
+			return null;
+		}
+	}
+	
+	
+	@Override
+	public RevisionCheckDTO getRevisionCheckByDesignIdFkAndRevision(String designSeqId, String revision) {
+	    try {
+	        String sql =
+	            "SELECT d.design_id, r.revision " +
+	            "FROM design d " +
+	            "LEFT JOIN design_revisions r " +
+	            "ON d.design_id = r.design_id_fk AND r.revision = ? " +
+	            "WHERE d.design_seq_id = ?";
+
+	        return jdbcTemplate.queryForObject(
+	            sql,
+	            new Object[]{ revision, designSeqId },
+	            (rs, rowNum) -> new RevisionCheckDTO(
+	                rs.getString("design_id"),    
+	                rs.getString("revision")     
+	            )
+	        );
+
+	    } catch (Exception e) {
+	        return null;  
+	    }
+	}
+
+
+
 	
 	
 	private String getDesignId(Design obj){
