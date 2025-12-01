@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -14,6 +14,12 @@ export default function ProjectForm() {
   const { state } = useLocation(); // passed when editing
   const isEdit = Boolean(state?.project);
 
+  const [projectTypes, setProjectTypes] = useState([]);
+  const [railwayZones, setRailwayZones] = useState([]);
+  const [yearList, setYearList] = useState([]);
+  const [divisions, setDivisions] = useState([]);
+  const [sections, setSections] = useState([]);
+
   // React Hook Form setup
   const {
     register,
@@ -24,15 +30,15 @@ export default function ProjectForm() {
   } = useForm({
     defaultValues: {
       project_name: "",
-      project_status: "",
-      project_type_id: "",
-      railway_zone: "",
+      project_status: { value: "", label: "" },
+      project_type_id: { value: "", label: "" },
+      railway_zone: { value: "", label: "" },
       plan_head_number: "",
-      financial_years: "",
+      financial_year: { value: "", label: "" },
       sanctioned_amount: "",
       sanctioned_commissioning_date: "",
-      division_id: "",
-      section_id: "",
+      division_id: { value: "", label: "" },
+      section_id: { value: "", label: "" },
       pink_book_item_numbers: "",
       actual_completion_cost: "",
       actual_completion_date: "",
@@ -47,58 +53,127 @@ export default function ProjectForm() {
     name: "completionCosts",
   });
 
+  // Fetch dropdown data from API
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        const [
+          typesRes,
+          zonesRes,
+          yearsRes,
+          divisionsRes,
+          sectionsRes
+        ] = await Promise.all([
+          api.get(`${API_BASE_URL}/projects/api/projectTypes`, { withCredentials: true }),
+          api.get(`${API_BASE_URL}/projects/api/railwayZones`, { withCredentials: true }),
+          api.get(`${API_BASE_URL}/projects/api/yearList`, { withCredentials: true }),
+          api.get(`${API_BASE_URL}/projects/api/divisions`, { withCredentials: true }),
+          api.get(`${API_BASE_URL}/projects/api/sections`, { withCredentials: true }),
+        ]);
+
+        setProjectTypes(typesRes.data);
+        setRailwayZones(zonesRes.data);
+        setYearList(yearsRes.data);
+        setDivisions(divisionsRes.data);
+        setSections(sectionsRes.data);
+
+      } catch (err) {
+        console.error("Error fetching dropdowns:", err);
+        alert("Error fetching dropdowns: " + err.message);
+      }
+    };
+
+    fetchDropdowns();
+  }, []);
+
   // Prefill form if editing
   useEffect(() => {
     if (isEdit && state?.project) {
-      Object.entries(state.project).forEach(([key, value]) => setValue(key, value));
-    }
-  }, [state, setValue, isEdit]);
+      const project = state.project;
 
-  // Sample static lists (replace with API if available)
-  const projectTypes = [
-    { value: "1", label: "Construction" },
-    { value: "2", label: "Maintenance" },
-  ];
+      setValue("project_name", project.project_name ?? "");
+      setValue("plan_head_number", project.plan_head_number ?? "");
+      setValue("sanctioned_amount", project.sanctioned_amount ?? "");
+      setValue("sanctioned_commissioning_date", project.sanctioned_commissioning_date ?? "");
+      setValue("pink_book_item_numbers", project.pink_book_item_numbers ?? "");
+      setValue("actual_completion_cost", project.actual_completion_cost ?? "");
+      setValue("actual_completion_date", project.actual_completion_date ?? "");
+      setValue("benefits", project.benefits ?? "");
+      setValue("remarks", project.remarks ?? "");
+	  setValue("structure_details", project.structure_details ?? "");
+	  setValue("from_chainage", project.from_chainage ?? "");
+	  setValue("to_chainage", project.to_chainage ?? "");
+      setValue("project_status", project.project_status ? { value: project.project_status, label: project.project_status } : { value: "", label: "" });
+      setValue("project_type_id", project.project_type_id ? { value: project.project_type_id, label: project.project_type_name || project.project_type_id } : { value: "", label: "" });
+      setValue("railway_zone", project.railway_zone ? { value: project.railway_zone, label: project.railway_zone_name || project.railway_zone } : { value: "", label: "" });
+      setValue("financial_year", project.financial_year ? { value: project.financial_year, label: project.financial_year } : { value: "", label: "" });
+      setValue("division_id", project.division_id ? { value: project.division_id, label: project.division_name || project.division_id } : { value: "", label: "" });
+      setValue("section_id", project.section_id ? { value: project.section_id, label: project.section_name || project.section_id } : { value: "", label: "" });
 
-  const railwayZones = [
-    { value: "WCR", label: "West Central Railway" },
-    { value: "ECR", label: "East Central Railway" },
-  ];
-
-  const yearList = [
-    { value: "2023-24", label: "2023-24" },
-    { value: "2024-25", label: "2024-25" },
-  ];
-
-  const divisions = [
-    { value: "Bhopal", label: "Bhopal" },
-    { value: "Jabalpur", label: "Jabalpur" },
-  ];
-
-  const sections = [
-    { value: "Section1", label: "Section 1" },
-    { value: "Section2", label: "Section 2" },
-  ];
-
-  // Submit Handler
-  const onSubmit = async (data) => {
-    try {
-      const endpoint = isEdit
-        ? `${API_BASE_URL}/projects/${state.project.projectId}`
-        : `${API_BASE_URL}/projects`;
-
-      if (isEdit) {
-        await api.put(endpoint, data);
-      } else {
-        await api.post(endpoint, data);
+      if (project.completionCosts && project.completionCosts.length) {
+        project.completionCosts.forEach((cost, index) => {
+          if (index === 0) {
+            setValue(`completionCosts.${index}.date`, cost.date ?? "");
+            setValue(`completionCosts.${index}.estimatedCost`, cost.estimatedCost ?? "");
+            setValue(`completionCosts.${index}.revisedDate`, cost.revisedDate ?? "");
+          } else {
+            appendCost({
+              date: cost.date ?? "",
+              estimatedCost: cost.estimatedCost ?? "",
+              revisedDate: cost.revisedDate ?? "",
+            });
+          }
+        });
       }
-
-      alert("✅ Project saved successfully!");
-      navigate("/wcrpmis/updateforms/project");
-    } catch (err) {
-      console.error("❌ Error saving project:", err);
-      alert("Error saving project");
     }
+  }, [state, setValue, isEdit, appendCost]);
+
+  const onSubmit = async (formData) => {
+    try {
+      const payload = {
+        ...formData,
+        project_status: formData.project_status?.value || "",
+        project_type_id: formData.project_type_id?.value || "",
+        railway_zone: formData.railway_zone?.value || "",
+        financial_year: formData.financial_year?.value || "",
+        division_id: formData.division_id?.value || "",
+        section_id: formData.section_id?.value || "",
+        completionCosts: formData.completionCosts.map(cost => ({
+          date: cost.date || "",
+          estimatedCost: cost.estimatedCost || "",
+          revisedDate: cost.revisedDate || ""
+        })),
+      };
+
+      console.log("Payload sent to backend:", payload);
+
+      const response = await api.post(
+        `${API_BASE_URL}/projects/api/addProject`,
+        payload,
+        { headers: { "Content-Type": "application/json" }, withCredentials: true }
+      );
+
+      if (response.data.success) {
+
+        navigate("/wcrpmis/updateforms/project");
+      } else {
+      }
+    }	  catch (err) {
+
+	    // Show a readable message
+	    let errorMsg = "Error saving project. Please try again later.";
+	    if (err.response?.data) {
+	      // If backend sends a message field
+	      if (err.response.data.message) {
+	        errorMsg = `Error: ${err.response.data.message}`;
+	      } else {
+	        // Fallback: stringify object
+	        errorMsg = `Error: ${JSON.stringify(err.response.data)}`;
+	      }
+	    }
+
+	    alert(errorMsg);
+	  }
   };
 
   return (
@@ -112,14 +187,15 @@ export default function ProjectForm() {
         <div className="innerPage">
           <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
 
-            {/* Row 1 */}
             <div className="form-row">
+              {/* Project Name */}
               <div className="form-field">
                 <label>Project Name <span className="red">*</span></label>
                 <input {...register("project_name", { required: true })} type="text" placeholder="Enter Value"/>
                 {errors.project_name && <span className="text-danger">Required</span>}
               </div>
 
+              {/* Project Status */}
               <div className="form-field">
                 <label>Project Status <span className="red">*</span></label>
                 <Controller
@@ -142,6 +218,7 @@ export default function ProjectForm() {
                 {errors.project_status && <span className="text-danger">Required</span>}
               </div>
 
+              {/* Project Type */}
               <div className="form-field">
                 <label>Project Type <span className="red">*</span></label>
                 <Controller
@@ -151,14 +228,18 @@ export default function ProjectForm() {
                     <Select
                       {...field}
                       classNamePrefix="react-select"
-                      options={projectTypes}
-                      placeholder="Select Value"
+                      options={projectTypes.map(pt => ({
+                        value: pt.project_type_id,
+                        label: pt.project_type_name
+                      }))}
+                      placeholder="Select Project Type"
                       isSearchable
                     />
                   )}
                 />
               </div>
-            
+
+              {/* Railway Zone */}
               <div className="form-field">
                 <label>Railway Zone <span className="red">*</span></label>
                 <Controller
@@ -166,48 +247,59 @@ export default function ProjectForm() {
                   control={control}
                   render={({ field }) => (
                     <Select
-                    classNamePrefix="react-select"
                       {...field}
-                      options={railwayZones}
-                      placeholder="Select Value"
+                      classNamePrefix="react-select"
+                      options={railwayZones.map(zone => ({
+                        value: zone.railway_id,
+                        label: zone.railway_name,
+                      }))}
+                      placeholder="Select Railway Zone"
                       isSearchable
                     />
                   )}
                 />
               </div>
 
+              {/* Plan Head Number */}
               <div className="form-field">
                 <label>Plan Head Number <span className="red">*</span></label>
                 <input {...register("plan_head_number")} type="text" placeholder="Enter Value" />
               </div>
 
+              {/* Sanctioned Year */}
               <div className="form-field">
                 <label>Sanctioned Year <span className="red">*</span></label>
                 <Controller
-                  name="financial_years"
+                  name="financial_year"
                   control={control}
                   render={({ field }) => (
                     <Select
                       {...field}
                       classNamePrefix="react-select"
-                      options={yearList}
-                      placeholder="Select Date"
+                      options={yearList.map(year => ({
+                        value: year.financial_year_id,
+                        label: year.financial_year,
+                      }))}
+                      placeholder="Select Year"
                       isSearchable
                     />
                   )}
                 />
               </div>
-            
+
+              {/* Sanctioned Amount */}
               <div className="form-field">
                 <label>Sanctioned Amount <span className="red">*</span></label>
                 <input {...register("sanctioned_amount")} type="number" placeholder="Enter Value" />
               </div>
 
+              {/* Sanctioned Commissioning Date */}
               <div className="form-field">
                 <label>Sanctioned Commissioning Date <span className="red">*</span></label>
                 <input {...register("sanctioned_commissioning_date")} type="date" placeholder="Select Date" />
               </div>
 
+              {/* Division */}
               <div className="form-field">
                 <label>Division <span className="red">*</span></label>
                 <Controller
@@ -217,13 +309,18 @@ export default function ProjectForm() {
                     <Select
                       {...field}
                       classNamePrefix="react-select"
-                      options={divisions}
-                      placeholder="Select Value"
+                      options={divisions.map(div => ({
+                        value: div.division_id,
+                        label: div.division_name
+                      }))}
+                      placeholder="Select Division"
                       isSearchable
                     />
                   )}
                 />
               </div>
+
+              {/* Section */}
               <div className="form-field">
                 <label>Section <span className="red">*</span></label>
                 <Controller
@@ -233,30 +330,34 @@ export default function ProjectForm() {
                     <Select
                       {...field}
                       classNamePrefix="react-select"
-                      options={sections}
-                      placeholder="Select Value"
+                      options={sections.map(sec => ({
+                        value: sec.section_id,
+                        label: sec.section_name
+                      }))}
+                      placeholder="Select Section"
                       isSearchable
                     />
                   )}
                 />
               </div>
 
+              {/* PB Item No */}
               <div className="form-field">
                 <label>PB Item No <span className="red">*</span></label>
                 <input {...register("pink_book_item_numbers")} type="text" placeholder="Enter Value" />
               </div>
 
+              {/* Actual Completion Cost */}
               <div className="form-field">
                 <label>Actual Completion Cost <span className="red">*</span></label>
                 <input {...register("actual_completion_cost")} type="text" placeholder="Enter Value" />
               </div>
             </div>
 
-            {/* Completion Costs */}
+            {/* Completion Costs Table */}
             <div className="row mt-1 mb-2">
               <h3 className="mb-1 d-flex align-center justify-content-center">Completion Costs</h3>
-
-              <div className="table-responsive dataTable ">
+              <div className="table-responsive dataTable">
                 <table className="table table-bordered align-middle">
                   <thead className="table-light">
                     <tr>
@@ -270,37 +371,12 @@ export default function ProjectForm() {
                     {costFields.length > 0 ? (
                       costFields.map((item, index) => (
                         <tr key={item.id}>
-                          <td>
-                            <input
-                              type="date"
-                              {...register(`completionCosts.${index}.date`)}
-                              className="form-control"
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              {...register(`completionCosts.${index}.estimatedCost`)}
-                              className="form-control"
-                              placeholder="Estimated Cost"
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="date"
-                              {...register(`completionCosts.${index}.revisedDate`)}
-                              className="form-control"
-                            />
-                          </td>
+                          <td><input type="date" {...register(`completionCosts.${index}.date`)} className="form-control" /></td>
+                          <td><input type="text" {...register(`completionCosts.${index}.estimatedCost`)} className="form-control" placeholder="Estimated Cost" /></td>
+                          <td><input type="date" {...register(`completionCosts.${index}.revisedDate`)} className="form-control" /></td>
                           <td className="text-center d-flex align-center justify-content-center">
-                            <button
-                              type="button"
-                              className="btn btn-outline-danger"
-                              onClick={() => removeCost(index)}
-                            >
-                              <MdOutlineDeleteSweep
-                               size="26"
-                              />
+                            <button type="button" className="btn btn-outline-danger" onClick={() => removeCost(index)}>
+                              <MdOutlineDeleteSweep size="26" />
                             </button>
                           </td>
                         </tr>
@@ -317,37 +393,22 @@ export default function ProjectForm() {
               </div>
 
               <div className="d-flex align-center justify-content-center mt-1">
-                <button
-                  type="button"
-                  className="btn-2 btn-green"
-                  onClick={() =>
-                    appendCost({ date: "", estimatedCost: "", revisedDate: "" })
-                  }
-                >
-                  <BiListPlus
-                    size="24"
-                  />
+                <button type="button" className="btn-2 btn-green" onClick={() => appendCost({ date: "", estimatedCost: "", revisedDate: "" })}>
+                  <BiListPlus size="24" />
                 </button>
               </div>
             </div>
 
-
-            {/* Buttons */}
+            {/* Form Buttons */}
             <div className="form-post-buttons">
               <button type="submit" className="btn btn-primary">
                 {isEdit ? "Update" : "Save"}
               </button>
-              <button
-                type="button"
-                className="btn btn-white"
-                onClick={() => navigate(-1)}
-              >
-                Cancel
-              </button>
+              <button type="button" className="btn btn-white" onClick={() => navigate(-1)}>Cancel</button>
             </div>
           </form>
-          </div>
         </div>
+      </div>
     </div>
   );
 }
