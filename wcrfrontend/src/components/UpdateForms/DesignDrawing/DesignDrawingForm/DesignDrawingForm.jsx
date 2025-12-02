@@ -20,7 +20,6 @@ export default function DesignDrawingForm() {
 	const isEdit = Boolean(designId);
 	const [projectOptions, setProjectOptions] = useState([]);
 	const [contractOptions, setContractOptions] = useState([]);
-	const [contractListOptions, setContractListOptions] = useState([]);
 	const [preparedByOptions, setPreparedByOptions] = useState([]);
 	const [approvingRailwayOptions, setApprovingRailwayOptions] = useState([]);
 	const [structureTypeOptions, setStructureTypeOptions] = useState([]);
@@ -28,11 +27,6 @@ export default function DesignDrawingForm() {
 	const [revisionStatusOptions, setRevisionStatusOptions] = useState([]);
 	const [approvalAuthorityOptions, setApprovalAuthorityOptions] = useState([]);
 	const [structureOptions, setStructureOptions] = useState([]);
-	const [stageOptions, setStageOptions] = useState([]);
-	const [submittedOptions, setSubmittedOptions] = useState([]);
-	const [submissionPurposeOptions, setSubmissionPurposeOptions] = useState([]);
-	const [designFileTypeOptions, setDesignFileTypeOptions] = useState([]);
-	const [asBuiltStatusOptions, setAsBuiltStatusOptions] = useState([]);
 
 	const {
 		register,
@@ -65,7 +59,7 @@ export default function DesignDrawingForm() {
 			hq_drawing_no: "",
 			revisionDetailsFields: [
 				{
-					revisions: "",
+					revisions: "R1",
 					drawing_nos: "",
 					correspondence_letter_nos: "",
 					revision_dates: "",
@@ -119,13 +113,7 @@ export default function DesignDrawingForm() {
 					})) || []
 				);
 
-				// Contract List Dropdown (Optional field)
-				setContractListOptions(
-					data.contractList?.map(c => ({
-						value: c.contract_id,
-						label: c.contract_name
-					})) || []
-				);
+
 
 				// Prepared By Dropdown
 				setPreparedByOptions(
@@ -182,46 +170,6 @@ export default function DesignDrawingForm() {
 					data.approvalAuthority?.map(a => ({
 						value: a.approval_authority_fk,
 						label: a.approval_authority_fk
-					})) || []
-				);
-
-				// Stage
-				setStageOptions(
-					data.stage?.map(s => ({
-						value: s.stage_fk,
-						label: s.stage_fk
-					})) || []
-				);
-
-				// Submitted Status
-				setSubmittedOptions(
-					data.submitted?.map(s => ({
-						value: s.submitted_id,
-						label: s.submitted_status
-					})) || []
-				);
-
-				// Submission Purpose
-				setSubmissionPurposeOptions(
-					data.submssionpurpose?.map(s => ({
-						value: s.purpose_id,
-						label: s.purpose_name
-					})) || []
-				);
-
-				// Design File Types
-				setDesignFileTypeOptions(
-					data.designFileType?.map(f => ({
-						value: f.file_type_id,
-						label: f.file_type_name
-					})) || []
-				);
-
-				// As-Built Status
-				setAsBuiltStatusOptions(
-					data.asBuiltStatuses?.map(a => ({
-						value: a.as_built_status_id,
-						label: a.as_built_status
 					})) || []
 				);
 
@@ -818,24 +766,25 @@ export default function DesignDrawingForm() {
 											revisionDetailsFields.map((item, index) => (
 												<tr key={item.id}>
 												<td>
-												    <span className="form-control-static">
-												        {isEdit
-												            ? (watch(`revisionDetailsFields.${index}.revisions`) || `R${index + 1}`)
-												            : `R${index + 1}`
-												        }
-												    </span>
+												  {/* Display Always */}
+												  <span className="form-control-static">
+												    {isEdit
+												      ? (watch(`revisionDetailsFields.${index}.revisions`) || item.revisions)
+												      : `R${index + 1}`}
+												  </span>
 
-												    <input
-												        type="hidden"
-												        {...register(`revisionDetailsFields.${index}.revisions`)}
-												        value={
-												            isEdit
-												                ? (watch(`revisionDetailsFields.${index}.revisions`) || `R${index + 1}`)
-												                : `R${index + 1}`
-												        }
-												    />
+												  {/* Send value always (JSP logic) */}
+												  <input
+												    type="hidden"
+												    {...register(`revisionDetailsFields.${index}.revisions`)}
+												    value={
+												      isEdit
+												        ? (watch(`revisionDetailsFields.${index}.revisions`) || item.revisions)
+												        : `R${index + 1}`
+												    }
+												    readOnly
+												  />
 												</td>
-
 													<td>
 														<input
 															type="text"
@@ -974,14 +923,14 @@ export default function DesignDrawingForm() {
 									className="btn-2 btn-green"
 									onClick={() =>
 										appendRevisionDetails({
-											revisions: "",
-											drawing_nos: "",
-											correspondence_letter_nos: "",
-											revision_dates: "",
-											revision_status_fks: "",
-											remarkss: "",
-											uploadFileNames: "",
-											current: "",
+										  revisions: `R${revisionDetailsFields.length + 1}`,
+										  drawing_nos: "",
+										  correspondence_letter_nos: "",
+										  revision_dates: "",
+										  revision_status: "",
+										  remarkss: "",
+										  uploadFileNames: "",
+										  current: "",
 										})
 									}
 								>
