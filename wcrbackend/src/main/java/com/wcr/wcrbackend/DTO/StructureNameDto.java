@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class StructureNameDto {
 
     private String structureId;
+    private String structure;
     private String structureName;
     private String structureDetails;
     private BigDecimal fromChainage;   // DECIMAL(10,2)

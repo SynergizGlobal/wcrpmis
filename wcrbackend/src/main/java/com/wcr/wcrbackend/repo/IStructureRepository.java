@@ -19,10 +19,10 @@ public interface IStructureRepository {
 	  
 	  List<String> getAllStructureTypes();
 	  
-	  void insertStructure(String name, String projectId, String type,
+	  void insertStructure(String name, String structure, String projectId, String type,
               String details, BigDecimal fromChainage, BigDecimal toChainage);
 
-      void updateStructure(String id, String name, String type,
+      void updateStructure(String id, String name, String structure, String type,
               String details, BigDecimal fromChainage, BigDecimal toChainage);
 
 	    void deleteStructure(String structureId);

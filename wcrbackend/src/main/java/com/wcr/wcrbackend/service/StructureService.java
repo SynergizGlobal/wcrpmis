@@ -84,6 +84,7 @@ public class StructureService {
 
                     // INSERT
                     structureRepository.insertStructure(
+                        row.getStructure(),
                         row.getStructureName(),
                         projectId,
                         typeDto.getType(),
@@ -97,6 +98,7 @@ public class StructureService {
                     // UPDATE
                     structureRepository.updateStructure(
                         row.getStructureId(),
+                        row.getStructure(),
                         row.getStructureName(),
                         typeDto.getType(),
                         row.getStructureDetails(),

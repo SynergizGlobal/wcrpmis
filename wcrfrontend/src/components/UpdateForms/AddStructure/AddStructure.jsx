@@ -74,7 +74,12 @@ export default function AddStructure() {
     const { name, value } = e.target;
     setFilters({ ...filters, [name]: value });
   };
-
+  
+  const handleClearFilters = () => {
+     setFilters({ project: "" });  
+     setSearch("");               
+     setPage(1);                   
+   };
 
   const handleAdd = () => navigate("addstructureform");
   const handleEdit = async (projectId) => {
@@ -140,7 +145,7 @@ export default function AddStructure() {
 		      <div className={styles.filterOptions} key={key}>
 		        <Select
 		          options={options}
-		          value={options.find((opt) => opt.value === filters[key])}
+				  value={filters[key] ? options.find(opt => opt.value === filters[key]) : null}
 				  onChange={(selectedOption) => {
 					console.log(" Selected Project:", selectedOption);
 				    handleFilterChange({
@@ -165,7 +170,7 @@ export default function AddStructure() {
 		    );
 		  })}
 
-		  <button className="btn btn-2 btn-primary">Clear Filters</button>
+		  <button className="btn btn-2 btn-primary" onClick={handleClearFilters}>Clear Filters</button>
 		</div>
 		  {/* Search + Entries Row */}
 		         <div className={styles.tableTopRow}>
@@ -205,30 +210,42 @@ export default function AddStructure() {
                 </tr>
               </thead>
 			  <tbody>
-			    {paginatedRows.map((project, index) => (
-			      <tr key={index}>
-			        <td>{project.projectId}</td>
-
-			        <td>
-			          {project.structureTypes.length > 0 ? (
-			            project.structureTypes.map((st, i) => (
-			              <div key={i}>{st.structureType} - {st.count}</div>
-			            ))
-			          ) : (
-			            <span>No structure types</span>
-			          )}
-			        </td>
-
-			        <td>
-			          <button
-			            className="btn btn-sm btn-outline-primary"
-			            onClick={() => handleEdit(project.projectId)}
-			          >
-			            <MdEditNote size={28} />
-			          </button>
+			    {searchedProjects.length === 0 ? (
+			      // CASE 1: No matching projects (search or filter result empty)
+			      <tr>
+			        <td colSpan="3">
+			          No details found
 			        </td>
 			      </tr>
-			    ))}
+			    ) : (
+			      // CASE 2: Display all rows (filtered OR searched)
+			      paginatedRows.map((item, index) => (
+			        <tr key={index}>
+			          <td>{item.projectId}</td>
+
+			          <td>
+			            {item.structureTypes?.length > 0 ? (
+			              item.structureTypes.map((st, i) => (
+			                <div key={i}>{st.structureType} - {st.count}</div>
+			              ))
+			            ) : (
+			              <span style={{ color: "red", fontStyle: "italic" }}>
+			                No Structures for this project
+			              </span>
+			            )}
+			          </td>
+
+			          <td>
+			            <button
+			              className="btn btn-sm btn-outline-primary"
+			              onClick={() => handleEdit(item.projectId)}
+			            >
+			              <MdEditNote size={28} />
+			            </button>
+			          </td>
+			        </tr>
+			      ))
+			    )}
 			  </tbody>
             </table>
           </div>

@@ -29,7 +29,7 @@
 		          type: "",
 				  rows: [
 		              { 
-		                structureId: "", 
+		                structure: "", 
 		                structureName: "",
 		                structureDetails: "",
 		                fromChainage: "",
@@ -161,26 +161,27 @@
 	        <form onSubmit={handleSubmit(onSubmit)}>
 	          
 	          {/* PROJECT */}
-	          <div className="form-row">
-	            <div className="form-field">
-	              <label>
-	                Project <span className="red">*</span>
-	              </label>
-	
-	              <Controller
-	                name="project"
-	                control={control}
-	                rules={{ required: true }}
-	                render={({ field }) => (
-						<Select
-						  {...field}
-						  placeholder="Select Project"
-						  options={projectOptions}
-						/>
-	                )}
-	              />
-	            </div>
-	          </div>
+			  <div className="form-row">
+			    <div className="form-field">
+			      <label>
+			        Project <span className="red">*</span>
+			      </label>
+
+			      <Controller
+			        name="project"
+			        control={control}
+			        rules={{ required: true }}
+			        render={({ field }) => (
+			          <Select
+			            {...field}
+			            placeholder="Select Project"
+			            options={projectOptions}
+			            isDisabled={isEdit}   
+			          />
+			        )}
+			      />
+			    </div>
+			  </div>
 	
 	          {/* SHOW STRUCTURE TYPES ONLY AFTER PROJECT SELECT */}
 	          {projectId && (
@@ -262,7 +263,7 @@
 		                onClick={() =>
 		                  addType({
 		                    type: "",
-		                    rows: [{ structureId: "", structureName: "" }],
+		                    rows: [{ structure: "", structureName: "" }],
 		                  })
 		                }
 		              >
@@ -304,7 +305,7 @@
 	  	        <table className={styles.table}>
 	  	          <thead>
 	  	            <tr>
-	  	              <th>Structure Id</th>
+	  	              <th>Structure </th>
 	  	              <th>Structure Name</th>
 	  	              <th>Structure Details</th>
 	  	              <th>From Chainage</th>
@@ -319,8 +320,8 @@
 
 	  	                <td>
 	  	                  <input
-	  	                    defaultValue={row.structureId}
-	  	                    {...register(`structureTypes.${typeIndex}.rows.${rowIndex}.structureId`)}
+	  	                    defaultValue={row.structure}
+	  	                    {...register(`structureTypes.${typeIndex}.rows.${rowIndex}.structure`)}
 	  	                  />
 	  	                </td>
 

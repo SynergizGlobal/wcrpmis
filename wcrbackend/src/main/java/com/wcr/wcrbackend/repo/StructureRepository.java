@@ -48,6 +48,7 @@ public class StructureRepository implements IStructureRepository {
     public List<Map<String, Object>> getStructuresByProject(String projectId) {
         String sql = """
             SELECT structure_id,
+                   structure,
                    structure_name,
                    structure_type_fk,
                    structure_details,
@@ -78,6 +79,7 @@ public class StructureRepository implements IStructureRepository {
         String structureSql = """
         	    SELECT structure_type_fk,
         	           structure_id,
+        	           structure,
         	           structure_name,
         	           structure_details,
         	           from_chainage,
@@ -95,6 +97,7 @@ public class StructureRepository implements IStructureRepository {
         for (Map<String, Object> row : rows) {
             String type = (String) row.get("structure_type_fk");
             String id = String.valueOf(row.get("structure_id"));
+            String structure = (String) row.get("structure"); 
             String name = (String) row.get("structure_name");
             String details = (String) row.get("structure_details");
             BigDecimal from = row.get("from_chainage") != null ? (BigDecimal) row.get("from_chainage") : null;
@@ -102,7 +105,7 @@ public class StructureRepository implements IStructureRepository {
 
             grouped
                 .computeIfAbsent(type, k -> new ArrayList<>())
-                .add(new StructureNameDto(id, name, details, from, to));
+                .add(new StructureNameDto(id, structure, name, details, from, to));
         }
 
         // STEP 4: Convert to DTO list
@@ -123,25 +126,26 @@ public class StructureRepository implements IStructureRepository {
     
     
     @Override
-    public void insertStructure(String name, String projectId, String type,
+    public void insertStructure(String structure, String name, String projectId, String type,
                   String details, BigDecimal fromChainage, BigDecimal toChainage) {
         String sql = """
             INSERT INTO structure 
-            (structure_name, project_id_fk, structure_type_fk, 
+            (structure, structure_name, project_id_fk, structure_type_fk, 
              structure_details, from_chainage, to_chainage)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """;
 
-        jdbcTemplate.update(sql, name, projectId, type, details, fromChainage, toChainage);
+        jdbcTemplate.update(sql, structure, name, projectId, type, details, fromChainage, toChainage);
     }
     
  // UPDATE (structureId required)
     @Override
-    public void updateStructure(String id, String name, String type,
+    public void updateStructure(String id, String structure, String name, String type,
                                 String details, BigDecimal fromChainage, BigDecimal toChainage) {
         String sql = """
             UPDATE structure
-            SET structure_name = ?,
+            SET structure = ?,
+                structure_name = ?,
                 structure_type_fk = ?,
                 structure_details = ?,
                 from_chainage = ?,
@@ -149,7 +153,7 @@ public class StructureRepository implements IStructureRepository {
             WHERE structure_id = ?
         """;
 
-        jdbcTemplate.update(sql, name, type, details, fromChainage, toChainage, id);
+        jdbcTemplate.update(sql, structure, name, type, details, fromChainage, toChainage, id);
     }
 
 
@@ -198,6 +202,7 @@ public class StructureRepository implements IStructureRepository {
     }
     
     
+    @Override
     public Map<String, BigDecimal> getProjectChainage(String projectId) {
         String sql = """
             SELECT from_chainage, to_chainage
