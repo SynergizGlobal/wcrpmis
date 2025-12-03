@@ -1,21 +1,19 @@
 package com.wcr.wcrbackend.service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.stereotype.Service;
+
 
 import com.wcr.wcrbackend.DTO.FullStructureResponse;
 import com.wcr.wcrbackend.DTO.ProjectStructureSummaryDto;
-import com.wcr.wcrbackend.DTO.SaveStructureRequest;
+import com.wcr.wcrbackend.DTO.Structure;
 import com.wcr.wcrbackend.DTO.StructureNameDto;
 import com.wcr.wcrbackend.DTO.StructureSaveRequest;
 import com.wcr.wcrbackend.DTO.StructureSummaryDto;
 import com.wcr.wcrbackend.DTO.StructureTypeDto;
 import com.wcr.wcrbackend.repo.IStructureRepository;
-
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -84,27 +82,27 @@ public class StructureService {
 
                     // INSERT
                     structureRepository.insertStructure(
-                        row.getStructure(),
-                        row.getStructureName(),
-                        projectId,
-                        typeDto.getType(),
-                        row.getStructureDetails(),
-                        from,
-                        to
-                    );
+                            row.getStructure(),
+                            row.getStructureName(),
+                            projectId,
+                            typeDto.getType(),
+                            row.getStructureDetails(),
+                            from,
+                            to
+                        );
 
                 } else {
 
                     // UPDATE
                     structureRepository.updateStructure(
-                        row.getStructureId(),
-                        row.getStructure(),
-                        row.getStructureName(),
-                        typeDto.getType(),
-                        row.getStructureDetails(),
-                        from,
-                        to
-                    );
+                            row.getStructureId(),
+                            row.getStructure(),
+                            row.getStructureName(),
+                            typeDto.getType(),
+                            row.getStructureDetails(),
+                            from,
+                            to
+                        );
                 }
             }
         }
@@ -128,7 +126,47 @@ public class StructureService {
         return structureRepository.getProjectChainage(projectId);
     }
 
+    
+    public List<Structure> getProjectsListForStructureForm(Structure obj) throws Exception {
+		return structureRepository.getProjectsListForStructureForm(obj);
+	}
+    
+	
+	public List<Structure> getWorkListForStructureForm(Structure obj) throws Exception {
+		return structureRepository.getWorkListForStructureForm(obj);
+	}
 
+	
+	public List<Structure> getContractListForStructureFrom(Structure obj) throws Exception {
+		return structureRepository.getContractListForStructureFrom(obj);
+	}
+
+	public List<Structure> getResponsiblePeopleListForStructureForm(Structure obj) throws Exception {
+		return structureRepository.getResponsiblePeopleListForStructureForm(obj);
+	}
+	
+	public List<Structure> getStructuresListForStructureFrom(Structure obj) throws Exception {
+		return structureRepository.getStructuresListForStructureFrom(obj);
+	}
+
+	
+	public List<Structure> getDepartmentsListForStructureFrom(Structure obj) throws Exception {
+		return structureRepository.getDepartmentsListForStructureFrom(obj);
+	}
+
+	public List<Structure> getWorkStatusListForStructureForm(Structure obj) throws Exception {
+		return structureRepository.getWorkStatusListForStructureForm(obj);
+	}
+
+	
+	public List<Structure> getUnitsListForStructureForm(Structure obj) throws Exception {
+		return structureRepository.getUnitsListForStructureForm(obj);
+	}
+
+	
+	public List<Structure> getFileTypeForStructureForm(Structure obj) throws Exception {
+		return structureRepository.getFileTypeForStructureForm(obj);
+	}
 }
 
 

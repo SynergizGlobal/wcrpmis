@@ -4,9 +4,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+
 import com.wcr.wcrbackend.DTO.FullStructureResponse;
 import com.wcr.wcrbackend.DTO.ProjectStructureSummaryDto;
-import com.wcr.wcrbackend.DTO.StructureNameDto;
+import com.wcr.wcrbackend.DTO.Structure;
 import com.wcr.wcrbackend.DTO.StructureSummaryDto;
 
 public interface IStructureRepository {
@@ -32,6 +33,26 @@ public interface IStructureRepository {
 	    List<ProjectStructureSummaryDto> getAllProjectSummaries();
 	    
 	    Map<String, BigDecimal> getProjectChainage(String projectId);
+	    
+	    
+		List<Structure> getProjectsListForStructureForm(Structure obj) throws Exception;
+
+		List<Structure> getWorkListForStructureForm(Structure obj) throws Exception;
+
+		List<Structure> getContractListForStructureFrom(Structure obj) throws Exception;
+
+		List<Structure> getStructuresListForStructureFrom(Structure obj) throws Exception;
+
+		List<Structure> getDepartmentsListForStructureFrom(Structure obj) throws Exception;
+		
+		List<Structure> getResponsiblePeopleListForStructureForm(Structure obj) throws Exception;
+
+		List<Structure> getWorkStatusListForStructureForm(Structure obj) throws Exception;
+
+		List<Structure> getUnitsListForStructureForm(Structure obj) throws Exception;
+
+		List<Structure> getFileTypeForStructureForm(Structure obj) throws Exception;
+
     
     
 }

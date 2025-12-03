@@ -1,11 +1,15 @@
 package com.wcr.wcrbackend.repo;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
 
 import com.wcr.wcrbackend.DTO.FullStructureResponse;
 import com.wcr.wcrbackend.DTO.ProjectStructureSummaryDto;
+import com.wcr.wcrbackend.DTO.Structure;
 import com.wcr.wcrbackend.DTO.StructureNameDto;
 import com.wcr.wcrbackend.DTO.StructureSummaryDto;
 import com.wcr.wcrbackend.DTO.StructureTypeDto;
@@ -217,6 +221,171 @@ public class StructureRepository implements IStructureRepository {
             return map;
         });
     }
+
+
+    @Override
+	public List<Structure> getProjectsListForStructureForm(Structure obj) throws Exception {
+		List<Structure> objsList = null;
+		try {
+			String qry = "select project_id as project_id_fk,project_name from project order by project_id asc";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Structure>(Structure.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+/////////////////////
+	@Override
+	public List<Structure> getWorkListForStructureForm(Structure obj) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<Structure> getContractListForStructureFrom(Structure obj) throws Exception {
+		List<Structure> objsList = null;
+		try {
+			String qry = "select contract_id as contract_id_fk,contract_name,contract_short_name,c.project_id_fk,project_name "
+					+ "from contract c "
+					+ "LEFT JOIN project p ON c.project_id_fk = project_id " + "where contract_id is not null ";
+
+			int arrSize = 0;
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + "and project_id_fk = ? ";
+				arrSize++;
+			}
+
+			qry = qry + " order by contract_id asc";
+
+			Object[] pValues = new Object[arrSize];
+
+			int i = 0;
+			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
+			}
+			objsList = jdbcTemplate.query(qry, pValues, new BeanPropertyRowMapper<Structure>(Structure.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Structure> getStructuresListForStructureFrom(Structure obj) throws Exception {
+		List<Structure> objsList = null;
+		try {
+			String qry = "select structure_type from structure_type";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Structure>(Structure.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Structure> getDepartmentsListForStructureFrom(Structure obj) throws Exception {
+		List<Structure> objsList = null;
+		try {
+			String qry = "select department as department_fk,department_name,contract_id_code from department";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Structure>(Structure.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+	@Override
+	public List<Structure> getResponsiblePeopleListForStructureForm(Structure obj) throws Exception {
+		List<Structure> objsList = null;
+		try {
+			String qry = "SELECT user_id,user_name,designation,department_fk FROM [user] u where user_name not like '%user%' and pmis_key_fk not like '%SGS%' and department_fk in('Engg','Elec','S&T')\r\n"
+					+ "					ORDER BY \r\n" + "					case when user_type_fk='HOD' then 1\r\n"
+					+ "					when user_type_fk='DYHOD' then 2\r\n"
+					+ "					when user_type_fk='Officers ( Jr./Sr. Scale )' then 3\r\n"
+					+ "					when user_type_fk='Others' then 4\r\n" + "					end asc ,\r\n"
+					+ "case when u.designation='ED Civil' then 1 \r\n" + "   when u.designation='CPM I' then 2 \r\n"
+					+ "   when u.designation='CPM II' then 3\r\n" + "   when u.designation='CPM III' then 4 \r\n"
+					+ "   when u.designation='CPM V' then 5\r\n" + "   when u.designation='CE' then 6 \r\n"
+					+ "   when u.designation='ED S&T' then 7 \r\n" + "   when u.designation='CSTE' then 8\r\n"
+					+ "   when u.designation='GM Electrical' then 9\r\n"
+					+ "   when u.designation='CEE Project I' then 10\r\n"
+					+ "   when u.designation='CEE Project II' then 11\r\n"
+					+ "   when u.designation='ED Finance & Planning' then 12\r\n"
+					+ "   when u.designation='AGM Civil' then 13\r\n"
+					+ "   when u.designation='DyCPM Civil' then 14\r\n"
+					+ "   when u.designation='DyCPM III' then 15\r\n" + "   when u.designation='DyCPM V' then 16\r\n"
+					+ "   when u.designation='DyCE EE' then 17\r\n"
+					+ "   when u.designation='DyCE Badlapur' then 18\r\n"
+					+ "   when u.designation='DyCPM Pune' then 19\r\n" + "   when u.designation='DyCE Proj' then 20\r\n"
+					+ "   when u.designation='DyCEE I' then 21\r\n"
+					+ "   when u.designation='DyCEE Projects' then 22\r\n"
+					+ "   when u.designation='DyCEE PSI' then 23\r\n" + "   when u.designation='DyCSTE I' then 24\r\n"
+					+ "   when u.designation='DyCSTE IT' then 25\r\n"
+					+ "   when u.designation='DyCSTE Projects' then 26\r\n"
+					+ "   when u.designation='XEN Consultant' then 27\r\n"
+					+ "   when u.designation='AEN Adhoc' then 28\r\n"
+					+ "   when u.designation='AEN Project' then 29\r\n"
+					+ "   when u.designation='AEN P-Way' then 30\r\n" + "   when u.designation='AEN' then 31\r\n"
+					+ "   when u.designation='Sr Manager Signal' then 32 \r\n"
+					+ "   when u.designation='Manager Signal' then 33\r\n"
+					+ "   when u.designation='Manager Civil' then 34 \r\n"
+					+ "   when u.designation='Manager OHE' then 35\r\n"
+					+ "   when u.designation='Manager GS' then 36\r\n"
+					+ "   when u.designation='Manager Finance' then 37\r\n"
+					+ "   when u.designation='Planning Manager' then 38\r\n"
+					+ "   when u.designation='Manager Project' then 39\r\n"
+					+ "   when u.designation='Manager' then 40 \r\n" + "   when u.designation='SSE' then 41\r\n"
+					+ "   when u.designation='SSE Project' then 42\r\n"
+					+ "   when u.designation='SSE Works' then 43\r\n" + "   when u.designation='SSE Drg' then 44\r\n"
+					+ "   when u.designation='SSE BR' then 45\r\n" + "   when u.designation='SSE P-Way' then 46\r\n"
+					+ "   when u.designation='SSE OHE' then 47\r\n" + "   when u.designation='SPE' then 48\r\n"
+					+ "   when u.designation='PE' then 49\r\n" + "   when u.designation='JE' then 50\r\n"
+					+ "   when u.designation='Demo-HOD-Elec' then 51\r\n"
+					+ "   when u.designation='Demo-HOD-Engg' then 52\r\n"
+					+ "   when u.designation='Demo-HOD-S&T' then 53\r\n" + "\r\n" + "   end asc";
+
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Structure>(Structure.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+
+	@Override
+	public List<Structure> getWorkStatusListForStructureForm(Structure obj) throws Exception {
+		List<Structure> objsList = null;
+		try {
+			String qry = "SELECT DISTINCT(work_status_fk) from work where work_status_fk <> ''";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Structure>(Structure.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Structure> getUnitsListForStructureForm(Structure obj) throws Exception {
+		List<Structure> objsList = null;
+		try {
+			String qry = "SELECT id, unit, value from money_unit";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Structure>(Structure.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
+	@Override
+	public List<Structure> getFileTypeForStructureForm(Structure obj) throws Exception {
+		List<Structure> objsList = null;
+		try {
+			String qry = "SELECT structure_file_type from structure_file_type";
+			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Structure>(Structure.class));
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+		return objsList;
+	}
 
 
 
