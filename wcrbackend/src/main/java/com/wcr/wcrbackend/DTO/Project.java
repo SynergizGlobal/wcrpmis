@@ -1,5 +1,6 @@
 package com.wcr.wcrbackend.DTO;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
@@ -26,8 +27,11 @@ public class Project {
 	created_date,created_by,railway,commissioned_length,length,project_file_type_fk,project_file_type,project_file_id,financial_progress,physical_progress,
 	uploaded_by_user_id_fk,chainages,latitude,longitude,status,srno,uploaded_file,project_data_id,	ongoing_projects,	total_length,	total_earthwork,	completed_track,	completed_major_bridges,	total_major_bridges,	completed_minor_bridges,total_minor_bridges,	completed_rob,	total_rob,	completed_rub,	total_rub
 
-	;
+	;	
 	
+	 private String structure_details;
+	 private BigDecimal from_chainage;
+	 private BigDecimal to_chainage;
 	
 	private MultipartFile[] projectGalleryFiles,projectFiles;
 	private List<Project> projectFilesList,projectGalleryFilesList,projectPinkBooks,projectGallery,projectDocs;

@@ -34,3 +34,9 @@
   gap: 10px;
   margin-top: 20px;
 }
+.tableWrapper table td{
+	padding: 10px;
+}
+.tableWrapper table td input{
+	width: 100%;
+}

@@ -7,6 +7,113 @@
   padding: 0;
 }
 
+.filterRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.leftFilters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rightFilters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 220px;
+}
+
+.filterGroup label {
+  font-size: 13px;
+  color: #444;
+  font-weight: 500;
+}
+
+.globalSearch {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  width: 220px;
+}
+
+/* Pagination layout */
+.paginationBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.paginationInfo {
+  font-size: 14px;
+  color: #444;
+}
+
+.paginationButtons {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paginationButtons button {
+  min-width: 38px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.totalPageText {
+  font-size: 13px;
+  color: #666;
+}
+.btn-sm svg {
+  vertical-align: middle;
+}
+.rightBtns {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-outline-secondary {
+  margin-left: 0.5rem;
+}
+
+
+@media (max-width: 768px) {
+  .filterRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rightFilters {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .paginationBar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -81,5 +188,3 @@
     flex: 0 0 46%;
   }
 }
-
-

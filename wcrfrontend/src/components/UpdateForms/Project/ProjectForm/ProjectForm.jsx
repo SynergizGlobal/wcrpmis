@@ -44,14 +44,33 @@ export default function ProjectForm() {
       actual_completion_date: "",
       benefits: "",
       remarks: "",
-      completionCosts: [{ date: "", estimatedCost: "", revisedDate: "" }],
+
+      // Completion Costs table
+      completionCosts: [
+        { date: "", estimatedCost: "", revisedDate: "" }
+      ],
+
+      // Structure Chainage table
+      structureChainage: [
+        { structureDetails: "", fromChainage: "", toChainage: "" }
+      ]
     },
   });
 
-  const { fields: costFields, append: appendCost, remove: removeCost } = useFieldArray({
-    control,
-    name: "completionCosts",
-  });
+  // Completion Cost Table FieldArray
+  const { fields: costFields, append: appendCost, remove: removeCost } =
+    useFieldArray({
+      control,
+      name: "completionCosts",
+    });
+
+  // Structure Chainage FieldArray
+  const { fields: chainageFields, append: appendChainage, remove: removeChainage } =
+    useFieldArray({
+      control,
+      name: "structureChainage",
+    });
+
 
   // Fetch dropdown data from API
   useEffect(() => {
@@ -100,9 +119,9 @@ export default function ProjectForm() {
       setValue("actual_completion_date", project.actual_completion_date ?? "");
       setValue("benefits", project.benefits ?? "");
       setValue("remarks", project.remarks ?? "");
-	  setValue("structure_details", project.structure_details ?? "");
-	  setValue("from_chainage", project.from_chainage ?? "");
-	  setValue("to_chainage", project.to_chainage ?? "");
+	  setValue("structureChainage.0.structureDetails", project.structure_details ?? "");
+	  setValue("structureChainage.0.fromChainage", project.from_chainage ?? "");
+	  setValue("structureChainage.0.toChainage", project.to_chainage ?? "");
       setValue("project_status", project.project_status ? { value: project.project_status, label: project.project_status } : { value: "", label: "" });
       setValue("project_type_id", project.project_type_id ? { value: project.project_type_id, label: project.project_type_name || project.project_type_id } : { value: "", label: "" });
       setValue("railway_zone", project.railway_zone ? { value: project.railway_zone, label: project.railway_zone_name || project.railway_zone } : { value: "", label: "" });
@@ -127,17 +146,23 @@ export default function ProjectForm() {
       }
     }
   }, [state, setValue, isEdit, appendCost]);
+  
 
   const onSubmit = async (formData) => {
-    try {
+    try {		
+		const chainage = formData.structureChainage?.[0] || {};
       const payload = {
         ...formData,
+		project_id: isEdit ? state.project.project_id : undefined,
         project_status: formData.project_status?.value || "",
         project_type_id: formData.project_type_id?.value || "",
         railway_zone: formData.railway_zone?.value || "",
         financial_year: formData.financial_year?.value || "",
         division_id: formData.division_id?.value || "",
         section_id: formData.section_id?.value || "",
+		 structure_details: chainage.structureDetails || null,
+	     from_chainage: chainage.fromChainage ? Number(chainage.fromChainage) : null,
+	     to_chainage: chainage.toChainage ? Number(chainage.toChainage) : null,
         completionCosts: formData.completionCosts.map(cost => ({
           date: cost.date || "",
           estimatedCost: cost.estimatedCost || "",
@@ -145,19 +170,55 @@ export default function ProjectForm() {
         })),
       };
 
-      console.log("Payload sent to backend:", payload);
+      if (typeof formData.pink_book_item_numbers === "string") {
+          if (formData.pink_book_item_numbers.trim() === "") {
+            delete payload.pink_book_item_numbers;
+          } else {
+            payload.pink_book_item_numbers = formData.pink_book_item_numbers.split(",").map(s => s.trim());
+          }
+        }
 
-      const response = await api.post(
-        `${API_BASE_URL}/projects/api/addProject`,
-        payload,
-        { headers: { "Content-Type": "application/json" }, withCredentials: true }
-      );
+        const arrayFields = [
+          "pink_book_item_numbers",
+          "financial_years",
+          "railways",
+          "projectFileNames",
+          "project_file_types",
+          "project_file_ids",
+          "created_dates",
+          "completion_dates",
+          "estimated_completion_costs",
+          "revised_completion_dates"
+        ];
 
-      if (response.data.success) {
 
-        navigate("/wcrpmis/updateforms/project");
-      } else {
-      }
+      arrayFields.forEach(f => {
+        if (!Array.isArray(payload[f])) {
+          delete payload[f];
+        }
+      });
+
+          console.log("FINAL PAYLOAD:", payload);
+
+		  let response;
+
+		  if (isEdit) {
+		    response = await api.put(
+		      `${API_BASE_URL}/projects/api/updateProject/${state.project.project_id}`,
+		      payload,
+		      { headers: { "Content-Type": "application/json" }, withCredentials: true }
+		    );
+		  } else {
+		    response = await api.post(
+		      `${API_BASE_URL}/projects/api/addProject`,
+		      payload,
+		      { headers: { "Content-Type": "application/json" }, withCredentials: true }
+		    );
+		  }
+		  
+		  if (response.status === 200) {
+        navigate("/updateforms/project");
+      } 
     }	  catch (err) {
 
 	    // Show a readable message
@@ -353,6 +414,53 @@ export default function ProjectForm() {
                 <input {...register("actual_completion_cost")} type="text" placeholder="Enter Value" />
               </div>
             </div>
+			
+			{/* STRUCTURE DETAILS TABLE */}
+			<h6 className="d-flex justify-content-center mt-1 mb-2">Structure Chainage Details</h6>
+
+			<div className={`dataTable ${styles.tableWrapper}`}>
+			  <table className="table user-table">
+			    <thead>
+			      <tr>
+			        <th>Structure Details</th>
+			        <th>From Chainage</th>
+			        <th>To Chainage</th>
+			      </tr>
+			    </thead>
+				<tbody>
+				  {chainageFields.map((row, index) => (
+				    <tr key={row.id}>
+				      <td>
+				        <input
+							type="text"
+				          {...register(`structureChainage.${index}.structureDetails`)}
+				          placeholder="Structure Details"
+				        />
+				      </td>
+
+				      <td>
+				        <input
+				          type="number"
+				          step="0.01"
+				          {...register(`structureChainage.${index}.fromChainage`)}
+				          placeholder="From"
+						  className="form-control"
+				        />
+				      </td>
+
+				      <td>
+				        <input
+				          type="number"
+				          step="0.01"
+				          {...register(`structureChainage.${index}.toChainage`)}
+				          placeholder="To"
+				        />
+				      </td>
+				    </tr>
+				  ))}
+				</tbody>
+			  </table>
+			</div>
 
             {/* Completion Costs Table */}
             <div className="row mt-1 mb-2">

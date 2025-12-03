@@ -3,7 +3,7 @@
 	import styles from "./Project.module.css";
 	import { CirclePlus } from "lucide-react";
 	import { LuCloudDownload } from "react-icons/lu";
-import api from "../../../api/axiosInstance";
+	import api from "../../../api/axiosInstance";
 	import { Outlet, useNavigate, useLocation } from "react-router-dom";
 	import { API_BASE_URL } from "../../../config";
 	import * as XLSX from "xlsx";
@@ -62,9 +62,16 @@ import api from "../../../api/axiosInstance";
 	  const handleDelete = async (proj) => {
 	    if (window.confirm(`Are you sure you want to delete project "${proj.project_name}"?`)) {
 	      try {
-	        const response = await fetch(`/projects/api/deleteProject/${proj.project_id}`, {
-	          method: "DELETE",
-	        });
+			const response = await fetch(
+			  `${API_BASE_URL}/projects/api/deleteProject/${proj.project_id}`,
+			  {
+			    method: "DELETE",
+			    credentials: "include",
+			    headers: {
+			      "Content-Type": "application/json",
+			    },
+			  }
+			);
 	
 	        if (response.ok) {
 	          alert("Project deleted successfully!");
