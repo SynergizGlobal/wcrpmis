@@ -59,5 +59,11 @@ public class StructureFormServiceImpl implements IStructureFormService{
 	public Structure getStructuresFormDetails(Structure obj) throws Exception {
 		return dao.getStructuresFormDetails(obj);
 	}
+
+
+	@Override
+	public boolean updateStructureForm(Structure obj) throws Exception {
+		return dao.updateStructureForm(obj);
+	}
 }
 	

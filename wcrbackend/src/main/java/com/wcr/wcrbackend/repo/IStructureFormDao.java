@@ -24,5 +24,7 @@ public interface IStructureFormDao {
 	List<Structure> getStructureDetailsTypes(Structure obj) throws Exception;
 
 	Structure getStructuresFormDetails(Structure obj) throws Exception;
+	
+	boolean updateStructureForm(Structure obj) throws Exception;
 
 }
