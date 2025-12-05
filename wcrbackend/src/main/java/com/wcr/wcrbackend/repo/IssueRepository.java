@@ -1259,9 +1259,9 @@ public class IssueRepository implements IIssueRepo {
 				//obj.setStatus_fk(obj.getStatus_fk());
 				obj.setAssigned_person_user_id_fk(null);
 			}
-			String qry = "INSERT INTO issue_history(issue_id_fk,issue_status_fk,assigned_person_user_id_fk,comment,created_by) "
+			String qry = "INSERT INTO issue_history(issue_id_fk,issue_status_fk,assigned_person_user_id_fk,comment,created_by,created_date) "
 					+ "VALUES "
-					+ "(:issue_id,:status_fk,:assigned_person_user_id_fk,:comment,:created_by_user_id_fk)";
+					+ "(:issue_id,:status_fk,:assigned_person_user_id_fk,:comment,:created_by_user_id_fk,CURRENT_TIMESTAMP)";
 			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
 			int count = template.update(qry, paramSource);
 			if (count > 0) {
@@ -1279,7 +1279,7 @@ public class IssueRepository implements IIssueRepo {
 
 		try {
 
-			String emailsQry = "select i.issue_id,zonal_railway_fk,description,date,contractor_name,w.work_short_name,i.contract_id_fk,i.status_fk,i.reported_by,c.contract_short_name,w.work_name,c.contract_name,i.category_fk,i.priority_fk,i.title,i.location,i.corrective_measure,i.remarks,"
+			String emailsQry = "select i.issue_id,zonal_railway_fk,description,date,contractor_name,i.contract_id_fk,i.status_fk,i.reported_by,c.contract_short_name,c.contract_name,i.category_fk,i.priority_fk,i.title,i.location,i.corrective_measure,i.remarks,"
 					+ "u2.designation as responsible_person_designation,u3.designation as escalated_to_designation,"
 					+ "u2.email_id as responsible_person_email_id,u3.email_id as escalated_to_email_id,"
 					+ "u4.email_id as contract_hod_email_id,u5.email_id as contract_dyhod_email_id,u5.user_name as dyhod_name,u4.user_name as hod_name, "
@@ -2356,7 +2356,7 @@ public class IssueRepository implements IIssueRepo {
 					+ "priority_fk,category_fk,status_fk,corrective_measure,FORMAT(resolved_date,'dd-MM-yyyy') AS resolved_date,escalated_to,i.remarks,contract_name,c.contract_short_name,project_id_fk,project_name,i.zonal_railway_fk,r.railway_name,other_organization,"
 					+ "FORMAT(escalation_date,'dd-MM-yyyy') AS escalation_date,FORMAT(assigned_date,'dd-MM-yyyy') AS assigned_date, "
 					+ "u2.designation as responsible_person_designation,u3.designation as escalated_to_designation,"
-					+ "c.hod_user_id_fk,c.dy_hod_user_id_fk,i.status_fk as existing_status_fk,other_org_resposible_person_name,other_org_resposible_person_designation,description,structure,component  "
+					+ "c.hod_user_id_fk,c.dy_hod_user_id_fk,i.status_fk as existing_status_fk,other_org_resposible_person_name,other_org_resposible_person_designation,description,structure,component,i.modified_by,i.modified_date  "
 					+ "from issue i " + "left outer join [user] u2 on i.responsible_person = u2.user_id "
 					+ "left outer join [user] u3 on i.escalated_to = u3.user_id "
 					+ "LEFT OUTER JOIN contract c ON i.contract_id_fk  = c.contract_id "
@@ -2452,9 +2452,15 @@ public class IssueRepository implements IIssueRepo {
 		try {
 			String priority = obj.getPriority_fk();
 			String status_fk = obj.getStatus_fk();
-			obj.setStatus_fk("");obj.setPriority_fk("");
+			
+			obj.setStatus_fk("");
+			obj.setPriority_fk("");
+			
 			Issue issue = getIssue(obj);
-			obj.setStatus_fk(status_fk);obj.setPriority_fk(priority);
+			obj.setStatus_fk(status_fk);
+			obj.setPriority_fk(priority);
+			
+			
 			NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
 			String qry = "UPDATE issue SET "
 					+ "title=:title,date=:date,location=:location,reported_by=:reported_by,responsible_person=:responsible_person,"

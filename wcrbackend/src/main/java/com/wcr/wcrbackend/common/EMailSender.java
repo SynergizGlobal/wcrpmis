@@ -50,34 +50,78 @@ public class EMailSender {
 	private static String pass = "Synergiz@2018";*/
 	
 	/************** ZIMBRA Mail Server Credentials**************************************/
-	private static String mailId = "syntrack@synergizglobal.com";
-	private static String pass = "bxku goln hhil axze";
+//	private static String mailId = "syntrack@synergizglobal.com";
+//	private static String pass = "@@Synergiz2025!";
+//	
+//	public static Session getSession() {
+//		Properties props = new Properties();
+//		
+//		/************** ZIMBRA Server Starts**************************************/
+//		props.put("mail.smtp.auth", "true");
+//		props.put("mail.smtp.starttls.enable", "true");
+//		props.put("mail.smtp.starttls.required", "true"); 
+//		props.put("mail.smtp.host", "smtp.smtp.office365.com");
+//		props.put("mail.smtp.port", "587");
+//		
+//		  //  The critical fix. Force TLS 1.2 for STARTTLS
+//	    props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+//		
+//		/************** ZIMBRA Server ends*************************************/
+//		
+//		/************** GMAIL Server Starts**************************************/
+//		/*props.put("mail.smtp.auth", "true");
+//		props.put("mail.smtp.starttls.enable", "true");
+//		props.put("mail.smtp.host", "smtp.gmail.com");
+//		props.put("mail.smtp.port", "587");*/
+//		/************** GMAIL Server ends*************************************/
+//		
+//		Session session = Session.getInstance(props,
+//		  new javax.mail.Authenticator() {
+//			protected PasswordAuthentication getPasswordAuthentication() {
+//				return new PasswordAuthentication(mailId, pass);
+//			}
+//		  });
+//		return session;
+//	}
 	
+	
+	
+	
+	
+	
+	
+	
+	private static String mailId = "syntrack@synergizglobal.com";
+	private static String pass = "@@Synergiz2025!";
+
 	public static Session getSession() {
-		Properties props = new Properties();
-		
-		/************** ZIMBRA Server Starts**************************************/
-		props.put("mail.smtp.auth", "true");
-		props.put("mail.smtp.starttls.enable", "true");
-		props.put("mail.smtp.host", "smtp.gmail.com");
-		props.put("mail.smtp.port", "587");
-		/************** ZIMBRA Server ends*************************************/
-		
-		/************** GMAIL Server Starts**************************************/
-		/*props.put("mail.smtp.auth", "true");
-		props.put("mail.smtp.starttls.enable", "true");
-		props.put("mail.smtp.host", "smtp.gmail.com");
-		props.put("mail.smtp.port", "587");*/
-		/************** GMAIL Server ends*************************************/
-		
-		Session session = Session.getInstance(props,
-		  new javax.mail.Authenticator() {
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(mailId, pass);
-			}
-		  });
-		return session;
+	    Properties props = new Properties();
+
+	    props.put("mail.smtp.auth", "true");
+	    props.put("mail.smtp.starttls.enable", "true");
+	    props.put("mail.smtp.starttls.required", "true");
+	    props.put("mail.smtp.auth.mechanisms", "LOGIN");
+	    props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+
+	    props.put("mail.smtp.host", "smtp.office365.com");
+	    props.put("mail.smtp.port", "587");
+
+	    Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+	        @Override
+	        protected PasswordAuthentication getPasswordAuthentication() {
+	            return new PasswordAuthentication(mailId, pass);
+	        }
+	    });
+
+	    return session;
 	}
+
+	
+	
+	
+	
+	
+	
 	
 	public static boolean send(String toAddress, String subject, String body) {
 		boolean isSend = false;		

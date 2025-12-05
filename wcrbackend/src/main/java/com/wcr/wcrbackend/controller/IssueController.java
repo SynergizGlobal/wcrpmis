@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -231,7 +233,9 @@ public class IssueController {
 			List<Issue> structures = issueService.getStructures(obj);
 			map.put("structures", structures);
 			List<Issue> components = issueService.getComponents(obj);
-			map.put("components", components);	
+			map.put("components", components);
+			List<Issue> actionTakens = issueService.getActionTakens(obj);
+			map.put("actionTakens", actionTakens);	
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -335,8 +339,13 @@ public class IssueController {
 	
 	@PostMapping(value="/add-issue")
 	public Boolean addIssue(@ModelAttribute Issue obj,HttpSession session) {
+		
+	System.out.println("inside the controller: ");
+
+
 		//ModelAndView model = new ModelAndView();
 		Boolean flag = false;
+		 
 		try {
 			//model.setViewName("redirect:/issues");
 			User uObj = (User) session.getAttribute("user");
@@ -528,7 +537,7 @@ public class IssueController {
 	}
 	
 	@PostMapping(value = "/export-issues")
-	public ResponseEntity<?> exportIssues(HttpServletRequest request, HttpServletResponse response,HttpSession session,@RequestBody Issue issue){
+	public ResponseEntity<?> exportIssues(HttpServletRequest request, HttpServletResponse response,HttpSession session,@ModelAttribute Issue issue){
 		//ModelAndView view = new ModelAndView(PageConstants.issuesGrid);
 		List<Issue> dataList = new ArrayList<Issue>();
 		String userId = null;String userName = null;
@@ -573,7 +582,11 @@ public class IssueController {
 		        
 		        
 	            XSSFRow headingRow = sheet.createRow(0);
-	            String headerString = "Issue ID^Project^Work^Contract^Short Description^Issue Pending Since^Location/Station/KM^Latitude^Longitude"
+//	            String headerString = "Issue ID^Project^Work^Contract^Short Description^Issue Pending Since^Location/Station/KM^Latitude^Longitude"
+//	            		+ "^Reported By^Raised On^Responsible Person^Assigned Date^Issue Category^Issue Status^Responsible Organization^Priority^Issue/Action Taken/Remarks^"
+//	            		+ "Escalated to^Escalation Date^Status After Escalation^Resolved Date^Description";
+	            
+	            String headerString = "Issue ID^Project^Contract^Short Description^Issue Pending Since^Location/Station/KM^Latitude^Longitude"
 	            		+ "^Reported By^Raised On^Responsible Person^Assigned Date^Issue Category^Issue Status^Responsible Organization^Priority^Issue/Action Taken/Remarks^"
 	            		+ "Escalated to^Escalation Date^Status After Escalation^Resolved Date^Description";
 	            
@@ -598,9 +611,9 @@ public class IssueController {
 					cell.setCellStyle(sectionStyle);
 					cell.setCellValue(obj.getProject_id_fk() +"-"+obj.getProject_name());
 					
-	                cell = row.createCell(c++);
-					cell.setCellStyle(sectionStyle);
-					cell.setCellValue(obj.getWork_id_fk()+"-"+obj.getWork_short_name());
+//	                cell = row.createCell(c++);
+//					cell.setCellStyle(sectionStyle);
+//					cell.setCellValue(obj.getWork_id_fk()+"-"+obj.getWork_short_name());
 					
 					cell = row.createCell(c++);
 					cell.setCellStyle(sectionStyle);

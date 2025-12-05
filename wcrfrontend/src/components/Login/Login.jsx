@@ -47,6 +47,8 @@ export default function Login() {
 
         localStorage.setItem("token", "SESSION_AUTH");
         localStorage.setItem("user", JSON.stringify(data));
+		localStorage.setItem("userName", data.userName);
+		
 
         window.location.href = "/wcrpmis/home";
     }
