@@ -974,14 +974,14 @@ public class IssueRepository implements IIssueRepo {
 	public List<Issue> getResponsiblePersonList(Issue obj) throws Exception {
 		List<Issue> objsList = null;
 		try {
-			String qry = "SELECT user_id as responsible_person_user_id,designation as responsible_person_designation "
+			String qry = "SELECT user_id as responsible_person_user_id,designation as responsible_person_designation, user_name as responsible_person "
 					+ "FROM [user] " + "where user_type_fk = ? ";
 			int arrSize = 1;
 			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDepartment_name())) {
 				qry = qry + "and department_fk = (select department from department where department_name = ?)";
 				arrSize++;
 			}
-			qry = qry + "group by user_id,designation order by designation";
+			qry = qry + "group by user_id,designation,user_name order by designation";
 			Object[] pValues = new Object[arrSize];
 			int i = 0;
 			pValues[i++] = CommonConstants.USER_TYPE_DYHOD;

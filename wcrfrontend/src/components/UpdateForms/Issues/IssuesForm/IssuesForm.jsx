@@ -34,6 +34,7 @@ export default function IssuesForm() {
 	const [responsibleOrganisationOptions, setResponsibleOrganisationOptions] = useState([]);
 	const [issueFileTypesOptions, setIssueFileTypesOptions] = useState([]);
 	const [issueStatusOptions, setIssueStatusOptions] = useState([]);
+	const [issueResponsiblePersonOptions, setIssueResponsiblePersonOptions] = useState([]);
 
 
 	const {
@@ -171,7 +172,15 @@ export default function IssuesForm() {
 		  })) || []
 		);
 
-        // 14. Structures 
+        // 14. ResponsiblePersonList
+		
+		setIssueResponsiblePersonOptions(
+		  data.responsiblePersonList?.map(t => ({
+		    value: t.responsible_person_user_id,
+		    label: t.responsible_person+ "-" + t.responsible_person_designation 
+		  }))
+		);
+
 
 
         // 15. Components
@@ -182,22 +191,15 @@ export default function IssuesForm() {
           })) || []
         );
 		
-		
-
-		if (Array.isArray(data.actionTakens) && data.actionTakens.length > 0) {
+		  if (Array.isArray(data.actionTakens) && data.actionTakens.length > 0) {
 			  const cleaned = data.actionTakens.map((f) => ({
-			    modified_by: f.user_name || "",
-			    modified_date: f.created_date || "",                    
-			    comment: f.comment || "",
+				  modified_by: f.user_name || "",
+				  modified_date: f.created_date || "",
+				  comment: f.comment || "",
 			  }));
-
 			  replaceModificationTable(cleaned);
-			}
-		
-		
-		
-		
-		
+		  }
+
       })
       .catch(err => console.error("Failed to load Issue form data:", err));
   }, []);
@@ -301,6 +303,12 @@ export default function IssuesForm() {
 	  status_fk: findOption(issueStatusOptions, d.status_fk),
 	  other_org_resposible_person_name: d.other_org_resposible_person_name || "",
 	  other_org_resposible_person_designation: d.other_org_resposible_person_designation || "",
+	  assigned_date: normalizeDate(d.assigned_date) || "",
+	  resolved_date: normalizeDate(d.resolved_date) || "",
+	  responsible_person:d.responsible_person || "",
+	  
+	  
+	  
 	  
     };
 
@@ -378,6 +386,13 @@ export default function IssuesForm() {
 	  formData.append("other_org_resposible_person_designation", data.other_org_resposible_person_designation || "");
 
       formData.append("reported_by", data.reported_by || "");
+	  
+	  formData.append("assigned_date", data.assigned_date || "");
+	  formData.append("resolved_date", data.resolved_date || "");
+	  formData.append("responsible_person", data.responsible_person || "");
+	  
+	  
+	  
 
 	  data.documentsTable.forEach((row) => {
 	    const file = row.issueFiles?.[0] ?? null;
@@ -412,7 +427,7 @@ export default function IssuesForm() {
 		  formData.append("issue_file_types", type);
 	      formData.append("issueFiles", empty);
 	      formData.append("issueFileNames", fileName);
-	      formData.append("issue_file_ids", fileId); //  ALWAYS append ID
+	      formData.append("issue_file_ids", fileId); 
 	    }
 	  });
 
@@ -821,24 +836,31 @@ export default function IssuesForm() {
 					        <input {...register("assigned_date")} type="date" placeholder="Select Date" />
 					      </div>
 
-							  <div className="form-field">
-								  <label>Responsible Person from WR: </label>
-								  <Controller
-									  name="responsible_person"
-									  control={control}
-									  render={({ field }) => (
-										  <Select
-											  {...field}
-											  options={issueStatusOptions}
-											  classNamePrefix="react-select"
-											  placeholder="Select value"
-											  isSearchable
-											  isClearable
-											  onChange={(selected) => field.onChange(selected)}
-										  />
-									  )}
-								  />
-							  </div>
+						  <div className="form-field">
+						    <label>Responsible Person from WCR: </label>
+						    <Controller
+						      name="responsible_person"
+						      control={control}
+						      render={({ field }) => (
+						        <Select
+						          options={issueResponsiblePersonOptions}
+						          classNamePrefix="react-select"
+						          placeholder="Select value"
+						          isSearchable
+						          isClearable
+
+						          // ⬇️ Display selected option correctly
+						          value={issueResponsiblePersonOptions.find(
+						            (option) => option.value === field.value
+						          )}
+
+						          // ⬇️ Store only primitive value
+						          onChange={(selected) => field.onChange(selected?.value || "")}
+						        />
+						      )}
+						    />
+						  </div>
+
 
 							  {watch("status_fk")?.value === "Closed" && (
 								  <div className="form-field">
