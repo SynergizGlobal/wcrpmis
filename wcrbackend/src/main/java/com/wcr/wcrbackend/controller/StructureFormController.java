@@ -348,7 +348,7 @@ public class StructureFormController {
 //	}	
 	
 	@RequestMapping(value = "/get-structure-form", method = {RequestMethod.GET, RequestMethod.POST})
-	@ResponseBody  // ← Add this annotation
+	@ResponseBody 
 	public Map<String, Object> getStructuresForm(@ModelAttribute Structure obj) {
 	    Map<String, Object> response = new HashMap<>();
 	    
@@ -377,6 +377,35 @@ public class StructureFormController {
 	    return response;
 	}
 	
+	@RequestMapping(value = "/get-structure-form/{structure_id}", method = {RequestMethod.GET, RequestMethod.POST})
+	@ResponseBody 
+	public Map<String, Object> getStructuresForm1(@ModelAttribute Structure obj) {
+	    Map<String, Object> response = new HashMap<>();
+	    
+	
+	    try {
+	        response.put("action", "edit");
+	        response.put("projectsList", structureService.getProjectsListForStructureForm(obj));
+	        response.put("worksList", structureService.getWorkListForStructureForm(obj));
+	        response.put("contractsList", structureService.getContractListForStructureFrom(obj));
+	        response.put("structuresList", structureService.getStructuresListForStructureFrom(obj));
+	        response.put("departmentsList", structureService.getDepartmentsListForStructureFrom(obj));
+	        response.put("responsiblePeopleList", structureService.getResponsiblePeopleListForStructureForm(obj));
+	        response.put("workStatusList", structureService.getWorkStatusListForStructureForm(obj));
+	        response.put("unitsList", structureService.getUnitsListForStructureForm(obj));
+	        response.put("fileType", structureService.getFileTypeForStructureForm(obj));
+	        response.put("executionStatusList", homeService.getExecutionStatusList());
+	        response.put("structureDetailsLocations", structureFormService.getStructureDetailsLocations(obj));
+	        response.put("structureDetailsTypes", structureFormService.getStructureDetailsTypes(obj));
+	        response.put("structuresListDetails", structureFormService.getStructuresFormDetails(obj));
+	        
+	    } catch (Exception e) {
+	        logger.error("getStructuresForm : " + e.getMessage());
+	        response.put("error", e.getMessage());
+	        response.put("status", "error");
+	    }
+	    return response;
+	}
 	
 //	@RequestMapping(value = "/update-structure-form", method = {RequestMethod.GET,RequestMethod.POST})
 //	public ModelAndView updateStructuresForm(@ModelAttribute Structure obj,RedirectAttributes attributes,HttpSession session){

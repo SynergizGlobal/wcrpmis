@@ -3,7 +3,7 @@ import Select from "react-select";
 import styles from './UpdateStructure.module.css';
 import { CirclePlus } from "lucide-react";
 import { LuCloudDownload } from "react-icons/lu";
-import { MdEditNote } from "react-icons/md"; // Changed to MdEditNote
+import { MdEditNote } from "react-icons/md";
 import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
@@ -34,6 +34,11 @@ export default function UpdateStructure() {
     structureTypes: [],
     workStatuses: []
   });
+
+  // Debug location state
+  useEffect(() => {
+    console.log("📍 UpdateStructure - Location state:", location.state);
+  }, [location.state]);
 
   // Fetch filter options on component mount
   useEffect(() => {
@@ -139,20 +144,43 @@ export default function UpdateStructure() {
   };
 
   const handleAdd = () => navigate("get-structure-form");
-  const handleEdit = (structure) => navigate("get-structure-form", { state: { structure } });
+
+  // FIXED: Updated handleEdit to pass correct state properties
+  const handleEdit = (structure) => {
+    console.log("📤 Navigating to edit with structure:", structure);
+    console.log("📤 Structure ID:", structure.structure_id);
+    console.log("📤 Passing state with:", { 
+      structure_id: structure.structure_id,
+      updateStructureform: structure 
+    });
+    
+    navigate("get-structure-form", { 
+      state: { 
+        structure_id: structure.structure_id,  // This is what UpdateStructureForm checks for
+        updateStructureform: structure         // This is also what UpdateStructureForm checks for
+      } 
+    });
+  };
 
   const isStructureForm = location.pathname.endsWith("/get-structure-form");
 
   return (
     <div className={styles.container}>
       {/* Top Bar */}
-	  {!isStructureForm && (
-	         <div className="pageHeading">
-	           <h2>Structure Form</h2>
-	           <div className="rightBtns">
-	           </div>
-	         </div>
-	       )}
+      {!isStructureForm && (
+        <div className="pageHeading">
+          <h2>Structure Form</h2>
+          <div className="rightBtns">
+            <button 
+              className="btn btn-primary d-flex align-items-center gap-1" 
+              onClick={handleAdd}
+            >
+              <CirclePlus size={20} />
+              Add Structure
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Filters */}
       {!isStructureForm && (
@@ -304,8 +332,7 @@ export default function UpdateStructure() {
                               onClick={() => handleEdit(sf)}
                               title="Edit"
                             >
-                              <MdEditNote size={18} /> {/* Changed to MdEditNote */}
-                             
+                              <MdEditNote size={18} />
                             </button>
                           </td>
                         </tr>

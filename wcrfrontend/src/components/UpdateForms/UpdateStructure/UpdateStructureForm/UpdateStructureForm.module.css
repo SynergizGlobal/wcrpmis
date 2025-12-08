@@ -23,3 +23,18 @@
 .file-upload-input {
   display: none;
 }
+.cost-with-unit {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cost-input {
+  flex: 1;
+  min-width: 60%;
+}
+
+.unit-select {
+  flex: 1;
+  min-width: 40%;
+}
