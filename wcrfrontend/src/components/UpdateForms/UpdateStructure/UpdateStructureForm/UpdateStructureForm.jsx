@@ -1,23 +1,22 @@
-
 import React, { useEffect, useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../../../api/axiosInstance";
-import { Outlet } from 'react-router-dom';
-import styles from './UpdateStructureForm.module.css';
+import styles from "./UpdateStructureForm.module.css";
 import { API_BASE_URL } from "../../../../config";
 
-import { MdOutlineDeleteSweep } from 'react-icons/md';
-import { BiListPlus } from 'react-icons/bi';
-import { RiAttachment2 } from 'react-icons/ri';
+import { MdOutlineDeleteSweep } from "react-icons/md";
+import { BiListPlus } from "react-icons/bi";
+import { RiAttachment2 } from "react-icons/ri";
 
 export default function UpdateStructureForm() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const isEdit = Boolean(state?.updateStructureform || state?.structure_id);
-  const structureId = state?.structure_id || state?.updateStructureform?.structure_id;
-  
+  const structureId =
+    state?.structure_id || state?.updateStructureform?.structure_id;
+
   const [dropdownData, setDropdownData] = useState({
     projectsList: [],
     structuresList: [],
@@ -29,12 +28,11 @@ export default function UpdateStructureForm() {
     departmentsList: [],
     unitsList: [],
     loading: true,
-    error: null
+    error: null,
   });
 
-  const [structureData, setStructureData] = useState(null);
+  const [structureApiData, setStructureApiData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPrefilled, setIsPrefilled] = useState(false);
 
   const {
     register,
@@ -51,260 +49,136 @@ export default function UpdateStructureForm() {
       structure_name: "",
       structure: "",
       work_status_fk: "",
-
-      contractExecutionExecutives: [{
-        contracts_id_fk: "",
-        excecutives: "",
-      }],
-
+      contractExecutionExecutives: [{ contracts_id_fk: "", excecutives: "" }],
       target_date: "",
       estimated_cost: "",
-      estimated_cost_unit: "", 
+      estimated_cost_unit: "",
       remarks: "",
       latitude: "",
       longitude: "",
       construction_start_date: "",
       revised_completion: "",
-
-      structureDetails: [{
-        structure_details: "",
-        structure_values: "",
-      }],
-      
-      documents: [{ 
-        structure_file_types: "", 
-        structureDocumentNames: "", 
-        structureFiles: "" 
-      }],
+      structureDetails: [
+        { structure_details: "", structure_values: "" },
+      ],
+      documents: [
+        {
+          structure_file_types: "",
+          structureDocumentNames: "",
+          structureFiles: "",
+          attachment: "", // existing file name from backend
+        },
+      ],
     },
   });
 
-  const { fields: contractExecutionExecutivesFields, append: appendContractExecutionExecutives, remove: removeContractExecutionExecutives } = useFieldArray({
-    control,
-    name: "contractExecutionExecutives",
-  });
+  const {
+    fields: contractExecutionExecutivesFields,
+    append: appendContractExecutionExecutives,
+    remove: removeContractExecutionExecutives,
+  } = useFieldArray({ control, name: "contractExecutionExecutives" });
 
-  const { fields: structureDetailsFields, append: appendStructureDetails, remove: removeStructureDetails } = useFieldArray({
-    control,
-    name: "structureDetails",
-  });
+  const {
+    fields: structureDetailsFields,
+    append: appendStructureDetails,
+    remove: removeStructureDetails,
+  } = useFieldArray({ control, name: "structureDetails" });
 
-  const { fields: documentsFields, append: appendDocuments, remove: removeDocuments } = useFieldArray({
-    control,
-    name: "documents",
-  });
+  const {
+    fields: documentsFields,
+    append: appendDocuments,
+    remove: removeDocuments,
+  } = useFieldArray({ control, name: "documents" });
 
-  // Helper function to prefill form with structure data
-  const prefillForm = (apiData) => {
-    if (!apiData || isPrefilled) return;
-    
-    console.log("API Data for prefilling:", apiData);
-    
-    // Check if we have structure data
-    const hasStructureData = apiData.structuresListDetails && apiData.structuresListDetails.length > 0;
-    const hasContractData = apiData.structureDetailsTypes && (Array.isArray(apiData.structureDetailsTypes) || apiData.structureDetailsTypes.contracts_id_fk);
-    const hasStructureDetails = apiData.structureDetailsLocations && Array.isArray(apiData.structureDetailsLocations);
-    
-    console.log("Data check:", {
-      hasStructureData,
-      hasContractData,
-      hasStructureDetails,
-      structuresListDetails: apiData.structuresListDetails,
-      structureDetailsTypes: apiData.structureDetailsTypes,
-      structureDetailsLocations: apiData.structureDetailsLocations
-    });
-    
-    // Prepare the form data object
-    const formData = {};
-    
-    // 1. Fill basic fields from structuresListDetails
-    if (hasStructureData) {
-      const structureDetail = apiData.structuresListDetails[0];
-      console.log("Structure detail:", structureDetail);
-      
-      const basicFields = [
-        { key: 'project_id_fk', value: structureDetail.project_id_fk },
-        { key: 'structure_type_fk', value: structureDetail.structure_type_fk },
-        { key: 'structure_name', value: structureDetail.structure_name },
-        { key: 'structure', value: structureDetail.structure },
-        { key: 'work_status_fk', value: structureDetail.work_status_fk },
-        { key: 'target_date', value: structureDetail.target_date },
-        { key: 'estimated_cost', value: structureDetail.estimated_cost },
-        { key: 'estimated_cost_unit', value: structureDetail.estimated_cost_unit },
-        { key: 'remarks', value: structureDetail.remarks },
-        { key: 'latitude', value: structureDetail.latitude },
-        { key: 'longitude', value: structureDetail.longitude },
-        { key: 'construction_start_date', value: structureDetail.construction_start_date },
-        { key: 'revised_completion', value: structureDetail.revised_completion }
-      ];
-      
-      basicFields.forEach(({ key, value }) => {
-        if (value !== null && value !== undefined && value !== '') {
-          // Format dates for date inputs
-          if (key.includes('_date') || key.includes('date')) {
-            if (value && typeof value === 'string' && value.includes('/')) {
-              // If date is in "dd/MM/yyyy" format, convert to "yyyy-MM-dd"
-              const [day, month, year] = value.split('/');
-              if (day && month && year) {
-                formData[key] = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-              }
-            } else if (value) {
-              // If already in correct format or timestamp
-              const date = new Date(value);
-              if (!isNaN(date.getTime())) {
-                formData[key] = date.toISOString().split('T')[0];
-              } else {
-                formData[key] = value;
-              }
-            }
-          } else {
-            formData[key] = value;
-          }
-        }
-      });
-    }
-    
-    // 2. Handle contractExecutionExecutives from structureDetailsTypes
-    let contractExecutionExecutives = [];
-    if (hasContractData) {
-      console.log("Processing contract data:", apiData.structureDetailsTypes);
-      
-      if (Array.isArray(apiData.structureDetailsTypes)) {
-        contractExecutionExecutives = apiData.structureDetailsTypes.map(exec => ({
-          contracts_id_fk: exec.contracts_id_fk,
-          excecutives: exec.excecutives ? exec.excecutives.split(',') : []
-        }));
-      } else {
-        // Handle single object case
-        const exec = apiData.structureDetailsTypes;
-        contractExecutionExecutives = [{
-          contracts_id_fk: exec.contracts_id_fk,
-          excecutives: exec.excecutives ? exec.excecutives.split(',') : []
-        }];
+  // Helpers: date conversions
+  const toInputDate = (value) => {
+    if (!value) return "";
+    if (typeof value === "string" && value.includes("/")) {
+      const [dd, mm, yyyy] = value.split("/");
+      if (dd && mm && yyyy) {
+        return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
       }
+      return "";
     }
-    
-    // 3. Handle structureDetails from structureDetailsLocations
-    let structureDetails = [];
-    if (hasStructureDetails) {
-      console.log("Processing structure details:", apiData.structureDetailsLocations);
-      
-      structureDetails = apiData.structureDetailsLocations.map(detail => ({
-        structure_details: detail.structure_details || '',
-        structure_values: detail.structure_values || ''
-      }));
-    }
-    
-    // 4. Prepare the complete form data
-    const completeFormData = {
-      ...formData,
-      contractExecutionExecutives: contractExecutionExecutives.length > 0 
-        ? contractExecutionExecutives 
-        : [{ contracts_id_fk: "", excecutives: "" }],
-      structureDetails: structureDetails.length > 0 
-        ? structureDetails 
-        : [{ structure_details: "", structure_values: "" }],
-      documents: [{ structure_file_types: "", structureDocumentNames: "", structureFiles: "" }]
-    };
-    
-    console.log("Complete form data to reset:", completeFormData);
-    
-    // Use reset to set all form values at once
-    reset(completeFormData);
-    setIsPrefilled(true);
-    
-    // Also set the arrays for field arrays
-    if (contractExecutionExecutives.length > 0) {
-      // Clear existing and add new
-      removeContractExecutionExecutives();
-      contractExecutionExecutives.forEach(exec => {
-        appendContractExecutionExecutives(exec);
-      });
-    }
-    
-    if (structureDetails.length > 0) {
-      // Clear existing and add new
-      removeStructureDetails();
-      structureDetails.forEach(detail => {
-        appendStructureDetails(detail);
-      });
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split("T")[0];
+  };
+
+  const formatDateForBackend = (dateString) => {
+    if (!dateString) return null;
+    try {
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return dateString;
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch {
+      return dateString;
     }
   };
 
-  // Fetch dropdown data and structure data
+  const findOption = (options, value, labelFallback) => {
+    if (value == null && labelFallback == null) return null;
+    const v = value != null ? String(value).trim().toUpperCase() : null;
+    const l =
+      labelFallback != null ? String(labelFallback).trim().toUpperCase() : null;
+    return (
+      options.find(
+        (o) =>
+          (v && String(o.value).trim().toUpperCase() === v) ||
+          (l && String(o.label).trim().toUpperCase() === l) ||
+          (v && String(o.label).trim().toUpperCase() === v) ||
+          (l && String(o.value).trim().toUpperCase() === l)
+      ) || null
+    );
+  };
+
+  // Fetch dropdown data & structure (for edit)
   useEffect(() => {
     const fetchData = async () => {
-		console.log("useEffect triggered");
-		console.log("isEdit:", isEdit);
-		console.log("structureId:", structureId);
-
       try {
-        setDropdownData(prev => ({ ...prev, loading: true }));
-        setIsPrefilled(false);
-        
-        // Prepare params for API call
+        setDropdownData((prev) => ({ ...prev, loading: true, error: null }));
+        setStructureApiData(null);
+
         const params = {};
-        
-        // Always include structure_id if available (for edit mode)
-        if (isEdit && structureId) {
-          params.structure_id = structureId;
-          console.log(`Fetching data for Structure ID: ${structureId}`);
-        }
-        
-        // Fetch dropdown data with parameters
-        const dropdownResponse = await api.get(`${API_BASE_URL}/get-structure-form`, {
-          params: params
+        if (isEdit && structureId) params.structure_id = structureId;
+
+        const res = await api.get(`${API_BASE_URL}/get-structure-form`, {
+          params,
         });
-        
-        console.log("Full API Response:", dropdownResponse.data);
-        
-        // Check what data we received
-        const hasStructureData = dropdownResponse.data.structuresListDetails && 
-                               dropdownResponse.data.structuresListDetails.length > 0;
-        
-        // Set dropdown data
+        const data = res.data || {};
+
         setDropdownData({
-          projectsList: dropdownResponse.data.projectsList || [],
-          structuresList: dropdownResponse.data.structuresList || [],
-          contractsList: dropdownResponse.data.contractsList || [],
-          responsiblePeopleList: dropdownResponse.data.responsiblePeopleList || [],
-          workStatusList: dropdownResponse.data.workStatusList || [],
-          executionStatusList: dropdownResponse.data.executionStatusList || [
-            "Not Started",
-            "In Progress",
-            "On Hold",
-            "Commissioned",
-            "Completed",
-            "Dropped"
-          ],
-          fileType: dropdownResponse.data.fileType || [],
-          departmentsList: dropdownResponse.data.departmentsList || [],
-          unitsList: dropdownResponse.data.unitsList || [],
+          projectsList: data.projectsList || [],
+          structuresList: data.structuresList || [],
+          contractsList: data.contractsList || [],
+          responsiblePeopleList: data.responsiblePeopleList || [],
+          workStatusList: data.workStatusList || [],
+          executionStatusList:
+            data.executionStatusList || [
+              "Not Started",
+              "In Progress",
+              "On Hold",
+              "Commissioned",
+              "Completed",
+              "Dropped",
+            ],
+          fileType: data.fileType || [],
+          departmentsList: data.departmentsList || [],
+          unitsList: data.unitsList || [],
           loading: false,
-          error: dropdownResponse.data.error || null
+          error: null,
         });
-        
-        // Store structure data
-        setStructureData(dropdownResponse.data);
-        
-        // Prefill form with API data (for both create and edit)
-        // Wait for dropdowns to be ready, then prefill
-        setTimeout(() => {
-          if (hasStructureData || dropdownResponse.data.structureDetailsTypes || dropdownResponse.data.structureDetailsLocations) {
-            console.log("Prefilling form with API data");
-            prefillForm(dropdownResponse.data);
-          } else if (isEdit && structureId) {
-            console.log("No structure data found for ID:", structureId);
-            alert("No structure data found for the provided ID");
-          }
-        }, 500);
-        
+
+        if (isEdit) setStructureApiData(data);
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setDropdownData(prev => ({
+        console.error("Error loading structure form:", err);
+        setDropdownData((prev) => ({
           ...prev,
           loading: false,
-          error: err.message
+          error: err.message || "Failed to load data",
         }));
       }
     };
@@ -312,150 +186,457 @@ export default function UpdateStructureForm() {
     fetchData();
   }, [isEdit, structureId]);
 
-  // Format data for Select components
-  const formatProjects = dropdownData.projectsList.map(item => ({
-    value: item.project_id_fk,
-    label: item.project_name
-  }));
+  // Format select options
+  const formatProjects = (dropdownData.projectsList || [])
+    .filter(Boolean)
+    .map((item) => ({
+      value: item.project_id_fk ?? item.project_id ?? item.id,
+      label:
+        item.project_name ||
+        String(item.project_id_fk ?? item.project_id ?? item.id),
+    }));
 
-  const formatStructures = dropdownData.structuresList.map(item => ({
-    value: item.structure_type,
-    label: item.structure_type
-  }));
+  const formatStructures = (dropdownData.structuresList || [])
+    .filter(Boolean)
+    .map((item) => ({
+      value: item.structure_type_fk || item.structure_type,
+      label: item.structure_type || String(item.structure_type_fk || ""),
+    }));
 
-  const formatContracts = dropdownData.contractsList.map(item => ({
-    value: item.contract_id_fk,
-    label: `${item.contract_short_name || item.contract_name} (${item.project_name})`
-  }));
+  const formatContracts = (dropdownData.contractsList || [])
+    .filter(Boolean)
+    .map((item) => {
+      const value = item.contract_id_fk ?? item.contract_id ?? item.id;
+      const label =
+        item.contract_short_name ||
+        item.contract_name ||
+        String(value);
+      return { value, label };
+    });
 
-  // Updated formatResponsiblePeople to show designation first, then user_name
-  const formatResponsiblePeople = dropdownData.responsiblePeopleList.map(item => ({
-    value: item.user_id,
-    label: `${item.designation} - ${item.user_name}`
-  }));
+  const formatResponsiblePeople = (dropdownData.responsiblePeopleList || [])
+    .filter(Boolean)
+    .map((item) => ({
+      value: item.user_id,
+      label: `${item.designation || ""} - ${item.user_name || ""}`,
+    }));
 
-  const formatWorkStatus = dropdownData.executionStatusList.map(status => ({
-    value: status,
-    label: status
-  }));
+  const formatWorkStatus = (dropdownData.executionStatusList || [])
+    .filter(Boolean)
+    .map((status) => ({
+      value: status,
+      label: status,
+    }));
 
-  const formatFileTypes = dropdownData.fileType.map(item => ({
-    value: item.value || item.id,
-    label: item.label || item.name
-  }));
+  const formatFileTypes = (dropdownData.fileType || [])
+    .filter(Boolean)
+    .map((item) => ({
+      value: item.value || item.structure_file_type,
+      label: item.value || item.structure_file_type,
+    }));
 
-  // Format units for Estimated Cost dropdown
-  const formatUnits = dropdownData.unitsList.map(item => ({
-    value: item.unit_id || item.value || item,
-    label: item.unit || item.label || item
-  }));
+  const formatUnits = (dropdownData.unitsList || [])
+    .filter(Boolean)
+    .map((item) => {
+      if (typeof item === "string") return { value: item, label: item };
+      return {
+        value: item.unit_id || item.value || item.unit || item,
+        label:
+          item.unit || item.label || String(item.unit_id || item.value || item),
+      };
+    });
 
-  // Helper function to format date for backend
-  const formatDateForBackend = (dateString) => {
-    if (!dateString) return null;
-    
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString;
-      
-      // Format as "dd/MM/yyyy" for backend
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return dateString;
+  // Prefill (for edit)
+  useEffect(() => {
+    if (!isEdit || dropdownData.loading || !structureApiData) return;
+
+    const rawDetails =
+      structureApiData.structuresListDetails ||
+      structureApiData.structureDetails ||
+      structureApiData.structure;
+
+    let d = null;
+    if (Array.isArray(rawDetails)) {
+      if (rawDetails.length === 0) return;
+      d = rawDetails[0];
+    } else if (rawDetails && typeof rawDetails === "object") {
+      d = rawDetails;
+    } else {
+      return;
     }
-  };
+    if (!d) return;
 
-  // Submit Handler
+    const projectOption = findOption(
+      formatProjects,
+      d.project_id_fk,
+      d.project_name
+    );
+    const structureTypeOption = findOption(
+      formatStructures,
+      d.structure_type_fk,
+      d.structure_type
+    );
+    const workStatusOption = findOption(
+      formatWorkStatus,
+      d.work_status_fk,
+      d.work_status
+    );
+
+    const unitRaw =
+      d.unit || d.estimated_cost_unit || d.estimated_cost_units || d.unit_id;
+    const costUnitOption = findOption(formatUnits, unitRaw, unitRaw);
+
+    // contractExecutionExecutives prefill
+    let execSource =
+      d.executivesList ||
+      structureApiData.executivesList ||
+      structureApiData.structureDetailsTypes ||
+      [];
+
+    if (!Array.isArray(execSource)) execSource = [execSource];
+    execSource = execSource.filter(Boolean);
+
+    const contractExecutionExecutives =
+      execSource.length > 0
+        ? execSource.map((exec) => {
+            const contractOpt = findOption(
+              formatContracts,
+              exec.contracts_id_fk,
+              exec.contract_short_name
+            );
+
+            let execValues = [];
+
+            if (exec.excecutives) {
+              const parts = String(exec.excecutives)
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
+
+              execValues = parts
+                .map(
+                  (p) =>
+                    findOption(formatResponsiblePeople, p, null) ||
+                    findOption(formatResponsiblePeople, null, p)
+                )
+                .filter(Boolean);
+            } else if (exec.responsiblePeopleLists) {
+              execValues = exec.responsiblePeopleLists
+                .map((p) =>
+                  findOption(
+                    formatResponsiblePeople,
+                    p.responsible_people_id_fk || p.user_id,
+                    p.user_name
+                  )
+                )
+                .filter(Boolean);
+            }
+
+            return {
+              contracts_id_fk: contractOpt,
+              excecutives: execValues,
+            };
+          })
+        : [{ contracts_id_fk: "", excecutives: "" }];
+
+    // Structure Details prefill
+    let structureDetailsUI = [];
+    if (
+      d.structureDetailsList1 &&
+      Array.isArray(d.structureDetailsList1) &&
+      d.structureDetailsList1.length > 0
+    ) {
+      structureDetailsUI = d.structureDetailsList1.map((sd) => ({
+        structure_details: sd.structure_detail || sd.structure_details || "",
+        structure_values: sd.structure_value || sd.structure_values || "",
+      }));
+    } else if (
+      structureApiData.structureDetailsList1 &&
+      Array.isArray(structureApiData.structureDetailsList1)
+    ) {
+      structureDetailsUI = structureApiData.structureDetailsList1.map(
+        (sd) => ({
+          structure_details: sd.structure_detail || sd.structure_details || "",
+          structure_values: sd.structure_value || sd.structure_values || "",
+        })
+      );
+    } else {
+      const sdArr =
+        d.structure_details || structureApiData.structure_details || [];
+      const svArr =
+        d.structure_values || structureApiData.structure_values || [];
+      const maxLen = Math.max(sdArr?.length || 0, svArr?.length || 0);
+      for (let i = 0; i < maxLen; i++) {
+        structureDetailsUI.push({
+          structure_details: (sdArr && sdArr[i]) || "",
+          structure_values: (svArr && svArr[i]) || "",
+        });
+      }
+      if (structureDetailsUI.length === 0)
+        structureDetailsUI = [
+          { structure_details: "", structure_values: "" },
+        ];
+    }
+
+    // Documents prefill
+    let docsSrc = d.documentsList || structureApiData.documentsList || [];
+    if (!Array.isArray(docsSrc)) docsSrc = [docsSrc];
+    docsSrc = docsSrc.filter(Boolean);
+
+    const documents =
+      docsSrc.length > 0
+        ? docsSrc.map((doc) => ({
+            structure_file_types: findOption(
+              formatFileTypes,
+              doc.structure_file_type_fk || doc.structure_file_type,
+              doc.structure_file_type
+            ),
+            structureDocumentNames: doc.name || doc.file_name || "",
+            structureFiles: "",
+            attachment: doc.attachment || doc.file_name || "", // store existing file name
+          }))
+        : [
+            {
+              structure_file_types: "",
+              structureDocumentNames: "",
+              structureFiles: "",
+              attachment: "",
+            },
+          ];
+
+    const values = {
+      project_id_fk: projectOption,
+      structure_type_fk: structureTypeOption,
+      work_status_fk: workStatusOption,
+      structure_name: d.structure_name || "",
+      structure: d.structure || d.structure_id || "",
+      target_date: toInputDate(d.target_date),
+      estimated_cost: d.estimated_cost || "",
+      estimated_cost_unit: costUnitOption,
+      remarks: d.remarks || "",
+      latitude: d.latitude || "",
+      longitude: d.longitude || "",
+      construction_start_date: toInputDate(d.construction_start_date),
+      revised_completion: toInputDate(d.revised_completion),
+      contractExecutionExecutives,
+      structureDetails: structureDetailsUI,
+      documents,
+    };
+
+    reset(values);
+  }, [isEdit, dropdownData.loading, structureApiData, reset]);
+
+  // Submit
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    
     try {
-      // Format dates for backend
+      const normalizeSingle = (sel) => {
+        if (sel == null) return null;
+        if (typeof sel === "object" && "value" in sel) return sel.value;
+        return sel;
+      };
+      const normalizeMulti = (sel) => {
+        if (!sel) return [];
+        if (Array.isArray(sel))
+          return sel.map((s) =>
+            typeof s === "object" && "value" in s ? s.value : s
+          );
+        if (typeof sel === "string")
+          return sel
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        return [];
+      };
+
+      // Contracts & executives arrays
+      const contracts_id_fk_arr = [];
+      const responsible_people_id_fks_arr = [];
+
+      (data.contractExecutionExecutives || []).forEach((item) => {
+        const cVal = normalizeSingle(item.contracts_id_fk);
+        const execIds = normalizeMulti(item.excecutives);
+
+        if (cVal != null && cVal !== "") {
+          contracts_id_fk_arr.push(String(cVal));
+        } else {
+          contracts_id_fk_arr.push(null);
+        }
+
+        if (execIds.length > 0) {
+          responsible_people_id_fks_arr.push(execIds.join(","));
+        } else {
+          responsible_people_id_fks_arr.push(null);
+        }
+      });
+
+      // Structure details arrays
+      const structure_details_arr = (data.structureDetails || []).map((it) =>
+        it && it.structure_details ? String(it.structure_details) : null
+      );
+      const structure_values_arr = (data.structureDetails || []).map((it) =>
+        it && it.structure_values ? String(it.structure_values) : null
+      );
+      const hasAnyStructureDetail = structure_details_arr.some(
+        (x) => x != null && x !== ""
+      );
+      const hasAnyStructureValue = structure_values_arr.some(
+        (x) => x != null && x !== ""
+      );
+
+      // Base formatted data (scalar & non-file arrays)
       const formattedData = {
         ...data,
         target_date: formatDateForBackend(data.target_date),
-        construction_start_date: formatDateForBackend(data.construction_start_date),
-        revised_completion: formatDateForBackend(data.revised_completion),
-        
-        // Format contractExecutionExecutives
-        contractExecutionExecutives: data.contractExecutionExecutives.map(item => ({
-          contracts_id_fk: item.contracts_id_fk?.value || item.contracts_id_fk,
-          excecutives: Array.isArray(item.excecutives) 
-            ? item.excecutives.map(exec => exec.value || exec).join(',')
-            : item.excecutives?.value || item.excecutives
-        })),
-        
-        // Format structureDetails
-        structureDetails: data.structureDetails.filter(item => 
-          item.structure_details || item.structure_values
+        construction_start_date: formatDateForBackend(
+          data.construction_start_date
         ),
-        
-        // Format documents (handle file uploads separately if needed)
-        documents: data.documents.filter(item => 
-          item.structure_file_types || item.structureDocumentNames
-        ).map(item => ({
-          structure_file_types: item.structure_file_types?.value || item.structure_file_types,
-          structureDocumentNames: item.structureDocumentNames
-        })),
-        
-        // Convert Select values to strings
+        revised_completion: formatDateForBackend(data.revised_completion),
+
         project_id_fk: data.project_id_fk?.value || data.project_id_fk,
-        structure_type_fk: data.structure_type_fk?.value || data.structure_type_fk,
+        structure_type_fk:
+          data.structure_type_fk?.value || data.structure_type_fk,
         work_status_fk: data.work_status_fk?.value || data.work_status_fk,
-        estimated_cost_unit: data.estimated_cost_unit?.value || data.estimated_cost_unit,
-        
-        // Add structure_id if editing
-        ...(isEdit && structureId && {
-          structure_id: structureId
-        })
+
+        estimated_cost: data.estimated_cost || undefined,
+        estimated_cost_unit:
+          data.estimated_cost_unit?.value ||
+          data.estimated_cost_unit ||
+          undefined,
+        estimated_cost_units:
+          data.estimated_cost_unit?.value ||
+          data.estimated_cost_unit ||
+          undefined,
+
+        contracts_id_fk:
+          contracts_id_fk_arr.length ? contracts_id_fk_arr : undefined,
+        responsible_people_id_fks: responsible_people_id_fks_arr.length
+          ? responsible_people_id_fks_arr
+          : undefined,
+
+        ...(hasAnyStructureDetail
+          ? { structure_details: structure_details_arr }
+          : {}),
+        ...(hasAnyStructureValue
+          ? { structure_values: structure_values_arr }
+          : {}),
+
+        ...(isEdit && structureId ? { structure_id: structureId } : {}),
       };
 
-      console.log("Submitting data:", formattedData);
+      // Build docs arrays (file types, names, file names, file objects)
+      const structure_file_types_arr = [];
+      const structureDocumentNames_arr = [];
+      const structureFileNames_arr = [];
+      const structureFiles_arr = [];
 
-      // Use the update-structure-form endpoint for both create and update
-      const response = await api.post(`${API_BASE_URL}/update-structure-form`, formattedData);
-      
-      if (response.data.success) {
+      (data.documents || []).forEach((doc) => {
+        const typeVal =
+          doc.structure_file_types?.value || doc.structure_file_types || "";
+        const nameVal = doc.structureDocumentNames || "";
+        const existingAttachment = doc.attachment || "";
+
+        let fileObj = null;
+        if (doc.structureFiles && doc.structureFiles.length > 0) {
+          // FileList from input
+          fileObj = doc.structureFiles[0];
+        }
+
+        // skip fully empty row
+        if (
+          !typeVal &&
+          !nameVal &&
+          !existingAttachment &&
+          (!fileObj || !fileObj.name)
+        ) {
+          return;
+        }
+
+        structure_file_types_arr.push(typeVal || "");
+        structureDocumentNames_arr.push(nameVal || "");
+
+        if (fileObj && fileObj.name) {
+          structureFileNames_arr.push(fileObj.name);
+          structureFiles_arr.push(fileObj);
+        } else {
+          // keep old file name from backend
+          structureFileNames_arr.push(existingAttachment || "");
+        }
+      });
+
+      // Now build FormData
+      const formData = new FormData();
+
+      // Simple fields & non-file arrays
+      Object.entries(formattedData).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+
+        if (Array.isArray(value)) {
+          value.forEach((v) => {
+            formData.append(key, v != null ? v : "");
+          });
+        } else {
+          formData.append(key, value);
+        }
+      });
+
+      // Append documents arrays
+      structure_file_types_arr.forEach((v) =>
+        formData.append("structure_file_types", v != null ? v : "")
+      );
+      structureDocumentNames_arr.forEach((v) =>
+        formData.append("structureDocumentNames", v != null ? v : "")
+      );
+      structureFileNames_arr.forEach((v) =>
+        formData.append("structureFileNames", v != null ? v : "")
+      );
+      structureFiles_arr.forEach((file) => {
+        formData.append("structureFiles", file);
+      });
+
+      console.log(
+        ">>> FINAL FORM DATA (debug, without files content).",
+        {
+          ...formattedData,
+          structure_file_types: structure_file_types_arr,
+          structureDocumentNames: structureDocumentNames_arr,
+          structureFileNames: structureFileNames_arr,
+          structureFiles_count: structureFiles_arr.length,
+        }
+      );
+
+      // Send multipart/form-data (let axios set headers)
+      const res = await api.post(
+        `${API_BASE_URL}/update-structure-form`,
+        formData
+      );
+
+      if (res.data?.success) {
         alert("✅ Structure saved successfully!");
-        navigate("/wcrpmis/updateforms/structure-form");	
+        navigate("wcrpmis/updateforms/structure-form");
       } else {
-        alert(`❌ ${response.data.message || "Failed to save structure"}`);
+        alert(
+          `❌ ${
+            res.data?.message || "Failed to save structure. Please try again."
+          }`
+        );
       }
     } catch (err) {
-      console.error("❌ Error saving structure:", err);
-      alert(err.response?.data?.error || err.response?.data?.message || "Error saving structure");
+      console.error(
+        "Error saving structure:",
+        err,
+        err?.response?.data ?? ""
+      );
+      alert(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          "Error saving structure"
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle file uploads separately if needed
-  const handleFileUpload = async (file, index) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    try {
-      const response = await api.post(`${API_BASE_URL}/upload-structure-document`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      if (response.data.success) {
-        setValue(`documents.${index}.structureFiles`, response.data.filePath);
-        return response.data.filePath;
-      }
-    } catch (error) {
-      console.error("File upload error:", error);
-    }
-    return null;
-  };
-
-  // Watch form values
   const watchRemarks = watch("remarks");
   const watchLatitude = watch("latitude") || "";
   const watchLongitude = watch("longitude") || "";
@@ -464,17 +645,41 @@ export default function UpdateStructureForm() {
     return (
       <div className={`${styles.container} container-padding`}>
         <div className="card">
-          <div className="text-center p-4">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
+          <div
+            className="innerPage d-flex justify-content-center align-items-center"
+            style={{ minHeight: "200px" }}
+          >
+            <div className="text-center">
+              <div className="spinner-border" role="status" />
+              <p className="mt-2 mb-0">Loading structure data...</p>
             </div>
-            <p className="mt-2">Loading form data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (dropdownData.error) {
+    return (
+      <div className={`${styles.container} container-padding`}>
+        <div className="card">
+          <div className="innerPage text-center">
+            <p className="text-danger mb-2">
+              Failed to load data: {dropdownData.error}
+            </p>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
+  // Form UI
   return (
     <div className={`${styles.container} container-padding`}>
       <div className="card">
@@ -483,15 +688,23 @@ export default function UpdateStructureForm() {
             {isEdit ? "Update Structure Form" : "Create Structure Form"}
           </h2>
           {isEdit && structureId && (
-            <p className="text-center text-muted">Editing Structure ID: {structureId}</p>
+            <p className="text-center text-muted">
+              Editing Structure ID: {structureId}
+            </p>
           )}
         </div>
+
         <div className="innerPage">
-          <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            encType="multipart/form-data"
+          >
             {/* Row 1 */}
             <div className="form-row">
               <div className="form-field">
-                <label>Project<span className="red">*</span></label>
+                <label>
+                  Project<span className="red">*</span>
+                </label>
                 <Controller
                   name="project_id_fk"
                   control={control}
@@ -501,17 +714,20 @@ export default function UpdateStructureForm() {
                       {...field}
                       classNamePrefix="react-select"
                       options={formatProjects}
-                      placeholder={dropdownData.loading ? "Loading..." : "Select Project"}
+                      placeholder="Select Project"
                       isSearchable
-                      isLoading={dropdownData.loading}
                     />
                   )}
                 />
-                {errors.project_id_fk && <span className="text-danger">Required</span>}
+                {errors.project_id_fk && (
+                  <span className="text-danger">Required</span>
+                )}
               </div>
 
               <div className="form-field">
-                <label> Structure Type <span className="red">*</span></label>
+                <label>
+                  Structure Type <span className="red">*</span>
+                </label>
                 <Controller
                   name="structure_type_fk"
                   control={control}
@@ -521,58 +737,85 @@ export default function UpdateStructureForm() {
                       {...field}
                       classNamePrefix="react-select"
                       options={formatStructures}
-                      placeholder={dropdownData.loading ? "Loading..." : "Select Structure Type"}
+                      placeholder="Select Structure Type"
                       isSearchable
-                      isLoading={dropdownData.loading}
                     />
                   )}
                 />
-                {errors.structure_type_fk && <span className="text-danger">Required</span>}
+                {errors.structure_type_fk && (
+                  <span className="text-danger">Required</span>
+                )}
               </div>
 
               <div className="form-field">
-                <label>Structure Name <span className="red">*</span></label>
-                <input {...register("structure_name", { required: true })} type="text" placeholder="Enter Value"/>
-                {errors.structure_name && <span className="text-danger">Required</span>}
+                <label>
+                  Structure Name <span className="red">*</span>
+                </label>
+                <input
+                  {...register("structure_name", { required: true })}
+                  type="text"
+                  placeholder="Enter Value"
+                />
+                {errors.structure_name && (
+                  <span className="text-danger">Required</span>
+                )}
               </div>
 
               <div className="form-field">
-                <label>Structure ID <span className="red">*</span></label>
-                <input {...register("structure", { required: true })} type="text" placeholder="Enter Value"/>
-                {errors.structure && <span className="text-danger">Required</span>}
+                <label>
+                  Structure ID <span className="red">*</span>
+                </label>
+                <input
+                  {...register("structure", { required: true })}
+                  type="text"
+                  placeholder="Enter Value"
+                />
+                {errors.structure && (
+                  <span className="text-danger">Required</span>
+                )}
               </div>
-            
+
               <div className="form-field">
-                <label>Work Status <span className="red">*</span></label>
+                <label>
+                  Work Status <span className="red">*</span>
+                </label>
                 <Controller
                   name="work_status_fk"
                   control={control}
                   rules={{ required: true }}
                   render={({ field }) => (
                     <Select
-                      classNamePrefix="react-select"
                       {...field}
+                      classNamePrefix="react-select"
                       options={formatWorkStatus}
-                      placeholder={dropdownData.loading ? "Loading..." : "Select Work Status"}
+                      placeholder="Select Work Status"
                       isSearchable
-                      isLoading={dropdownData.loading}
                     />
                   )}
                 />
-                {errors.work_status_fk && <span className="text-danger">Required</span>}
+                {errors.work_status_fk && (
+                  <span className="text-danger">Required</span>
+                )}
               </div>
             </div>
 
-            {/* Contract Execution Executives */}
+            {/* Contract - Execution Executives */}
             <div className="row mt-1 mb-2">
-              <h3 className="mb-1 d-flex align-center justify-content-center">Contract - Execution Executives</h3>
+              <h3 className="mb-1 d-flex align-center justify-content-center">
+                Contract - Execution Executives
+              </h3>
 
               <div className="table-responsive dataTable ">
                 <table className="table table-bordered align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: "40%" }}>Contract <span className="red">*</span></th>
-                      <th style={{ width: "45%" }}>Responsible Executives <span className="red">*</span></th>
+                      <th style={{ width: "40%" }}>
+                        Contract <span className="red">*</span>
+                      </th>
+                      <th style={{ width: "45%" }}>
+                        Responsible Executives{" "}
+                        <span className="red">*</span>
+                      </th>
                       <th style={{ width: "15%" }}>Action</th>
                     </tr>
                   </thead>
@@ -593,21 +836,21 @@ export default function UpdateStructureForm() {
                                   placeholder="Select Contract"
                                   isSearchable
                                   isClearable
-                                  isLoading={dropdownData.loading}
                                 />
                               )}
                             />
-                            {errors.contractExecutionExecutives?.[index]?.contracts_id_fk && (
-                              <span className="red">
-                                Required
-                              </span>
+                            {errors.contractExecutionExecutives?.[index]
+                              ?.contracts_id_fk && (
+                              <span className="red">Required</span>
                             )}
                           </td>
                           <td>
                             <Controller
                               name={`contractExecutionExecutives.${index}.excecutives`}
                               control={control}
-                              rules={{ required: "Please select executives" }}
+                              rules={{
+                                required: "Please select executives",
+                              }}
                               render={({ field }) => (
                                 <Select
                                   {...field}
@@ -615,21 +858,21 @@ export default function UpdateStructureForm() {
                                   isMulti
                                   placeholder="Select Executives"
                                   classNamePrefix="react-select"
-                                  isLoading={dropdownData.loading}
                                 />
                               )}
                             />
-                            {errors.contractExecutionExecutives?.[index]?.excecutives && (
-                              <span className="red">
-                                Required
-                              </span>
+                            {errors.contractExecutionExecutives?.[index]
+                              ?.excecutives && (
+                              <span className="red">Required</span>
                             )}
                           </td>
                           <td className="text-center d-flex align-center justify-content-center">
                             <button
                               type="button"
                               className="btn btn-outline-danger"
-                              onClick={() => removeContractExecutionExecutives(index)}
+                              onClick={() =>
+                                removeContractExecutionExecutives(index)
+                              }
                               disabled={isSubmitting}
                             >
                               <MdOutlineDeleteSweep size="26" />
@@ -639,7 +882,10 @@ export default function UpdateStructureForm() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="3" className="text-center text-muted">
+                        <td
+                          colSpan="3"
+                          className="text-center text-muted"
+                        >
                           No contract executives added yet.
                         </td>
                       </tr>
@@ -653,9 +899,9 @@ export default function UpdateStructureForm() {
                   type="button"
                   className="btn-2 btn-green"
                   onClick={() =>
-                    appendContractExecutionExecutives({ 
-                      contracts_id_fk: "", 
-                      excecutives: "" 
+                    appendContractExecutionExecutives({
+                      contracts_id_fk: "",
+                      excecutives: "",
                     })
                   }
                   disabled={isSubmitting}
@@ -664,28 +910,26 @@ export default function UpdateStructureForm() {
                 </button>
               </div>
             </div>
-          
-            {/* Basic Information - Reordered as per your image */}
+
+            {/* Basic info: cost + unit + remarks */}
             <div className="form-row">
-              {/* Original Target Date */}
               <div className="form-field">
                 <label>Original Target Date</label>
-                <input 
-                  {...register("target_date")} 
-                  type="date" 
-                  placeholder="Enter Value" 
+                <input
+                  {...register("target_date")}
+                  type="date"
+                  placeholder="Enter Value"
                   disabled={isSubmitting}
                 />
               </div>
-            
-              {/* Estimated Cost with Unit Select */}
+
               <div className="form-field">
                 <label>Estimated Cost</label>
                 <div className={styles["cost-with-unit"]}>
-                  <input 
-                    {...register("estimated_cost")} 
-                    type="number" 
-                    placeholder="Enter Value" 
+                  <input
+                    {...register("estimated_cost")}
+                    type="number"
+                    placeholder="Enter Value"
                     disabled={isSubmitting}
                     className={styles["cost-input"]}
                   />
@@ -700,7 +944,6 @@ export default function UpdateStructureForm() {
                         placeholder="Unit"
                         isSearchable
                         isClearable
-                        isLoading={dropdownData.loading}
                         className={styles["unit-select"]}
                         isDisabled={isSubmitting}
                       />
@@ -709,89 +952,123 @@ export default function UpdateStructureForm() {
                 </div>
               </div>
 
-              {/* Remarks - Full width */}
-              <div className="form-field" style={{ flex: "2 1 100%" }}>
+              <div
+                className="form-field"
+                style={{ flex: "2 1 100%" }}
+              >
                 <label>Remarks</label>
-                <textarea 
+                <textarea
                   {...register("remarks")}
-                  name="remarks"
                   maxLength={1000}
                   rows="3"
                   placeholder="Enter remarks..."
                   disabled={isSubmitting}
                 ></textarea>
-                <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#555",
+                    textAlign: "right",
+                  }}
+                >
                   {watchRemarks?.length || 0}/1000
                 </div>
               </div>
             </div>
 
-            {/* Latitude & Longitude */}
+            {/* Lat / Long / Dates */}
             <div className="form-row">
               <div className="form-field">
                 <label>Latitude</label>
-                <input 
-                  {...register("latitude")} 
-                  type="number" 
-                  step="any" 
-                  placeholder="Enter Latitude" 
+                <input
+                  {...register("latitude")}
+                  type="number"
+                  step="any"
+                  placeholder="Enter Latitude"
                   disabled={isSubmitting}
                   maxLength={15}
                 />
-                <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#555",
+                    textAlign: "right",
+                  }}
+                >
                   {watchLatitude.length}/15
                 </div>
               </div>
 
               <div className="form-field">
                 <label>Longitude</label>
-                <input 
-                  {...register("longitude")} 
-                  type="number" 
-                  step="any" 
-                  placeholder="Enter Longitude" 
+                <input
+                  {...register("longitude")}
+                  type="number"
+                  step="any"
+                  placeholder="Enter Longitude"
                   disabled={isSubmitting}
                   maxLength={15}
                 />
-                <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#555",
+                    textAlign: "right",
+                  }}
+                >
                   {watchLongitude.length}/15
                 </div>
               </div>
 
-              {/* Construction Start Date */}
               <div className="form-field">
-                <label>Construction Start Date <span className="red">*</span></label>
-                <input 
-                  {...register("construction_start_date", { required: true })} 
-                  type="date" 
-                  placeholder="Enter Value" 
+                <label>
+                  Construction Start Date{" "}
+                  <span className="red">*</span>
+                </label>
+                <input
+                  {...register("construction_start_date", {
+                    required: true,
+                  })}
+                  type="date"
+                  placeholder="Enter Value"
                   disabled={isSubmitting}
                 />
-                {errors.construction_start_date && <span className="text-danger">Required</span>}
+                {errors.construction_start_date && (
+                  <span className="text-danger">Required</span>
+                )}
               </div>
 
-              {/* Target Completion Date */}
               <div className="form-field">
-                <label>Target Completion Date <span className="red">*</span></label>
-                <input 
-                  {...register("revised_completion", { required: true })} 
-                  type="date" 
-                  placeholder="Enter Value" 
+                <label>
+                  Target Completion Date{" "}
+                  <span className="red">*</span>
+                </label>
+                <input
+                  {...register("revised_completion", {
+                    required: true,
+                  })}
+                  type="date"
+                  placeholder="Enter Value"
                   disabled={isSubmitting}
                 />
-                {errors.revised_completion && <span className="text-danger">Required</span>}
+                {errors.revised_completion && (
+                  <span className="text-danger">Required</span>
+                )}
               </div>
             </div>
 
             {/* Structure Details */}
             <div className="row mt-1 mb-2">
-              <h3 className="mb-1 d-flex align-center justify-content-center">Structure Details</h3>
-
+              <h3 className="mb-1 d-flex align-center justify-content-center">
+                Structure Details
+              </h3>
               <div className="table-responsive dataTable ">
                 <table className="table table-bordered align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: "45%" }}>Structure Detail</th>
+                      <th style={{ width: "45%" }}>
+                        Structure Detail
+                      </th>
                       <th style={{ width: "40%" }}>Value</th>
                       <th style={{ width: "15%" }}>Action</th>
                     </tr>
@@ -803,7 +1080,9 @@ export default function UpdateStructureForm() {
                           <td>
                             <input
                               type="text"
-                              {...register(`structureDetails.${index}.structure_details`)}
+                              {...register(
+                                `structureDetails.${index}.structure_details`
+                              )}
                               className="form-control"
                               placeholder="Enter detail description"
                               disabled={isSubmitting}
@@ -812,7 +1091,9 @@ export default function UpdateStructureForm() {
                           <td>
                             <input
                               type="text"
-                              {...register(`structureDetails.${index}.structure_values`)}
+                              {...register(
+                                `structureDetails.${index}.structure_values`
+                              )}
                               className="form-control"
                               placeholder="Enter value"
                               disabled={isSubmitting}
@@ -822,7 +1103,9 @@ export default function UpdateStructureForm() {
                             <button
                               type="button"
                               className="btn btn-outline-danger"
-                              onClick={() => removeStructureDetails(index)}
+                              onClick={() =>
+                                removeStructureDetails(index)
+                              }
                               disabled={isSubmitting}
                             >
                               <MdOutlineDeleteSweep size="26" />
@@ -832,7 +1115,10 @@ export default function UpdateStructureForm() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="3" className="text-center text-muted">
+                        <td
+                          colSpan="3"
+                          className="text-center text-muted"
+                        >
                           No structure details added yet.
                         </td>
                       </tr>
@@ -846,9 +1132,9 @@ export default function UpdateStructureForm() {
                   type="button"
                   className="btn-2 btn-green"
                   onClick={() =>
-                    appendStructureDetails({ 
-                      structure_details: "", 
-                      structure_values: "" 
+                    appendStructureDetails({
+                      structure_details: "",
+                      structure_values: "",
                     })
                   }
                   disabled={isSubmitting}
@@ -860,7 +1146,9 @@ export default function UpdateStructureForm() {
 
             {/* Documents */}
             <div className="row mt-1 mb-2">
-              <h3 className="mb-1 d-flex align-center justify-content-center">Documents</h3>
+              <h3 className="mb-1 d-flex align-center justify-content-center">
+                Documents
+              </h3>
 
               <div className="table-responsive dataTable ">
                 <table className="table table-bordered align-middle">
@@ -888,7 +1176,6 @@ export default function UpdateStructureForm() {
                                   placeholder="Select File Type"
                                   isSearchable
                                   isClearable
-                                  isLoading={dropdownData.loading}
                                   isDisabled={isSubmitting}
                                 />
                               )}
@@ -897,31 +1184,75 @@ export default function UpdateStructureForm() {
                           <td>
                             <input
                               type="text"
-                              {...register(`documents.${index}.structureDocumentNames`)}
+                              {...register(
+                                `documents.${index}.structureDocumentNames`
+                              )}
                               className="form-control"
                               placeholder="File Name"
                               disabled={isSubmitting}
                             />
+                            {/* hidden attachment field for existing file name */}
+                            <input
+                              type="hidden"
+                              {...register(
+                                `documents.${index}.attachment`
+                              )}
+                            />
                           </td>
                           <td>
-                            <div className={styles["file-upload-wrapper"]}>
-                              <label 
-                                htmlFor={`file-${index}`} 
-                                className={styles["file-upload-label-icon"]}
-                                style={isSubmitting ? { opacity: 0.6, cursor: 'not-allowed' } : {}}>
-                                <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
-                                {isSubmitting ? 'Uploading...' : 'Upload File'}
+                            <div
+                              className={
+                                styles["file-upload-wrapper"]
+                              }
+                            >
+                              <label
+                                htmlFor={`file-${index}`}
+                                className={
+                                  styles["file-upload-label-icon"]
+                                }
+                                style={
+                                  isSubmitting
+                                    ? {
+                                        opacity: 0.6,
+                                        cursor: "not-allowed",
+                                      }
+                                    : {}
+                                }
+                              >
+                                <RiAttachment2
+                                  size={20}
+                                  style={{ marginRight: "6px" }}
+                                />
+                                {isSubmitting
+                                  ? "Uploading..."
+                                  : "Upload File"}
                               </label>
                               <input
                                 id={`file-${index}`}
                                 type="file"
-                                {...register(`documents.${index}.structureFiles`)}
-                                className={styles["file-upload-input"]}
+                                {...register(
+                                  `documents.${index}.structureFiles`
+                                )}
+                                className={
+                                  styles["file-upload-input"]
+                                }
                                 disabled={isSubmitting}
                               />
-                              {(watch(`documents.${index}.structureFiles`)?.[0]?.name) && (
-                                <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569" }}>
-                                  {watch(`documents.${index}.structureFiles`)?.[0]?.name}
+                              {watch(
+                                `documents.${index}.structureFiles`
+                              )?.[0]?.name && (
+                                <p
+                                  style={{
+                                    marginTop: "6px",
+                                    fontSize: "0.9rem",
+                                    color: "#475569",
+                                  }}
+                                >
+                                  {
+                                    watch(
+                                      `documents.${index}.structureFiles`
+                                    )?.[0]?.name
+                                  }
                                 </p>
                               )}
                             </div>
@@ -940,7 +1271,10 @@ export default function UpdateStructureForm() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="4" className="text-center text-muted">
+                        <td
+                          colSpan="4"
+                          className="text-center text-muted"
+                        >
                           No documents added yet.
                         </td>
                       </tr>
@@ -954,10 +1288,11 @@ export default function UpdateStructureForm() {
                   type="button"
                   className="btn-2 btn-green"
                   onClick={() =>
-                    appendDocuments({ 
-                      structure_file_types: "", 
-                      structureDocumentNames: "", 
-                      structureFiles: "" 
+                    appendDocuments({
+                      structure_file_types: "",
+                      structureDocumentNames: "",
+                      structureFiles: "",
+                      attachment: "",
                     })
                   }
                   disabled={isSubmitting}
@@ -969,19 +1304,18 @@ export default function UpdateStructureForm() {
 
             {/* Buttons */}
             <div className="form-post-buttons">
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn btn-primary"
-                disabled={isSubmitting || dropdownData.loading}
+                disabled={isSubmitting}
               >
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    {isEdit ? "Updating..." : "Saving..."}
-                  </>
-                ) : (
-                  isEdit ? "Update" : "Save"
-                )}
+                {isSubmitting
+                  ? isEdit
+                    ? "Updating..."
+                    : "Saving..."
+                  : isEdit
+                  ? "Update"
+                  : "Save"}
               </button>
               <button
                 type="button"

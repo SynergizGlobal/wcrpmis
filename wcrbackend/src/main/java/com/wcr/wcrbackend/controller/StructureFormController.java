@@ -441,43 +441,95 @@ public class StructureFormController {
 	
 	
 	
-	
+	@PostMapping("/update-structure-form")
+	public ResponseEntity<?> updateStructure(@ModelAttribute Structure obj,
+	                                         HttpSession session) {
+	    try {
+	        // Get user from session
+	        User uObj = (User) session.getAttribute("user");
+	        if (uObj == null) {
+	            // session expired or user not logged in
+	            return ResponseEntity.status(401).body(
+	                Map.of("success", false, "message", "User session expired. Please login again.")
+	            );
+	        }
 
-    @PostMapping("/update-structure-form")
-    public ResponseEntity<?> updateStructure(@RequestBody Structure obj,
-                                             HttpSession session) {
-        try {
-            String user_Id = (String) session.getAttribute("USER_ID");
-            String userName = (String) session.getAttribute("USER_NAME");
-            String userDesignation = (String) session.getAttribute("USER_DESIGNATION");
-            
-            System.out.println("Method called..................");
-            
-            System.out.println("USer ID"+ user_Id);
-            System.out.println("USER Name"+ userName);
-            System.out.println("USer Degination"+ userDesignation);
+	        String user_Id = uObj.getUserId();
+	        String userName = uObj.getUserName();
+	        String userDesignation = uObj.getDesignation(); 
 
-            obj.setUser_id(user_Id);
-            obj.setUser_name(userName);
-            obj.setDesignation(userDesignation);
+	        System.out.println("Method called..................");
+	        System.out.println("User ID: " + user_Id);
+	        System.out.println("User Name: " + userName);
+	        System.out.println("User Designation: " + userDesignation);
 
-            obj.setConstruction_start_date(DateParser.parse(obj.getConstruction_start_date()));	
-            obj.setTarget_date(DateParser.parse(obj.getTarget_date()));	
-            obj.setRevised_completion(DateParser.parse(obj.getRevised_completion()));	
-            obj.setCommissioning_date(DateParser.parse(obj.getCommissioning_date()));	
-            obj.setActual_completion_date(DateParser.parse(obj.getActual_completion_date()));	
+	        obj.setUser_id(user_Id);
+	        obj.setUser_name(userName);
+	        obj.setDesignation(userDesignation);
 
-            boolean flag = structureFormService.updateStructureForm(obj);
+	        obj.setConstruction_start_date(DateParser.parse(obj.getConstruction_start_date()));	
+	        obj.setTarget_date(DateParser.parse(obj.getTarget_date()));	
+	        obj.setRevised_completion(DateParser.parse(obj.getRevised_completion()));	
+	        obj.setCommissioning_date(DateParser.parse(obj.getCommissioning_date()));	
+	        obj.setActual_completion_date(DateParser.parse(obj.getActual_completion_date()));	
 
-            if (flag) {
-                return ResponseEntity.ok().body(Map.of("success", true, "message", "Structure updated"));
-            } else {
-                return ResponseEntity.status(400).body(Map.of("success", false, "message", "Update failed"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
-        }
-    }
+	        boolean flag = structureFormService.updateStructureForm(obj);
+
+	        if (flag) {
+	            return ResponseEntity.ok().body(
+	                Map.of("success", true, "message", "Structure updated")
+	            );
+	        } else {
+	            return ResponseEntity.status(400).body(
+	                Map.of("success", false, "message", "Update failed")
+	            );
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(500).body(
+	            Map.of("success", false, "error", e.getMessage())
+	        );
+	    }
+	}
+
+//
+//    @PostMapping("/update-structure-form")
+//    public ResponseEntity<?> updateStructure(@RequestBody Structure obj,
+//                                             HttpSession session) {
+//    	
+//    	
+//        try {
+//            String user_Id = (String) session.getAttribute("USER_ID");
+//            String userName = (String) session.getAttribute("USER_NAME");
+//            String userDesignation = (String) session.getAttribute("USER_DESIGNATION");
+//            
+//            System.out.println("Method called..................");
+//            
+//            System.out.println("USer ID"+ user_Id);
+//            System.out.println("USER Name"+ userName);
+//            System.out.println("USer Degination"+ userDesignation);
+//
+//            obj.setUser_id(user_Id);
+//            obj.setUser_name(userName);
+//            obj.setDesignation(userDesignation);
+//
+//            obj.setConstruction_start_date(DateParser.parse(obj.getConstruction_start_date()));	
+//            obj.setTarget_date(DateParser.parse(obj.getTarget_date()));	
+//            obj.setRevised_completion(DateParser.parse(obj.getRevised_completion()));	
+//            obj.setCommissioning_date(DateParser.parse(obj.getCommissioning_date()));	
+//            obj.setActual_completion_date(DateParser.parse(obj.getActual_completion_date()));	
+//
+//            boolean flag = structureFormService.updateStructureForm(obj);
+//
+//            if (flag) {
+//                return ResponseEntity.ok().body(Map.of("success", true, "message", "Structure updated"));
+//            } else {
+//                return ResponseEntity.status(400).body(Map.of("success", false, "message", "Update failed"));
+//            }
+//        } catch (Exception e) {
+//            return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
+//        }
+//    }
 }
 //	@RequestMapping(value = "/get-structure-form/{structure_id}", method = {RequestMethod.GET,RequestMethod.POST})
 //	public ModelAndView getStructuresForm(@ModelAttribute Structure obj,@PathVariable("structure_id") String structure_id,HttpSession session,RedirectAttributes attributes ){
