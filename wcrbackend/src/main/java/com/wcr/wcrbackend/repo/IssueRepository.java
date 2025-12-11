@@ -945,8 +945,9 @@ public class IssueRepository implements IIssueRepo {
 	public List<Issue> getRailwayList() throws Exception {
 		List<Issue> objsList = null;
 		try {
-			String qry = "SELECT railway_id,railway_name from railway WHERE railway_id <> 'Con' and railway_id='MRVC' ORDER BY case when railway_id='MRVC' then 1" + 
-					"when railway_id='CR' then 2 when railway_id='WR' then 3 when railway_id='Others' then 4 end asc";
+			String qry = "SELECT railway_id,railway_name from railway";
+//					+ " WHERE railway_id <> 'Con' and railway_id='MRVC' ORDER BY case when railway_id='MRVC' then 1" + 
+//					"when railway_id='CR' then 2 when railway_id='WR' then 3 when railway_id='Others' then 4 end asc";
 			objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<Issue>(Issue.class));
 		} catch (Exception e) {
 			throw new Exception(e);

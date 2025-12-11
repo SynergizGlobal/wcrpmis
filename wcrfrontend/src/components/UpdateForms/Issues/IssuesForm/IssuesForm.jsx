@@ -32,6 +32,7 @@ export default function IssuesForm() {
 	const [shortDescriptionOptions, setShortDescriptionOptions] = useState([]);
 	const [issuePriorityOptions, setIssuePriorityOptions] = useState([]);
 	const [responsibleOrganisationOptions, setResponsibleOrganisationOptions] = useState([]);
+	const [otherResponsibleOrganisationOptions, setOtherResponsibleOrganisationOptions] = useState([]);
 	const [issueFileTypesOptions, setIssueFileTypesOptions] = useState([]);
 	const [issueStatusOptions, setIssueStatusOptions] = useState([]);
 	const [issueResponsiblePersonOptions, setIssueResponsiblePersonOptions] = useState([]);
@@ -62,6 +63,7 @@ export default function IssuesForm() {
 			modified_date: "",
 			location: "",
 			other_organization: "",
+			zonal_railway_fk: "",
 			reported_by: "",
 			status_fk: "",
 			other_org_resposible_person_name: "",
@@ -150,12 +152,23 @@ export default function IssuesForm() {
 
 
         // 12. Other Organizations
-        setResponsibleOrganisationOptions(
+        setOtherResponsibleOrganisationOptions(
           data.otherOrganizations?.map(o => ({
             value: o.other_organization,
             label: o.other_organization
           })) || []
         );
+		
+
+		// 12. Other Organizations
+		setResponsibleOrganisationOptions(
+		  data.railwayList?.map(o => ({
+		    value: o.railway_id,
+		    label: o.railway_name
+		  })) || []
+		);
+
+		
 
         // 13. File Types
         setIssueFileTypesOptions(
@@ -244,6 +257,7 @@ export default function IssuesForm() {
       issueCategoryOptions.length &&
       issuePriorityOptions.length &&
       responsibleOrganisationOptions.length &&
+	  otherResponsibleOrganisationOptions.length &&
       issueFileTypesOptions.length;
 
     if (!optionsReady) return;
@@ -291,7 +305,9 @@ export default function IssuesForm() {
 	  modified_date: normalizeDate(d.modified_date),
       location: d.location || "",
       reported_by: d.reported_by || "",
-      other_organization: findOption(responsibleOrganisationOptions, d.other_organization),
+      other_organization: findOption(otherResponsibleOrganisationOptions, d.other_organization),
+	  zonal_railway_fk: findOption(responsibleOrganisationOptions, d.zonal_railway_fk),
+
 
       // Select dropdown fields
       project_id_fk: findOption(projectOptions, d.project_id_fk),
@@ -381,6 +397,9 @@ export default function IssuesForm() {
 	    data.other_organization?.value ?? ""
 	  );
 	  
+	  if(data.zonal_railway_fk){
+		formData.append("zonal_railway_fk", data.zonal_railway_fk.value || "");
+	  }
 	  formData.append("other_org_resposible_person_name", data.other_org_resposible_person_name || "");
 	  
 	  formData.append("other_org_resposible_person_designation", data.other_org_resposible_person_designation || "");
@@ -389,8 +408,11 @@ export default function IssuesForm() {
 	  
 	  formData.append("assigned_date", data.assigned_date || "");
 	  formData.append("resolved_date", data.resolved_date || "");
-	  formData.append("responsible_person", data.responsible_person || "");
-	  
+
+	  if(data.responsible_person)
+		{
+			formData.append("responsible_person", data.responsible_person || "");
+		}	  
 	  
 	  
 
@@ -732,10 +754,44 @@ export default function IssuesForm() {
 							  <label>Location/Station/KM </label>
 							  <input {...register("location")} type="text" />
 						  </div>
+						  
+						  
+						  
+						  <div className="form-field">
+						  							  <label>
+						  								  Responsible Organization (Pending with) <span className="red">*</span>
+						  							  </label>
+
+						  							  <Controller
+						  								  name="zonal_railway_fk"
+						  								  control={control}
+						  								  rules={{ required: "Responsible Organization is required" }}
+						  								  render={({ field }) => (
+						  									  <Select
+						  										  {...field}
+						  										  options={responsibleOrganisationOptions}
+						  										  classNamePrefix="react-select"
+						  										  placeholder="Select value"
+						  										  isSearchable
+						  										  isClearable
+						  										  value={responsibleOrganisationOptions.find(
+						  											  (opt) =>
+						  												  opt.value === field.value?.value ||
+						  												  opt.value === field.value
+						  										  )}
+						  										  onChange={(selected) => field.onChange(selected)}
+						  									  />
+						  								  )}
+						  							  />
+
+						  							  {errors.zonal_railway_fk && (
+						  								  <span className="red">{errors.zonal_railway_fk.message}</span>
+						  							  )}
+						  						  </div>
 
 						  <div className="form-field">
 							  <label>
-								  Responsible Organization (Pending with) <span className="red">*</span>
+								 Other Responsible Organization (Pending with) <span className="red">*</span>
 							  </label>
 
 							  <Controller
@@ -745,12 +801,12 @@ export default function IssuesForm() {
 								  render={({ field }) => (
 									  <Select
 										  {...field}
-										  options={responsibleOrganisationOptions}
+										  options={otherResponsibleOrganisationOptions}
 										  classNamePrefix="react-select"
 										  placeholder="Select value"
 										  isSearchable
 										  isClearable
-										  value={responsibleOrganisationOptions.find(
+										  value={otherResponsibleOrganisationOptions.find(
 											  (opt) =>
 												  opt.value === field.value?.value ||
 												  opt.value === field.value
