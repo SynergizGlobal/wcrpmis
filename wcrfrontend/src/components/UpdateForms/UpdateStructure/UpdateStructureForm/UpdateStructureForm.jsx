@@ -488,10 +488,12 @@ export default function UpdateStructureForm() {
       const formattedData = {
         ...data,
         target_date: formatDateForBackend(data.target_date),
-        construction_start_date: formatDateForBackend(
-          data.construction_start_date
-        ),
-        revised_completion: formatDateForBackend(data.revised_completion),
+        construction_start_date: data.construction_start_date 
+          ? formatDateForBackend(data.construction_start_date)
+          : undefined,
+        revised_completion: data.revised_completion
+          ? formatDateForBackend(data.revised_completion)
+          : undefined,
 
         project_id_fk: data.project_id_fk?.value || data.project_id_fk,
         structure_type_fk:
@@ -608,12 +610,20 @@ export default function UpdateStructureForm() {
       // Send multipart/form-data (let axios set headers)
       const res = await api.post(
         `${API_BASE_URL}/update-structure-form`,
-        formData
-      );
+         formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
 
       if (res.data?.success) {
         alert("✅ Structure saved successfully!");
-        navigate("wcrpmis/updateforms/structure-form");
+         navigate("/updateforms/structure-form", { 
+          state: { refresh: true, timestamp: Date.now() } 
+        });
+        
       } else {
         alert(
           `❌ ${
@@ -1021,39 +1031,23 @@ export default function UpdateStructureForm() {
               </div>
 
               <div className="form-field">
-                <label>
-                  Construction Start Date{" "}
-                  <span className="red">*</span>
-                </label>
+                <label>Construction Start Date</label>
                 <input
-                  {...register("construction_start_date", {
-                    required: true,
-                  })}
+                  {...register("construction_start_date")}
                   type="date"
                   placeholder="Enter Value"
                   disabled={isSubmitting}
                 />
-                {errors.construction_start_date && (
-                  <span className="text-danger">Required</span>
-                )}
               </div>
 
               <div className="form-field">
-                <label>
-                  Target Completion Date{" "}
-                  <span className="red">*</span>
-                </label>
+                <label>Target Completion Date</label>
                 <input
-                  {...register("revised_completion", {
-                    required: true,
-                  })}
+                  {...register("revised_completion")}
                   type="date"
                   placeholder="Enter Value"
                   disabled={isSubmitting}
                 />
-                {errors.revised_completion && (
-                  <span className="text-danger">Required</span>
-                )}
               </div>
             </div>
 

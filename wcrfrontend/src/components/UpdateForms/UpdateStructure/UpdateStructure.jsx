@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
+import { RefreshContext } from "../../../context/RefreshContext"; // Add this import
 import Select from "react-select";
 import styles from "./UpdateStructure.module.css";
 import { MdEditNote } from "react-icons/md";
@@ -11,6 +12,7 @@ import { debounce } from "lodash";
 export default function UpdateStructure() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { refresh } = useContext(RefreshContext); // Consume context
 
   const [structureFormGrid, setStructureFormGrid] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,11 +38,12 @@ export default function UpdateStructure() {
     workStatuses: [],
   });
 
+  // Initial load on mount
   useEffect(() => {
     fetchFilterOptions();
   }, []);
 
-  // Re-fetch when filters, page, or pageSize change
+  // Re-fetch when filters, page, pageSize change or when refresh is triggered
   useEffect(() => {
     fetchStructureFormGrid();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -51,6 +54,7 @@ export default function UpdateStructure() {
     filters.search,
     pagination.currentPage,
     pagination.pageSize,
+    location.key, // This will change when refresh() causes navigation
   ]);
 
   const fetchFilterOptions = async () => {
