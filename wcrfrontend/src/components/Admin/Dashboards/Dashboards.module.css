@@ -89,3 +89,29 @@
     flex: 0 0 46%;
   }
 }
+
+/* ------- Pagination ------- */
+.paginationBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.paginationBtns {
+  display: flex;
+  gap: 8px;
+}
+
+.paginationBtns button {
+  padding: 6px 12px;
+  border: 1px solid #bbb;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.activePage {
+  background: #2E3A71 !important;
+  color: white !important;
+}

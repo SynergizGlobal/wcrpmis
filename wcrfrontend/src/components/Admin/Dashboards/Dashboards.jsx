@@ -7,6 +7,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import api from "../../../api/axiosInstance";
 import styles from './Dashboards.module.css';
 import { API_BASE_URL } from "../../../config";
+import { MdEditNote } from "react-icons/md";
 
 export default function Dashboards() {
 	const location = useLocation();
@@ -16,8 +17,10 @@ export default function Dashboards() {
 	  const [perPage, setPerPage] = useState(10);
 	  const { refresh } = useContext(RefreshContext);
 	  
-	  const [dashboards, setDashBoard] = useState([]);
+	  const [dashboards, setDashBoards] = useState([]);
 	  const [showModal, setShowModal] = useState(false);
+	  
+	  const openModal = () => setShowModal(true);
 	  
 	  const [filters, setFilters] = useState({
 	     module: "",
@@ -25,28 +28,112 @@ export default function Dashboards() {
 	     status: "",
 	   });
 	   
-	   const openModal = () => setShowModal(true);
+	   const [moduleOptions, setModuleOptions] = useState([]);
+	   const [dashboardTypeOptions, setDashboardTypeOptions] = useState([]);
+	   const [statusOptions, setStatusOptions] = useState([]);
 	      
-	  /* useEffect(() => {
-	      fetchProjects();
-	    }, []);
+	   useEffect(() => {
+	     // MODULE FILTER (from backend)
+	     api.get(`${API_BASE_URL}/api/dashboard/modules`)
+	       .then((res) => {
+	         setModuleOptions(
+	           res.data.map(m => ({
+	             value: m,
+	             label: m
+	           }))
+	         );
+	       })
+	       .catch(err => console.error("Module fetch error:", err));
 
-	    const fetchProjects = async () => {
-	      try {
-	        const res = await api.get(`${API_BASE_URL}/projects`, { withCredentials: true });
-	        setProjects(res.data || []);
-	      } catch (err) {
-	        console.error("Error fetching projects:", err);
-	      }
-	    };
-	 */
- const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters({ ...filters, [name]: value });
-  };
+	     // DASHBOARD TYPE FILTER (static)
+	     setDashboardTypeOptions([
+	       { value: "module", label: "Module" },
+	       { value: "project", label: "Project" }
+	     ]);
+
+	     // STATUS FILTER (static)
+	     setStatusOptions([
+	       { value: "Active", label: "Active" },
+	       { value: "Inactive", label: "Inactive" }
+	     ]);
+
+	   }, [refresh, location]);
+	   
+	   // FILTER CHANGE HANDLER
+	   const handleFilterChange = (name, value) => {
+	     setFilters(prev => ({ ...prev, [name]: value }));
+	     setPage(1);
+	   };
+
+	   // CLEAR FILTERS
+	   const handleClearFilters = () => {
+	     setFilters({
+	       module: "",
+	       dashboardType: "",
+	       status: "",
+	     });
+
+	     setPage(1);
+	   };
+
+	   // SEARCH 
+	   const filteredDashboards = dashboards.filter(d => {
+	       const txt = search.toLowerCase();
+	       return (
+	         d.dashboard_name?.toLowerCase().includes(txt) ||
+	         d.module_name_fk?.toLowerCase().includes(txt) ||
+	         d.folder?.toLowerCase().includes(txt) ||
+	         d.user_role_access?.toLowerCase().includes(txt) ||
+	         d.user_type_access?.toLowerCase().includes(txt) ||
+	         d.user_access?.toLowerCase().includes(txt)
+	       );
+	   });
+
+	   // PAGINATION
+	   const totalRecords = filteredDashboards.length;
+	   const totalPages = Math.ceil(totalRecords / perPage);
+
+	   const paginatedRows = filteredDashboards.slice(
+	     (page - 1) * perPage,
+	     page * perPage
+	   );
+	   
+	   // INITIAL LOAD ONLY
+	   useEffect(() => {
+	     fetchDashboards();  
+	   }, [refresh, location]);
+
+	   // WHEN FILTERS CHANGE → always POST
+	   useEffect(() => {
+	     fetchDashboardList();
+	   }, [filters, refresh, location]);
+
+	   const fetchDashboards = () => {
+	     api.get(`${API_BASE_URL}/api/dashboard/list`)
+	       .then(res => setDashBoards(res.data))
+	       .catch(err => console.error("Dashboard list error:", err));
+	   };
+
+	   const fetchDashboardList = () => {
+	     api.post(`${API_BASE_URL}/api/dashboard/list`, {
+	       module_name_fk: filters.module,
+	       dashboard_type_fk: filters.dashboardType,
+	       soft_delete_status_fk: filters.status
+	     })
+	     .then(res => setDashBoards(res.data))
+	     .catch(err => console.error("Dashboard List Error:", err));
+	   };
 
   const handleAdd = () => navigate("dashboardform");
-  const handleEdit = (project) => navigate("dashboardform", { state: { project } });
+  const handleEdit = async (dash) => {
+    try {
+      const res = await api.get(`${API_BASE_URL}/api/dashboard/get/${dash.dashboard_id}`);
+      navigate("dashboardform", { state: { dashboardData: res.data } });
+    } catch (err) {
+      console.error("Get dashboard error:", err);
+      alert("Failed to load dashboard: " + (err?.response?.data?.message || err.message));
+    }
+  };
 
   const isDashboardForm = location.pathname.endsWith("/dashboardform");
 
@@ -75,51 +162,38 @@ export default function Dashboards() {
         
         <div className="innerPage">
           <div className={styles.filterRow}>
-            {Object.keys(filters).map((key) => {
-              const options = [
-                { value: "", label: `Select ${key}` },
-                { value: "demo1", label: `${key} 1` },
-                { value: "demo2", label: `${key} 2` },
-              ];
+		  <div className={styles.filterRow}>
 
-              return (
-                <div className={styles.filterOptions} key={key}>
-                  <Select
-                    options={options}
-                    value={options.find((opt) => opt.value === filters[key])}
-                    onChange={(selectedOption) =>
-                      handleFilterChange({
-                        target: { name: key, value: selectedOption.value },
-                      })
-                    }
-                    placeholder={`Select ${key}`}
-                    isSearchable
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        minHeight: "32px",
-                        borderColor: "#ced4da",
-                        boxShadow: "none",
-                        "&:hover": { borderColor: "#86b7fe" },
-                      }),
-                      dropdownIndicator: (base) => ({
-                        ...base,
-                        padding: "2px 6px",
-                      }),
-                      valueContainer: (base) => ({
-                        ...base,
-                        padding: "0 6px",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 9999, // prevents clipping inside modals or cards
-                      }),
-                    }}
-                  />
-                </div>
-              );
-            })}
-            <button className="btn btn-2 btn-primary">Clear Filters</button>
+		    {/* MODULE FILTER */}
+		    <Select
+		      options={[{ value: "", label: "Select Module" }, ...moduleOptions]}
+		      value={moduleOptions.find(o => o.value === filters.module) || null}
+			  onChange={opt => handleFilterChange("module", opt ? opt.value : null)}
+		      placeholder="Select Module"
+		    />
+
+		    {/* DASHBOARD TYPE FILTER */}
+		    <Select
+		      options={[{ value: "", label: "Select Dashboard Type" }, ...dashboardTypeOptions]}
+		      value={dashboardTypeOptions.find(o => o.value === filters.dashboardType) || null}
+		      onChange={opt => handleFilterChange("dashboardType", opt? opt.value : null)}
+		      placeholder="Select Dashboard Type"
+		    />
+
+		    {/* STATUS FILTER */}
+		    <Select
+		      options={[{ value: "", label: "Select Status" }, ...statusOptions]}
+		      value={statusOptions.find(o => o.value === filters.status) || null}
+		      onChange={opt => handleFilterChange("status", opt?opt.value : null)}
+		      placeholder="Select Status"
+		    />
+
+		    {/* CLEAR BUTTON */}
+		    <button className="btn btn-2 btn-primary" onClick={handleClearFilters}>
+		      Clear Filters
+		    </button>
+
+		  </div>
           </div>
 		  
 		  {/* Search + Entries Row */}
@@ -161,34 +235,65 @@ export default function Dashboards() {
 	              <th>Action</th>
                 </tr>
               </thead>
-              <tbody>
-                {dashboards.length > 0 ? (
-                  dashboards.map((dash, index) => (
-                    <tr key={index}>
-                      <td>{dash.name}</td>
-                      <td>{dash.module}</td>
-                      <td>{dash.folder}</td>
-                      <td>{dash.status}</td>
-                      <td>{dash.userRoleAccess}</td>
-                      <td>{dash.userTypeAccess}</td>
-                      <td>{dash.action}</td>
-                      <td>
-                        <button className="btn btn-sm btn-outline-primary" onClick={() => handleEdit(dash)}>
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="8" style={{ textAlign: "center" }}>
-                      No records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+			  <tbody>
+			  {paginatedRows.length > 0 ? (
+			      paginatedRows.map((dash, i) => (
+			        <tr key={i}>
+			          <td>{dash.dashboard_name}</td>
+			          <td>{dash.module_name_fk}</td>
+			          <td>{dash.folder || "-"}</td>
+			          <td>{dash.soft_delete_status_fk}</td>
+			          <td>{dash.user_role_access}</td>
+			          <td>{dash.user_type_access}</td>
+			          <td>{dash.user_access}</td>
+
+			          <td>
+			            <button 
+			              className="btn btn-sm btn-outline-primary"
+			              onClick={() => handleEdit(dash)}
+			            >
+			              <MdEditNote size={22} />
+			            </button>
+			          </td>
+			        </tr>
+			      ))
+			    ) : (
+			      <tr>
+			        <td colSpan="8" style={{ textAlign: "center" }}>
+			          No records found
+			        </td>
+			      </tr>
+			    )}
+			  </tbody>
             </table>
           </div>
+		  {/* PAGINATION */}
+		  	  <div className={styles.paginationBar}>
+		  	    <span>
+		  	      {totalRecords === 0
+		  	        ? "0 - 0"
+		  	        : `${(page - 1) * perPage + 1} - ${Math.min(page * perPage, totalRecords)}`}
+		  	      {" "}of {totalRecords}
+		  	    </span>
+
+		  	    <div className={styles.paginationBtns}>
+		  	      <button
+		  	        onClick={() => page > 1 && setPage(page - 1)}
+		  	        disabled={page === 1}
+		  	      >
+		  	        {"<"}
+		  	      </button>
+
+		  	      <button className={styles.activePage}>{page}</button>
+
+		  	      <button
+		  	        onClick={() => page < totalPages && setPage(page + 1)}
+		  	        disabled={page === totalPages}
+		  	      >
+		  	        {">"}
+		  	      </button>
+		  	    </div>
+		  	  </div>
         </div>
       )}
         <Outlet />
