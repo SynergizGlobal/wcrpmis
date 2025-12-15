@@ -306,10 +306,11 @@ export default function UpdateStructure() {
                   Clear Filters
                 </button>
               </div>
-              
-              {/* Search bar moved to right side */}
-              <div className={styles.searchBarContainer}>
-                <div className={styles.searchBar}>
+            </div>
+
+            <div className={`dataTable ${styles.tableWrapper}`}>
+              <div className={styles.tableHeader}>
+                <div className={styles.tableSearchBar}>
                   <input
                     ref={searchInputRef}
                     type="text"
@@ -320,109 +321,107 @@ export default function UpdateStructure() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className={`dataTable ${styles.tableWrapper}`}>
-            {loading ? (
-              <div className="text-center py-4">Loading...</div>
-            ) : (
-              <>
-                <table className={styles.projectTable}>
-                  <thead>
-                    <tr>
-                      <th>Structure ID</th>
-                      <th>Project</th>
-                      <th>Structure Type</th>
-                      <th>Structure</th>
-                      <th>Contract</th>
-                      <th>Work Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {structureFormGrid.length > 0 ? (
-                      structureFormGrid.map((sf, index) => (
-                        <tr key={sf.structure_id ?? sf.structureId ?? index}>
-                          <td>{sf.structure_id ?? sf.structureId}</td>
-                          <td>{sf.project_id_fk ?? sf.projectIdFk}</td>
-                          <td>{sf.structure_type_fk ?? sf.structureTypeFk}</td>
-                          <td>{sf.structure_name ?? sf.structure}</td>
-                          <td>{sf.contract_short_name ?? sf.contractShortName}</td>
-                          <td>{sf.work_status_fk ?? sf.workStatusFk}</td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                              onClick={() => handleEdit(sf)}
-                              title="Edit"
-                            >
-                              <MdEditNote size={18} />
-                            </button>
+              
+              {loading ? (
+                <div className="text-center py-4">Loading...</div>
+              ) : (
+                <>
+                  <table className={styles.projectTable}>
+                    <thead>
+                      <tr>
+                        <th>Structure ID</th>
+                        <th>Project</th>
+                        <th>Structure Type</th>
+                        <th>Structure</th>
+                        <th>Contract</th>
+                        <th>Work Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {structureFormGrid.length > 0 ? (
+                        structureFormGrid.map((sf, index) => (
+                          <tr key={sf.structure_id ?? sf.structureId ?? index}>
+                            <td>{sf.structure_id ?? sf.structureId}</td>
+                            <td>{sf.project_id_fk ?? sf.projectIdFk}</td>
+                            <td>{sf.structure_type_fk ?? sf.structureTypeFk}</td>
+                            <td>{sf.structure_name ?? sf.structure}</td>
+                            <td>{sf.contract_short_name ?? sf.contractShortName}</td>
+                            <td>{sf.work_status_fk ?? sf.workStatusFk}</td>
+                            <td>
+                              <button
+                                className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                onClick={() => handleEdit(sf)}
+                                title="Edit"
+                              >
+                                <MdEditNote size={18} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="7" style={{ textAlign: "center" }}>
+                            No records found
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="7" style={{ textAlign: "center" }}>
-                          No records found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-
-                {pagination.totalPages > 1 && (
-                  <div className={styles.paginationWrapper}>
-                    <div className={styles.pageSizeSelector}>
-                      <span>Rows per page:</span>
-                      <select
-                        value={pagination.pageSize}
-                        onChange={handlePageSizeChange}
-                      >
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                      </select>
-                    </div>
-
-                    <ReactPaginate
-                      breakLabel="..."
-                      previousLabel="‹"
-                      nextLabel="›"
-                      pageCount={pagination.totalPages}
-                      onPageChange={handlePageChange}
-                      forcePage={pagination.currentPage}
-                      containerClassName={styles.pagination}
-                      pageClassName={styles.pageItem}
-                      pageLinkClassName={styles.pageLink}
-                      previousClassName={styles.pageItem}
-                      nextClassName={styles.pageItem}
-                      previousLinkClassName={styles.pageLink}
-                      nextLinkClassName={styles.pageLink}
-                      breakClassName={styles.pageItem}
-                      breakLinkClassName={styles.pageLink}
-                      disabledClassName={styles.disabled}
-                      activeClassName={styles.active}
-                      pageRangeDisplayed={3}
-                      marginPagesDisplayed={1}
-                    />
-
-                    <div className={styles.paginationInfo}>
-                      {pagination.totalRecords > 0 ? (
-                        <>
-                          Showing <strong>{startRecord}</strong>–
-                          <strong>{endRecord}</strong> of{" "}
-                          <strong>{pagination.totalRecords}</strong>
-                        </>
-                      ) : (
-                        "No records"
                       )}
+                    </tbody>
+                  </table>
+
+                  {pagination.totalPages > 1 && (
+                    <div className={styles.paginationWrapper}>
+                      <div className={styles.pageSizeSelector}>
+                        <span>Rows per page:</span>
+                        <select
+                          value={pagination.pageSize}
+                          onChange={handlePageSizeChange}
+                        >
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                      </div>
+
+                      <ReactPaginate
+                        breakLabel="..."
+                        previousLabel="‹"
+                        nextLabel="›"
+                        pageCount={pagination.totalPages}
+                        onPageChange={handlePageChange}
+                        forcePage={pagination.currentPage}
+                        containerClassName={styles.pagination}
+                        pageClassName={styles.pageItem}
+                        pageLinkClassName={styles.pageLink}
+                        previousClassName={styles.pageItem}
+                        nextClassName={styles.pageItem}
+                        previousLinkClassName={styles.pageLink}
+                        nextLinkClassName={styles.pageLink}
+                        breakClassName={styles.pageItem}
+                        breakLinkClassName={styles.pageLink}
+                        disabledClassName={styles.disabled}
+                        activeClassName={styles.active}
+                        pageRangeDisplayed={3}
+                        marginPagesDisplayed={1}
+                      />
+
+                      <div className={styles.paginationInfo}>
+                        {pagination.totalRecords > 0 ? (
+                          <>
+                            Showing <strong>{startRecord}</strong>–
+                            <strong>{endRecord}</strong> of{" "}
+                            <strong>{pagination.totalRecords}</strong>
+                          </>
+                        ) : (
+                          "No records"
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

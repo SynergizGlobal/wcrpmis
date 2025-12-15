@@ -1,24 +1,13 @@
+/* UpdateStructure.module.css */
 .container {
   padding: 20px;
   background-color: #f9f9f9;
   border-radius: 8px;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #3f4a7f;
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: 6px;
-}
-
-.actions button {
-  margin-left: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+/* Filter Section */
+.filterSection {
+  margin-bottom: 20px;
 }
 
 .filterRow {
@@ -26,18 +15,79 @@
   justify-content: space-between;
   gap: 10px;
   background: #fff;
-  padding: 10px;
+  padding: 15px;
   margin-top: 15px;
   border-radius: 6px;
+  flex-wrap: wrap;
 }
 
-.filterRow select {
-  padding: 6px;
+.filterOptions {
+  flex: 1;
+  min-width: 180px;
+}
+
+.filterOptions :global(.react-select__control) {
+  min-height: 38px;
   border-radius: 4px;
   border: 1px solid #ccc;
-  min-width: 120px;
 }
 
+.filterOptions :global(.react-select__control:hover) {
+  border-color: #86b7fe;
+}
+
+.filterOptions :global(.react-select__control--is-focused) {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.clearButton {
+  white-space: nowrap;
+  min-width: 120px;
+  background-color: #3f4a7f;
+  border-color: #3f4a7f;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clearButton:hover {
+  background-color: #2c345c;
+  border-color: #2c345c;
+}
+
+/* Table Header with Search Bar */
+.tableHeader {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 15px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.tableSearchBar {
+  width: 250px;
+}
+
+.tableSearchBar input {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  width: 100%;
+  font-size: 14px;
+}
+
+.tableSearchBar input:focus {
+  outline: none;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Table Styles */
 .tableWrapper {
   margin-top: 20px;
   background: #fff;
@@ -48,17 +98,20 @@
 .projectTable {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
 .projectTable th {
   background: #3f4a7f;
   color: white;
-  padding: 10px;
+  padding: 12px 15px;
   text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
 }
 
 .projectTable td {
-  padding: 8px;
+  padding: 12px 15px;
   border-bottom: 1px solid #ddd;
 }
 
@@ -66,26 +119,28 @@
   background: #f4f7ff;
 }
 
-/* Search */
-.searchBar {
-  margin-bottom: 1rem;
+.projectTable tbody tr:hover {
+  background-color: #f0f4ff;
 }
 
-.searchBar input {
-  padding: 8px 12px;
-  border: 1px solid #ced4da;
+.projectTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Actions column specific styling */
+.projectTable th:last-child,
+.projectTable td:last-child {
+  text-align: center;
+  width: 100px;
+}
+
+.projectTable td:last-child button {
+  padding: 4px 8px;
+  font-size: 13px;
   border-radius: 4px;
-  width: 100%;
-  max-width: 300px;
 }
 
-.searchBar input:focus {
-  outline: none;
-  border-color: #86b7fe;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-/* ==== NEW PAGINATION STYLE ==== */
+/* Pagination Styles */
 .paginationWrapper {
   display: flex;
   justify-content: space-between;
@@ -112,6 +167,13 @@
   border: 1px solid #cbd5f5;
   background-color: #ffffff;
   font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.pageSizeSelector select:focus {
+  outline: none;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
 /* Pagination control (ul) */
@@ -173,6 +235,7 @@
 .paginationInfo {
   color: #475569;
   font-size: 0.85rem;
+  text-align: right;
 }
 
 /* ======= RESPONSIVE ======= */
@@ -180,38 +243,64 @@
   .filterRow {
     flex-wrap: wrap;
     justify-content: center;
-    gap: 20px;
-  }
-
-  .projectTable thead tr th {
-    min-width: 100px;
+    gap: 15px;
   }
 
   .filterOptions {
     flex: 0 0 46%;
+    min-width: 200px;
+  }
+
+  .projectTable {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .projectTable th {
+    min-width: 120px;
   }
 
   .paginationWrapper {
     flex-direction: column;
     align-items: stretch;
+    gap: 15px;
   }
 
   .pagination {
     justify-content: center;
+    order: 2;
+  }
+
+  .pageSizeSelector {
+    order: 1;
+    justify-content: center;
   }
 
   .paginationInfo {
+    order: 3;
     text-align: center;
   }
 }
 
 @media (max-width: 768px) {
-  .searchBar input {
-    max-width: 100%;
+  .tableHeader {
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .tableSearchBar {
+    width: 100%;
+    max-width: 300px;
   }
 
   .filterOptions {
     flex: 0 0 100%;
+    min-width: 100%;
+  }
+
+  .clearButton {
+    width: 100%;
+    margin-top: 10px;
   }
 
   .pagination {
@@ -223,5 +312,34 @@
     height: 28px;
     padding: 0 8px;
     font-size: 0.8rem;
+  }
+
+  .projectTable th:last-child,
+  .projectTable td:last-child {
+    width: auto;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 576px) {
+  .container {
+    padding: 15px;
+  }
+
+  .projectTable th,
+  .projectTable td {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .pageSizeSelector {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
