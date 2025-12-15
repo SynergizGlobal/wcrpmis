@@ -456,196 +456,241 @@ public class StructureFormDaoImpl implements IStructureFormDao{
 		return structure;
 	}
 	
-
+//
 	@Override
 	public boolean updateStructureForm(Structure obj) throws Exception {
-		boolean flag = false;
-		TransactionDefinition def = new DefaultTransactionDefinition();
-		TransactionStatus status = transactionManager.getTransaction(def);
-		try {
-			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);		
-			String structure_id= null;
-			String qry = "UPDATE structure set "
-					+ "structure =:structure,structure_name =:structure_name,structure_type_fk =:structure_type_fk,target_date =:target_date,"
-					+ "construction_start_date =:construction_start_date,actual_completion_date =:actual_completion_date,commissioning_date =:commissioning_date,"
-					+ "estimated_cost =:estimated_cost,completion_cost =:completion_cost,work_status_fk =:work_status_fk,latitude =:latitude,longitude =:longitude"
-					+ ",remarks =:remarks,revised_completion =:revised_completion,estimated_cost_units =:estimated_cost_units,completion_cost_units =:completion_cost_units "
-					+ " where structure_id= :structure_id";		 
-			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
-			int count = namedParamJdbcTemplate.update(qry, paramSource);			
-			if(count > 0) {
-				flag = true;
-			}
-			if(flag) {
-				
-				String deleteQry = "DELETE from structure_details where structure_id_fk = :structure_id";		 
-				paramSource = new BeanPropertySqlParameterSource(obj);		 
-				count = namedParamJdbcTemplate.update(deleteQry, paramSource);
-				
-				if(flag && !StringUtils.isEmpty(obj.getStructure_details()) && obj.getStructure_details().length > 0) {
-					obj.setStructure_details(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_details()));
-				}
-				if(flag && !StringUtils.isEmpty(obj.getStructure_values()) && obj.getStructure_values().length > 0) {
-					obj.setStructure_values(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_values()));
-				}
-				
-				String[] fobDetailNames = obj.getStructure_details();
-				String[] fobDetailValues = obj.getStructure_values();
-				
-				String qryFOBDetail = "INSERT INTO structure_details (structure_id_fk,structure_detail,value) VALUES  (?,?,?)";		
-				
-				int[] counts = jdbcTemplate.batchUpdate(qryFOBDetail,
-		            new BatchPreparedStatementSetter() {			                 
-		                @Override
-		                public void setValues(PreparedStatement ps, int i) throws SQLException {	
-		                	int k = 1;
-							ps.setString(k++, obj.getStructure_id());
-							ps.setString(k++, fobDetailNames.length > 0 ?fobDetailNames[i]:null);
-							ps.setString(k++, fobDetailValues.length > 0 ?fobDetailValues[i]:null);
-		                }
-		                @Override  
-		                public int getBatchSize() {		                	
-		                	int arraySize = 0;
-		    				if(!StringUtils.isEmpty(obj.getStructure_details()) && obj.getStructure_details().length > 0) {
-		    					obj.setStructure_details(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_details()));
-		    					if(arraySize < obj.getStructure_details().length) {
-		    						arraySize = obj.getStructure_details().length;
-		    					}
-		    				}
-		    				if(!StringUtils.isEmpty(obj.getStructure_values()) && obj.getStructure_values().length > 0) {
-		    					obj.setStructure_values(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_values()));
-		    					if(arraySize < obj.getStructure_values().length) {
-		    						arraySize = obj.getStructure_values().length;
-		    					}
-		    				}
-		                    return arraySize;
-		                }
-		            });
-					String docDeleteQry = "DELETE from structure_documents where structure_id_fk = :structure_id";		 
-					paramSource = new BeanPropertySqlParameterSource(obj);		 
-					count = namedParamJdbcTemplate.update(docDeleteQry, paramSource);
-					
-					//String file_insert_qry = "INSERT into  fob_files ( fob_id_fk, attachment,created_date,fob_file_type_fk,name) VALUES (:fob_id,:attachment,:created_date,:fob_file_type_fk,:name)";
-					String document_insert_qry = "INSERT into  structure_documents ( structure_id_fk, attachment,structure_file_type_fk,name,created_date) VALUES (:structure_id,:attachment,:structure_file_type_fk,:name,CONVERT(date, getdate()))";
+	    boolean flag = false;
+	    TransactionDefinition def = new DefaultTransactionDefinition();
+	    TransactionStatus status = transactionManager.getTransaction(def);
+	    try {
+	        NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+	        String structure_id = null;
+	        String qry = "UPDATE structure set "
+	                + "structure =:structure,structure_name =:structure_name,structure_type_fk =:structure_type_fk,target_date =:target_date,"
+	                + "construction_start_date =:construction_start_date,actual_completion_date =:actual_completion_date,commissioning_date =:commissioning_date,"
+	                + "estimated_cost =:estimated_cost,completion_cost =:completion_cost,work_status_fk =:work_status_fk,latitude =:latitude,longitude =:longitude"
+	                + ",remarks =:remarks,revised_completion =:revised_completion,estimated_cost_units =:estimated_cost_units,completion_cost_units =:completion_cost_units "
+	                + " where structure_id= :structure_id";
+	        BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+	        int count = namedParamJdbcTemplate.update(qry, paramSource);
+	        if (count > 0) {
+	            flag = true;
+	        }
+	        if (flag) {
 
-					int arraySize =0, docArrSize = 0;
-					
-					if (!StringUtils.isEmpty(obj.getStructureFileNames()) && obj.getStructureFileNames().length > 0) {
-						obj.setStructureFileNames(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructureFileNames()));
-						if (docArrSize < obj.getStructureFileNames().length) {
-							docArrSize = obj.getStructureFileNames().length;
-						}
-					}
-					if (!StringUtils.isEmpty(obj.getStructure_file_types()) && obj.getStructure_file_types().length > 0) {
-						obj.setStructure_file_types(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_file_types()));
-						if (docArrSize < obj.getStructure_file_types().length) {
-							docArrSize = obj.getStructure_file_types().length;
-						}
-					}
-					if (!StringUtils.isEmpty(obj.getStructureDocumentNames()) && obj.getStructureDocumentNames().length > 0) {
-						obj.setStructureDocumentNames(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructureDocumentNames()));
-						if (docArrSize < obj.getStructureDocumentNames().length) {
-							docArrSize = obj.getStructureDocumentNames().length;
-						}
-					}
+	            String deleteQry = "DELETE from structure_details where structure_id_fk = :structure_id";
+	            paramSource = new BeanPropertySqlParameterSource(obj);
+	            count = namedParamJdbcTemplate.update(deleteQry, paramSource);
 
-					for (int i = 0; i < docArrSize; i++) {
-						if (!StringUtils.isEmpty(obj.getStructureFiles()) && obj.getStructureFiles().length > 0) {
-							MultipartFile multipartFile = obj.getStructureFiles()[i];
-							if (((null != multipartFile && !multipartFile.isEmpty()) || (!StringUtils.isEmpty(obj.getStructureFileNames()[i]))) 
-									&& !StringUtils.isEmpty(obj.getStructure_file_types()[i]) && !StringUtils.isEmpty(obj.getStructureDocumentNames()[i]))  {
-								String saveDirectory =  CommonConstants2.STRUCTURE_FILE_SAVING_PATH ;
-								String fileName = obj.getStructureFileNames()[i];
-								if (null != multipartFile && !multipartFile.isEmpty()) {
-									FileUploads.singleFileSaving(multipartFile, saveDirectory, fileName);
-								}
-								Structure fileObj = new Structure();
-								fileObj.setAttachment(fileName);
-								
-								String fob_file_type_fk = obj.getStructure_file_types()[i];
-								String name = obj.getStructureDocumentNames()[i];
-								
-								fileObj.setStructure_id(obj.getStructure_id());
-								fileObj.setStructure_file_type_fk(fob_file_type_fk);
-								fileObj.setName(name);
-								
-								paramSource = new BeanPropertySqlParameterSource(fileObj);
-								namedParamJdbcTemplate.update(document_insert_qry, paramSource);
-							}
-						}
-					}
-			
-					String conDeleteQry = "DELETE from structure_contract_responsible_people where structure_id_fk = :structure_id";		 
-					paramSource = new BeanPropertySqlParameterSource(obj);		 
-					count = namedParamJdbcTemplate.update(conDeleteQry, paramSource);
-					
-					if(!StringUtils.isEmpty(obj.getContracts_id_fk()) && obj.getContracts_id_fk().length > 0) {
-						String qry3 = "INSERT into structure_contract_responsible_people (structure_id_fk,contract_id_fk,responsible_people_id_fk) VALUES (:structure_id_fk,:contract_id_fk,:responsible_people_id_fk)";
-						int len = obj.getContracts_id_fk().length;
-						
-						int size = 0;
-						if(!StringUtils.isEmpty(obj.getContracts_id_fk()) && obj.getContracts_id_fk().length > 0) {
-	    					obj.setContracts_id_fk(CommonMethods.replaceEmptyByNullInSringArray(obj.getContracts_id_fk()));
-	    					if(size < obj.getContracts_id_fk().length) {
-	    						size = obj.getContracts_id_fk().length;
-	    					}
-	    				}
-						if(size == 1 ) {
-				    		String joined = String.join(",", obj.getResponsible_people_id_fks());
-				    		String[] strArray = new String[] {joined};
-				    		obj.setResponsible_people_id_fks(strArray);
-				    	}
-						if(!StringUtils.isEmpty(obj.getResponsible_people_id_fks()) && obj.getResponsible_people_id_fks().length > 0) {
-	    					obj.setResponsible_people_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getResponsible_people_id_fks()));
-	    					if(size < obj.getResponsible_people_id_fks().length) {
-	    						size = obj.getResponsible_people_id_fks().length;
-	    					}
-	    				}
-						for (int i = 0; i < size; i++){
-							List<String> executives = null;
-							if(!StringUtils.isEmpty(obj.getResponsible_people_id_fks()[i])){
-								if(obj.getResponsible_people_id_fks()[i].contains(",")) {
-									executives = new ArrayList<String>(Arrays.asList(obj.getResponsible_people_id_fks()[i].split(",")));
-								}else {
-									executives = new ArrayList<String>(Arrays.asList(obj.getResponsible_people_id_fks()[i]));
-								}
-								for(String eObj : executives) {
-									if(!eObj.equals("null") && !StringUtils.isEmpty(obj.getContracts_id_fk()[i]) &&  !StringUtils.isEmpty(eObj)) {
-										Structure fileObj = new Structure();
-										fileObj.setStructure_id_fk(obj.getStructure_id());
-										fileObj.setContract_id_fk(obj.getContracts_id_fk()[i]);
-										fileObj.setResponsible_people_id_fk(eObj);
-										paramSource = new BeanPropertySqlParameterSource(fileObj);
-										namedParamJdbcTemplate.update(qry3, paramSource);
-									}
-								}
-							}
-						
-						}			
-			
-					}	
-					
-				
-					FormHistory formHistory = new FormHistory();
-					formHistory.setCreated_by_user_id_fk(obj.getUser_id());
-					formHistory.setUser(obj.getDesignation()+" - "+obj.getUser_name());
-					formHistory.setModule_name_fk("Works");
-					formHistory.setForm_name("Update Structure Form");
-					formHistory.setForm_action_type("Update");
-					formHistory.setForm_details("Structure for "+obj.getProject_id_fk() + " Updated");
-					formHistory.setProject_id_fk(obj.getProject_id_fk());
-					//formHistory.setContract(obj.getContract_id_fk());
-					
-					boolean history_flag = formsHistoryDao.saveFormHistory(formHistory);
-					/********************************************************************************/
-			}
-			transactionManager.commit(status);
-		}catch(Exception e){ 
-			transactionManager.rollback(status);
-			e.printStackTrace();
-			throw new Exception(e);
-		}
-		return flag;
+	            if (flag && !StringUtils.isEmpty(obj.getStructure_details()) && obj.getStructure_details().length > 0) {
+	                obj.setStructure_details(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_details()));
+	            }
+	            if (flag && !StringUtils.isEmpty(obj.getStructure_values()) && obj.getStructure_values().length > 0) {
+	                obj.setStructure_values(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_values()));
+	            }
+
+	            String[] fobDetailNames = obj.getStructure_details();
+	            String[] fobDetailValues = obj.getStructure_values();
+
+	            String qryFOBDetail = "INSERT INTO structure_details (structure_id_fk,structure_detail,value) VALUES  (?,?,?)";
+
+	            int[] counts = jdbcTemplate.batchUpdate(qryFOBDetail,
+	                    new BatchPreparedStatementSetter() {
+	                        @Override
+	                        public void setValues(PreparedStatement ps, int i) throws SQLException {
+	                            int k = 1;
+	                            ps.setString(k++, obj.getStructure_id());
+	                            // SAFELY get detail name
+	                            String detailName = (fobDetailNames != null && fobDetailNames.length > i) ? fobDetailNames[i] : null;
+	                            ps.setString(k++, detailName);
+	                            // SAFELY get detail value
+	                            String detailValue = (fobDetailValues != null && fobDetailValues.length > i) ? fobDetailValues[i] : null;
+	                            ps.setString(k++, detailValue);
+	                        }
+
+	                        @Override
+	                        public int getBatchSize() {
+	                            int arraySize = 0;
+	                            if (!StringUtils.isEmpty(obj.getStructure_details()) && obj.getStructure_details().length > 0) {
+	                                obj.setStructure_details(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_details()));
+	                                if (arraySize < obj.getStructure_details().length) {
+	                                    arraySize = obj.getStructure_details().length;
+	                                }
+	                            }
+	                            if (!StringUtils.isEmpty(obj.getStructure_values()) && obj.getStructure_values().length > 0) {
+	                                obj.setStructure_values(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_values()));
+	                                if (arraySize < obj.getStructure_values().length) {
+	                                    arraySize = obj.getStructure_values().length;
+	                                }
+	                            }
+	                            return arraySize;
+	                        }
+	                    });
+	            String docDeleteQry = "DELETE from structure_documents where structure_id_fk = :structure_id";
+	            paramSource = new BeanPropertySqlParameterSource(obj);
+	            count = namedParamJdbcTemplate.update(docDeleteQry, paramSource);
+
+	            //String file_insert_qry = "INSERT into  fob_files ( fob_id_fk, attachment,created_date,fob_file_type_fk,name) VALUES (:fob_id,:attachment,:created_date,:fob_file_type_fk,:name)";
+	            String document_insert_qry = "INSERT into  structure_documents ( structure_id_fk, attachment,structure_file_type_fk,name,created_date) VALUES (:structure_id,:attachment,:structure_file_type_fk,:name,CONVERT(date, getdate()))";
+
+	            int arraySize = 0, docArrSize = 0;
+
+	            if (!StringUtils.isEmpty(obj.getStructureFileNames()) && obj.getStructureFileNames().length > 0) {
+	                obj.setStructureFileNames(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructureFileNames()));
+	                if (docArrSize < obj.getStructureFileNames().length) {
+	                    docArrSize = obj.getStructureFileNames().length;
+	                }
+	            }
+	            if (!StringUtils.isEmpty(obj.getStructure_file_types()) && obj.getStructure_file_types().length > 0) {
+	                obj.setStructure_file_types(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructure_file_types()));
+	                if (docArrSize < obj.getStructure_file_types().length) {
+	                    docArrSize = obj.getStructure_file_types().length;
+	                }
+	            }
+	            if (!StringUtils.isEmpty(obj.getStructureDocumentNames()) && obj.getStructureDocumentNames().length > 0) {
+	                obj.setStructureDocumentNames(CommonMethods.replaceEmptyByNullInSringArray(obj.getStructureDocumentNames()));
+	                if (docArrSize < obj.getStructureDocumentNames().length) {
+	                    docArrSize = obj.getStructureDocumentNames().length;
+	                }
+	            }
+
+	            // FIXED DOCUMENT PROCESSING LOOP
+	            for (int i = 0; i < docArrSize; i++) {
+	                // SAFELY get the file at index i
+	                MultipartFile multipartFile = null;
+	                if (obj.getStructureFiles() != null && i < obj.getStructureFiles().length) {
+	                    multipartFile = obj.getStructureFiles()[i];
+	                }
+
+	                // SAFELY get array values at index i
+	                String fileName = null;
+	                String fileType = null;
+	                String docName = null;
+
+	                if (obj.getStructureFileNames() != null && i < obj.getStructureFileNames().length) {
+	                    fileName = obj.getStructureFileNames()[i];
+	                }
+	                if (obj.getStructure_file_types() != null && i < obj.getStructure_file_types().length) {
+	                    fileType = obj.getStructure_file_types()[i];
+	                }
+	                if (obj.getStructureDocumentNames() != null && i < obj.getStructureDocumentNames().length) {
+	                    docName = obj.getStructureDocumentNames()[i];
+	                }
+
+	                // Check if we have enough data to save this document
+	                boolean hasNewFile = (multipartFile != null && !multipartFile.isEmpty());
+	                boolean hasFileName = !StringUtils.isEmpty(fileName);
+	                boolean hasFileType = !StringUtils.isEmpty(fileType);
+	                boolean hasDocName = !StringUtils.isEmpty(docName);
+
+	                // Save only if we have required data
+	                if ((hasNewFile || hasFileName) && hasFileType && hasDocName) {
+	                    String saveDirectory = CommonConstants2.STRUCTURE_FILE_SAVING_PATH;
+
+	                    // If new file uploaded, save it
+	                    if (hasNewFile) {
+	                        FileUploads.singleFileSaving(multipartFile, saveDirectory, fileName);
+	                    }
+
+	                    Structure fileObj = new Structure();
+	                    fileObj.setAttachment(fileName);
+	                    fileObj.setStructure_id(obj.getStructure_id());
+	                    fileObj.setStructure_file_type_fk(fileType);
+	                    fileObj.setName(docName);
+
+	                    paramSource = new BeanPropertySqlParameterSource(fileObj);
+	                    namedParamJdbcTemplate.update(document_insert_qry, paramSource);
+	                }
+	            }
+
+	            String conDeleteQry = "DELETE from structure_contract_responsible_people where structure_id_fk = :structure_id";
+	            paramSource = new BeanPropertySqlParameterSource(obj);
+	            count = namedParamJdbcTemplate.update(conDeleteQry, paramSource);
+
+	            if (!StringUtils.isEmpty(obj.getContracts_id_fk()) && obj.getContracts_id_fk().length > 0) {
+	                String qry3 = "INSERT into structure_contract_responsible_people (structure_id_fk,contract_id_fk,responsible_people_id_fk) VALUES (:structure_id_fk,:contract_id_fk,:responsible_people_id_fk)";
+	                
+	                // FIXED: Add null check for contracts array
+	                int len = (obj.getContracts_id_fk() != null) ? obj.getContracts_id_fk().length : 0;
+
+	                int size = 0;
+	                if (!StringUtils.isEmpty(obj.getContracts_id_fk()) && obj.getContracts_id_fk().length > 0) {
+	                    obj.setContracts_id_fk(CommonMethods.replaceEmptyByNullInSringArray(obj.getContracts_id_fk()));
+	                    if (size < obj.getContracts_id_fk().length) {
+	                        size = obj.getContracts_id_fk().length;
+	                    }
+	                }
+	                if (size == 1) {
+	                    String joined = "";
+	                    if (obj.getResponsible_people_id_fks() != null && obj.getResponsible_people_id_fks().length > 0) {
+	                        joined = String.join(",", obj.getResponsible_people_id_fks());
+	                    }
+	                    String[] strArray = new String[]{joined};
+	                    obj.setResponsible_people_id_fks(strArray);
+	                }
+	                if (!StringUtils.isEmpty(obj.getResponsible_people_id_fks()) && obj.getResponsible_people_id_fks().length > 0) {
+	                    obj.setResponsible_people_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getResponsible_people_id_fks()));
+	                    if (size < obj.getResponsible_people_id_fks().length) {
+	                        size = obj.getResponsible_people_id_fks().length;
+	                    }
+	                }
+	                for (int i = 0; i < size; i++) {
+	                    List<String> executives = null;
+	                    
+	                    // SAFELY get executives at index i
+	                    String execString = null;
+	                    if (obj.getResponsible_people_id_fks() != null && i < obj.getResponsible_people_id_fks().length) {
+	                        execString = obj.getResponsible_people_id_fks()[i];
+	                    }
+	                    
+	                    if (!StringUtils.isEmpty(execString)) {
+	                        if (execString.contains(",")) {
+	                            executives = new ArrayList<String>(Arrays.asList(execString.split(",")));
+	                        } else {
+	                            executives = new ArrayList<String>(Arrays.asList(execString));
+	                        }
+	                        for (String eObj : executives) {
+	                            // SAFELY get contract at index i
+	                            String contractId = null;
+	                            if (obj.getContracts_id_fk() != null && i < obj.getContracts_id_fk().length) {
+	                                contractId = obj.getContracts_id_fk()[i];
+	                            }
+	                            
+	                            if (!eObj.equals("null") && !StringUtils.isEmpty(contractId) && !StringUtils.isEmpty(eObj)) {
+	                                Structure fileObj = new Structure();
+	                                fileObj.setStructure_id_fk(obj.getStructure_id());
+	                                fileObj.setContract_id_fk(contractId);
+	                                fileObj.setResponsible_people_id_fk(eObj);
+	                                paramSource = new BeanPropertySqlParameterSource(fileObj);
+	                                namedParamJdbcTemplate.update(qry3, paramSource);
+	                            }
+	                        }
+	                    }
+
+	                }
+
+	            }
+
+	            FormHistory formHistory = new FormHistory();
+	            formHistory.setCreated_by_user_id_fk(obj.getUser_id());
+	            formHistory.setUser(obj.getDesignation() + " - " + obj.getUser_name());
+	            formHistory.setModule_name_fk("Works");
+	            formHistory.setForm_name("Update Structure Form");
+	            formHistory.setForm_action_type("Update");
+	            formHistory.setForm_details("Structure for " + obj.getProject_id_fk() + " Updated");
+	            formHistory.setProject_id_fk(obj.getProject_id_fk());
+	            //formHistory.setContract(obj.getContract_id_fk());
+
+	            boolean history_flag = formsHistoryDao.saveFormHistory(formHistory);
+	            /********************************************************************************/
+	        }
+	        transactionManager.commit(status);
+	    } catch (Exception e) {
+	        transactionManager.rollback(status);
+	        e.printStackTrace();
+	        throw new Exception(e);
+	    }
+	    return flag;
 	}
 
 	

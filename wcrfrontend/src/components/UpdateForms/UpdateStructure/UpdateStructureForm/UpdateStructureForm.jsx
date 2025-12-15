@@ -33,6 +33,8 @@ export default function UpdateStructureForm() {
 
   const [structureApiData, setStructureApiData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fileNames, setFileNames] = useState({}); // Track file names for display
+  const [fileSources, setFileSources] = useState({}); // Track if file is new or existing
 
   const {
     register,
@@ -90,6 +92,62 @@ export default function UpdateStructureForm() {
     remove: removeDocuments,
   } = useFieldArray({ control, name: "documents" });
 
+  // Track file changes
+  const handleFileChange = (index, e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileNames(prev => ({ ...prev, [index]: file.name }));
+      setFileSources(prev => ({ ...prev, [index]: 'new' })); // Mark as NEW
+      // Also update the form value
+      setValue(`documents.${index}.structureFiles`, e.target.files);
+    } else {
+      // Clear file name if file is removed
+      setFileNames(prev => {
+        const newNames = { ...prev };
+        delete newNames[index];
+        return newNames;
+      });
+      setFileSources(prev => {
+        const newSources = { ...prev };
+        delete newSources[index];
+        return newSources;
+      });
+    }
+  };
+
+  // Clear file input when row is removed
+  const handleRemoveDocument = (index) => {
+    removeDocuments(index);
+    setFileNames(prev => {
+      const newNames = { ...prev };
+      // Shift all indices after the removed one
+      const updatedNames = {};
+      Object.keys(newNames).forEach(key => {
+        const keyNum = parseInt(key);
+        if (keyNum > index) {
+          updatedNames[keyNum - 1] = newNames[key];
+        } else if (keyNum < index) {
+          updatedNames[keyNum] = newNames[key];
+        }
+      });
+      return updatedNames;
+    });
+    setFileSources(prev => {
+      const newSources = { ...prev };
+      // Shift all indices after the removed one
+      const updatedSources = {};
+      Object.keys(newSources).forEach(key => {
+        const keyNum = parseInt(key);
+        if (keyNum > index) {
+          updatedSources[keyNum - 1] = newSources[key];
+        } else if (keyNum < index) {
+          updatedSources[keyNum] = newSources[key];
+        }
+      });
+      return updatedSources;
+    });
+  };
+
   // Helpers: date conversions
   const toInputDate = (value) => {
     if (!value) return "";
@@ -141,6 +199,8 @@ export default function UpdateStructureForm() {
       try {
         setDropdownData((prev) => ({ ...prev, loading: true, error: null }));
         setStructureApiData(null);
+        setFileNames({});
+        setFileSources({});
 
         const params = {};
         if (isEdit && structureId) params.structure_id = structureId;
@@ -385,16 +445,25 @@ export default function UpdateStructureForm() {
 
     const documents =
       docsSrc.length > 0
-        ? docsSrc.map((doc) => ({
-            structure_file_types: findOption(
-              formatFileTypes,
-              doc.structure_file_type_fk || doc.structure_file_type,
-              doc.structure_file_type
-            ),
-            structureDocumentNames: doc.name || doc.file_name || "",
-            structureFiles: "",
-            attachment: doc.attachment || doc.file_name || "", // store existing file name
-          }))
+        ? docsSrc.map((doc, index) => {
+            const fileName = doc.attachment || doc.file_name || "";
+            // Store file name in state for display
+            if (fileName) {
+              setFileNames(prev => ({ ...prev, [index]: fileName }));
+              setFileSources(prev => ({ ...prev, [index]: 'existing' })); // Mark as EXISTING
+            }
+            
+            return {
+              structure_file_types: findOption(
+                formatFileTypes,
+                doc.structure_file_type_fk || doc.structure_file_type,
+                doc.structure_file_type
+              ),
+              structureDocumentNames: doc.name || doc.file_name || "",
+              structureFiles: "",
+              attachment: fileName,
+            };
+          })
         : [
             {
               structure_file_types: "",
@@ -426,7 +495,7 @@ export default function UpdateStructureForm() {
     reset(values);
   }, [isEdit, dropdownData.loading, structureApiData, reset]);
 
-  // Submit
+  // Submit - COMPLETELY UPDATED with proper array alignment
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
@@ -437,15 +506,17 @@ export default function UpdateStructureForm() {
       };
       const normalizeMulti = (sel) => {
         if (!sel) return [];
-        if (Array.isArray(sel))
+        if (Array.isArray(sel)) {
           return sel.map((s) =>
             typeof s === "object" && "value" in s ? s.value : s
           );
-        if (typeof sel === "string")
+        }
+        if (typeof sel === "string") {
           return sel
             .split(",")
             .map((s) => s.trim())
             .filter(Boolean);
+        }
         return [];
       };
 
@@ -484,159 +555,140 @@ export default function UpdateStructureForm() {
         (x) => x != null && x !== ""
       );
 
-      // Base formatted data (scalar & non-file arrays)
-      const formattedData = {
-        ...data,
-        target_date: formatDateForBackend(data.target_date),
-        construction_start_date: data.construction_start_date 
-          ? formatDateForBackend(data.construction_start_date)
-          : undefined,
-        revised_completion: data.revised_completion
-          ? formatDateForBackend(data.revised_completion)
-          : undefined,
+      // Build FormData
+      const formData = new FormData();
 
-        project_id_fk: data.project_id_fk?.value || data.project_id_fk,
-        structure_type_fk:
-          data.structure_type_fk?.value || data.structure_type_fk,
-        work_status_fk: data.work_status_fk?.value || data.work_status_fk,
-
-        estimated_cost: data.estimated_cost || undefined,
-        estimated_cost_unit:
-          data.estimated_cost_unit?.value ||
-          data.estimated_cost_unit ||
-          undefined,
-        estimated_cost_units:
-          data.estimated_cost_unit?.value ||
-          data.estimated_cost_unit ||
-          undefined,
-
-        contracts_id_fk:
-          contracts_id_fk_arr.length ? contracts_id_fk_arr : undefined,
-        responsible_people_id_fks: responsible_people_id_fks_arr.length
-          ? responsible_people_id_fks_arr
-          : undefined,
-
-        ...(hasAnyStructureDetail
-          ? { structure_details: structure_details_arr }
-          : {}),
-        ...(hasAnyStructureValue
-          ? { structure_values: structure_values_arr }
-          : {}),
-
-        ...(isEdit && structureId ? { structure_id: structureId } : {}),
+      // Add scalar fields
+      const addField = (key, value) => {
+        if (value !== undefined && value !== null && value !== "") {
+          formData.append(key, value);
+        }
       };
 
-      // Build docs arrays (file types, names, file names, file objects)
+      // Add array fields
+      const addArrayField = (key, array) => {
+        if (array && array.length > 0) {
+          array.forEach(item => {
+            formData.append(key, item != null ? String(item) : "");
+          });
+        }
+      };
+
+      // Add basic fields
+      addField("project_id_fk", data.project_id_fk?.value || data.project_id_fk);
+      addField("structure_type_fk", data.structure_type_fk?.value || data.structure_type_fk);
+      addField("structure_name", data.structure_name);
+      addField("structure", data.structure);
+      addField("work_status_fk", data.work_status_fk?.value || data.work_status_fk);
+      addField("estimated_cost", data.estimated_cost);
+      addField("estimated_cost_unit", data.estimated_cost_unit?.value || data.estimated_cost_unit);
+      addField("estimated_cost_units", data.estimated_cost_unit?.value || data.estimated_cost_unit);
+      addField("remarks", data.remarks);
+      addField("latitude", data.latitude);
+      addField("longitude", data.longitude);
+      addField("target_date", formatDateForBackend(data.target_date));
+      addField("construction_start_date", formatDateForBackend(data.construction_start_date));
+      addField("revised_completion", formatDateForBackend(data.revised_completion));
+      
+      if (isEdit && structureId) {
+        addField("structure_id", structureId);
+      }
+
+      // Add arrays
+      addArrayField("contracts_id_fk", contracts_id_fk_arr);
+      addArrayField("responsible_people_id_fks", responsible_people_id_fks_arr);
+      
+      if (hasAnyStructureDetail) {
+        addArrayField("structure_details", structure_details_arr);
+      }
+      if (hasAnyStructureValue) {
+        addArrayField("structure_values", structure_values_arr);
+      }
+
+      // CRITICAL: Document arrays - MUST HAVE SAME LENGTH
       const structure_file_types_arr = [];
       const structureDocumentNames_arr = [];
       const structureFileNames_arr = [];
       const structureFiles_arr = [];
 
-      (data.documents || []).forEach((doc) => {
-        const typeVal =
-          doc.structure_file_types?.value || doc.structure_file_types || "";
+      (data.documents || []).forEach((doc, index) => {
+        const typeVal = normalizeSingle(doc.structure_file_types);
         const nameVal = doc.structureDocumentNames || "";
         const existingAttachment = doc.attachment || "";
+        
+        // Get the actual file from state if it's a new upload
+        const isNewFile = fileSources[index] === 'new';
+        const uploadedFileName = fileNames[index] || "";
+        const uploadedFile = isNewFile ? doc.structureFiles?.[0] : null;
 
-        let fileObj = null;
-        if (doc.structureFiles && doc.structureFiles.length > 0) {
-          // FileList from input
-          fileObj = doc.structureFiles[0];
-        }
-
-        // skip fully empty row
-        if (
-          !typeVal &&
-          !nameVal &&
-          !existingAttachment &&
-          (!fileObj || !fileObj.name)
-        ) {
-          return;
-        }
-
+        // ALWAYS push values for ALL arrays to maintain alignment
         structure_file_types_arr.push(typeVal || "");
         structureDocumentNames_arr.push(nameVal || "");
-
-        if (fileObj && fileObj.name) {
-          structureFileNames_arr.push(fileObj.name);
-          structureFiles_arr.push(fileObj);
+        
+        if (isNewFile && uploadedFile && uploadedFile.name) {
+          // New file uploaded (overwrites existing)
+          structureFileNames_arr.push(uploadedFileName);
+          structureFiles_arr.push(uploadedFile);
+        } else if (existingAttachment && !isNewFile) {
+          // Existing file from backend (no new upload)
+          structureFileNames_arr.push(existingAttachment);
+          structureFiles_arr.push(null); // null placeholder for alignment
         } else {
-          // keep old file name from backend
-          structureFileNames_arr.push(existingAttachment || "");
+          // No file at all
+          structureFileNames_arr.push("");
+          structureFiles_arr.push(null); // null placeholder for alignment
         }
       });
 
-      // Now build FormData
-      const formData = new FormData();
+      // Add document arrays to FormData
+      addArrayField("structure_file_types", structure_file_types_arr);
+      addArrayField("structureDocumentNames", structureDocumentNames_arr);
+      addArrayField("structureFileNames", structureFileNames_arr);
 
-      // Simple fields & non-file arrays
-      Object.entries(formattedData).forEach(([key, value]) => {
-        if (value === undefined || value === null) return;
-
-        if (Array.isArray(value)) {
-          value.forEach((v) => {
-            formData.append(key, v != null ? v : "");
-          });
+      // Add files - include null placeholders for alignment
+      structureFiles_arr.forEach((file, index) => {
+        if (file instanceof File) {
+          formData.append("structureFiles", file);
         } else {
-          formData.append(key, value);
+          // IMPORTANT: Send empty blob to maintain array position
+          // This ensures backend arrays have same length
+          formData.append("structureFiles", new Blob([], { type: 'application/octet-stream' }));
         }
       });
 
-      // Append documents arrays
-      structure_file_types_arr.forEach((v) =>
-        formData.append("structure_file_types", v != null ? v : "")
-      );
-      structureDocumentNames_arr.forEach((v) =>
-        formData.append("structureDocumentNames", v != null ? v : "")
-      );
-      structureFileNames_arr.forEach((v) =>
-        formData.append("structureFileNames", v != null ? v : "")
-      );
-      structureFiles_arr.forEach((file) => {
-        formData.append("structureFiles", file);
+      // Debug log
+      console.log("FormData being sent:", {
+        structure_file_types: structure_file_types_arr,
+        structureDocumentNames: structureDocumentNames_arr,
+        structureFileNames: structureFileNames_arr,
+        fileSources: fileSources,
+        structureFiles_count: structureFiles_arr.length,
+        structureFiles_hasFiles: structureFiles_arr.filter(f => f instanceof File).length
       });
 
-      console.log(
-        ">>> FINAL FORM DATA (debug, without files content).",
-        {
-          ...formattedData,
-          structure_file_types: structure_file_types_arr,
-          structureDocumentNames: structureDocumentNames_arr,
-          structureFileNames: structureFileNames_arr,
-          structureFiles_count: structureFiles_arr.length,
-        }
-      );
-
-      // Send multipart/form-data (let axios set headers)
+      // Send request
       const res = await api.post(
         `${API_BASE_URL}/update-structure-form`,
-         formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       if (res.data?.success) {
         alert("✅ Structure saved successfully!");
-         navigate("/updateforms/structure-form", { 
+        navigate("/updateforms/structure-form", { 
           state: { refresh: true, timestamp: Date.now() } 
         });
-        
       } else {
         alert(
-          `❌ ${
-            res.data?.message || "Failed to save structure. Please try again."
-          }`
+          `❌ ${res.data?.message || "Failed to save structure. Please try again."}`
         );
       }
     } catch (err) {
-      console.error(
-        "Error saving structure:",
-        err,
-        err?.response?.data ?? ""
-      );
+      console.error("Error saving structure:", err, err?.response?.data ?? "");
       alert(
         err?.response?.data?.error ||
           err?.response?.data?.message ||
@@ -697,11 +749,7 @@ export default function UpdateStructureForm() {
           <h2 className="center-align ps-relative">
             {isEdit ? "Update Structure Form" : "Create Structure Form"}
           </h2>
-          {isEdit && structureId && (
-            <p className="text-center text-muted">
-              Editing Structure ID: {structureId}
-            </p>
-          )}
+         
         </div>
 
         <div className="innerPage">
@@ -1138,7 +1186,7 @@ export default function UpdateStructureForm() {
               </div>
             </div>
 
-            {/* Documents */}
+            {/* Documents - FIXED SECTION */}
             <div className="row mt-1 mb-2">
               <h3 className="mb-1 d-flex align-center justify-content-center">
                 Documents
@@ -1185,7 +1233,6 @@ export default function UpdateStructureForm() {
                               placeholder="File Name"
                               disabled={isSubmitting}
                             />
-                            {/* hidden attachment field for existing file name */}
                             <input
                               type="hidden"
                               {...register(
@@ -1194,22 +1241,13 @@ export default function UpdateStructureForm() {
                             />
                           </td>
                           <td>
-                            <div
-                              className={
-                                styles["file-upload-wrapper"]
-                              }
-                            >
+                            <div className={styles["file-upload-wrapper"]}>
                               <label
                                 htmlFor={`file-${index}`}
-                                className={
-                                  styles["file-upload-label-icon"]
-                                }
+                                className={styles["file-upload-label-icon"]}
                                 style={
                                   isSubmitting
-                                    ? {
-                                        opacity: 0.6,
-                                        cursor: "not-allowed",
-                                      }
+                                    ? { opacity: 0.6, cursor: "not-allowed" }
                                     : {}
                                 }
                               >
@@ -1217,45 +1255,66 @@ export default function UpdateStructureForm() {
                                   size={20}
                                   style={{ marginRight: "6px" }}
                                 />
-                                {isSubmitting
-                                  ? "Uploading..."
-                                  : "Upload File"}
+                                {isSubmitting ? "Uploading..." : "Upload File"}
                               </label>
                               <input
                                 id={`file-${index}`}
                                 type="file"
-                                {...register(
-                                  `documents.${index}.structureFiles`
-                                )}
-                                className={
-                                  styles["file-upload-input"]
-                                }
+                                className={styles["file-upload-input"]}
                                 disabled={isSubmitting}
+                                onChange={(e) => handleFileChange(index, e)}
                               />
-                              {watch(
-                                `documents.${index}.structureFiles`
-                              )?.[0]?.name && (
-                                <p
-                                  style={{
-                                    marginTop: "6px",
+                              
+                              {/* Show file name - CORRECT LOGIC */}
+                              <div style={{ marginTop: "6px" }}>
+                                {fileSources[index] === 'new' && fileNames[index] ? (
+                                  // New file uploaded (replaces existing if any)
+                                  <p style={{
+                                    fontSize: "0.9rem",
+                                    color: "#1e40af",
+                                    fontWeight: "bold",
+                                    margin: 0,
+                                  }}>
+                                    📎 New file: {fileNames[index]}
+                                    {item.attachment && (
+                                      <span style={{
+                                        fontSize: "0.8rem",
+                                        color: "#666",
+                                        fontStyle: "italic",
+                                        marginLeft: "8px",
+                                      }}>
+                                        (replaces: {item.attachment})
+                                      </span>
+                                    )}
+                                  </p>
+                                ) : item.attachment && !fileNames[index] ? (
+                                  // Existing file from backend (no new upload)
+                                  <p style={{
                                     fontSize: "0.9rem",
                                     color: "#475569",
-                                  }}
-                                >
-                                  {
-                                    watch(
-                                      `documents.${index}.structureFiles`
-                                    )?.[0]?.name
-                                  }
-                                </p>
-                              )}
+                                    fontStyle: "italic",
+                                    margin: 0,
+                                  }}>
+                                    📄 Existing file: {item.attachment}
+                                  </p>
+                                ) : fileNames[index] ? (
+                                  // Just in case - shouldn't happen
+                                  <p style={{
+                                    fontSize: "0.9rem",
+                                    color: "#1e40af",
+                                    margin: 0,
+                                  }}>
+                                    📎 File: {fileNames[index]}
+                                  </p>
+                                ) : null}
+                              </div>
                             </div>
                           </td>
                           <td className="text-center d-flex align-center justify-content-center">
                             <button
                               type="button"
                               className="btn btn-outline-danger"
-                              onClick={() => removeDocuments(index)}
+                              onClick={() => handleRemoveDocument(index)}
                               disabled={isSubmitting}
                             >
                               <MdOutlineDeleteSweep size="26" />

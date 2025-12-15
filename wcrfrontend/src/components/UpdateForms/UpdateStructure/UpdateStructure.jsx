@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useContext } from "react";
-import { RefreshContext } from "../../../context/RefreshContext"; // Add this import
+import React, { useState, useEffect, useCallback, useContext, useRef } from "react";
+import { RefreshContext } from "../../../context/RefreshContext";
 import Select from "react-select";
 import styles from "./UpdateStructure.module.css";
 import { MdEditNote } from "react-icons/md";
@@ -12,7 +12,7 @@ import { debounce } from "lodash";
 export default function UpdateStructure() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { refresh } = useContext(RefreshContext); // Consume context
+  const { refresh } = useContext(RefreshContext);
 
   const [structureFormGrid, setStructureFormGrid] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,6 @@ export default function UpdateStructure() {
     pageSize: 10,
   });
 
-  // Store FULL react-select option objects
   const [filters, setFilters] = useState({
     contract: null,
     structureType: null,
@@ -38,12 +37,13 @@ export default function UpdateStructure() {
     workStatuses: [],
   });
 
-  // Initial load on mount
+  // Create a ref for the search input to clear its value
+  const searchInputRef = useRef(null);
+
   useEffect(() => {
     fetchFilterOptions();
   }, []);
 
-  // Re-fetch when filters, page, pageSize change or when refresh is triggered
   useEffect(() => {
     fetchStructureFormGrid();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,7 +54,7 @@ export default function UpdateStructure() {
     filters.search,
     pagination.currentPage,
     pagination.pageSize,
-    location.key, // This will change when refresh() causes navigation
+    location.key,
   ]);
 
   const fetchFilterOptions = async () => {
@@ -72,23 +72,48 @@ export default function UpdateStructure() {
           }),
         ]);
 
+      // Debug logging to see actual response structure
+      console.log("Structure Types API Response:", structureTypesRes.data);
+
       setOptions({
         contracts:
           contractsRes.data?.map((item) => ({
-            value: item.contract_id || item.value,
-            label: item.contract_short_name,
+            value: item.contract_id_fk || item.contractIdFk,
+            label: item.contract_short_name || item.contractShortName,
           })) || [],
         structureTypes:
-          structureTypesRes.data?.map((item) => ({
-            value: item.structure_type_id || item.value,
-            label: item.structure_type,
-          })) || [],
+          Array.isArray(structureTypesRes.data)
+            ? structureTypesRes.data.map((item) => {
+                // Extract value from possible property names
+                const value = 
+                  item.structure_type_id || 
+                  item.id ||
+                  item.value ||
+                  item.structure_type || 
+                  item.structureType;
+                
+                // Extract label from possible property names
+                const label = 
+                  item.structure_type || 
+                  item.label ||
+                  item.name ||
+                  item.structure_type_name ||
+                  item.structureTypeName ||
+                  (value ? `Structure Type ${value}` : 'Unknown');
+                
+                return {
+                  value: value,
+                  label: label,
+                };
+              })
+            : [],
         workStatuses:
           workStatusesRes.data?.map((item) => ({
-            value: item.work_status_id || item.value,
-            label: item.work_status_fk,
+            value: item.work_status_fk || item.workStatusFk,
+            label: item.work_status_fk || item.workStatusFk,
           })) || [],
       });
+
     } catch (err) {
       console.error("Error fetching filter options:", err);
     }
@@ -106,27 +131,33 @@ export default function UpdateStructure() {
       if (filters.contract) {
         params.contract_id_fk = filters.contract.value;
       }
+      
       if (filters.structureType) {
+        // Try multiple possible parameter names for structure type
+        params.structure_type = filters.structureType.value;
         params.structure_type_fk = filters.structureType.value;
+        params.structureTypeId = filters.structureType.value;
       }
+      
       if (filters.workStatus) {
         params.work_status_fk = filters.workStatus.value;
       }
 
-      const res = await api.get(
-        `${API_BASE_URL}/ajax/getStructuresList`,
-        {
-          params,
-          withCredentials: true,
-        }
-      );
+      console.log("Fetching structures with params:", params);
 
-      const data = res.data;
-      setStructureFormGrid(data.aaData || []);
+      const res = await api.get(`${API_BASE_URL}/ajax/getStructuresList`, {
+        params,
+        withCredentials: true,
+      });
+
+      const data = res.data || {};
+      console.log("Structures API Response:", data);
+      setStructureFormGrid(data.aaData ?? data.data ?? []);
 
       setPagination((prev) => {
-        const totalRecords = data.iTotalRecords || 0;
-        const totalPages = Math.ceil(totalRecords / prev.pageSize) || 0;
+        const totalRecords = data.iTotalRecords ?? data.iTotalDisplayRecords ?? 0;
+        const totalPages =
+          totalRecords > 0 ? Math.ceil(totalRecords / prev.pageSize) : 0;
         return {
           ...prev,
           totalRecords,
@@ -136,12 +167,14 @@ export default function UpdateStructure() {
     } catch (err) {
       console.error("Error fetching structure list:", err);
       setStructureFormGrid([]);
+      setPagination((prev) => ({ ...prev, totalRecords: 0, totalPages: 0 }));
     } finally {
       setLoading(false);
     }
   };
 
   const handleFilterChange = (name, selectedOption) => {
+    console.log(`Filter ${name} changed to:`, selectedOption);
     setFilters((prev) => ({
       ...prev,
       [name]: selectedOption || null,
@@ -171,26 +204,31 @@ export default function UpdateStructure() {
       pageSize: newSize,
       currentPage: 0,
       totalPages:
-        prev.totalRecords > 0
-          ? Math.ceil(prev.totalRecords / newSize)
-          : prev.totalPages,
+        prev.totalRecords > 0 ? Math.ceil(prev.totalRecords / newSize) : prev.totalPages,
     }));
   };
 
   const clearFilters = () => {
+    // Clear all filters
     setFilters({
       contract: null,
       structureType: null,
       workStatus: null,
       search: "",
     });
+    
+    // Clear the search input field
+    if (searchInputRef.current) {
+      searchInputRef.current.value = "";
+    }
+    
     setPagination((prev) => ({ ...prev, currentPage: 0 }));
   };
 
   const handleEdit = (structure) => {
     navigate("get-structure-form", {
       state: {
-        structure_id: structure.structure_id,
+        structure_id: structure.structure_id ?? structure.structureId,
         updateStructureform: structure,
       },
     });
@@ -198,15 +236,12 @@ export default function UpdateStructure() {
 
   const isStructureForm = location.pathname.endsWith("/get-structure-form");
 
-  // For "Showing X–Y of Z"
   const startRecord =
     pagination.totalRecords === 0
       ? 0
       : pagination.currentPage * pagination.pageSize + 1;
   const endRecord =
-    startRecord === 0
-      ? 0
-      : startRecord + structureFormGrid.length - 1;
+    startRecord === 0 ? 0 : startRecord + structureFormGrid.length - 1;
 
   return (
     <div className={styles.container}>
@@ -218,71 +253,76 @@ export default function UpdateStructure() {
 
       {!isStructureForm && (
         <div className="innerPage">
-          {/* Search Bar */}
-          <div className={styles.searchBar}>
-            <input
-              type="text"
-              placeholder="Search structures."
-              className="form-control"
-              onChange={(e) => handleSearchChange(e.target.value)}
-              style={{ maxWidth: "300px" }}
-            />
+          <div>
+            <div className={styles.filterSection}>
+              <div className={styles.filterRow}>
+                <div className={styles.filterOptions}>
+                  <Select
+                    classNamePrefix="react-select"
+                    options={options.contracts}
+                    value={filters.contract}
+                    onChange={(selectedOption) =>
+                      handleFilterChange("contract", selectedOption)
+                    }
+                    placeholder="Select Contract"
+                    isSearchable
+                    isClearable
+                  />
+                </div>
+
+                <div className={styles.filterOptions}>
+                  <Select
+                    classNamePrefix="react-select"
+                    options={options.structureTypes}
+                    value={filters.structureType}
+                    onChange={(selectedOption) =>
+                      handleFilterChange("structureType", selectedOption)
+                    }
+                    placeholder="Select Structure Type"
+                    isSearchable
+                    isClearable
+                  />
+                </div>
+
+                <div className={styles.filterOptions}>
+                  <Select
+                    classNamePrefix="react-select"
+                    options={options.workStatuses}
+                    value={filters.workStatus}
+                    onChange={(selectedOption) =>
+                      handleFilterChange("workStatus", selectedOption)
+                    }
+                    placeholder="Select Work Status"
+                    isSearchable
+                    isClearable
+                  />
+                </div>
+
+                <button
+                  className={`btn btn-2 btn-primary ${styles.clearButton}`}
+                  type="button"
+                  onClick={clearFilters}
+                >
+                  Clear Filters
+                </button>
+              </div>
+              
+              {/* Search bar moved to right side */}
+              <div className={styles.searchBarContainer}>
+                <div className={styles.searchBar}>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search structures..."
+                    className="form-control"
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    defaultValue={filters.search}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Filters */}
-          <div className="filterRow">
-            <div className="filterOptions">
-              <Select
-                classNamePrefix="react-select"
-                options={options.contracts}
-                value={filters.contract}
-                onChange={(selectedOption) =>
-                  handleFilterChange("contract", selectedOption)
-                }
-                placeholder="Select Contract"
-                isSearchable
-                isClearable
-              />
-            </div>
-
-            <div className="filterOptions">
-              <Select
-                classNamePrefix="react-select"
-                options={options.structureTypes}
-                value={filters.structureType}
-                onChange={(selectedOption) =>
-                  handleFilterChange("structureType", selectedOption)
-                }
-                placeholder="Select Structure Type"
-                isSearchable
-                isClearable
-              />
-            </div>
-
-            <div className="filterOptions">
-              <Select
-                classNamePrefix="react-select"
-                options={options.workStatuses}
-                value={filters.workStatus}
-                onChange={(selectedOption) =>
-                  handleFilterChange("workStatus", selectedOption)
-                }
-                placeholder="Select Work Status"
-                isSearchable
-                isClearable
-              />
-            </div>
-
-            <button
-              className="btn btn-2 btn-primary"
-              type="button"
-              onClick={clearFilters}
-            >
-              Clear Filters
-            </button>
-          </div>
-
-          {/* Data Table */}
           <div className={`dataTable ${styles.tableWrapper}`}>
             {loading ? (
               <div className="text-center py-4">Loading...</div>
@@ -303,13 +343,13 @@ export default function UpdateStructure() {
                   <tbody>
                     {structureFormGrid.length > 0 ? (
                       structureFormGrid.map((sf, index) => (
-                        <tr key={sf.structure_id || index}>
-                          <td>{sf.structure_id}</td>
-                          <td>{sf.project_id_fk}</td>
-                          <td>{sf.structure_type_fk}</td>
-                          <td>{sf.structure_name || sf.structure}</td>
-                          <td>{sf.contract_id_fk}</td>
-                          <td>{sf.work_status_fk}</td>
+                        <tr key={sf.structure_id ?? sf.structureId ?? index}>
+                          <td>{sf.structure_id ?? sf.structureId}</td>
+                          <td>{sf.project_id_fk ?? sf.projectIdFk}</td>
+                          <td>{sf.structure_type_fk ?? sf.structureTypeFk}</td>
+                          <td>{sf.structure_name ?? sf.structure}</td>
+                          <td>{sf.contract_short_name ?? sf.contractShortName}</td>
+                          <td>{sf.work_status_fk ?? sf.workStatusFk}</td>
                           <td>
                             <button
                               className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
@@ -331,10 +371,8 @@ export default function UpdateStructure() {
                   </tbody>
                 </table>
 
-                {/* Pagination */}
                 {pagination.totalPages > 1 && (
                   <div className={styles.paginationWrapper}>
-                    {/* Rows per page selector */}
                     <div className={styles.pageSizeSelector}>
                       <span>Rows per page:</span>
                       <select
@@ -348,7 +386,6 @@ export default function UpdateStructure() {
                       </select>
                     </div>
 
-                    {/* Pager */}
                     <ReactPaginate
                       breakLabel="..."
                       previousLabel="‹"
@@ -371,7 +408,6 @@ export default function UpdateStructure() {
                       marginPagesDisplayed={1}
                     />
 
-                    {/* Info text */}
                     <div className={styles.paginationInfo}>
                       {pagination.totalRecords > 0 ? (
                         <>
