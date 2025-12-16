@@ -2,10 +2,57 @@ package com.wcr.wcrbackend.repo;
 
 import java.util.List;
 
+import com.wcr.wcrbackend.DTO.BankGuarantee;
 import com.wcr.wcrbackend.DTO.Contract;
+import com.wcr.wcrbackend.DTO.Insurence;
+import com.wcr.wcrbackend.DTO.User;
 
 public interface IContractRepo {
 
 	List<Contract> getDepartmentList() throws Exception;
+	
+	public List<Contract> getDesignationsFilterList(Contract obj) throws Exception;
+	
+	public List<Contract> getDyHODDesignationsFilterList(Contract obj) throws Exception;
+	
+	public List<Contract> contractorsFilterList(Contract obj)throws Exception;
+	
+	public List<Contract> getContractStatusFilterListInContract(Contract obj) throws Exception;
+	
+	public List<Contract> getStatusFilterListInContract(Contract obj) throws Exception;
 
+	public List<Contract> contractList(Contract obj)throws Exception;
+	
+	public List<Contract> getProjectsListForContractForm(Contract obj) throws Exception;
+	
+	public List<Contract> getWorkListForContractForm(Contract obj) throws Exception;
+	
+	public List<Contract> getContractFileTypeList(Contract obj) throws Exception;
+	
+	public List<User> setHodList()throws Exception;
+	
+	public List<User> getDyHodList() throws Exception;
+	
+	public List<Contract> getContractorsList()throws Exception; 
+	
+	public List<Contract> getContractTypeList()throws Exception;
+
+	public List<Contract> getInsurenceTypeList()throws Exception;
+	
+	public List<BankGuarantee> bankGuarantee()throws Exception;
+
+	public List<Insurence> insurenceType()throws Exception;
+
+	public List<Contract> getResponsiblePeopleList(Contract obj) throws Exception;
+	
+	public List<Contract> getUnitsList(Contract obj) throws Exception;
+	
+	public List<Contract> getContractStatus() throws Exception;
+	
+	public Contract getContract(Contract obj)throws Exception;
+	
+	public List<Contract> getBankNameList(Contract obj) throws Exception;
+
+	public List<Contract> getContractStatusType(Contract obj)throws Exception;
 }
+
