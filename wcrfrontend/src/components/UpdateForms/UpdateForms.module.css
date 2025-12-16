@@ -1,210 +1,105 @@
-/* UpdateStructure.module.css */
-.container {
+.updateFormsContainer{
   padding: 20px;
-  background-color: #f8f9fa;
+  background-color: #eef2f8;
+  min-height: 100vh;
 }
-
-/* Filter Section */
-.filterSection {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.filterRow {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-  flex: 1;
-}
-
-.filterOptions {
-  min-width: 200px;
-  flex: 1;
-}
-
-.clearButton {
-  white-space: nowrap;
-  min-width: 120px;
-}
-
-.searchBarContainer {
-  display: flex;
-  align-items: center;
-}
-
-.searchBar {
-  min-width: 300px;
-}
-
-.searchBar input {
-  border-radius: 4px;
-  border: 1px solid #ced4da;
-  padding: 8px 12px;
-  font-size: 14px;
-}
-
-.searchBar input:focus {
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-/* Table Styles */
-.tableWrapper {
-  margin-top: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.projectTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.projectTable th {
-  background-color: #343a40;
-  color: white;
-  font-weight: 600;
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 2px solid #dee2e6;
-}
-
-.projectTable td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.projectTable tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
-.projectTable tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* Pagination Styles */
-.paginationWrapper {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  border-top: 1px solid #dee2e6;
-  background-color: #f8f9fa;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.pageSizeSelector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.pageSizeSelector select {
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #ced4da;
-  font-size: 14px;
-}
-
-.pagination {
-  display: flex;
-  list-style: none;
+.noStyle {
+  background: none;
   padding: 0;
-  margin: 0;
-  gap: 5px;
+  min-height: auto;
 }
 
-.pageItem {
-  margin: 0 2px;
+.pageTitle {
+  text-align: center;
+  color: var(--primary-color);
+  margin-bottom: 30px;
+  font-size: 22px;
+  font-weight: 600;
 }
 
-.pageLink {
-  display: block;
-  padding: 6px 12px;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  color: #007bff;
-  text-decoration: none;
-  font-size: 14px;
-  cursor: pointer;
+.formsGrid {
+  /* display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 25px;
+  justify-items: center; */
+
+  display: flex;
+  gap: 40px;
+  justify-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.card{
+  width: 100%;
+  flex: 1 0 22%;
+  position: relative;
+  text-align: center;
+}
+
+
+.cardHeader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
   background-color: white;
-  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.pageLink:hover {
-  background-color: #e9ecef;
-  border-color: #dee2e6;
-}
-
-.active .pageLink {
-  background-color: #007bff;
+.cardHeader:hover {
+  background-color: var(--primary-fade-color);
   color: white;
-  border-color: #007bff;
+  transform: translateY(-3px);
 }
 
-.disabled .pageLink {
-  color: #6c757d;
-  pointer-events: none;
-  background-color: #e9ecef;
-  border-color: #dee2e6;
+.subDropdown {
+  background: #caeefb;
+  border-radius: 5px;
+  /* padding: 5px; */
+  text-align: left;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
 }
 
-.paginationInfo {
-  font-size: 14px;
-  color: #495057;
-  text-align: right;
+
+.menuItem div{
+  display: flex;
+  align-items: center;
+}
+.menuItem a {
+  text-decoration: none;
+  color: #156082;
+  padding: 11px 15px;
+  width: 100%;
+  display: flex;
 }
 
-/* For smaller screens */
-@media (max-width: 768px) {
-  .filterSection {
-    flex-direction: column;
+.menuItem a:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+.arrow {
+  transition: transform 0.3s ease;
+  margin-top: 5px;
+}
+
+.arrowOpen {
+  transform: rotate(90deg);
+}
+
+@media (max-width: 767px) {
+  .formsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
   }
-  
-  .filterRow {
-    width: 100%;
-  }
-  
-  .filterOptions {
-    min-width: 100%;
-  }
-  
-  .searchBarContainer {
-    width: 100%;
-  }
-  
-  .searchBar {
-    min-width: 100%;
-  }
-  
-  .paginationWrapper {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  
-  .pagination {
-    justify-content: center;
-    order: 2;
-  }
-  
-  .pageSizeSelector {
-    order: 1;
-    justify-content: center;
-  }
-  
-  .paginationInfo {
-    order: 3;
-    text-align: center;
+  .card{
+    flex: 100%;
   }
 }
