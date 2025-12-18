@@ -244,6 +244,11 @@ p{
     background-color: #449d44;
     border-color: #398439;
 }
+.btn-skyblue {
+    color: #fff;
+    background-color: #46B1E1;
+}
+
 .btn-red {
     color: #fff;
     background-color: #d9534f;

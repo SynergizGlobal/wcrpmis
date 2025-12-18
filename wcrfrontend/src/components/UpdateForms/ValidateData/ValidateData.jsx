@@ -39,7 +39,6 @@ export default function ValidateData() {
   const [loading, setLoading] = useState(false);
 
   const [completedDisabled, setCompletedDisabled] = useState(true);
-  const [enableCompleted, setEnableCompleted] = useState(false);
 
 
   const [filterOptions, setFilterOptions] = useState({
@@ -178,11 +177,6 @@ export default function ValidateData() {
 
   
   
-  
-  
-
-  const getToday = () => new Date().toISOString().split("T")[0];
-
   const handleApprove = async (row) => {
   //  setisLoading(true);
 
@@ -356,33 +350,7 @@ export default function ValidateData() {
 
 
 
-  // Select ALL checkboxes in the current visible page
-  function toggleSelectAll(checked) {
-    if (checked) {
-      const ids = new Set(
-        validationList
-          .filter(
-            r =>
-              !(r.status === "COMPLETED" && completedDisabled)
-          )
-          .map(r => r.progress_id)
-      );
-      setSelectedIds(ids);
-    } else {
-      setSelectedIds(new Set());
-    }
-  }
-
-
-// Select INDIVIDUAL checkbox
-function toggleSelect(id) {
-  setSelectedIds(prev => {
-    const next = new Set(prev);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    return next;
-  });
-}
+ 
 
 const clearAllFiltersAndSearch = () => {
 	setFilters({ contract: "", structure: "", modifiedBy: "" });
@@ -577,17 +545,58 @@ const renderPageButtons = (page, totalPages, setPageFn) => {
 	
 	const toggleDisabledRows = () => {
 	  const completedIds = paginatedData
-	    .filter(r => r.status === "COMPLETED")
+	    .filter(r => r.status === "completed")
 	    .map(r => r.progress_id);
 
-	  setSelectedIds(new Set(completedIds));
-	  setCompletedDisabled(false);           
+	  setCompletedDisabled(false);     
+
+	  setSelectedIds(prev => {
+	    const next = new Set(prev);
+	    completedIds.forEach(id => next.add(id));
+	    return next;
+	  });
 	};
 
 
 
 
+	 // Select ALL checkboxes in the current visible page
+	 function toggleSelectAll(checked) {
+	   if (checked) {
+	     const ids = new Set(
+	       paginatedData
+	         .filter(
+	           r => !(r.status === "completed" && completedDisabled)
+	         )
+	         .map(r => r.progress_id)
+	     );
+	     setSelectedIds(ids);
+	   } else {
+	     setSelectedIds(new Set());
+	   }
+	 }
+
+
+	// Select INDIVIDUAL checkbox
+	function toggleSelect(id) {
+	  setSelectedIds(prev => {
+	    const next = new Set(prev);
+	    if (next.has(id)) next.delete(id);
+	    else next.add(id);
+	    return next;
+	  });
+	}
+
 		
+
+	useEffect(() => {
+	  if (activeTab === "pending") {
+	    setCompletedDisabled(true);
+	    setSelectedIds(new Set());
+	  }
+	}, [activeTab, paginatedData]);
+
+	
   return (
     <div className={styles.container}>
       <div className="pageHeading">
@@ -696,44 +705,34 @@ const renderPageButtons = (page, totalPages, setPageFn) => {
 						    >
 						      {/* APPROVE */}
 						      <button
-						        className={`btn waves-effect t-c ${
-						          selectedIds.size === 0 || loading ? "disabled" : ""
-						        }`}
+						        className="btn waves-effect btn-green"
 						        onClick={handleBulkApprove}
 						        disabled={selectedIds.size === 0 || loading}
 						      >
-						        <i className="btn-2 btn-green"></i> Approve
+						        Approve
 						      </button>
 
 						      {/* REJECT */}
 						      <button
-						        className={`btn waves-effect bg-s t-c ${
-						          selectedIds.size === 0 || loading ? "disabled" : ""
-						        }`}
+						        className="btn waves-effect btn-red"
 						        onClick={handleBulkReject}
 						        disabled={selectedIds.size === 0 || loading}
 						      >
-						        <i className="btn-2 btn-red"></i> Reject
+						        Reject
 						      </button>
 
 						      {/* ENABLE COMPLETED */}
 						      <button
-						        className={`btn waves-effect grey darken-1 ${
-						          completedDisabled ? "" : "disabled"
-						        }`}
+							  className="btn waves-effect btn-skyblue"
 						        onClick={toggleDisabledRows}
 						        disabled={!completedDisabled}
 						      >
-						        <i
-						          className={`fa ${
-						            completedDisabled ? "fa-unlock" : "fa-lock"
-						          }`}
-						        ></i>{" "}
 						        Enable Completed Activities
 						      </button>
 						    </div>
 						  </div>
 						)}
+
 
 
 
@@ -782,8 +781,8 @@ const renderPageButtons = (page, totalPages, setPageFn) => {
 		  <th rowSpan={2} className="col-check">
 		    {activeTab === "pending" && (() => {
 		      // rows that are actually selectable right now
-		      const selectableRows = validationList.filter(
-		        r => !(r.status === "COMPLETED" && completedDisabled)
+		      const selectableRows = paginatedData.filter(
+		        r => !(r.status === "completed" && completedDisabled)
 		      );
 
 		      return (
@@ -853,6 +852,17 @@ const renderPageButtons = (page, totalPages, setPageFn) => {
 	        </tr>
 	      ) : (
 			paginatedData.map((row) => {
+				
+				console.log(
+				  "ROW",
+				  row.progress_id,
+				  row.status,
+				  "completedDisabled:",
+				  completedDisabled,
+				  "activeTab:",
+				  activeTab
+				);
+
 			  // ===== COMPUTED FIELDS (FROM JSP LOGIC) =====
 			  const cumulativeCompleted = Number(row.cumulative_completed) || 0;
 			  const actualForDay = Number(row.actual_for_the_day) || 0;
@@ -862,14 +872,15 @@ const renderPageButtons = (page, totalPages, setPageFn) => {
 			  ).toFixed(1);
 
 			  const reportingText = `${row.updated_by ?? ""} ${row.progress_date ?? ""}`;
+			
+				
+			  
+				const isCheckboxDisabled =
+				  activeTab === "pending" &&
+				  (row.status || "").toLowerCase() === "completed" &&
+				  completedDisabled;
 
-			  // ===== JSP BEHAVIOR MATCH =====
-			  const isCompleted = row.status === "COMPLETED";
-			  const shouldLockCompleted =
-			    activeTab === "pending" && isCompleted && completedDisabled;
 
-			  const isCheckboxDisabled =
-			    activeTab === "pending" && isCompleted && !enableCompleted;
 
 			  return (
 			    <tr
@@ -881,12 +892,12 @@ const renderPageButtons = (page, totalPages, setPageFn) => {
 			      {/* CHECKBOX */}
 			      <td className="col-check">
 			        {activeTab === "pending" && (
-			          <input
-			            type="checkbox"
-			            disabled={isCheckboxDisabled}
-			            checked={selectedIds.has(row.progress_id)}
-			            onChange={() => toggleSelect(row.progress_id)}
-			          />
+						<input
+						  type="checkbox"
+						  disabled={isCheckboxDisabled}
+						  checked={selectedIds.has(row.progress_id)}
+						  onChange={() => toggleSelect(row.progress_id)}
+						/>
 			        )}
 			      </td>
 
