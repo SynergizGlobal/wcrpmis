@@ -29,6 +29,8 @@ import com.wcr.wcrbackend.common.CommonMethods;
 import com.wcr.wcrbackend.common.DateParser;
 import com.wcr.wcrbackend.common.EMailSender;
 import com.wcr.wcrbackend.common.FileUploads;
+
+import jakarta.transaction.Transactional;
 @Repository
 public class IssueRepository implements IIssueRepo {
 
@@ -2604,6 +2606,34 @@ public class IssueRepository implements IIssueRepo {
 			//transactionManager.commit(status);
 		} catch (Exception e) {
 			//transactionManager.rollback(status);
+			throw new Exception(e);
+		}
+		return flag;
+	}
+	
+	
+	@Override
+	@Transactional
+	public boolean readIssueMessage(String message_id) throws Exception {
+		boolean flag = false;
+	//	TransactionDefinition def = new DefaultTransactionDefinition();
+	//	TransactionStatus status = transactionManager.getTransaction(def);
+		try {
+	//		NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+			NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());
+
+			String msgUpdateqry = "UPDATE messages SET read_time = CURRENT_TIMESTAMP where message_id = :message_id";
+			
+			Issue obj = new Issue();
+			obj.setMessage_id(message_id);
+			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
+			int count = template.update(msgUpdateqry, paramSource);
+			if (count > 0) {
+				flag = true;
+			}
+	//		transactionManager.commit(status);
+		} catch (Exception e) {
+	//		transactionManager.rollback(status);
 			throw new Exception(e);
 		}
 		return flag;

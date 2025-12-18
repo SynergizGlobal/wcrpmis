@@ -62,4 +62,8 @@ public interface IIssueService {
 
 	boolean updateIssue(Issue obj) throws Exception;
 
+	
+	boolean readIssueMessage(String message_id) throws Exception;
+
+
 }

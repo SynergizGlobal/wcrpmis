@@ -185,4 +185,9 @@ public class IssueService implements IIssueService {
 		return issueRepo.updateIssue(obj);
 	}
 
+	@Override
+	public boolean readIssueMessage(String message_id) throws Exception {
+		return issueRepo.readIssueMessage(message_id);
+	}
+
 }
