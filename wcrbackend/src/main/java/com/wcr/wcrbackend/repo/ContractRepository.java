@@ -864,9 +864,7 @@ public class ContractRepository implements IContractRepo {
 			List<Contract> objsList = null;
 			try {
 				String qry =" select distinct contract_status from general_status ";
-						//" ORDER BY case when contract_status='Open' then 1 " + 
-						//"   when contract_status='Closed' then 2" + 
-						//"   when contract_status='Yet to be Awarded' then 3 end asc";
+						
 					objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Contract>(Contract.class));	
 			}catch(Exception e){ 
 				e.printStackTrace();
@@ -874,7 +872,7 @@ public class ContractRepository implements IContractRepo {
 			}
 			return objsList;
 		}
-
+//
 		@Override
 		public Contract getContract(Contract obj)throws Exception{
 			Connection con = null;
@@ -882,7 +880,10 @@ public class ContractRepository implements IContractRepo {
 			ResultSet resultSet = null;
 			Contract contract = null;
 			try{
+				
 				con = dataSource.getConnection();
+				
+			
 				String contract_updateQry = "select dt.contract_id_code,c.project_id_fk,p.project_name,u.designation,u.user_name,contract_type_fk,c.contract_id,"
 										+ "c.contract_name,c.contract_short_name,contractor_id_fk,cr.contractor_name,dt.department as department_fk,dt.department_name,c.hod_user_id_fk,c.dy_hod_user_id_fk,  " 
 										+ "scope_of_contract,cast(estimated_cost as decimal(18,2)) as estimated_cost,FORMAT(date_of_start,'dd-MM-yyyy') AS date_of_start,"
@@ -902,6 +903,7 @@ public class ContractRepository implements IContractRepo {
 										+"left join department dt on c.contract_department = dt.department where contract_id = ?" ;
 				stmt = con.prepareStatement(contract_updateQry);
 				stmt.setString(1, obj.getContract_id());
+			
 				resultSet = stmt.executeQuery();
 				if(resultSet.next()) {
 					contract = new Contract();
