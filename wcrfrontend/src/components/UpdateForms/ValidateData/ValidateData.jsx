@@ -1,147 +1,378 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Outlet } from 'react-router-dom';
-import styles from './ValidateData.module.css';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useContext
+} from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import Select from "react-select";
+import styles from "./ValidateData.module.css";
+import { API_BASE_URL } from "../../../config";
+import api from "../../../api/axiosInstance";
+import { RefreshContext } from "../../../context/RefreshContext";
+import swal from "sweetalert";
 
-const sampleData = [
-  {
-    id: 1,
-    taskCode: "NP_E_02140",
-    structure: "ND-PTD",
-    component: "CH. 17000 - CH. 18000",
-    element: "CH. 17280 - CH. 18000",
-    activityName: "Earthwork Filling",
-    unit: "CuM",
-    scope: 35121.12,
-    progressLast: { activityLevel: 3.2, componentLevel: 3.2, structureLevel: 2.7 },
-    reporting: "Nihal 2025-01-25",
-    actualUpdated: 26,
-    resultsAfterAccept: { activityLevel: 1567, componentLevel: 6.5, structureLevel: 5.5 },
-    updatedOn: "2025-01-25",
-    status: "pending",
-  },
-  {
-    id: 2,
-    taskCode: "NP_E_02140",
-    structure: "ND-PTD",
-    component: "CH. 17000 - CH. 18000",
-    element: "CH. 17280 - CH. 18000",
-    activityName: "Earthwork Filling",
-    unit: "CuM",
-    scope: 35121.12,
-    progressLast: { activityLevel: 3.2, componentLevel: 3.2, structureLevel: 2.7 },
-    reporting: "Nihal 2025-01-26",
-    actualUpdated: 24,
-    resultsAfterAccept: { activityLevel: 1565, componentLevel: 6.5, structureLevel: 5.5 },
-    updatedOn: "2025-01-26",
-    status: "pending",
-  },
-  {
-    id: 3,
-    taskCode: "NP_E_04410",
-    structure: "ND-PTD",
-    component: "CH. 35000 - CH. 36000",
-    element: "CH. 35760 - CH. 36000",
-    activityName: "Railway Earth Filling",
-    unit: "CuM",
-    scope: 800,
-    progressLast: { activityLevel: 799, componentLevel: 0.2, structureLevel: 0.2 },
-    reporting: "Nihal 2024-12-21",
-    actualUpdated: 17,
-    resultsAfterAccept: { activityLevel: 816, componentLevel: 0.2, structureLevel: 0.2 },
-    updatedOn: "2024-12-21",
-    status: "approved",
-    approvedOn: "2025-11-19",
-  },
-  {
-    id: 4,
-    taskCode: "NP_E_04470",
-    structure: "ND-PTD",
-    component: "CH. 35760 - CH. 36000",
-    element: "CH. 35760 - CH. 36000",
-    activityName: "Railway Earth Filling",
-    unit: "CuM",
-    scope: 552.75,
-    progressLast: { activityLevel: 549, componentLevel: 0.2, structureLevel: 0.2 },
-    reporting: "Nihal 2024-12-16",
-    actualUpdated: 12,
-    resultsAfterAccept: { activityLevel: 561, componentLevel: 0.2, structureLevel: 0.2 },
-    updatedOn: "2024-12-16",
-    status: "rejected",
-    rejectedOn: "2025-11-10",
-  },
-];
 
 export default function ValidateData() {
+	
   const [activeTab, setActiveTab] = useState("pending");
   const [rows, setRows] = useState([]);
+  const { refresh } = useContext(RefreshContext);
 
   const [contractFilter, setContractFilter] = useState("");
   const [structureFilter, setStructureFilter] = useState("");
   const [updatedByFilter, setUpdatedByFilter] = useState("");
   const [searchText, setSearchText] = useState("");
+  const location = useLocation();
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedIds, setSelectedIds] = useState(new Set());
 
-  useEffect(() => {
-    setTimeout(() => setRows(sampleData), 200);
-  }, []);
+
+
+  const [validationList, setValidationList] = useState([]);
+
+  const [listLoading, setListLoading] = useState(false);
+  
+  const [loading, setLoading] = useState(false);
+
+  const [completedDisabled, setCompletedDisabled] = useState(true);
+  const [enableCompleted, setEnableCompleted] = useState(false);
+
+
+  const [filterOptions, setFilterOptions] = useState({
+  	contract: [],
+  	structure:[],
+  	modifiedBy: [],
+  });
+
+  
+  
+  const [filters, setFilters] = useState({
+  	contract: "",
+  	structure: "",
+  	modifiedBy: "",
+
+  });
+
+
+   const loadContractOptions = async (selected = "") => {
+   	if (filters.contract !== "") return;
+
+	const params = {
+		approval_status_fk: "approved"		
+	};
+
+   	const res = await api.post(
+   		`${API_BASE_URL}/validation/ajax/getContractsInApprovableActivities`,
+   		params
+   	);
+
+   	const data = res.data || [];
+
+   	setFilterOptions(prev => ({
+   		...prev,
+   		contract: data.map(val => ({
+   			value: val.contract_id_fk,
+   			label: val.contract_short_name,
+   		})),
+   	}));
+   };
+   
+  
+  
+
+
+	const loadStructureOptions = async (selected = "") => {
+		if (filters.structure !== "") return;
+
+
+		const params = {
+			contract_id_fk: filters.contract,
+			structure: filters.structure,
+			updated_by_user_id_fk: filters.modifiedBy,
+			approval_status_fk: "Pending",
+
+		};
+		const res = await api.post(
+			`${API_BASE_URL}/validation/ajax/getStructuresInApprovableActivities`,
+			params
+		);
+
+		const data = res.data || [];
+
+		setFilterOptions(prev => ({
+			...prev,
+			structure: data.map(val => ({
+				value: val.structure,
+				label: val.structure,
+			})),
+		}));
+	};
+
+
+
+
+
+
+
+
+
+
+    const loadUpdatedByOptions = async (selected = "") => {
+    	if (filters.modifiedBy !== "") return;
+
+		const params = {
+			contract_id_fk: filters.contract,
+			structure: filters.structure,
+			updated_by_user_id_fk: filters.modifiedBy,
+			approval_status_fk: "Pending",
+
+		};
+
+    	const res = await api.post(
+			`${API_BASE_URL}/validation/ajax/getUpdatedByListInApprovableActivities`,
+    		params
+    	);
+
+    	const data = res.data || [];
+
+    	setFilterOptions(prev => ({
+    		...prev,
+    		modifiedBy: data.map(val => ({
+    			value: val.user_id,
+    			label: val.user_name,
+    		})),
+    	}));
+    };
+   
+   
+   
+
+   
+	useEffect(() => {
+		loadContractOptions();
+		loadStructureOptions();
+		loadUpdatedByOptions();
+	}, []);
+  
+	const filteredData = useMemo(() => {
+	  if (!searchText) return validationList;
+
+	  const search = searchText.toLowerCase();
+
+	  return validationList.filter((row) => {
+	    return (
+	      row.p6_task_code?.toLowerCase().includes(search) ||
+	      row.contract_short_name?.toLowerCase().includes(search) ||
+	      row.structure?.toLowerCase().includes(search) ||
+	      row.component?.toLowerCase().includes(search) ||
+	      row.component_id?.toLowerCase().includes(search) ||
+	      row.activity_name?.toLowerCase().includes(search) ||
+	      row.updated_by?.toLowerCase().includes(search)
+	    );
+	  });
+	}, [validationList, searchText]);
+
+  
+  
+  
+  
 
   const getToday = () => new Date().toISOString().split("T")[0];
 
-  const handleApprove = (id) => {
-    setRows((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, status: "approved", approvedOn: getToday() } : r
-      )
-    );
-  };
+  const handleApprove = async (row) => {
+  //  setisLoading(true);
 
-  const handleReject = (id) => {
-    setRows((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, status: "rejected", rejectedOn: getToday() } : r
-      )
-    );
-  };
+    try {
+      const params = new URLSearchParams({
+        structure: row.structure,
+        progress_id: row.progress_id,
+        work_id_fk: row.work_id_fk,
+        contract_id_fk: row.contract_id_fk,
+      });
 
-  const handleInfo = (id) => {
-    const r = rows.find((x) => x.id === id);
-    alert(`Info for ${r.taskCode}\nReporting: ${r.reporting}`);
-  };
+      const res = await fetch(
+        `${API_BASE_URL}/validation/ajax/approveActivityProgress?${params.toString()}`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
 
-  const filtered = useMemo(() => {
-    return rows.filter((r) => {
-      if (activeTab !== r.status) return false;
+      const data = await res.json();
 
-      if (contractFilter && !r.component.includes(contractFilter)) return false;
-      if (structureFilter && !r.structure.includes(structureFilter)) return false;
-      if (updatedByFilter && !r.reporting.includes(updatedByFilter)) return false;
-
-      if (searchText) {
-        const s = searchText.toLowerCase();
-        const hay = `${r.taskCode} ${r.structure} ${r.component} ${r.element} ${r.activityName}`.toLowerCase();
-        if (!hay.includes(s)) return false;
+      if (data?.message_flag) {
+        swal({
+          title: "Success",
+          text: data.message,
+          icon: "success",
+          button: "Okay",
+        }).then(() => {
+          fetchVaidationList(); // refresh table
+        });
+      } else {
+        swal("Failed", data?.message || "Approval failed", "error");
       }
+    } catch (err) {
+      console.error(err);
+      swal("Error", "Something went wrong", "error");
+    } finally {
+  //    setLoading(false);
+    }
+  };
 
-      return true;
+
+  const handleReject = (row) => {
+    swal({
+      title: "Are you sure you want to reject progress of activity?",
+      icon: "warning",
+      buttons: true,
+      dangerMode: true,
+    }).then((willReject) => {
+      if (willReject) {
+        confirmReject(row);
+      }
     });
-  }, [rows, activeTab, contractFilter, structureFilter, updatedByFilter, searchText]);
+  };
+  const confirmReject = async (row) => {
+  //  setLoading(true);
 
-  const total = filtered.length;
+    try {
+      const params = new URLSearchParams({
+        structure: row.structure,
+        progress_id: row.progress_id,
+        work_id_fk: row.work_id_fk,
+        contract_id_fk: row.contract_id_fk,
+      });
+
+      const res = await fetch(
+        `${API_BASE_URL}/validation/ajax/rejectActivityProgress?${params.toString()}`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+      const data = await res.json();
+
+      if (data?.message_flag) {
+        swal("Rejected", data.message, "success").then(() => {
+          fetchVaidationList();
+        });
+      } else {
+        swal("Failed", data?.message || "Rejection failed", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      swal("Error", "Something went wrong", "error");
+    } finally {
+  //    setLoading(false);
+    }
+  };
+
+
+  const handleInfo = (taskcode, reporting) => {
+ //   const r = rows.find((x) => x.id === id);
+    alert(`Info for ${taskcode}\nReporting: ${reporting}`);
+  };
+  
+  
+  const fetchVaidationList = useCallback(async () => {
+     setListLoading(true);
+
+     try {
+       const body = {
+         updated_by_user_id_fk: filters.modifiedBy || "",
+         contract_id_fk: filters.contract || "",
+         structure: filters.structure || "",
+         approval_status_fk:
+           activeTab === "pending"
+             ? "pending"
+             : activeTab === "approved"
+             ? "approved"
+             : "rejected",
+       };
+
+       const res = await api.post(
+         `${API_BASE_URL}/validation/ajax/getApprovableActivities`,
+         body,
+         { withCredentials: true }
+       );
+
+       setValidationList(Array.isArray(res.data) ? res.data : []);
+     } catch (err) {
+       console.error("Error fetching validation list:", err);
+       setValidationList([]);
+     } finally {
+       setListLoading(false);
+     }
+   }, [filters, activeTab]);
+  
+
+  
+
+  const total = validationList.length;
   const pages = Math.ceil(total / pageSize);
-  const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  const paginatedData = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, page, pageSize]);
+
+  // 1️⃣ Reset page when filters / tab / page size change
+  useEffect(() => {
+    setPage(1);
+  }, [filters, activeTab, pageSize]);
+
+  useEffect(() => {
+    fetchVaidationList();
+  }, [filters, activeTab, fetchVaidationList]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchText]);
+
+
+ 
+
+  
+  const handleFilterChange = async (name, value) => {
+    let updated = { ...filters, [name]: value };
+
+    if (name === "contract") {
+      updated.structure = "";
+      updated.modifiedBy = "";
+    }
+
+    if (name === "structure") {
+      updated.modifiedBy = "";
+    }
+
+    setFilters(updated);
+  };
+
+
 
   // Select ALL checkboxes in the current visible page
-function toggleSelectAll(checked) {
-  if (checked) {
-    const ids = new Set(visible.map(r => r.id));
-    setSelectedIds(ids);
-  } else {
-    setSelectedIds(new Set());
+  function toggleSelectAll(checked) {
+    if (checked) {
+      const ids = new Set(
+        validationList
+          .filter(
+            r =>
+              !(r.status === "COMPLETED" && completedDisabled)
+          )
+          .map(r => r.progress_id)
+      );
+      setSelectedIds(ids);
+    } else {
+      setSelectedIds(new Set());
+    }
   }
-}
+
 
 // Select INDIVIDUAL checkbox
 function toggleSelect(id) {
@@ -153,7 +384,210 @@ function toggleSelect(id) {
   });
 }
 
+const clearAllFiltersAndSearch = () => {
+	setFilters({ contract: "", structure: "", modifiedBy: "" });
+	setSearchText("");
+	setContractFilter("");
+	setUpdatedByFilter("");
+	setStructureFilter("");
+	setPageSize(10);
+};
 
+
+
+
+const renderPageButtons = (page, totalPages, setPageFn) => {
+  if (totalPages <= 1) return null;
+
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+    .filter((p) => {
+      if (p <= 2 || p > totalPages - 2) return true;
+      if (p >= page - 1 && p <= page + 1) return true;
+      return false;
+    })
+    .reduce((acc, p, idx, arr) => {
+      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+      acc.push(p);
+      return acc;
+    }, []);
+
+	return (
+	    <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+	      <button
+	        disabled={page === 1}
+	        onClick={() => setPageFn(page - 1)}
+	        className="pageBtn"
+	      >
+	        ‹
+	      </button>
+
+	      {pages.map((item, idx) =>
+	        item === "..." ? (
+	          <span key={`ellipsis-${idx}`} style={{ padding: "0 6px" }}>
+	            ...
+	          </span>
+	        ) : (
+	          <button
+	            key={`page-${item}`}
+	            onClick={() => setPageFn(item)}
+	            className={`pageBtn ${item === page ? "activePage" : ""}`}
+	          >
+	            {item}
+	          </button>
+	        )
+	      )}
+
+	      <button
+	        disabled={page === totalPages}
+	        onClick={() => setPageFn(page + 1)}
+	        className="pageBtn"
+	      >
+	        ›
+	      </button>
+	    </div>
+	  );
+	};
+
+	const handleBulkApprove = async () => {
+	  if (selectedIds.size === 0) {
+	    swal("Please select at least one checkbox", "", "error");
+	    return;
+	  }
+
+//	  setLoading(true);
+
+	  try {
+	    // Get selected rows
+	    const selectedRows = validationList.filter(row =>
+	      selectedIds.has(row.progress_id)
+	    );
+
+	    // Distinct values (same logic as JSP)
+	    const progressIds = selectedRows.map(r => r.progress_id).join(",");
+
+	    const distinctWorks = [
+	      ...new Set(selectedRows.map(r => r.work_id_fk))
+	    ].join(",");
+
+	    const distinctContracts = [
+	      ...new Set(selectedRows.map(r => r.contract_id_fk))
+	    ].join(",");
+
+	    const distinctStructures = [
+	      ...new Set(selectedRows.map(r => r.structure))
+	    ].join(",");
+
+	    const params = new URLSearchParams({
+	      progress_id: progressIds,
+	      work_id_fk: distinctWorks,
+	      contract_id_fk: distinctContracts,
+	      structure: distinctStructures,
+	    });
+
+	    const res = await fetch(
+	      `${API_BASE_URL}/validation/ajax/approveMultipleActivityProgress?${params.toString()}`,
+	      {
+	        method: "POST",
+	        credentials: "include",
+	      }
+	    );
+
+	    const data = await res.json();
+
+	    if (data?.message_flag) {
+	      swal({
+	        title: "Success",
+	        text: data.message,
+	        icon: "success",
+	        button: "Okay",
+	      }).then(() => {
+	        setSelectedIds(new Set()); // clear selection
+	        fetchVaidationList();     // refresh table
+	      });
+	    } else {
+	      swal("Failed", data?.message || "Approval failed", "error");
+	    }
+	  } catch (err) {
+	    console.error(err);
+	    swal("Error", "Something went wrong", "error");
+	  } finally {
+	//    setLoading(false);
+	  }
+	};
+	const confirmBulkReject = async () => {
+//	  setLoading(true);
+
+	  try {
+	    const progressIds = Array.from(selectedIds).join(",");
+
+	    const params = new URLSearchParams({
+	      progress_id: progressIds,
+	    });
+
+	    const res = await fetch(
+	      `${API_BASE_URL}/validation/ajax/rejectMultipleActivityProgress?${params.toString()}`,
+	      {
+	        method: "POST",
+	        credentials: "include",
+	      }
+	    );
+
+	    const data = await res.json();
+
+	    if (data?.message_flag) {
+	      swal({
+	        title: "Success",
+	        text: data.message,
+	        icon: "success",
+	        button: "Okay",
+	      }).then(() => {
+	        setSelectedIds(new Set());
+	        fetchVaidationList();
+	      });
+	    } else {
+	      swal("Failed", data?.message || "Rejection failed", "error");
+	    }
+	  } catch (err) {
+	    console.error(err);
+	    swal("Error", "Something went wrong", "error");
+	  } finally {
+	//    setLoading(false);
+	  }
+	};
+
+	
+	const handleBulkReject = () => {
+	  if (selectedIds.size === 0) {
+	    swal("Please select at least one checkbox", "", "error");
+	    return;
+	  }
+
+	  swal({
+	    title: "Are you sure you want to reject selected progress of activities?",
+	    icon: "warning",
+	    buttons: true,
+	    dangerMode: true,
+	  }).then((isConfirm) => {
+	    if (isConfirm) {
+	      confirmBulkReject();
+	    }
+	  });
+	};
+
+	
+	const toggleDisabledRows = () => {
+	  const completedIds = paginatedData
+	    .filter(r => r.status === "COMPLETED")
+	    .map(r => r.progress_id);
+
+	  setSelectedIds(new Set(completedIds));
+	  setCompletedDisabled(false);           
+	};
+
+
+
+
+		
   return (
     <div className={styles.container}>
       <div className="pageHeading">
@@ -188,36 +622,120 @@ function toggleSelect(id) {
       </div>
 
       {/* Filters */}
-    <div className={styles.filterRow}>
-      <div  className="filterOptions">
-        <select value={contractFilter} onChange={(e) => setContractFilter(e.target.value)}>
-          <option value="">Select Contract</option>
-          <option value="17000">CH. 17000</option>
-          <option value="35000">CH. 35000</option>
-        </select>
-      </div>
-      <div  className="filterOptions">
-        <select value={structureFilter} onChange={(e) => setStructureFilter(e.target.value)}>
-          <option value="">Select Structure</option>
-          <option value="ND-PTD">ND-PTD</option>
-          <option value="SD-PTD">SD-PTD</option>
-        </select>
-        </div>
-      <div className="filterOptions">
-        <select value={updatedByFilter} onChange={(e) => setUpdatedByFilter(e.target.value)}>
-          <option value="">Select Updated By</option>
-          <option value="Nihal">Nihal</option>
-          <option value="Venkatesh">Venkatesh</option>
-        </select>
+	  <div className={styles.filterRow}>
+	  						{Object.keys(filters).map((key) => {
+	  							const options = filterOptions[key] || [];
+	  							// key mapping to friendly label
+	  							const labelMap = {
+	  								contract: "Contract",
+	  								structure: "Structure",
+	  								modifiedBy: "modifiedBy",
+	  							};
+	  							return (
+	  								<div className="filterOptions" key={key} style={{ minWidth: 160 }}>
+	  									<Select
+	  										options={[{ value: "", label: `Select ${labelMap[key] || key}` }, ...options]}
+	  										classNamePrefix="react-select"
+	  										value={
+	  											options.find((opt) => opt.value === filters[key]) || {
+	  												value: "",
+	  												label: `Select ${labelMap[key] || key}`,
+	  											}
+	  										}
+	  										onChange={(selectedOption) =>
+	  											handleFilterChange(key, selectedOption?.value || "")
+	  										}
+	  										placeholder={`Select ${labelMap[key] || key}`}
+	  										isSearchable
+	  										styles={{
+	  											control: (base) => ({
+	  												...base,
+	  												minHeight: "32px",
+	  												borderColor: "#ced4da",
+	  												boxShadow: "none",
+	  												"&:hover": { borderColor: "#86b7fe" },
+	  											}),
+	  											dropdownIndicator: (base) => ({ ...base, padding: "2px 6px" }),
+	  											valueContainer: (base) => ({ ...base, padding: "0 6px" }),
+	  											menu: (base) => ({ ...base, zIndex: 9999 }),
+	  										}}
+	  									/>
+	  								</div>
+	  							);
+	  						})}
 
-        {/* <input
-          placeholder="Search..."
-          style={{ padding: 6 }}
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        /> */}
-      </div>
-    </div>
+	  						<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+	  							<button
+	  								className="btn btn-2 btn-primary"
+	  								type="button"
+	  								onClick={clearAllFiltersAndSearch}
+	  							>
+	  								Clear Filter
+	  							</button>
+	  						</div>
+	  					</div>
+						
+						{activeTab === "pending" && (
+						  <div
+						    className="row no-mar"
+						    style={{
+						      marginBottom: 0,
+						      display: "flex",
+						      justifyContent: "center"
+						    }}
+						  >
+						    <div
+						      className="btn-holder"
+						      style={{
+						        display: "flex",
+						        gap: "12px",
+						        alignItems: "center",
+						        flexWrap: "wrap",
+						        justifyContent: "center"
+						      }}
+						    >
+						      {/* APPROVE */}
+						      <button
+						        className={`btn waves-effect t-c ${
+						          selectedIds.size === 0 || loading ? "disabled" : ""
+						        }`}
+						        onClick={handleBulkApprove}
+						        disabled={selectedIds.size === 0 || loading}
+						      >
+						        <i className="btn-2 btn-green"></i> Approve
+						      </button>
+
+						      {/* REJECT */}
+						      <button
+						        className={`btn waves-effect bg-s t-c ${
+						          selectedIds.size === 0 || loading ? "disabled" : ""
+						        }`}
+						        onClick={handleBulkReject}
+						        disabled={selectedIds.size === 0 || loading}
+						      >
+						        <i className="btn-2 btn-red"></i> Reject
+						      </button>
+
+						      {/* ENABLE COMPLETED */}
+						      <button
+						        className={`btn waves-effect grey darken-1 ${
+						          completedDisabled ? "" : "disabled"
+						        }`}
+						        onClick={toggleDisabledRows}
+						        disabled={!completedDisabled}
+						      >
+						        <i
+						          className={`fa ${
+						            completedDisabled ? "fa-unlock" : "fa-lock"
+						          }`}
+						        ></i>{" "}
+						        Enable Completed Activities
+						      </button>
+						    </div>
+						  </div>
+						)}
+
+
 
     {/* Show Entries + Search Row */}
       <div className={styles.tableTopRow} style={{ display: "flex", justifyContent: "space-between", marginTop: "10px" }}>
@@ -247,7 +765,6 @@ function toggleSelect(id) {
             value={searchText}
             onChange={(e) => {
               setSearchText(e.target.value);
-              setPage(1);
             }}
             className={styles.searchInput}
           />
@@ -258,168 +775,212 @@ function toggleSelect(id) {
 
       {/* Table */}
       <div className={`dataTable ${styles.tableWrapper}`}>
-        <table className="main-table">
-          <thead>
-            {/* ---------- FIRST HEADER ROW (GROUP HEADERS) ---------- */}
-            <tr className="top-head">
-              <th rowSpan={2} className="col-check">
-                {activeTab === "pending" && (
-                  <input
-                    type="checkbox"
-                    onChange={(e) => toggleSelectAll(e.target.checked)}
-                    checked={
-                      visible.length > 0 &&
-                      visible.every((r) => selectedIds.has(r.id))
-                    }
-                  />
-                )}
-              </th>
+	  <table className="main-table">
+	    <thead>
+	      {/* ---------- FIRST HEADER ROW ---------- */}
+	      <tr className="top-head">
+		  <th rowSpan={2} className="col-check">
+		    {activeTab === "pending" && (() => {
+		      // rows that are actually selectable right now
+		      const selectableRows = validationList.filter(
+		        r => !(r.status === "COMPLETED" && completedDisabled)
+		      );
 
-              <th rowSpan={2}>Task Code</th>
-              <th rowSpan={2}>Structure</th>
-              <th rowSpan={2}>Component</th>
-              <th rowSpan={2}>Element</th>
-              <th rowSpan={2}>Activity Name</th>
-              <th rowSpan={2}>Unit</th>
-              <th rowSpan={2}>Scope</th>
+		      return (
+		        <input
+		          type="checkbox"
+		          onChange={(e) => toggleSelectAll(e.target.checked)}
+		          checked={
+		            selectableRows.length > 0 &&
+		            selectableRows.every(r => selectedIds.has(r.progress_id))
+		          }
+		          disabled={selectableRows.length === 0}
+		        />
+		      );
+		    })()}
+		  </th>
+	        <th rowSpan={2}>Task Code</th>
+	        <th rowSpan={2}>Contract</th>
+	        <th rowSpan={2}>Structure</th>
+	        <th rowSpan={2}>Component</th>
+	        <th rowSpan={2}>Element</th>
+	        <th rowSpan={2}>Activity Name</th>
+	        <th rowSpan={2}>Unit</th>
+	        <th rowSpan={2}>Scope</th>
 
-              {/* Group 1 */}
-              <th colSpan={3} className="group">Progress till last update</th>
+	        <th colSpan={3} className="group">Progress till last update</th>
 
-              <th rowSpan={2}>Reporting</th>
-              <th rowSpan={2}>Actual Progress Updated / Updated Scope</th>
+	        <th rowSpan={2}>Reporting</th>
+	        <th rowSpan={2}>Actual Progress Updated / Updated Scope</th>
 
-              {/* Group 2 */}
-              <th colSpan={3} className="group">
-                Results shown after accepting in the validation form
-              </th>
+	        <th colSpan={3} className="group">Results after acceptance</th>
 
-              {/* Last column changes based on tab */}
-              <th rowSpan={2}>
-                {activeTab === "pending"
-                  ? "Updated ON"
-                  : activeTab === "approved"
-                  ? "Approved ON"
-                  : "Rejected ON"}
-              </th>
+	        <th rowSpan={2}>
+	          {activeTab === "pending"
+	            ? "Updated On"
+	            : activeTab === "approved"
+	            ? "Approved On"
+	            : "Rejected On"}
+	        </th>
 
-              {/* ACTION column only for Pending */}
-              {activeTab === "pending" && <th rowSpan={2}>Action</th>}
-            </tr>
+	        {activeTab === "pending" && <th rowSpan={2}>Action</th>}
+	      </tr>
 
-            {/* ---------- SECOND HEADER ROW (SUB-HEADERS) ---------- */}
-            <tr className="sub-head">
-              <th>Activity Level</th>
-              <th>Component Level</th>
-              <th>Structure Level</th>
+	      {/* ---------- SECOND HEADER ROW ---------- */}
+	      <tr className="sub-head">
+	        <th>Activity Level</th>
+	        <th>Component Level</th>
+	        <th>Structure Level</th>
 
-              <th>Activity Level</th>
-              <th>Component Level</th>
-              <th>Structure Level</th>
-            </tr>
-          </thead>
+	        <th>Activity Level</th>
+	        <th>Component Level</th>
+	        <th>Structure Level</th>
+	      </tr>
+	    </thead>
 
-          <tbody>
-            {visible.length === 0 ? (
-              <tr>
-                <td colSpan={activeTab === "pending" ? 18 : 17} className="no-data">
-                  No data available in table
-                </td>
-              </tr>
-            ) : (
-              visible.map((row) => (
-                <tr key={row.id} className={`data-row ${row.status}`}>
-                  {/* checkbox only for pending */}
-                  <td className="col-check">
-                    {activeTab === "pending" && (
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(row.id)}
-                        onChange={() => toggleSelect(row.id)}
-                      />
-                    )}
-                  </td>
+	    <tbody>
+	      {listLoading ? (
+	        <tr>
+	          <td colSpan={activeTab === "pending" ? 19 : 18} style={{ textAlign: "center" }}>
+	            Loading...
+	          </td>
+	        </tr>
+	      ) : paginatedData.length === 0 ? (
+	        <tr>
+	          <td colSpan={activeTab === "pending" ? 19 : 18} style={{ textAlign: "center" }}>
+	            No data available in table
+	          </td>
+	        </tr>
+	      ) : (
+			paginatedData.map((row) => {
+			  // ===== COMPUTED FIELDS (FROM JSP LOGIC) =====
+			  const cumulativeCompleted = Number(row.cumulative_completed) || 0;
+			  const actualForDay = Number(row.actual_for_the_day) || 0;
 
-                  <td>{row.taskCode}</td>
-                  <td>{row.structure}</td>
-                  <td>{row.component}</td>
-                  <td>{row.element}</td>
-                  <td>{row.activityName}</td>
-                  <td>{row.unit}</td>
-                  <td>{row.scope}</td>
+			  const activityLevelAfterAccept = (
+			    cumulativeCompleted + actualForDay
+			  ).toFixed(1);
 
-                  <td>{row.progressLast.activityLevel}</td>
-                  <td>{row.progressLast.componentLevel}</td>
-                  <td>{row.progressLast.structureLevel}</td>
+			  const reportingText = `${row.updated_by ?? ""} ${row.progress_date ?? ""}`;
 
-                  <td>{row.reporting}</td>
-                  <td>{row.actualUpdated}</td>
+			  // ===== JSP BEHAVIOR MATCH =====
+			  const isCompleted = row.status === "COMPLETED";
+			  const shouldLockCompleted =
+			    activeTab === "pending" && isCompleted && completedDisabled;
 
-                  <td>{row.resultsAfterAccept.activityLevel}</td>
-                  <td>{row.resultsAfterAccept.componentLevel}</td>
-                  <td>{row.resultsAfterAccept.structureLevel}</td>
+			  const isCheckboxDisabled =
+			    activeTab === "pending" && isCompleted && !enableCompleted;
 
-                  <td>
-                    {activeTab === "pending"
-                      ? row.updatedOn
-                      : activeTab === "approved"
-                      ? row.approvedOn
-                      : row.rejectedOn}
-                  </td>
+			  return (
+			    <tr
+			      key={row.progress_id}
+			      className={`data-row ${row.status} ${
+			        isCheckboxDisabled ? "disabled-row" : ""
+			      }`}
+			    >
+			      {/* CHECKBOX */}
+			      <td className="col-check">
+			        {activeTab === "pending" && (
+			          <input
+			            type="checkbox"
+			            disabled={isCheckboxDisabled}
+			            checked={selectedIds.has(row.progress_id)}
+			            onChange={() => toggleSelect(row.progress_id)}
+			          />
+			        )}
+			      </td>
 
-                  {/* ACTION BUTTONS only for pending */}
-                  {activeTab === "pending" && (
-                    <td>
-                      <div className={styles.tableActionBtns}>
-                        <button
-                          className="btn-2 btn-green"
-                          title="Approve"
-                          onClick={() => handleApprove(row.id)}
-                        >
-                          ✔
-                        </button>
+			      <td>{row.p6_task_code}</td>
+			      <td>{row.contract_short_name}</td>
+			      <td>{row.structure}</td>
+			      <td>{row.component}</td>
+			      <td>{row.component_id}</td>
+			      <td>{row.activity_name}</td>
+			      <td>{row.unit}</td>
+			      <td>{row.total_scope}</td>
 
-                        <button
-                          className="btn-2 btn-red"
-                          title="Reject"
-                          onClick={() => handleReject(row.id)}
-                        >
-                          ✖
-                        </button>
+			      {/* Progress till last update */}
+			      <td>{row.cumulative_completed}</td>
+			      <td>{row.component_per_prior}</td>
+			      <td>{row.structure_per_prior}</td>
 
-                        <button
-                          className="btn-2 btn-yellow"
-                          title="Info"
-                          onClick={() => handleInfo(row.id)}
-                        >
-                          i
-                        </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+			      {/* Reporting */}
+			      <td>{reportingText}</td>
+
+			      {/* Actual updated */}
+			      <td>
+			        {row.actual_for_the_day}
+			        {row.updated_scope ? ` / ${row.updated_scope}` : ""}
+			      </td>
+
+			      {/* Results after acceptance */}
+			      <td>{activityLevelAfterAccept}</td>
+			      <td>{row.component_per_post}</td>
+			      <td>{row.structure_per_post}</td>
+
+			      {/* Dates */}
+			      <td>
+			        {activeTab === "pending"
+			          ? row.updated_on
+			          : activeTab === "approved"
+			          ? row.approved_on
+			          : row.rejected_on}
+			      </td>
+
+			      {/* ACTIONS (PENDING ONLY) */}
+			      {activeTab === "pending" && (
+			        <td>
+			          <div className={styles.tableActionBtns}>
+			            <button
+			              className="btn-2 btn-green"
+			              onClick={() => handleApprove(row)}
+			            >
+			              ✔
+			            </button>
+
+			            <button
+			              className="btn-2 btn-red"
+			              onClick={() => handleReject(row)}
+			            >
+			              ✖
+			            </button>
+
+			            <button
+			              className="btn-2 btn-yellow"
+			              onClick={() =>
+			                handleInfo(row.p6_task_code, reportingText)
+			              }
+			            >
+			              i
+			            </button>
+			          </div>
+			        </td>
+			      )}
+			    </tr>
+			  );
+			})
+	      )}
+	    </tbody>
+	  </table>
+
+	  
+
 
       </div>
 
       {/* Pagination */}
-      <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between" }}>
-        <div>
-          Showing {visible.length} of {total}
-        </div>
-        <div>
-          <button disabled={page === 1} onClick={() => setPage(page - 1)}>
-            Prev
-          </button>
-          <span style={{ margin: "0 10px" }}>{page}</span>
-          <button disabled={page === pages} onClick={() => setPage(page + 1)}>
-            Next
-          </button>
-        </div>
-      </div>
+	  <div className="paginationRow">
+	    <div className="paginationInfo">
+	      Showing {(page - 1) * pageSize + 1} –{" "}
+	      {Math.min(page * pageSize, total)} of {total}
+	    </div>
+
+	    <div className="paginationControls">
+	      {renderPageButtons(page, pages, setPage)}
+	    </div>
+	  </div>
+
+
     </div>
   </div>
   );
