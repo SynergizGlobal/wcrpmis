@@ -54,3 +54,19 @@
 .file-upload-input {
   display: none;
 }
+.saveEditButton {
+  background-color: #28a745 !important; /* Green color */
+  border-color: #28a745 !important;
+  color: white !important;
+  border-radius: 25px !important; /* This makes it oval/round */
+  padding: 8px 20px !important; /* Adjust padding for better shape */
+}
+
+.saveEditButton:hover:not(:disabled) {
+  background-color: #218838 !important;
+  border-color: #1e7e34 !important;
+}
+
+.saveEditButton:disabled {
+  opacity: 0.65;
+}

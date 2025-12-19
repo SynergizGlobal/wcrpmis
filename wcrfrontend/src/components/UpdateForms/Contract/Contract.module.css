@@ -63,6 +63,63 @@
 .projectTable tr:nth-child(even) {
   background: #f4f7ff;
 }
+.tableControls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 15px 0;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.entries select {
+  margin: 0 6px;
+  padding: 4px 6px;
+}
+
+.searchWrapper {
+  position: relative;
+}
+
+.searchInput {
+  padding: 6px 30px 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.searchIcon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 15px 0;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  border: 1px solid #3f4a7f;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pagination button:hover {
+  background: #3f4a7f;
+  color: white;
+}
+
+.pagination .active {
+  background: #3f4a7f;
+  color: white;
+}
+
 
 @media(max-width: 992px) {
   .filterRow{

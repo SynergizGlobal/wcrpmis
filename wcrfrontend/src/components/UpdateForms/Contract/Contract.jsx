@@ -14,6 +14,7 @@ export default function Contract() {
   const [loadingContracts, setLoadingContracts] = useState(false);
   
   // State for filter options
+  
   const [hodOptions, setHodOptions] = useState([]);
   const [dyHodOptions, setDyHodOptions] = useState([]);
   const [contractorOptions, setContractorOptions] = useState([]);
@@ -27,6 +28,8 @@ export default function Contract() {
     contractStatus: "",
     statusOfWork: "",
   });
+
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [loading, setLoading] = useState({
     hod: false,
@@ -44,7 +47,7 @@ export default function Contract() {
   // Apply filters when they change
   useEffect(() => {
     applyFilters();
-  }, [filters, contracts]);
+  }, [filters, contracts, searchQuery]);
 
   const fetchContracts = async () => {
     setLoadingContracts(true);
@@ -67,15 +70,13 @@ export default function Contract() {
 
   const applyFilters = () => {
     // If no filters are set, show all contracts
-    const allFiltersEmpty = Object.values(filters).every(value => !value);
+    const allFiltersEmpty = Object.values(filters).every(value => !value) && !searchQuery;
     if (allFiltersEmpty) {
       // We're already showing all contracts in the contracts state
       return;
     }
 
-    console.log("Applying filters:", filters);
-    // In a real implementation, you would filter the contracts array here
-    // or make an API call with filter parameters
+    console.log("Applying filters:", filters, "Search query:", searchQuery);
   };
 
   const fetchFilterOptions = async () => {
@@ -152,6 +153,10 @@ export default function Contract() {
     setFilters(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   const handleClearFilters = () => {
     setFilters({
       hod: "",
@@ -160,6 +165,7 @@ export default function Contract() {
       contractStatus: "",
       statusOfWork: "",
     });
+    setSearchQuery("");
   };
 
   const handleAdd = () => navigate("add-contract-form");
@@ -203,64 +209,72 @@ export default function Contract() {
     }
   };
 
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      });
-    } catch (error) {
-      return "Invalid Date";
-    }
-  };
-
-  // Filter contracts based on selected filters
+  // Filter contracts based on selected filters and search query
   const filterContracts = () => {
     if (!contracts || contracts.length === 0) return [];
 
-    return contracts.filter(contract => {
-      // HOD filter
-      if (filters.hod && contract.designation !== filters.hod) return false;
-      
-      // Dy HOD filter
-      if (filters.dyHod && contract.dy_hod_designation !== filters.dyHod) return false;
-      
-      // Contractor filter
-      if (filters.contractor) {
+    let filtered = contracts;
+
+    // Apply dropdown filters
+    if (filters.hod) {
+      filtered = filtered.filter(contract => contract.designation === filters.hod);
+    }
+    
+    if (filters.dyHod) {
+      filtered = filtered.filter(contract => contract.dy_hod_designation === filters.dyHod);
+    }
+    
+    if (filters.contractor) {
+      filtered = filtered.filter(contract => {
         const contractorValue = `${contract.contractor_id_fk}-${contract.contractor_name}`;
-        if (contractorValue !== filters.contractor) return false;
-      }
-      
-      // Contract Status filter
-      if (filters.contractStatus && contract.contract_status !== filters.contractStatus) return false;
-      
-      // Status of Work filter
-      if (filters.statusOfWork && contract.contract_status_fk !== filters.statusOfWork) return false;
-      
-      return true;
-    });
+        return contractorValue === filters.contractor;
+      });
+    }
+    
+    if (filters.contractStatus) {
+      filtered = filtered.filter(contract => contract.contract_status === filters.contractStatus);
+    }
+    
+    if (filters.statusOfWork) {
+      filtered = filtered.filter(contract => contract.contract_status_fk === filters.statusOfWork);
+    }
+
+    // Apply search query if present
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(contract => {
+        return (
+          (contract.project_name && contract.project_name.toLowerCase().includes(query)) ||
+          (contract.contract_id && contract.contract_id.toString().toLowerCase().includes(query)) ||
+          (contract.contract_short_name && contract.contract_short_name.toLowerCase().includes(query)) ||
+          (contract.contractor_name && contract.contractor_name.toLowerCase().includes(query)) ||
+          (contract.department_name && contract.department_name.toLowerCase().includes(query)) ||
+          (contract.designation && contract.designation.toLowerCase().includes(query)) ||
+          (contract.dy_hod_designation && contract.dy_hod_designation.toLowerCase().includes(query)) ||
+          (contract.modified_date && contract.modified_date.toLowerCase().includes(query))
+        );
+      });
+    }
+
+    return filtered;
   };
 
   const filteredContracts = filterContracts();
 
   return (
     <div className={styles.container}>
-      { !isDesignDrawingForm &&(
-      <div className="pageHeading">
-        <h2>Contract</h2>
-        <div className="rightBtns">
-          <button className="btn btn-primary" onClick={handleAdd}>
-            <CirclePlus size={16} /> Add
-          </button>
-          <button className="btn btn-primary">
-            <LuCloudDownload size={16} /> Export
-          </button>
+      {!isDesignDrawingForm && (
+        <div className="pageHeading">
+          <h2>Contract</h2>
+          <div className="rightBtns">
+            <button className="btn btn-primary" onClick={handleAdd}>
+              <CirclePlus size={16} /> Add
+            </button>
+            <button className="btn btn-primary">
+              <LuCloudDownload size={16} /> Export
+            </button>
+          </div>
         </div>
-      </div>
       )}
       
       {/* Filters */}
@@ -322,57 +336,94 @@ export default function Contract() {
             </button>
           </div>
           
+          <div className={styles.tableControls}>
+            <div className="showEntriesCount">
+              <label>Show </label>
+              <select
+                value={10}
+                onChange={(e) => console.log("Per page changed:", e.target.value)}
+              >
+                {[1,5, 10, 20, 50, 100].map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <span> entries</span>
+            </div>
+            
+            <div className={styles.searchWrapper}>
+              <input
+                type="text"
+                placeholder="Search contracts..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className={styles.searchInput}
+              />
+              <span className={styles.searchIcon}>🔍</span>
+            </div>
+          </div>
+          
           <div className={`dataTable ${styles.tableWrapper}`}>
             {loadingContracts ? (
               <div style={{ textAlign: "center", padding: "20px" }}>
                 Loading contracts...
               </div>
             ) : (
-              <table className={styles.designTable}>
-                <thead>
-                  <tr>
-                    <th>Project</th>
-                    <th>Contract ID</th>
-                    <th>Contract Name</th>
-                    <th>Contractor Name</th>
-                    <th>Department</th>
-                    <th>HOD</th>
-                    <th>Dy HOD</th>
-                    <th>Last Update</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredContracts.length > 0 ? (
-                    filteredContracts.map((contract, index) => (
-                      <tr key={contract.contract_id || index}>
-                        <td>{contract.project_name || "N/A"}</td>
-                        <td>{contract.contract_id || "N/A"}</td>
-                        <td>{contract.contract_short_name || "N/A"}</td>
-                        <td>{contract.contractor_name || "N/A"}</td>
-                        <td>{contract.department_name || "N/A"}</td>
-                        <td>{contract.designation || "N/A"}</td>
-                        <td>{contract.dy_hod_designation || "N/A"}</td>
-                        <td>{formatDate(contract.modified_date)}</td>
-                        <td>
-                          <button 
-                            className="btn btn-sm btn-outline-primary" 
-                            onClick={() => handleEdit(contract)}
-                          >
-                            Edit
-                          </button>
+              <>
+                <table className={styles.designTable}>
+                  <thead>
+                    <tr>
+                      <th>Project</th>
+                      <th>Contract ID</th>
+                      <th>Contract Name</th>
+                      <th>Contractor Name</th>
+                      <th>Department</th>
+                      <th>HOD</th>
+                      <th>Dy HOD</th>
+                      <th>Last Update</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredContracts.length > 0 ? (
+                      filteredContracts.map((contract, index) => (
+                        <tr key={contract.contract_id || index}>
+                          <td>{contract.project_name}</td>
+                          <td>{contract.contract_id}</td>
+                          <td>{contract.contract_short_name}</td>
+                          <td>{contract.contractor_name}</td>
+                          <td>{contract.department_name}</td>
+                          <td>{contract.designation}</td>
+                          <td>{contract.dy_hod_designation}</td>
+                          <td>{contract.modified_date}</td>
+                          <td>
+                            <button 
+                              className="btn btn-sm btn-outline-primary" 
+                              onClick={() => handleEdit(contract)}
+                            >
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="9" style={{ textAlign: "center", padding: "20px" }}>
+                          {contracts.length === 0 
+                            ? "No contracts found" 
+                            : searchQuery 
+                              ? `No contracts found matching "${searchQuery}"`
+                              : "No contracts match the selected filters"}
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="9" style={{ textAlign: "center", padding: "20px" }}>
-                        {contracts.length === 0 ? "No contracts found" : "No contracts match the selected filters"}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+                {searchQuery && filteredContracts.length > 0 && (
+                  <div className={styles.searchResultsInfo}>
+                    Showing {filteredContracts.length} result(s) for "{searchQuery}"
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
