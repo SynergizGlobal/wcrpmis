@@ -130,4 +130,47 @@ public class ContractService implements IContractService {
 	public List<Contract> getContractStatusType(Contract obj)throws Exception{
 		return contractRepo.getContractStatusType(obj);
 	}
+	
+	@Override
+	public String addContract(Contract contract)throws Exception{
+		return contractRepo.addContract(contract);
+	}
+
+	@Override
+	public List<Contract> getExecutivesListForContractForm(Contract obj) throws Exception {
+		return contractRepo.getExecutivesListForContractForm(obj);
+	}
+
+	@Override
+	public List<Contract> getHodList(Contract obj) throws Exception {
+		return contractRepo.getHodList(obj);
+	}
+	@Override
+	public List<Contract> getDyHodList(Contract obj) throws Exception {
+		return contractRepo.getDyHodList(obj);
+	}
+
+
+	
+	@Override
+	public List<Contract> contractListForExport(Contract contract) throws Exception {
+		return contractRepo.contractListForExport(contract);
+	}
+	
+	@Override
+	public List<Contract> contractRevisionsList(Contract contract) throws Exception {
+		return contractRepo.contractRevisionsList(contract);
+	}
+	@Override
+	public List<Contract> contractBGList(Contract contract) throws Exception {
+		return contractRepo.contractBGList(contract);
+	}
+	@Override
+	public List<Contract> contractInsuranceList(Contract contract) throws Exception {
+		return contractRepo.contractInsuranceList(contract);
+	}
+	@Override
+	public List<Contract> contractMilestoneList(Contract contract) throws Exception {
+		return contractRepo.contractMilestoneList(contract);
+	}
 }

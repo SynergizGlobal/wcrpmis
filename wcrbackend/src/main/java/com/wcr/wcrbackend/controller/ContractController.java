@@ -55,11 +55,15 @@ import com.google.gson.GsonBuilder;
 import com.wcr.wcrbackend.DTO.BankGuarantee;
 import com.wcr.wcrbackend.DTO.Contract;
 import com.wcr.wcrbackend.DTO.Insurence;
+import com.wcr.wcrbackend.common.DateParser;
 import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.service.HomeService;
 import com.wcr.wcrbackend.service.IContractService;
 import com.wcr.wcrbackend.service.IUserService;
 import com.wcr.wcrbackend.service.SafetyService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 
@@ -232,31 +236,30 @@ public class ContractController {
 		}
 		return contractList;
 	}
-	
+//
 //	@RequestMapping(value = "/get-contract", method = {RequestMethod.GET,RequestMethod.POST})
 //	public ModelAndView getcontract(@ModelAttribute Contract obj,HttpSession session){
 //		ModelAndView model = new ModelAndView();
 //		try{
+//			
+//
+//			
+//			String user_Id = (String) session.getAttribute("userId");
+//			String userName = (String) session.getAttribute("userName");
+//			String userDesignation = (String) session.getAttribute("designation");
+//			
+//			System.out.println("User_id:"+ user_Id);
+//			System.out.println("UserNmae:"+ userName);
+//      		System.out.println("UserDegination:" + userDesignation);
+//			
 //			User uObj = (User) session.getAttribute("user");
-//			
-//			String user_Id = uObj.getUserId();
-//			String userName = uObj.getUserName();
-//			String userDesignation = uObj.getDesignation();
-//			
-//			System.out.println("User_id"+ user_Id);
-//			System.out.println("UserNmae"+ userName);
-//			System.out.println("UserDegination" + userDesignation);
-//			
-//			
 //			obj.setUser_type_fk(uObj.getUserTypeFk());
 //			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
 //			obj.setCreated_by_user_id_fk(user_Id);
 //			obj.setUser_id(user_Id);
 //			obj.setUser_name(userName);
 //			obj.setDesignation(userDesignation);
-//			System.out.println("===========");
-//			System.out.println("User Object"+ uObj);
-//	
+//			
 //			
 //		//	model.setViewName(PageConstants.updateContractForm);
 //			List<Contract> projectsList = contractService.getProjectsListForContractForm(obj);
@@ -306,7 +309,7 @@ public class ContractController {
 //			
 //			List<Contract> bankNameList = contractService.getBankNameList(obj);
 //			model.addObject("bankNameList", bankNameList);			
-//	//		
+//			
 //			obj.setContract_status(contractDeatils.getStatus());
 //			List<Contract> contract_Statustype = contractService.getContractStatusType(obj);
 //			model.addObject("contract_Statustype", contract_Statustype);
@@ -319,253 +322,87 @@ public class ContractController {
 //		}
 //		return model;
 //	}
-	
-	
-	
-//	@GetMapping("/get-contracttt")
-//	public ResponseEntity<Map<String, Object>> getContract(
-//	        @RequestParam(required = false) String contract_id,
-//	        @RequestParam(required = false) String tab_name,
-//	        HttpSession session) {
-//
-//	    Map<String, Object> response = new HashMap<>();
-//
-//	    try {
-//	        // ===== SESSION CHECK =====
-//	        User uObj = (User) session.getAttribute("user");
-//	        if (uObj == null) {
-//	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//	                    .body(Map.of("message", "User session expired"));
-//	        }
-//
-//	        /// ===== BUILD REQUEST OBJECT =====
-//	        Contract obj = new Contract();
-//	        obj.setContract_id(contract_id);
-//	        obj.setTab_name(tab_name);
-//
-//	        obj.setUser_type_fk(uObj.getUserTypeFk());
-//	        obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
-//	        obj.setCreated_by_user_id_fk(uObj.getUserId());
-//	        obj.setUser_id(uObj.getUserId());
-//	        obj.setUser_name(uObj.getUserName());
-//	        obj.setDesignation(uObj.getDesignation());
-//
-//	        // ===== MASTER DATA =====
-//	        response.put("projectsList", contractService.getProjectsListForContractForm(obj));
-//	        response.put("worksList", contractService.getWorkListForContractForm(obj));
-//	        response.put("contractFileTypeList", contractService.getContractFileTypeList(obj));
-//	        response.put("departmentList", contractService.getDepartmentList());
-//	        response.put("hodList", contractService.setHodList());
-//	        response.put("dyHodList", contractService.getDyHodList());
-//	        response.put("contractor", contractService.getContractorsList());
-//	        response.put("contract_type", contractService.getContractTypeList());
-//	        response.put("insurance_type", contractService.getInsurenceTypeList());
-//	        response.put("bankGuaranteeTYpe", contractService.bankGuarantee());
-//	        response.put("InsurenceType", contractService.insurenceType());
-//	        response.put("responsiblePeopleList", contractService.getResponsiblePeopleList(obj));
-//	        response.put("unitsList", contractService.getUnitsList(obj));
-//	        response.put("contract_Status", contractService.getContractStatus());
-//	        response.put("bankNameList", contractService.getBankNameList(obj));
-//	        System.out.println("STEP-1: ENTERED getContracttt()");
-//	        System.out.println("STEP-2: Before calling getContract()");
-//	        Contract contractDetails = contractService.getContract(obj);
-//	        System.out.println("STEP-3: After calling getContract()");
-//
-//	        
-//	        response.put("contractDetails", contractDetails);
-//
-//	        // ===== STATUS TYPE (SAFE) =====
-//	        if (contractDetails != null) {
-//	            obj.setContract_status(contractDetails.getStatus());
-//	            response.put("contract_Statustype",
-//	                    contractService.getContractStatusType(obj));
-//	        } else {
-//	            response.put("contract_Statustype", List.of());
-//	        }
-//
-//	        response.put("gotoTab", tab_name);
-//	        response.put("success", true);
-//
-//	        return ResponseEntity.ok(response);
-//
-//	    } catch (Exception e) {
-//	        e.printStackTrace();
-//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//	                .body(Map.of(
-//	                        "success", false,
-//	                        "message", "Error fetching contract data",
-//	                        "error", e.getMessage()
-//	                ));
-//	    }
+//	
+//	@RequestMapping(value = "/get-contract/{contract_id}", method = {RequestMethod.GET,RequestMethod.POST})
+//	public ModelAndView getcontract(@ModelAttribute Contract obj,@PathVariable("contract_id") String contract_id,HttpSession session ){
+//		ModelAndView model = new ModelAndView();
+//		try{
+//			
+//			String user_Id = (String) session.getAttribute("userId");
+//			String userName = (String) session.getAttribute("userName");
+//			String userDesignation = (String) session.getAttribute("designation");
+//			
+//		
+//			User uObj = (User) session.getAttribute("user");
+//            
+//			obj.setUser_type_fk(uObj.getUserTypeFk());
+//			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+//			obj.setCreated_by_user_id_fk(user_Id);
+//			obj.setUser_id(user_Id);
+//			obj.setUser_name(userName);
+//			obj.setDesignation(userDesignation);
+//			
+//			
+//			//model.setViewName(PageConstants.updateContractForm);
+//			List<Contract> projectsList = contractService.getProjectsListForContractForm(obj);
+//			model.addObject("projectsList", projectsList);
+//			
+//			List<Contract> worksList = contractService.getWorkListForContractForm(obj);
+//			model.addObject("worksList", worksList);
+//			
+//			List<Contract> contractFileTypeList = contractService.getContractFileTypeList(obj);
+//			model.addObject("contractFileTypeList", contractFileTypeList);
+//			
+//			List<Contract> departmentList = contractService.getDepartmentList();
+//			model.addObject("departmentList", departmentList);
+//			
+//			List<com.wcr.wcrbackend.DTO.User> hodList = contractService.setHodList();
+//			model.addObject("hodList", hodList);
+//			
+//			List<com.wcr.wcrbackend.DTO.User> dyHodList = contractService.getDyHodList();
+//			model.addObject("dyHodList", dyHodList);
+//			
+//			List<Contract> contractor = contractService.getContractorsList();
+//			model.addObject("contractor", contractor);
+//			 
+//			List<Contract> contract_type = contractService.getContractTypeList();
+//			model.addObject("contract_type", contract_type);
+//			
+//			List<Contract> insurance_type = contractService.getInsurenceTypeList();
+//			model.addObject("insurance_type", insurance_type);
+//			
+//			List<BankGuarantee> bankGuaranteeTYpe = contractService.bankGuarantee();
+//			model.addObject("bankGuaranteeTYpe", bankGuaranteeTYpe);
+//			
+//			List<Insurence> InsurenceType = contractService.insurenceType();
+//			model.addObject("InsurenceType", InsurenceType);
+//			
+//			List<Contract> contract_Status = contractService.getContractStatus();
+//			model.addObject("contract_Status", contract_Status);
+//			
+//			List<Contract> unitsList = contractService.getUnitsList(obj);
+//			model.addObject("unitsList", unitsList);
+//			
+//			List<Contract> bankNameList = contractService.getBankNameList(obj);
+//			model.addObject("bankNameList", bankNameList);			
+//			
+//			obj.setContract_id(contract_id);
+//			Contract contractDeatils = contractService.getContract(obj);
+//			model.addObject("contractDeatils", contractDeatils);
+//			
+//			obj.setContract_status(contractDeatils.getStatus());
+//			List<Contract> contract_Statustype = contractService.getContractStatusType(obj);
+//			model.addObject("contract_Statustype", contract_Statustype);
+//			
+//			model.addObject("gotoTab", obj.getTab_name());
+//			
+//		}catch (Exception e) {
+//			e.printStackTrace();
+//			logger.error("Contract : " + e.getMessage());
+//		}
+//		return model;
 //	}
-
-	
-	@RequestMapping(value = "/get-contract", method = {RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView getcontract(@ModelAttribute Contract obj,HttpSession session){
-		ModelAndView model = new ModelAndView();
-		try{
-			
-
-			
-			String user_Id = (String) session.getAttribute("userId");
-			String userName = (String) session.getAttribute("userName");
-			String userDesignation = (String) session.getAttribute("designation");
-			
-			System.out.println("User_id:"+ user_Id);
-			System.out.println("UserNmae:"+ userName);
-      		System.out.println("UserDegination:" + userDesignation);
-			
-			User uObj = (User) session.getAttribute("user");
-			obj.setUser_type_fk(uObj.getUserTypeFk());
-			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
-			obj.setCreated_by_user_id_fk(user_Id);
-			obj.setUser_id(user_Id);
-			obj.setUser_name(userName);
-			obj.setDesignation(userDesignation);
-			
-			
-		//	model.setViewName(PageConstants.updateContractForm);
-			List<Contract> projectsList = contractService.getProjectsListForContractForm(obj);
-			model.addObject("projectsList", projectsList);
-			
-			List<Contract> worksList = contractService.getWorkListForContractForm(obj);
-			model.addObject("worksList", worksList);
-			
-			List<Contract> contractFileTypeList = contractService.getContractFileTypeList(obj);
-			model.addObject("contractFileTypeList", contractFileTypeList);
-			
-			List<Contract> departmentList = contractService.getDepartmentList();
-			model.addObject("departmentList", departmentList);
-			
-			List<com.wcr.wcrbackend.DTO.User> hodList = contractService.setHodList();
-			model.addObject("hodList", hodList);
-			
-			List<com.wcr.wcrbackend.DTO.User> dyHodList = contractService.getDyHodList();
-			model.addObject("dyHodList", dyHodList);
-			
-			List<Contract> contractor = contractService.getContractorsList();
-			model.addObject("contractor", contractor);
-			
-			List<Contract> contract_type = contractService.getContractTypeList();
-			model.addObject("contract_type", contract_type);
-			
-			List<Contract> insurance_type = contractService.getInsurenceTypeList();
-			model.addObject("insurance_type", insurance_type);
-			
-			List<BankGuarantee> bankGuaranteeTYpe = contractService.bankGuarantee();
-			model.addObject("bankGuaranteeTYpe", bankGuaranteeTYpe);
-			
-			List<Insurence> InsurenceType = contractService.insurenceType();
-			model.addObject("InsurenceType", InsurenceType);
-			
-			List<Contract> responsiblePeopleList = contractService.getResponsiblePeopleList(obj);
-			model.addObject("responsiblePeopleList", responsiblePeopleList);
-			
-			List<Contract> unitsList = contractService.getUnitsList(obj);
-			model.addObject("unitsList", unitsList);
-			
-			List<Contract> contract_Status = contractService.getContractStatus();
-			model.addObject("contract_Status", contract_Status);
-			
-			Contract contractDeatils = contractService.getContract(obj);
-			model.addObject("contractDeatils", contractDeatils);
-			
-			List<Contract> bankNameList = contractService.getBankNameList(obj);
-			model.addObject("bankNameList", bankNameList);			
-			
-			obj.setContract_status(contractDeatils.getStatus());
-			List<Contract> contract_Statustype = contractService.getContractStatusType(obj);
-			model.addObject("contract_Statustype", contract_Statustype);
-			
-			model.addObject("gotoTab", obj.getTab_name());
-			
-		}catch (Exception e) {
-			e.printStackTrace();
-			logger.error("Contract : " + e.getMessage());
-		}
-		return model;
-	}
-	
-	@RequestMapping(value = "/get-contract/{contract_id}", method = {RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView getcontract(@ModelAttribute Contract obj,@PathVariable("contract_id") String contract_id,HttpSession session ){
-		ModelAndView model = new ModelAndView();
-		try{
-			
-			String user_Id = (String) session.getAttribute("userId");
-			String userName = (String) session.getAttribute("userName");
-			String userDesignation = (String) session.getAttribute("designation");
-			
-		
-			User uObj = (User) session.getAttribute("user");
-            
-			obj.setUser_type_fk(uObj.getUserTypeFk());
-			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
-			obj.setCreated_by_user_id_fk(user_Id);
-			obj.setUser_id(user_Id);
-			obj.setUser_name(userName);
-			obj.setDesignation(userDesignation);
-			
-			
-			//model.setViewName(PageConstants.updateContractForm);
-			List<Contract> projectsList = contractService.getProjectsListForContractForm(obj);
-			model.addObject("projectsList", projectsList);
-			
-			List<Contract> worksList = contractService.getWorkListForContractForm(obj);
-			model.addObject("worksList", worksList);
-			
-			List<Contract> contractFileTypeList = contractService.getContractFileTypeList(obj);
-			model.addObject("contractFileTypeList", contractFileTypeList);
-			
-			List<Contract> departmentList = contractService.getDepartmentList();
-			model.addObject("departmentList", departmentList);
-			
-			List<com.wcr.wcrbackend.DTO.User> hodList = contractService.setHodList();
-			model.addObject("hodList", hodList);
-			
-			List<com.wcr.wcrbackend.DTO.User> dyHodList = contractService.getDyHodList();
-			model.addObject("dyHodList", dyHodList);
-			
-			List<Contract> contractor = contractService.getContractorsList();
-			model.addObject("contractor", contractor);
-			 
-			List<Contract> contract_type = contractService.getContractTypeList();
-			model.addObject("contract_type", contract_type);
-			
-			List<Contract> insurance_type = contractService.getInsurenceTypeList();
-			model.addObject("insurance_type", insurance_type);
-			
-			List<BankGuarantee> bankGuaranteeTYpe = contractService.bankGuarantee();
-			model.addObject("bankGuaranteeTYpe", bankGuaranteeTYpe);
-			
-			List<Insurence> InsurenceType = contractService.insurenceType();
-			model.addObject("InsurenceType", InsurenceType);
-			
-			List<Contract> contract_Status = contractService.getContractStatus();
-			model.addObject("contract_Status", contract_Status);
-			
-			List<Contract> unitsList = contractService.getUnitsList(obj);
-			model.addObject("unitsList", unitsList);
-			
-			List<Contract> bankNameList = contractService.getBankNameList(obj);
-			model.addObject("bankNameList", bankNameList);			
-			
-			obj.setContract_id(contract_id);
-			Contract contractDeatils = contractService.getContract(obj);
-			model.addObject("contractDeatils", contractDeatils);
-			
-			obj.setContract_status(contractDeatils.getStatus());
-			List<Contract> contract_Statustype = contractService.getContractStatusType(obj);
-			model.addObject("contract_Statustype", contract_Statustype);
-			
-			model.addObject("gotoTab", obj.getTab_name());
-			
-		}catch (Exception e) {
-			e.printStackTrace();
-			logger.error("Contract : " + e.getMessage());
-		}
-		return model;
-	}
-	
+//	
 
     @RequestMapping(
         value = "/get-contractt",
@@ -671,4 +508,824 @@ public class ContractController {
                     ));
         }
     }
+    
+
+	@RequestMapping(value = "/add-contract", method = {RequestMethod.GET,RequestMethod.POST})
+	public ModelAndView addContract(@ModelAttribute  Contract contract,RedirectAttributes attributes,HttpSession session){
+		ModelAndView model = new ModelAndView();
+		try{
+			String user_Id = (String) session.getAttribute("userId");
+			String userName = (String) session.getAttribute("userName");
+			String userDesignation = (String) session.getAttribute("designation");
+			
+			contract.setCreated_by_user_id_fk(user_Id);
+			contract.setUser_id(user_Id);
+			contract.setUser_name(userName);
+			contract.setDesignation(userDesignation);
+			
+			User uObj = (User) session.getAttribute("user");
+			contract.setUser_type_fk(uObj.getUserTypeFk());
+			contract.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			
+			contract.setDoc(DateParser.parse(contract.getDoc()));
+			contract.setCa_date(DateParser.parse(contract.getCa_date()));
+			contract.setDate_of_start(DateParser.parse(contract.getDate_of_start()));			
+			contract.setLoa_date(DateParser.parse(contract.getLoa_date()));
+			contract.setActual_completion_date(DateParser.parse(contract.getActual_completion_date()));		
+			contract.setContract_closure_date(DateParser.parse(contract.getContract_closure_date()));
+			contract.setCompletion_certificate_release(DateParser.parse(contract.getCompletion_certificate_release()));		
+			contract.setFinal_takeover(DateParser.parse(contract.getFinal_takeover()));
+			contract.setFinal_bill_release(DateParser.parse(contract.getFinal_bill_release()));
+			contract.setDefect_liability_period(DateParser.parse(contract.getDefect_liability_period()));
+			contract.setRetention_money_release(DateParser.parse(contract.getRetention_money_release()));
+			contract.setPbg_release(DateParser.parse(contract.getPbg_release()));
+			contract.setBg_date(DateParser.parse(contract.getBg_date()));
+			contract.setRelease_date(DateParser.parse(contract.getRelease_date()));
+			contract.setPlanned_date_of_award(DateParser.parse(contract.getPlanned_date_of_award()));
+			contract.setPlanned_date_of_completion(DateParser.parse(contract.getPlanned_date_of_completion()));
+			
+			//contract.setContract_status("Open");
+			//contract.setContract_status_fk("Not Started");
+		
+			String contractid =  contractService.addContract(contract);			
+			if(!StringUtils.isEmpty(contractid)) {
+				attributes.addFlashAttribute("success", "Contract "+contractid+" Added Succesfully."); 
+			} else {
+				attributes.addFlashAttribute("error","Adding Contract is failed. Try again.");
+			}
+		 }catch (Exception e) {
+			attributes.addFlashAttribute("error","Adding Contract is failed. Try again.");
+			logger.error("Project : " + e.getMessage());
+		}
+		return model;
+	}
+	
+	
+
+	@RequestMapping(value = "/saveedit-contract", method = {RequestMethod.GET,RequestMethod.POST})
+	public ModelAndView saveeditContract(@ModelAttribute  Contract contract,RedirectAttributes attributes,HttpSession session){
+		ModelAndView model = new ModelAndView();
+		try{
+			String user_Id = (String) session.getAttribute("userId");
+			String userName = (String) session.getAttribute("userName");
+			String userDesignation = (String) session.getAttribute("designation");
+			
+			contract.setCreated_by_user_id_fk(user_Id);
+			contract.setUser_id(user_Id);
+			contract.setUser_name(userName);
+			contract.setDesignation(userDesignation);
+			
+			User uObj = (User) session.getAttribute("user");
+			
+			contract.setUser_type_fk(uObj.getUserTypeFk());
+			contract.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			
+			contract.setDoc(DateParser.parse(contract.getDoc()));
+			contract.setCa_date(DateParser.parse(contract.getCa_date()));
+			contract.setDate_of_start(DateParser.parse(contract.getDate_of_start()));			
+			contract.setLoa_date(DateParser.parse(contract.getLoa_date()));
+			contract.setActual_completion_date(DateParser.parse(contract.getActual_completion_date()));		
+			contract.setContract_closure_date(DateParser.parse(contract.getContract_closure_date()));
+			contract.setCompletion_certificate_release(DateParser.parse(contract.getCompletion_certificate_release()));		
+			contract.setFinal_takeover(DateParser.parse(contract.getFinal_takeover()));
+			contract.setFinal_bill_release(DateParser.parse(contract.getFinal_bill_release()));
+			contract.setDefect_liability_period(DateParser.parse(contract.getDefect_liability_period()));
+			contract.setRetention_money_release(DateParser.parse(contract.getRetention_money_release()));
+			contract.setPbg_release(DateParser.parse(contract.getPbg_release()));
+			contract.setBg_date(DateParser.parse(contract.getBg_date()));
+			contract.setRelease_date(DateParser.parse(contract.getRelease_date()));
+			contract.setPlanned_date_of_award(DateParser.parse(contract.getPlanned_date_of_award()));
+			contract.setPlanned_date_of_completion(DateParser.parse(contract.getPlanned_date_of_completion()));
+		
+			String contractid =  contractService.addContract(contract);	
+			model.setViewName("redirect:/get-contract/"+contractid);
+
+		 }catch (Exception e) {
+			attributes.addFlashAttribute("error","Adding Contract is failed. Try again.");
+			logger.error("Project : " + e.getMessage());
+		}
+		return model;
+	}	
+	
+	
+	@RequestMapping(value = "/ajax/getContractStatusLIstFormContractFom", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
+	public List<Contract> getContractStatusLIstFormContractFom(@ModelAttribute Contract obj) {
+		List<Contract> dataList = null;  
+		try {
+			dataList = contractService.getContractStatusType(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getContractStatusLIstFormContractFom : " + e.getMessage());
+		}
+		return dataList;
+	}
+	
+	@RequestMapping(value = "/ajax/getExecutivesListForContractForm", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
+	public List<Contract> getExecutivesListForContractForm(@ModelAttribute Contract obj) {
+		List<Contract> dataList = null;  
+		try {
+			dataList = contractService.getExecutivesListForContractForm(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getExecutivesListForContractForm : " + e.getMessage());
+		}
+		return dataList;
+	}
+	
+	
+	@RequestMapping(value = "/ajax/getHodList", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
+	public List<Contract> getHodList(@ModelAttribute Contract obj,HttpSession session) {
+		List<Contract> dataList = null;  
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			dataList = contractService.getHodList(obj);
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getHodList : " + e.getMessage());
+		}
+		return dataList;
+	}
+	
+	
+	@RequestMapping(value = "/ajax/getDyHodList", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
+	public List<Contract> getDyHodList(@ModelAttribute Contract obj,HttpSession session) {
+		List<Contract> dataList = null;  
+		try {
+			User uObj = (User) session.getAttribute("user");
+			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			dataList = contractService.getDyHodList(obj);
+		}catch (Exception e) {
+			e.printStackTrace();
+			logger.error("getDyHodList : " + e.getMessage());
+		}
+		return dataList;
+	}
+	
+	@RequestMapping(value = "/export-contract", method = {RequestMethod.GET,RequestMethod.POST})
+	public void exportContract(HttpServletRequest request, HttpServletResponse response,HttpSession session,@ModelAttribute Contract contract,RedirectAttributes attributes){
+	//	ModelAndView view = new ModelAndView(PageConstants.contractGrid);
+		try {
+			String user_Id = (String) session.getAttribute("userId");
+			String userRoleCode = (String) session.getAttribute("userRoleNameFk");
+	
+			contract.setUser_id(user_Id);
+			contract.setUser_role_code(userRoleCode);
+			
+			//view.setViewName("redirect:/contract");
+			
+			List<Contract> dataList = contractService.contractListForExport(contract);  
+			List<Contract> revisionsDataList = contractService.contractRevisionsList(contract); 
+			List<Contract> bgDataList = contractService.contractBGList(contract); 
+			List<Contract> insuranceDataList = contractService.contractInsuranceList(contract); 
+			List<Contract> milestoneDataList = contractService.contractMilestoneList(contract); 
+			
+			
+			if(dataList != null && dataList.size() > 0){
+	            XSSFWorkbook  workBook = new XSSFWorkbook ();
+	            XSSFSheet contractsSheet = workBook.createSheet(WorkbookUtil.createSafeSheetName("Contract"));
+	            XSSFSheet revisionsSheet = workBook.createSheet(WorkbookUtil.createSafeSheetName("Revision Details"));
+	            XSSFSheet bgSheet = workBook.createSheet(WorkbookUtil.createSafeSheetName("BG"));
+	            XSSFSheet insuranceSheet = workBook.createSheet(WorkbookUtil.createSafeSheetName("Insurance"));
+	            XSSFSheet milestoneSheet = workBook.createSheet(WorkbookUtil.createSafeSheetName("Milestone"));
+	            
+		        workBook.setSheetOrder(contractsSheet.getSheetName(), 0);
+		        workBook.setSheetOrder(revisionsSheet.getSheetName(), 1);
+		        workBook.setSheetOrder(bgSheet.getSheetName(), 2);
+		        workBook.setSheetOrder(insuranceSheet.getSheetName(), 3);
+		        workBook.setSheetOrder(milestoneSheet.getSheetName(), 4);
+		        
+		        byte[] blueRGB = new byte[]{(byte)0, (byte)176, (byte)240};
+		        byte[] yellowRGB = new byte[]{(byte)255, (byte)192, (byte)0};
+		        byte[] greenRGB = new byte[]{(byte)146, (byte)208, (byte)80};
+		        byte[] redRGB = new byte[]{(byte)255, (byte)0, (byte)0};
+		        byte[] whiteRGB = new byte[]{(byte)255, (byte)255, (byte)255};
+		        
+		        boolean isWrapText = true;boolean isBoldText = true;boolean isItalicText = false; int fontSize = 11;String fontName = "Times New Roman";
+		        CellStyle blueStyle = cellFormating(workBook,blueRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle yellowStyle = cellFormating(workBook,yellowRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle greenStyle = cellFormating(workBook,greenRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle redStyle = cellFormating(workBook,redRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle whiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        
+		        CellStyle indexWhiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        
+		        isWrapText = true;isBoldText = false;isItalicText = false; fontSize = 9;fontName = "Times New Roman";
+		        CellStyle sectionStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle sectioncostStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.RIGHT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle sectionunitsStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        
+		        CellStyle centerStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        CellStyle rightStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.RIGHT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+		        
+		        
+	            XSSFRow headingRow = contractsSheet.createRow(0);
+	            String headerString = "Work^Contract ID^Contract Name^Contract Short Name^Contractor^Department^HOD^DY HOD^Bank Funded(Yes/No)^Bank Name^Type of Review^Notice Inviting Tender^Contract Type^Scope of Contract"
+	            		+ "^Estimated Cost\n(Rs in Lakhs)^Planned Date of Award^Awarded Cost\n(Rs in Lakhs)^LOA Letter Number^LOA Date^CA NO^CA Date^Date of Start^DOC^"
+	            		+ "Actual Completion Date^Final Taking over by Client^Date of issue of Completion Certificate^Date of Payment of Final bill^Date of release of Final Retention / BG^Completion  Cost\n(Rs in Lakhs)^"
+	            		+ "End date of Defect Liability Period^Date of release of PBG^Date of Contract Closure^Contract Status^Status of Work^Bank Guarantee Requried^Insurance Requried^Tally Head";
+	            
+	            String[] headerStringArr = headerString.split("\\^");
+	            
+	            for (int i = 0; i < headerStringArr.length; i++) {		        	
+		        	Cell cell = headingRow.createCell(i);
+			        cell.setCellStyle(greenStyle);
+					cell.setCellValue(headerStringArr[i]);
+				}
+	            
+	            NumberFormat numberFormatter = new DecimalFormat("#0.00");
+	            
+	            short rowNo = 1;
+	            for (Contract obj : dataList) {
+	                XSSFRow row = contractsSheet.createRow(rowNo);
+	                int c = 0;
+	                
+	                Cell cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getWork_id_fk() +" - "+obj.getWork_name());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_id());
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_name());
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_short_name());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue((!StringUtils.isEmpty(obj.getContractor_id_fk())?obj.getContractor_id_fk():"")+(!StringUtils.isEmpty(obj.getContractor_name())?" - "+obj.getContractor_name():""));
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getHod_department());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getDesignation());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getDy_hod_designation());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getBank_funded());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getBank_name());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getType_of_review());	
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getNoticeinvitingtender());						
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_type_fk());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getScope_of_contract());
+					
+					String estimated_cost = "";
+					String estimated_cost_units = "";
+					if(!StringUtils.isEmpty(obj.getEstimated_cost())) {
+						estimated_cost = obj.getEstimated_cost();
+					}
+					if(!StringUtils.isEmpty(obj.getEstimated_cost_units())) {
+						estimated_cost_units = obj.getEstimated_cost_units();
+					}
+					
+					
+					
+					Double estimated_cost_value = null;
+					if(!StringUtils.isEmpty(estimated_cost) && !StringUtils.isEmpty(estimated_cost_units)) {
+						double val = (Double.parseDouble(estimated_cost)*Double.parseDouble(estimated_cost_units))/100000;
+						estimated_cost_value = Double.parseDouble(numberFormatter.format(val));
+					}
+					cell = row.createCell(c++);
+					cell.setCellStyle(rightStyle);
+					if(!StringUtils.isEmpty(estimated_cost_value)) {
+						cell.setCellValue(estimated_cost_value);
+					}else {
+						cell.setCellValue("");
+					}
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getPlanned_date_of_award());
+					
+					String awarded_cost = "";
+					String awarded_cost_units = "";
+					if(!StringUtils.isEmpty(obj.getAwarded_cost())) {
+						awarded_cost = obj.getAwarded_cost();
+					}
+					if(!StringUtils.isEmpty(obj.getAwarded_cost_units())) {
+						awarded_cost_units = obj.getAwarded_cost_units();
+					}
+					Double awarded_cost_value = null;
+					if(!StringUtils.isEmpty(awarded_cost) && !StringUtils.isEmpty(awarded_cost_units)) {
+						double val = (Double.parseDouble(awarded_cost)*Double.parseDouble(awarded_cost_units))/100000;
+						awarded_cost_value = Double.parseDouble(numberFormatter.format(val));
+					}
+					cell = row.createCell(c++);
+					cell.setCellStyle(rightStyle);
+					if(!StringUtils.isEmpty(awarded_cost_value)) {
+						cell.setCellValue(awarded_cost_value);
+					}else {
+						cell.setCellValue("");
+					}
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getLoa_letter_number());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getLoa_date());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getCa_no());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getCa_date());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getDate_of_start());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getDoc());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getActual_completion_date());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getFinal_takeover());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getCompletion_certificate_release());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getFinal_bill_release());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getRetention_money_release());
+					
+					String completed_cost = "";
+					String completed_cost_units = "";
+					if(!StringUtils.isEmpty(obj.getCompleted_cost())) {
+						completed_cost = obj.getCompleted_cost();
+					}
+					if(!StringUtils.isEmpty(obj.getCompleted_cost_units())) {
+						completed_cost_units = obj.getCompleted_cost_units();
+					}
+					Double completed_cost_value = null;
+					if(!StringUtils.isEmpty(completed_cost) && !StringUtils.isEmpty(completed_cost_units)) {
+						double val = (Double.parseDouble(completed_cost)*Double.parseDouble(completed_cost_units))/100000;
+						completed_cost_value = Double.parseDouble(numberFormatter.format(val));
+					}
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(rightStyle);
+					if(!StringUtils.isEmpty(completed_cost_value)) {
+						cell.setCellValue(completed_cost_value);
+					}else {
+						cell.setCellValue("");
+					}
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getDefect_liability_period());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getPbg_release());					
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getContract_closure_date());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getContract_status());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getContract_status_fk());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getBg_required());
+	                
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getInsurance_required());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getTally_head());
+	                
+	                rowNo++;
+	            }
+	            for(int columnIndex = 0; columnIndex < headerStringArr.length; columnIndex++) {
+	            	contractsSheet.setColumnWidth(columnIndex, 25 * 200);
+				}
+	            
+	            
+	            /********************************** Revision Details *********************************************************/
+	            
+	            headingRow = revisionsSheet.createRow(0);
+	            headerString = "Contract ID^Contract Short Name^Revision Number^Revised Contract Value\n(Rs in Lakhs)^Current^Revised DOC^Current^Approval by Bank(Yes/No)^Remarks";
+	            
+	            headerStringArr = headerString.split("\\^");
+	            
+	            for (int i = 0; i < headerStringArr.length; i++) {		        	
+		        	Cell cell = headingRow.createCell(i);
+			        cell.setCellStyle(greenStyle);
+					cell.setCellValue(headerStringArr[i]);
+				}
+	            
+	            rowNo = 1;
+	            for (Contract obj : revisionsDataList) {
+	                XSSFRow row = revisionsSheet.createRow(rowNo);
+	                int c = 0;
+	                
+	                Cell cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_id());
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_short_name());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRevision_number());
+					
+					String revised_amount = "";
+					String revised_amount_units = "";
+					if(!StringUtils.isEmpty(obj.getRevised_amount())) {
+						revised_amount = obj.getRevised_amount();
+					}
+					if(!StringUtils.isEmpty(obj.getRevised_amount_units())) {
+						revised_amount_units = obj.getRevised_amount_units();
+					}
+					Double revised_amount_value = null;
+					if(!StringUtils.isEmpty(revised_amount) && !StringUtils.isEmpty(revised_amount_units)) {
+						double val = (Double.parseDouble(revised_amount)*Double.parseDouble(revised_amount_units))/100000;
+						revised_amount_value = Double.parseDouble(numberFormatter.format(val));
+					}
+					cell = row.createCell(c++);
+					cell.setCellStyle(rightStyle);
+					if(!StringUtils.isEmpty(revised_amount_value)) {
+						cell.setCellValue(revised_amount_value);
+					}else {
+						cell.setCellValue("");
+					}
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getRevision_amounts_status());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getRevised_doc());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getRevision_status());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getApprovalbybank());				
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRemarks());
+	                
+	                rowNo++;
+	            }
+	            for(int columnIndex = 0; columnIndex < headerStringArr.length; columnIndex++) {
+	            	revisionsSheet.setColumnWidth(columnIndex, 25 * 200);
+				}
+	            
+	            /********************************** BG Details *********************************************************/
+	            
+	            headingRow = bgSheet.createRow(0);
+	            headerString = "Contract ID^Contract Short Name^Code^BG Type^Issuing Bank^BG / FDR Number^Amount\n(Rs in Lakhs)^BG / FDR Date^Expiry Date^Release Date";
+	            
+	            headerStringArr = headerString.split("\\^");
+	            
+	            for (int i = 0; i < headerStringArr.length; i++) {		        	
+		        	Cell cell = headingRow.createCell(i);
+			        cell.setCellStyle(greenStyle);
+					cell.setCellValue(headerStringArr[i]);
+				}
+	            
+	            rowNo = 1;
+	            for (Contract obj : bgDataList) {
+	                XSSFRow row = bgSheet.createRow(rowNo);
+	                int c = 0;
+	                
+	                Cell cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_id());
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_short_name());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(rightStyle);
+					cell.setCellValue(obj.getCode());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getBg_type_fk());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getIssuing_bank());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getBg_number());
+					
+					String bg_value = "";
+					String bg_value_units = "";
+					if(!StringUtils.isEmpty(obj.getBg_value())) {
+						bg_value = obj.getBg_value();
+					}
+					if(!StringUtils.isEmpty(obj.getBg_value_units())) {
+						bg_value_units = obj.getBg_value_units();
+					}
+					Double bg_value_value = null;
+					if(!StringUtils.isEmpty(bg_value) && !StringUtils.isEmpty(bg_value_units)) {
+						double val = (Double.parseDouble(bg_value)*Double.parseDouble(bg_value_units))/100000;
+						bg_value_value = Double.parseDouble(numberFormatter.format(val));
+					}
+					cell = row.createCell(c++);
+					cell.setCellStyle(rightStyle);
+					if(!StringUtils.isEmpty(bg_value_value)) {
+						cell.setCellValue(bg_value_value);
+					}else {
+						cell.setCellValue("");
+					}
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getBg_date());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getBg_valid_upto());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getRelease_date());
+					
+	                
+	                rowNo++;
+	            }
+	            for(int columnIndex = 0; columnIndex < headerStringArr.length; columnIndex++) {
+	            	bgSheet.setColumnWidth(columnIndex, 25 * 200);
+				}
+	            
+	            /********************************** Insurance Details *********************************************************/
+	            
+	            headingRow = insuranceSheet.createRow(0);
+	            headerString = "Contract ID^Contract Short Name^Insurance Type^Issuing Agency^Agency Address^Insurance Number^Insurance Value\n(Rs in Lakhs)^Valid Upto^Release";
+	            
+	            headerStringArr = headerString.split("\\^");
+	            
+	            for (int i = 0; i < headerStringArr.length; i++) {		        	
+		        	Cell cell = headingRow.createCell(i);
+			        cell.setCellStyle(greenStyle);
+					cell.setCellValue(headerStringArr[i]);
+				}
+	            
+	            rowNo = 1;
+	            for (Contract obj : insuranceDataList) {
+	                XSSFRow row = insuranceSheet.createRow(rowNo);
+	                int c = 0;
+	                
+	                Cell cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_id());
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_short_name());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getInsurance_type_fk());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getIssuing_agency());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getAgency_address());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getInsurance_number());
+					
+					String insurance_value = "";
+					String insurance_value_units = "";
+					if(!StringUtils.isEmpty(obj.getInsurance_value())) {
+						insurance_value = obj.getInsurance_value();
+					}
+					if(!StringUtils.isEmpty(obj.getInsurance_value_units())) {
+						insurance_value_units = obj.getInsurance_value_units();
+					}
+					Double insurance_value_value = null;
+					if(!StringUtils.isEmpty(insurance_value) && !StringUtils.isEmpty(insurance_value_units)) {
+						double val = (Double.parseDouble(insurance_value)*Double.parseDouble(insurance_value_units))/100000;
+						insurance_value_value = Double.parseDouble(numberFormatter.format(val));
+					}
+					cell = row.createCell(c++);
+					cell.setCellStyle(rightStyle);
+					if(!StringUtils.isEmpty(insurance_value_value)) {
+						cell.setCellValue(insurance_value_value);
+					}else {
+						cell.setCellValue("");
+					}
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getInsurence_valid_upto());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getInsurance_status());
+					
+	                
+	                rowNo++;
+	            }
+	            for(int columnIndex = 0; columnIndex < headerStringArr.length; columnIndex++) {
+	            	insuranceSheet.setColumnWidth(columnIndex, 25 * 200);
+				}
+	            
+	            /********************************** Milestone Details *********************************************************/
+	            
+	            headingRow = milestoneSheet.createRow(0);
+	            headerString = "Contract ID^Contract Short Name^Milestone ID^Milestone Name^Milestone Date^Actual Date^Revision^Remarks ";
+	            
+	            headerStringArr = headerString.split("\\^");
+	            
+	            for (int i = 0; i < headerStringArr.length; i++) {		        	
+		        	Cell cell = headingRow.createCell(i);
+			        cell.setCellStyle(greenStyle);
+					cell.setCellValue(headerStringArr[i]);
+				}
+	            
+	            rowNo = 1;
+	            for (Contract obj : milestoneDataList) {
+	                XSSFRow row = milestoneSheet.createRow(rowNo);
+	                int c = 0;
+					
+					Cell cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_id());
+					
+	                cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getContract_short_name());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getMilestone_id());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getMilestone_name());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getMilestone_date());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(centerStyle);
+					cell.setCellValue(obj.getActual_date());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRevision());
+					
+					cell = row.createCell(c++);
+					cell.setCellStyle(sectionStyle);
+					cell.setCellValue(obj.getRemarks());
+					
+	                rowNo++;
+	            }
+	            for(int columnIndex = 0; columnIndex < headerStringArr.length; columnIndex++) {
+	            	milestoneSheet.setColumnWidth(columnIndex, 25 * 200);
+				}
+	            
+	            /*******************************************************************************************/
+	            
+	            
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
+                Date date = new Date();
+                String fileName = "Contract_"+dateFormat.format(date);
+                
+	            try{
+	                /*FileOutputStream fos = new FileOutputStream(fileDirectory +fileName+".xls");
+	                workBook.write(fos);
+	                fos.flush();*/
+	            	
+	               response.setContentType("application/.csv");
+	 			   response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+	 			   response.setContentType("application/vnd.ms-excel");
+	 			   // add response header
+	 			   response.addHeader("Content-Disposition", "attachment; filename=" + fileName+".xlsx");
+	 			   
+	 			    //copies all bytes from a file to an output stream
+	 			   workBook.write(response.getOutputStream()); // Write workbook to response.
+		           workBook.close();
+	 			    //flushes output stream
+	 			    response.getOutputStream().flush();
+	            	
+	                
+	                attributes.addFlashAttribute("success",dataExportSucess);
+	            	//response.setContentType("application/vnd.ms-excel");
+	            	//response.setHeader("Content-Disposition", "attachment; filename=filename.xls");
+	            	//XSSFWorkbook  workbook = new XSSFWorkbook ();
+	            	// ...
+	            	// Now populate workbook the usual way.
+	            	// ...
+	            	//workbook.write(response.getOutputStream()); // Write workbook to response.
+	            	//workbook.close();
+	            }catch(FileNotFoundException e){
+	                //e.printStackTrace();
+	                attributes.addFlashAttribute("error",dataExportInvalid);
+	            }catch(IOException e){
+	                //e.printStackTrace();
+	                attributes.addFlashAttribute("error",dataExportError);
+	            }
+	         }else{
+	        	 attributes.addFlashAttribute("error",dataExportNoData);
+	         }
+		}catch(Exception e){	
+			e.printStackTrace();
+			logger.error("exportContract : "+e.getMessage());
+			attributes.addFlashAttribute("error", commonError);			
+		}
+		//return view;
+	}
+	
+	
+	private CellStyle cellFormating(XSSFWorkbook workBook,byte[] rgb,HorizontalAlignment hAllign, VerticalAlignment vAllign, boolean isWrapText,boolean isBoldText,boolean isItalicText,int fontSize,String fontName) {
+		CellStyle style = workBook.createCellStyle();
+		//Setting Background color  
+		//style.setFillBackgroundColor(IndexedColors.AQUA.getIndex());
+		style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		
+		if (style instanceof XSSFCellStyle) {
+		   XSSFCellStyle xssfcellcolorstyle = (XSSFCellStyle)style;
+		   xssfcellcolorstyle.setFillForegroundColor(new XSSFColor(rgb, null));
+		}
+		//style.setFillPattern(FillPatternType.ALT_BARS);
+		style.setBorderBottom(BorderStyle.MEDIUM);
+		style.setBorderTop(BorderStyle.MEDIUM);
+		style.setBorderLeft(BorderStyle.MEDIUM);
+		style.setBorderRight(BorderStyle.MEDIUM);
+		style.setAlignment(hAllign);
+		style.setVerticalAlignment(vAllign);
+		style.setWrapText(isWrapText);
+		
+		Font font = workBook.createFont();
+        //font.setColor(HSSFColor.HSSFColorPredefined.WHITE.getIndex());
+        font.setFontHeightInPoints((short)fontSize);  
+        font.setFontName(fontName);  //"Times New Roman"
+        
+        font.setItalic(isItalicText); 
+        font.setBold(isBoldText);
+        // Applying font to the style  
+        style.setFont(font); 
+        
+        return style;
+	}
 }

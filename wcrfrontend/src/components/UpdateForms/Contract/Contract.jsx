@@ -6,6 +6,8 @@ import { LuCloudDownload } from "react-icons/lu";
 import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
+import { MdEditNote } from "react-icons/md";
+
 
 export default function Contract() {
   const location = useLocation();
@@ -400,7 +402,7 @@ export default function Contract() {
                               className="btn btn-sm btn-outline-primary" 
                               onClick={() => handleEdit(contract)}
                             >
-                              Edit
+                               <MdEditNote size="22" />
                             </button>
                           </td>
                         </tr>

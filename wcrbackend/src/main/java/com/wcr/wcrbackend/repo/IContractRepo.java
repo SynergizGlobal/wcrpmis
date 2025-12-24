@@ -54,5 +54,24 @@ public interface IContractRepo {
 	public List<Contract> getBankNameList(Contract obj) throws Exception;
 
 	public List<Contract> getContractStatusType(Contract obj)throws Exception;
+	
+	public String addContract(Contract contract)throws Exception;
+	
+	public List<Contract> getExecutivesListForContractForm(Contract obj) throws Exception;
+	
+	public List<Contract> getHodList(Contract obj) throws Exception;
+
+	public List<Contract> getDyHodList(Contract obj) throws Exception;
+
+	public List<Contract> contractListForExport(Contract contract) throws Exception;
+
+	public List<Contract> contractRevisionsList(Contract contract) throws Exception;
+
+	public List<Contract> contractBGList(Contract contract) throws Exception;
+
+	public List<Contract> contractInsuranceList(Contract contract) throws Exception;
+
+	public List<Contract> contractMilestoneList(Contract contract) throws Exception;
+
 }
 
