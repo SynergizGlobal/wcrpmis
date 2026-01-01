@@ -13,753 +13,1133 @@ import { BiListPlus } from 'react-icons/bi';
 import { RiAttachment2 } from 'react-icons/ri';
 
 export default function ContractForm() {
-
   const [activeTab, setActiveTab] = useState("managers");
-
   const navigate = useNavigate();
-      const { state } = useLocation(); // passed when editing
-      const row = state?.data || null;
-      const isEdit = !!row;
+  const { state } = useLocation(); // passed when editing
+  const row = state?.data || null;
+  const isEdit = !!row;
 
-      const [projectOptions, setProjectOptions] = useState([]);
-      const [loading, setLoading] = useState(false);
-      const [savingForEdit, setSavingForEdit] = useState(false);
-
+  // State for dropdown options
+  const [projectOptions, setProjectOptions] = useState([]);
+  const [hodOptions, setHodOptions] = useState([]);
+  const [dyHodOptions, setDyHodOptions] = useState([]);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
+  const [contractTypeOptions, setContractTypeOptions] = useState([]);
+  const [contractorOptions, setContractorOptions] = useState([]);
+  const [executiveOptions, setExecutiveOptions] = useState({});
+  const [bgTypeOptions, setBgTypeOptions] = useState([]);
+  const [insuranceTypeOptions, setInsuranceTypeOptions] = useState([]);
+  const [contractStatusOptions, setContractStatusOptions] = useState([]);
+  const [bankNameOptions, setBankNameOptions] = useState([]);
+  const [unitOptions, setUnitOptions] = useState([]); 
+  const [fileTypeOptions, setFileTypeOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [savingForEdit, setSavingForEdit] = useState(false);
+  const [formLoading, setFormLoading] = useState(true);
+  const [loadingExecutives, setLoadingExecutives] = useState(false);
   const {
-          register,
-          control,
-          handleSubmit,
-          setValue,
-          getValues,
-          watch,
-          formState: { errors },
-        } = useForm({
-          defaultValues: {
-            project_id_fk: "",
-            contract_status: "",
-            hod_user_id_fk: "",
-            dy_hod_user_id_fk: "",
-            contract_department: "",
-            contract_short_name: "",
-            bank_funded: "",
-            bank_name: "",
-            type_of_review: "",
-            contract_name: "",
-            contract_type_fk: "",
-            contractor_id_fk: "",
-            bg_required: "",
-            insurance_required: "",
-            milestone_requried: "",
-            revision_requried: "",
-            contractors_key_requried: "",
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    getValues,
+    watch,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      project_id_fk: "",
+      contract_status: "",
+      hod_user_id_fk: "",
+      dy_hod_user_id_fk: "",
+      contract_department: "",
+      contract_short_name: "",
+      bank_funded: "",
+      bank_name: "",
+      type_of_review: "",
+      contract_name: "",
+      contract_type_fk: "",
+      contractor_id_fk: "",
+      bg_required: "",
+      insurance_required: "",
+      milestone_requried: "",
+      revision_requried: "",
+      contractors_key_requried: "",
+      estimated_cost_unit: "Rs", // Added unit field with default Rs
 
-            executives: [{ department_fks: "", responsible_people_id_fks: "" }],
-            tenderBidRevisions: [{ revisionno: "", revision_estimated_cost: "", revision_planned_date_of_award: "", revision_planned_date_of_completion: "", notice_inviting_tender: "", tender_bid_opening_date: "", technical_eval_approval: "", financial_eval_approval: "", tender_bid_remarks: "" }],
-            bgDetailsList : [{ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_dates: "", bg_valid_uptos: "", release_dates: ""  }],
-            insuranceRequired: [{ insurance_type_fks: "", issuing_agencys: "", agency_addresss: "", insurance_numbers: "", insurance_values: "", insurence_valid_uptos: "", insuranceStatus: "" }],
-            milestoneRequired: [{ milestone_ids: "", milestone_names: "", milestone_dates: "", actual_dates: "", revisions: "", mile_remarks: "" }],
-            revisionRequired: [{ revision_numbers: "", revised_amounts: "", revision_amounts_statuss: "", revised_docs: "", revision_statuss: "", approvalbybankstatus: "" }],
-            contractorsKeyRequried: [{ contractKeyPersonnelNames: "", contractKeyPersonnelDesignations: "", contractKeyPersonnelMobileNos: "", contractKeyPersonnelEmailIds: "" }],
-            documentsTable: [{ contract_file_types: "", contractDocumentNames: "", contractDocumentFiles: "" }],
+      executives: [{ department_fks: "", responsible_people_id_fks: "" }],
+      tenderBidRevisions: [{ revisionno: "R1", revision_estimated_cost: "", revision_planned_date_of_award: "", revision_planned_date_of_completion: "", notice_inviting_tender: "", tender_bid_opening_date: "", technical_eval_approval: "", financial_eval_approval: "", tender_bid_remarks: "" }],
+      bgDetailsList: [{ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_unit: "Rs", bg_dates: "", bg_valid_uptos: "", release_dates: "" }],
+      insuranceRequired: [{ insurance_type_fks: "", issuing_agencys: "", agency_addresss: "", insurance_numbers: "", insurance_values: "", insurance_unit: "Rs", insurence_valid_uptos: "", insuranceStatus: "" }],
+      milestoneRequired: [{ milestone_ids: "K-1", milestone_names: "", milestone_dates: "", actual_dates: "", revisions: "", mile_remarks: "" }],
+      revisionRequired: [{ revision_numbers: "R1", revised_amounts: "", revision_unit: "Rs", revision_amounts_statuss: "", revised_docs: "", revision_statuss: "", approvalbybankstatus: "" }],
+      contractorsKeyRequried: [{ contractKeyPersonnelNames: "", contractKeyPersonnelDesignations: "", contractKeyPersonnelMobileNos: "", contractKeyPersonnelEmailIds: "" }],
+      documentsTable: [{ contract_file_types: "", contractDocumentNames: "", contractDocumentFiles: "" }],
+    }
+  });
 
-          }
-        });
+  const bankFunded = watch("bank_funded");
+  const contractStatus = watch("contract_status");
+  const bgDetails = watch("bg_required");
+  const insuranceRequiredbutton = watch("insurance_required");
+  const milestoneRequiredButton = watch("milestone_requried");
+  const revisionRequiredButton = watch("revision_requried");
+  const contractorsKeyRequriedButton = watch("contractors_key_requried");
 
+  const { fields: executiveFields, append: appendExecutive, remove: removeExecutive } = useFieldArray({
+    control,
+    name: "executives",
+  });
 
-        const bankFunded = watch("bank_funded");
-        const contractStatus = watch("contract_status");
-        const bgDetails = watch("bg_required");
-        const insuranceRequiredbutton = watch("insurance_required");
-        const milestoneRequiredButton= watch("milestone_requried");
-        const revisionRequiredButton = watch("revision_requried");
-        const contractorsKeyRequriedButton = watch("contractors_key_requried");
+  const { fields: tenderBidRevisionsFields, append: appendTenderBidRevisions, remove: removeTenderBidRevisions } = useFieldArray({
+    control,
+    name: "tenderBidRevisions",
+  });
 
-          const { fields: executiveFields, append: appendExecutive, remove: removeExecutive } = useFieldArray({
-            control,
-            name: "executives",
-          });
+  const { fields: bgDetailsListFields, append: appendBgDetailsList, remove: removeBgDetailsList } = useFieldArray({
+    control,
+    name: "bgDetailsList",
+  });
 
-          const { fields: tenderBidRevisionsFields, append: appendTenderBidRevisions, remove: removeTenderBidRevisions } = useFieldArray({
-            control,
-            name: "tenderBidRevisions",
-          });
+  const { fields: insuranceRequiredFields, append: appendInsuranceRequired, remove: removeInsuranceRequired } = useFieldArray({
+    control,
+    name: "insuranceRequired",
+  });
 
-          const { fields: bgDetailsListFields, append: appendBgDetailsList, remove: removeBgDetailsList } = useFieldArray({
-            control,
-            name: "bgDetailsList",
-          });
-          
-          const { fields: insuranceRequiredFields, append: appendInsuranceRequired, remove: removeInsuranceRequired } = useFieldArray({
-            control,
-            name: "insuranceRequired",
-          });
+  const { fields: milestoneRequiredFields, append: appendMilestoneRequired, remove: removeMilestoneRequired } = useFieldArray({
+    control,
+    name: "milestoneRequired",
+  });
 
-          const { fields: milestoneRequiredFields, append: appendMilestoneRequired, remove: removeMilestoneRequired } = useFieldArray({
-            control,
-            name: "milestoneRequired",
-          });
+  const { fields: revisionRequiredFields, append: appendRevisionRequired, remove: removeRevisionRequired } = useFieldArray({
+    control,
+    name: "revisionRequired",
+  });
 
-          const { fields: revisionRequiredFields, append: appendRevisionRequired, remove: removeRevisionRequired } = useFieldArray({
-            control,
-            name: "revisionRequired",
-          });
+  const { fields: contractorsKeyRequriedFields, append: appendContractorsKeyRequried, remove: removeContractorsKeyRequried } = useFieldArray({
+    control,
+    name: "contractorsKeyRequried",
+  });
 
-          const { fields: contractorsKeyRequriedFields, append: appendContractorsKeyRequried, remove: removeContractorsKeyRequried } = useFieldArray({
-            control,
-            name: "contractorsKeyRequried",
-          });
+  const { fields: documentsTableFields, append: appendDocumentsTable, remove: removeDocumentsTable } = useFieldArray({
+    control,
+    name: "documentsTable",
+  });
 
-          const { fields: documentsTableFields, append: appendDocumentsTable, remove: removeDocumentsTable } = useFieldArray({
-            control,
-            name: "documentsTable",
-          });
-        
-    const onSubmit = async (data, saveForEdit = false) => {
-      if (saveForEdit) {
-        setSavingForEdit(true);
-      } else {
-        setLoading(true);
-      }
-      
+  // Generate revision number based on index (for tender bid revisions)
+  const generateRevisionNumber = (index) => {
+    return `R${index + 1}`;
+  };
+
+  // Generate milestone ID based on index
+  const generateMilestoneId = (index) => {
+    return `K-${index + 1}`;
+  };
+
+  // Generate revision number for revision required section
+  const generateRevisionRequiredNumber = (index) => {
+    return `R${index + 1}`;
+  };
+
+  // Handle adding new tender bid revision
+  const handleAppendTenderBidRevision = () => {
+    const nextRevisionNumber = generateRevisionNumber(tenderBidRevisionsFields.length);
+    appendTenderBidRevisions({
+      revisionno: nextRevisionNumber,
+      revision_estimated_cost: "",
+      revision_planned_date_of_award: "",
+      revision_planned_date_of_completion: "",
+      notice_inviting_tender: "",
+      tender_bid_opening_date: "",
+      technical_eval_approval: "",
+      financial_eval_approval: "",
+      tender_bid_remarks: ""
+    });
+  };
+
+  // Handle removing tender bid revision (prevent deletion of R1)
+  const handleRemoveTenderBidRevision = (index) => {
+    // Check if this is the first revision (R1)
+    const revisionNumber = getValues(`tenderBidRevisions.${index}.revisionno`);
+    if (revisionNumber === "R1") {
+      alert("Cannot delete the first revision (R1).");
+      return;
+    }
+    removeTenderBidRevisions(index);
+  };
+
+  // Handle adding new milestone
+  const handleAppendMilestone = () => {
+    const nextMilestoneId = generateMilestoneId(milestoneRequiredFields.length);
+    appendMilestoneRequired({
+      milestone_ids: nextMilestoneId,
+      milestone_names: "",
+      milestone_dates: "",
+      actual_dates: "",
+      revisions: "",
+      mile_remarks: ""
+    });
+  };
+
+  // Handle removing milestone (prevent deletion of K-1)
+  const handleRemoveMilestone = (index) => {
+    // Check if this is the first milestone (K-1)
+    const milestoneId = getValues(`milestoneRequired.${index}.milestone_ids`);
+    if (milestoneId === "K-1") {
+      alert("Cannot delete the first milestone (K-1).");
+      return;
+    }
+    removeMilestoneRequired(index);
+  };
+
+  // Handle adding new revision required
+  const handleAppendRevisionRequired = () => {
+    const nextRevisionNumber = generateRevisionRequiredNumber(revisionRequiredFields.length);
+    appendRevisionRequired({
+      revision_numbers: nextRevisionNumber,
+      revised_amounts: "",
+      revision_unit: "Rs",
+      revision_amounts_statuss: "",
+      revised_docs: "",
+      revision_statuss: "",
+      approvalbybankstatus: ""
+    });
+  };
+
+  // Handle removing revision required (prevent deletion of R1)
+  const handleRemoveRevisionRequired = (index) => {
+    // Check if this is the first revision (R1)
+    const revisionNumber = getValues(`revisionRequired.${index}.revision_numbers`);
+    if (revisionNumber === "R1") {
+      alert("Cannot delete the first revision (R1).");
+      return;
+    }
+    removeRevisionRequired(index);
+  };
+
+  // Fetch dropdown data on component mount
+  useEffect(() => {
+    const fetchDropdownData = async () => {
       try {
-        const formData = new FormData();
-        
-        // Append all form fields to FormData
-        Object.keys(data).forEach(key => {
-          if (key !== 'documentsTable') {
-            if (typeof data[key] === 'object' && data[key] !== null) {
-              formData.append(key, JSON.stringify(data[key]));
-            } else {
-              formData.append(key, data[key] || '');
-            }
-          }
-        });
+        setFormLoading(true);
+        const response = await api.post(`${API_BASE_URL}/contract/add-contract-form`, {});
 
-        // Handle file uploads separately
-        data.documentsTable?.forEach((doc, index) => {
-          if (doc.contractDocumentFiles && doc.contractDocumentFiles[0]) {
-            formData.append(`document_${index}`, doc.contractDocumentFiles[0]);
-            formData.append(`document_name_${index}`, doc.contractDocumentNames || '');
-            formData.append(`document_type_${index}`, doc.contract_file_types || '');
-          }
-        });
+        if (response.data.success) {
+          // Transform and set dropdown options
+          
+          // Projects: project_id and project_name
+          const projects = response.data.projectsList || [];
+          const projectOpts = projects.map(project => ({
+            value: project.project_id,
+            label:`${project.project_id} - ${project.project_name}`
+          }));
+          setProjectOptions(projectOpts);
 
-        let response;
-        if (isEdit) {
-          // Update existing contract
-          response = await api.put(`${API_BASE_URL}/contracts/${row.id}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-        } else {
-          // Create new contract
-          response = await api.post(`${API_BASE_URL}/contracts`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-        }
-        
-        if (saveForEdit) {
-          // If saving for edit, stay on the page and show success message
-          alert("Contract saved successfully! You can continue editing.");
-          // If this was a new contract, we might want to update the URL or form mode
-          if (!isEdit && response.data?.id) {
-            // Optionally update to edit mode with the new ID
-            console.log("New contract created with ID:", response.data.id);
-            // You could navigate to edit mode or just refresh the form
+          // HOD: designation and user_name
+          const hodList = response.data.hodList || [];
+          const hodOpts = hodList.map(hod => ({
+             value: hod.user_id || hod.id || hod.designation + "_" + hod.user_name,
+            label:`${hod.designation} - ${hod.user_name}`
+          }));
+          setHodOptions(hodOpts);
+
+          // Dy HOD: designation and user_name
+          const dyHodList = response.data.dyHodList || [];
+          const dyHodOpts = dyHodList.map(dyHod => ({
+            value: dyHod.user_id || dyHod.id || dyHod.designation + "_" + dyHod.user_name,
+            label: `${dyHod.designation} - ${dyHod.user_name}`
+          }));
+          setDyHodOptions(dyHodOpts);
+
+          // Contract Department: department_name
+          const departments = response.data.departmentList || [];
+          const deptOpts = departments.map(dept => ({
+            value: dept.department_fk,
+            label: dept.department_name
+          }));
+          setDepartmentOptions(deptOpts);
+
+          // Contract Type
+          const contractTypes = response.data.contract_type || [];
+          const contractTypeOpts = contractTypes.map(type => ({
+            value: type.id || type.value,
+            label: type.name || type.label
+          }));
+          setContractTypeOptions(contractTypeOpts);
+
+          // Contractors
+          const contractors = response.data.contractors || [];
+          const contractorOpts = contractors.map(contractor => ({
+            value: contractor.id || contractor.value,
+            label: contractor.name || contractor.label
+          }));
+          setContractorOptions(contractorOpts);
+
+          // Responsible People (Executives)
+		  const responsiblePeople = response.data.responsiblePeopleList || [];
+		  const executiveOpts = responsiblePeople.map(person => ({
+		    value: person.id || person.value, // This should be a unique ID
+		    label: `${person.designation || ''} - ${person.user_name || person.name || person.label}`.trim()
+		  }));
+		  setExecutiveOptions(executiveOpts);
+          // Bank Guarantee Type
+          const bgTypes = response.data.bankGuaranteeType || [];
+          const bgTypeOpts = bgTypes.map(type => ({
+            value: type.id || type.bg_type_fk,
+            label: type.bg_type_fk
+          }));
+          setBgTypeOptions(bgTypeOpts);
+
+          // Insurance Type
+          const insuranceTypes = response.data.insurance_type || [];
+          const insuranceTypeOpts = insuranceTypes.map(type => ({
+            value: type.id || type.insurance_type,
+            label: type.insurance_type
+          }));
+          setInsuranceTypeOptions(insuranceTypeOpts);
+
+          // Contract Status
+          const contractStatuses = response.data.contract_Statustype || [];
+          const contractStatusOpts = contractStatuses.map(status => ({
+			 value:  status.contract_status_fk,
+			  label: status.contract_status_fk 
+			}));
+          setContractStatusOptions(contractStatusOpts);
+
+          // Bank Names
+          const bankNames = response.data.bankNameList || [];
+          const bankNameOpts = bankNames.map(bank => ({
+            value: bank.id || bank.value || bank.bank_name,
+            label: bank.bank_name || bank.label || bank.name
+          }));
+          setBankNameOptions(bankNameOpts);
+
+          // Unit Options - Added this section
+          // If API returns unit options, use them, otherwise use default ones
+          const units = response.data.unitsList || [];
+          let unitOpts = units.map(unit => ({
+              value: unit.id || unit.value,
+              label: unit.unit || unit.label
+            }));
+          
+          // Check if "Rs" exists in unit options
+          const hasRs = unitOpts.some(unit => 
+            unit.value === "Rs" || unit.label === "Rs" || 
+            unit.value === "₹" || unit.label === "₹" ||
+            unit.value === "INR" || unit.label === "INR"
+          );
+          
+          // If "Rs" doesn't exist, add it as the first option
+          if (!hasRs) {
+            unitOpts = [
+              { value: "Rs", label: "Rs" },
+              ...unitOpts
+            ];
           }
+          
+          setUnitOptions(unitOpts);
+		  
+		  const fileTypes = response.data.contractFileTypeList || [];
+		  const fileTypeOpts = fileTypes.map(fileType => ({
+		    value: fileType.contract_file_type, // Use the type as value
+		    label: fileType.contract_file_type  // Use the type as
+		  }));
+		  setFileTypeOptions(fileTypeOpts);
+
+          console.log("Dropdown data loaded successfully");
         } else {
-          // Normal save, go back to previous page
-          alert(isEdit ? "Contract updated successfully!" : "Contract added successfully!");
-          navigate(-1); // Go back to previous page
+          console.error("Failed to load dropdown data:", response.data.message);
         }
       } catch (error) {
-        console.error("Error submitting form:", error);
-        alert(`Error: ${error.response?.data?.message || error.message}`);
+        console.error("Error fetching dropdown data:", error);
       } finally {
-        if (saveForEdit) {
-          setSavingForEdit(false);
-        } else {
-          setLoading(false);
-        }
+        setFormLoading(false);
       }
     };
 
-    const handleCancel = () => {
-      if (window.confirm("Are you sure you want to cancel? Any unsaved changes will be lost.")) {
+    fetchDropdownData();
+  }, []);
+  const fetchExecutivesByDepartment = async (departmentId) => {
+    try {
+      setLoadingExecutives(true);
+      
+      const response = await api.post(`${API_BASE_URL}/contract/ajax/getExecutivesListForContractForm`, {
+        department_fk: departmentId // Send department ID to filter
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        const executiveOpts = response.data.map(person => ({
+          value: person.user_id || person.id || `${person.designation}_${person.user_name}`,
+          label: `${person.designation || ''} - ${person.user_name || person.name || ''}`.trim()
+        }));
+        
+        // Store executives for this department
+        setExecutiveOptions(prev => ({
+          ...prev,
+          [departmentId]: executiveOpts
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching executives:", error);
+    } finally {
+      setLoadingExecutives(false);
+    }
+  };
+  // Load edit data if in edit mode
+  useEffect(() => {
+    if (isEdit && row) {
+      // Set form values from row data
+      Object.keys(row).forEach(key => {
+        if (row[key] !== undefined && row[key] !== null) {
+          setValue(key, row[key]);
+        }
+      });
+
+      // Handle array fields if present in row data
+      if (row.executives && Array.isArray(row.executives)) {
+        row.executives.forEach((executive, index) => {
+          setValue(`executives.${index}`, executive);
+        });
+      }
+
+      // Similarly handle other array fields as needed
+    }
+  }, [isEdit, row, setValue]);
+
+  const onSubmit = async (data, saveForEdit = false) => {
+    if (saveForEdit) {
+      setSavingForEdit(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const formData = new FormData();
+
+      // Append all form fields to FormData
+      Object.keys(data).forEach(key => {
+        if (key !== 'documentsTable') {
+          if (typeof data[key] === 'object' && data[key] !== null) {
+            formData.append(key, JSON.stringify(data[key]));
+          } else {
+            formData.append(key, data[key] || '');
+          }
+        }
+      });
+
+      // Handle file uploads separately
+      data.documentsTable?.forEach((doc, index) => {
+        if (doc.contractDocumentFiles && doc.contractDocumentFiles[0]) {
+          formData.append(`document_${index}`, doc.contractDocumentFiles[0]);
+          formData.append(`document_name_${index}`, doc.contractDocumentNames || '');
+          formData.append(`document_type_${index}`, doc.contract_file_types || '');
+        }
+      });
+
+      let response;
+      if (isEdit) {
+        // Update existing contract
+        response = await api.put(`${API_BASE_URL}/contracts/${row.id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        // Create new contract
+        response = await api.post(`${API_BASE_URL}/contracts`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
+      if (saveForEdit) {
+        // If saving for edit, stay on the page and show success message
+        alert("Contract saved successfully! You can continue editing.");
+        // If this was a new contract, we might want to update the URL or form mode
+        if (!isEdit && response.data?.id) {
+          // Optionally update to edit mode with the new ID
+          console.log("New contract created with ID:", response.data.id);
+          // You could navigate to edit mode or just refresh the form
+        }
+      } else {
+        // Normal save, go back to previous page
+        alert(isEdit ? "Contract updated successfully!" : "Contract added successfully!");
         navigate(-1); // Go back to previous page
       }
-    };
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert(`Error: ${error.response?.data?.message || error.message}`);
+    } finally {
+      if (saveForEdit) {
+        setSavingForEdit(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  };
 
-    const executiveOptions = [
-      { value: 1, label: "Executive 1" },
-      { value: 2, label: "Executive 2" },
-      { value: 3, label: "Executive 3" }
-    ];
+  const handleCancel = () => {
+    if (window.confirm("Are you sure you want to cancel? Any unsaved changes will be lost.")) {
+      navigate(-1); // Go back to previous page
+    }
+  };
 
-    const sectionRefs = {
-      managers: useRef(null),
-      executives: useRef(null),
-      details: useRef(null),
-      closure: useRef(null),
-      bank: useRef(null),
-      insurance: useRef(null),
-      milestone: useRef(null),
-      personnel: useRef(null),
-      documents: useRef(null)
-    };
+  const sectionRefs = {
+    managers: useRef(null),
+    executives: useRef(null),
+    details: useRef(null),
+    closure: useRef(null),
+    bank: useRef(null),
+    insurance: useRef(null),
+    milestone: useRef(null),
+    personnel: useRef(null),
+    documents: useRef(null)
+  };
 
-      const tabs = [
-        { id: "managers", label: "Contract Managers" },
-        { id: "executives", label: "Executives" },
-        { id: "details", label: "Contract Details" },
-        { id: "closure", label: "Contract Closure" },
-        { id: "bank", label: "Bank Guarantee" },
-        { id: "insurance", label: "Insurance" },
-        { id: "milestone", label: "Milestone" },
-        { id: "personnel", label: "Contractor's Key Personnel" },
-        { id: "documents", label: "Documents" },
-      ];
+  const tabs = [
+    { id: "managers", label: "Contract Managers" },
+    { id: "executives", label: "Executives" },
+    { id: "details", label: "Contract Details" },
+    { id: "closure", label: "Contract Closure" },
+    { id: "bank", label: "Bank Guarantee" },
+    { id: "insurance", label: "Insurance" },
+    { id: "milestone", label: "Milestone" },
+    { id: "personnel", label: "Contractor's Key Personnel" },
+    { id: "documents", label: "Documents" },
+  ];
 
-      const scrollToSection = (id) => {
-        setActiveTab(id);
-        sectionRefs[id].current.scrollIntoView({ behavior: "smooth", block: "start" });
-      };
+  const scrollToSection = (id) => {
+    setActiveTab(id);
+    sectionRefs[id].current.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
-      useEffect(() => {
-        const handleScroll = () => {
-          let current = "";
+  useEffect(() => {
+    // Don't set up scroll listener while form is loading
+    if (formLoading) return;
 
-          Object.keys(sectionRefs).forEach((key) => {
-            const section = sectionRefs[key].current;
-            const top = section.getBoundingClientRect().top;
+    const handleScroll = () => {
+      let current = "";
 
-            if (top <= 150 && top >= -200) {
-              current = key;
-            }
-          });
+      Object.keys(sectionRefs).forEach((key) => {
+        const section = sectionRefs[key].current;
+        if (section) {
+          const top = section.getBoundingClientRect().top;
 
-          if (current) setActiveTab(current);
-        };
-
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-      }, []);
-
-        useEffect(() => {
-          if (isEdit && state?.project) {
-            Object.entries(state.project).forEach(([key, value]) => setValue(key, value));
+          if (top <= 150 && top >= -200) {
+            current = key;
           }
-        }, [state, setValue, isEdit]);
+        }
+      });
 
-      useEffect(() => {
-        console.log("📋 Current Form Mode:", isEdit ? "EDIT" : "ADD");
-        if (isEdit) console.log("🗂️ Editing Existing Record:", row);
-      }, [isEdit, row]);
+      if (current) setActiveTab(current);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [formLoading]); // Re-run when formLoading changes
+
+  useEffect(() => {
+    console.log("📋 Current Form Mode:", isEdit ? "EDIT" : "ADD");
+    if (isEdit) console.log("🗂️ Editing Existing Record:", row);
+  }, [isEdit, row]);
+
+  if (formLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: "400px" }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <span className="ms-2">Loading form data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className={`contractForm ${styles.container}`}>
       <form onSubmit={handleSubmit((data) => onSubmit(data, false))}>
         <div className="card">
-              <div className="formHeading">
-                <h2 className="center-align ps-relative">
-                  {isEdit ? "Update Contract" : "Add Contract"}
-                </h2>
-              </div>
-              <div className="innerPage">
-                <div className={styles.stickyNav}>
-                  {tabs.map(t => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => scrollToSection(t.id)}
-                      className={`${styles.navBtn} ${activeTab === t.id ? styles.activeTab : ""}`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
+          <div className="formHeading">
+            <h2 className="center-align ps-relative">
+              {isEdit ? "Update Contract" : "Add Contract"}
+            </h2>
+          </div>
+          <div className="innerPage">
+            <div className={styles.stickyNav}>
+              {tabs.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => scrollToSection(t.id)}
+                  className={`${styles.navBtn} ${activeTab === t.id ? styles.activeTab : ""}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            <div ref={sectionRefs.managers} className={styles.formSection}>
+              <h6 className="d-flex justify-content-center mt-1 mb-2">Contract Managers</h6>
+
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Project <span className="red">*</span></label>
+                  <Controller
+                    name="project_id_fk"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        classNamePrefix="react-select"
+                        options={projectOptions}
+                        placeholder="Select Project"
+                        isSearchable
+                        isClearable
+                        value={projectOptions.find(opt => opt.value === field.value) || null}
+                        onChange={(opt) => field.onChange(opt?.value || "")}
+                      />
+                    )}
+                  />
+                  {errors.project_id_fk && (
+                    <p className="red">Project is required</p>
+                  )}
+                </div>
+                <div className="form-field">
+                  <label>Contract Awarded</label>
+                  <div className="d-flex gap-20" style={{ padding: "10px" }}>
+                    <label>
+                      <input
+                        type="radio"
+                        value="yes"
+                        {...register("contract_status", { required: "Please select Contract Awarded status" })}
+                      />
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="no"
+                        {...register("contract_status")}
+                      />
+                      No
+                    </label>
+                  </div>
+                  {errors.contract_status && (
+                    <p className="red">{errors.contract_status.message}</p>
+                  )}
+                </div>
+                <div className="form-field">
+                  <label>HOD <span className="red">*</span></label>
+                  <Controller
+                    name="hod_user_id_fk"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        classNamePrefix="react-select"
+                        options={hodOptions}
+                        placeholder="Select HOD"
+                        isSearchable
+                        isClearable
+                        value={hodOptions.find(opt => opt.value === field.value) || null}
+                        onChange={(opt) => field.onChange(opt?.value || "")}
+                      />
+                    )}
+                  />
+                  {errors.hod_user_id_fk && (
+                    <p className="red">HOD is required</p>
+                  )}
+                </div>
+                <div className="form-field">
+                  <label>Dy HOD <span className="red">*</span></label>
+                  <Controller
+                    name="dy_hod_user_id_fk"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        classNamePrefix="react-select"
+                        options={dyHodOptions}
+                        placeholder="Select Dy HOD"
+                        isSearchable
+                        isClearable
+                        value={dyHodOptions.find(opt => opt.value === field.value) || null}
+                        onChange={(opt) => field.onChange(opt?.value || "")}
+                      />
+                    )}
+                  />
+                  {errors.dy_hod_user_id_fk && (
+                    <p className="red">Dy HOD is required</p>
+                  )}
+                </div>
+                <div className="form-field">
+                  <label>Contract Department <span className="red">*</span></label>
+                  <Controller
+                    name="contract_department"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        classNamePrefix="react-select"
+                        options={departmentOptions}
+                        placeholder="Select Department"
+                        isSearchable
+                        isClearable
+                        value={departmentOptions.find(opt => opt.value === field.value) || null}
+                        onChange={(opt) => field.onChange(opt?.value || "")}
+                      />
+                    )}
+                  />
+                  {errors.contract_department && (
+                    <p className="red">Contract Department is required</p>
+                  )}
+                </div>
+                <div className="form-field">
+                  <label>Contract Short Name <span className="red">*</span></label>
+                  <input
+                    type="text"
+                    maxLength={100}
+                    {...register("contract_short_name", { required: "Contract Short Name is required" })}
+                    placeholder="Enter Value"
+                  />
+                  <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                    {watch("contract_short_name")?.length || 0}/100
+                  </div>
+                  {errors.contract_short_name && (
+                    <p className="red">{errors.contract_short_name.message}</p>
+                  )}
                 </div>
 
-                <div ref={sectionRefs.managers} className={styles.formSection}> 
-                <h6 className="d-flex justify-content-center mt-1 mb-2">Contract Managers</h6>
-                
-                <div className="form-row">
+                <div className="form-field">
+                  <label>Bank Funded</label>
+                  <div className="d-flex gap-20" style={{ padding: "10px" }}>
+                    <label>
+                      <input
+                        type="radio"
+                        value="yes"
+                        {...register("bank_funded")}
+                      />
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="no"
+                        {...register("bank_funded")}
+                      />
+                      No
+                    </label>
+                  </div>
+                </div>
+                {bankFunded === "yes" && (
+                  <>
                     <div className="form-field">
-                      <label>Project <span className="red">*</span></label>
+                      <label>Bank Name</label>
                       <Controller
-                        name="project_id_fk"
+                        name="bank_name"
                         control={control}
-                        rules={{ required: true }}
                         render={({ field }) => (
                           <Select
                             {...field}
                             classNamePrefix="react-select"
-                            options={projectOptions}
-                            placeholder="Select Project"
+                            options={bankNameOptions}
+                            placeholder="Select Bank"
                             isSearchable
                             isClearable
-                            value={projectOptions.find(opt => opt.value === field.value?.value) || null}
-                            onChange={(opt) => field.onChange(opt)}
+                            value={bankNameOptions.find(opt => opt.value === field.value) || null}
+                            onChange={(opt) => field.onChange(opt?.value || "")}
                           />
                         )}
                       />
-
-                      {errors.project_id_fk && (
-                        <p className="red">{errors.project_id_fk.message}</p>
-                      )}
                     </div>
                     <div className="form-field">
-                      <label>Contract Awarded</label>
-                        <div className="d-flex gap-20" style={{padding: "10px"}}>
-                          <label>
-                            <input
-                              type="radio"
-                              value="yes"
-                              {...register("contract_status", { required: "Please select JM Approval" })}
-                            />
-                            Yes
-                          </label>
-
-                          <label>
-                            <input
-                              type="radio"
-                              value="no"
-                              {...register("contract_status")}
-                            />
-                            No
-                          </label>
-                        </div>
-                      </div>
-                      <div className="form-field">
-                      <label>HOD <span className="red">*</span></label>
-                      <Controller
-                        name="hod_user_id_fk"
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field }) => (
-                          <Select
-                            {...field}
-                            classNamePrefix="react-select"
-                            placeholder="Select Project"
-                            isSearchable
-                            isClearable
-                          />
-                        )}
-                      />
-
-                      {errors.hod_user_id_fk && (
-                        <p className="red">{errors.hod_user_id_fk.message}</p>
-                      )}
-                    </div>
-                    <div className="form-field">
-                      <label>Dy HOD <span className="red">*</span></label>
-                      <Controller
-                        name="dy_hod_user_id_fk"
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field }) => (
-                          <Select
-                            {...field}
-                            classNamePrefix="react-select"
-                            placeholder="Select Project"
-                            isSearchable
-                            isClearable
-                          />
-                        )}
-                      />
-
-                      {errors.dy_hod_user_id_fk && (
-                        <p className="red">{errors.dy_hod_user_id_fk.message}</p>
-                      )}
-                    </div>
-                    <div className="form-field">
-                      <label>Contract Department <span className="red">*</span></label>
-                      <Controller
-                        name="contract_department"
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field }) => (
-                          <Select
-                            {...field}
-                            classNamePrefix="react-select"
-                            placeholder="Select Project"
-                            isSearchable
-                            isClearable
-                          />
-                        )}
-                      />
-
-                      {errors.contract_department && (
-                        <p className="red">{errors.contract_department.message}</p>
-                      )}
-                    </div>
-                    <div className="form-field">
-                      <label>Contract Short Name <span className="red">*</span></label>
+                      <label>Type of Review</label>
                       <input
                         type="text"
-                        maxLength={100}
-                        rules={{ required: true }}
-                        {...register("contract_short_name")}
+                        {...register("type_of_review")}
                         placeholder="Enter Value"
                       />
-                      <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
-                        {watch("contract_short_name")?.length || 0}/100
-                        {errors.contract_short_name && <span className="red">Required</span>}
-                      </div>
                     </div>
+                  </>
+                )}
+              </div>
+            </div>
 
-                  <div className="form-field">
-                    <label>Bank Refunded</label>
-                        <div className="d-flex gap-20" style={{padding: "10px"}}>
-                          <label>
-                            <input
-                              type="radio"
-                              value="yes"
-                              {...register("bank_funded", { required: "Please select JM Approval" })}
-                            />
-                            Yes
-                          </label>
+            <div ref={sectionRefs.executives} className={styles.formSection}>
+              <h6 className="d-flex justify-content-center mt-1 mb-2">Executives</h6>
 
-                          <label>
-                            <input
-                              type="radio"
-                              value="no"
-                              {...register("bank_funded")}
-                            />
-                            No
-                          </label>
-                        </div>
-                      </div>
-                      {bankFunded === "yes" && (
-                          <>
-                              <div className="form-field">
-                                <label>Bank Name <span className="red">*</span></label>
-                                <input
-                                  type="text"
-                                  rules={{ required: true }}
-                                  {...register("bank_name")}
-                                  placeholder="Enter Value"
-                                />
-                                {errors.bank_name && (
-                                  <p className="red">{errors.bank_name.message}</p>
-                                )}
-                              </div>
-                              <div className="form-field">
-                                <label>Type of Review <span className="red">*</span></label>
-                                <input
-                                  type="text"
-                                  rules={{ required: true }}
-                                  {...register("type_of_review")}
-                                  placeholder="Enter Value"
-                                />
-                                {errors.type_of_review && (
-                                  <p className="red">{errors.type_of_review.message}</p>
-                                )}
-                              </div>
-                          </>
-                      )}
+              <div className="table-responsive dataTable ">
+                <table className="table table-bordered align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th style={{ width: "43%" }}>Department <span className="red">*</span></th>
+                      <th style={{ width: "42%" }}>Select Executives <span className="red">*</span></th>
+                      <th style={{ width: "15%" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {executiveFields.length > 0 ? (
+                      executiveFields.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>
+                            <Controller
+                              name={`executives.${index}.department_fks`}
+                              control={control}
+                              rules={{ required: "Department is required" }}
+                              render={({ field }) => (
+                                <Select
+                                  {...field}
+                                  classNamePrefix="react-select"
+                                  options={departmentOptions}
+                                  placeholder="Select Department"
+                                  isSearchable
+                                  isClearable
+                                  value={departmentOptions.find(opt => opt.value === field.value) || null}
+								    onChange={(opt) => {
+								          field.onChange(opt?.value || "");
+								          // Clear responsible people when department changes
+								          setValue(`executives.${index}.responsible_people_id_fks`, []);
+								          // Fetch executives for selected department
+								          if (opt?.value) {
+								            fetchExecutivesByDepartment(opt.value);
+								          }
+								        }}
+								      />
+								    )}
+								  />
+                            {errors.executives?.[index]?.department_fks && (
+                              <span className="red">{errors.executives[index].department_fks.message}</span>
+                            )}
+                          </td>
+                          <td>
+						  <Controller
+						    name={`executives.${index}.responsible_people_id_fks`}
+						    control={control}
+						    rules={{ required: "Please select executives" }}
+						    render={({ field }) => {
+						      const selectedDept = watch(`executives.${index}.department_fks`);
+						      const deptExecutives = executiveOptions[selectedDept] || [];
+						      
+						      return (
+						        <Select
+						          {...field}
+						          options={deptExecutives}
+						          isMulti
+						          placeholder={loadingExecutives ? "Loading..." : "Select Executives"}
+						          classNamePrefix="react-select"
+						          isDisabled={!selectedDept || loadingExecutives}
+						          onChange={(selected) => {
+						            const selectedValues = selected ? selected.map(option => option.value) : [];
+						            field.onChange(selectedValues);
+						          }}
+						          value={deptExecutives.filter(option => 
+						            Array.isArray(field.value) 
+						              ? field.value.includes(option.value)
+						              : false
+						          )}
+						        />
+						      );
+						    }}
+						  />
+                            {errors.executives?.[index]?.responsible_people_id_fks && (
+                              <span className="red">{errors.executives[index].responsible_people_id_fks.message}</span>
+                            )}
+                          </td>
+                          <td className="text-center d-flex align-center justify-content-center">
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger"
+                              onClick={() => removeExecutive(index)}
+                            >
+                              <MdOutlineDeleteSweep size="26" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="text-center text-muted">
+                          No rows added yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="d-flex align-center justify-content-center mt-1">
+                <button
+                  type="button"
+                  className="btn-2 btn-green"
+                  onClick={() =>
+                    appendExecutive({ department_fks: "", responsible_people_id_fks: "" })
+                  }
+                >
+                  <BiListPlus size="24" />
+                </button>
+              </div>
+            </div>
+
+            <div ref={sectionRefs.details} className={styles.formSection}>
+              <h6 className="d-flex justify-content-center mt-1 mb-2">Contract Details</h6>
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Contract Short Name <span className="red">*</span> </label>
+                  <input
+                    {...register("contract_short_name", { required: "Contract Short Name is required" })}
+                    type="text"
+                    placeholder="Enter Value"
+                  />
+                  {errors.contract_short_name && (
+                    <p className="error-text">{errors.contract_short_name.message}</p>
+                  )}
                 </div>
-                  
+              </div>
+
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Contract Name<span className="red">*</span></label>
+                  <textarea
+                    {...register("contract_name", { required: "Contract name is required" })}
+                    maxLength={200}
+                    rows="3"
+                    placeholder="Enter contract name"
+                  ></textarea>
+                  <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                    {watch("contract_name")?.length || 0}/200
+                    {errors.contract_name && <span className="red">{errors.contract_name.message}</span>}
+                  </div>
                 </div>
-                <div ref={sectionRefs.executives} className={styles.formSection}> 
-                  <h6 className="d-flex justify-content-center mt-1 mb-2">Executives</h6>
+              </div>
 
-                  <div className="table-responsive dataTable ">
-                                  <table className="table table-bordered align-middle">
-                                    <thead className="table-light">
-                                      <tr>
-                                        <th style={{ width: "43%" }}>Department <span className="red">*</span></th>
-                                        <th style={{ width: "42%" }}>Select Executives <span className="red">*</span></th>
-                                        <th style={{ width: "15%" }}>Action</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {executiveFields.length > 0 ? (
-                                        executiveFields.map((item, index) => (
-                                          <tr key={item.id}>
-                                            <td>
-                                              <Controller
-                                                  name={`executives.${index}.department_fks`}
-                                                  control={control}
-                                                  rules={{ required: "Required" }}
-                                                  render={({ field }) => (
-                                                    <Select
-                                                      {...field}
-                                                      classNamePrefix="react-select"
-                                                      placeholder="Select File Type"
-                                                      isSearchable
-                                                      isClearable
-                                                      value={field.value}
-                                                      onChange={(opt) => field.onChange(opt)}
-                                                    />
-                                                  )}
-                                                />
-                                                {errors.executives?.[index]?.department_fks && (
-                                                <span className="red">{errors.executives[index].department_fks.message}</span>
-                                              )}
-                                            </td>
-                                            <td>
-                                              <Controller
-                                                name={`executives.${index}.responsible_people_id_fks`}
-                                                control={control}
-                                                rules={{ required: "Please select executives" }}
-                                                render={({ field }) => (
-                                                  <Select
-                                                    {...field}
-                                                    options={executiveOptions}
-                                                    isMulti
-                                                    placeholder="Select Executives"
-                                                    classNamePrefix="react-select"
-                                                    onChange={(selected) => field.onChange(selected)}
-                                                    value={field.value}
-                                                  />
-                                                )}
-                                              />
-
-                                              {errors.executives?.[index]?.responsible_people_id_fks && (
-                                                <span className="red">{errors.executives[index].responsible_people_id_fks.message}</span>
-                                              )}
-                                            </td>
-                                            <td className="text-center d-flex align-center justify-content-center">
-                                              <button
-                                                type="button"
-                                                className="btn btn-outline-danger"
-                                                onClick={() => removeExecutive(index)}
-                                              >
-                                                <MdOutlineDeleteSweep
-                                                  size="26"
-                                                />
-                                              </button>
-                                            </td>
-                                          </tr>
-                                        ))
-                                      ) : (
-                                        <tr>
-                                          <td colSpan="4" className="text-center text-muted">
-                                            No rows added yet.
-                                          </td>
-                                        </tr>
-                                      )}
-                                    </tbody>
-                                  </table>
-                                </div>
-                
-                                <div className="d-flex align-center justify-content-center mt-1">
-                                  <button
-                                    type="button"
-                                    className="btn-2 btn-green"
-                                    onClick={() =>
-                                      appendExecutive({ department_fks: "", responsible_people_id_fks: "" })
-                                    }
-                                  >
-                                    <BiListPlus
-                                      size="24"
-                                    />
-                                  </button>
-                                </div>
-
-                </div>
-                <div ref={sectionRefs.details} className={styles.formSection}>
-                  <h6 className="d-flex justify-content-center mt-1 mb-2">Contract Details</h6>
-            <div className="form-row">
+              {contractStatus === "yes" && (
+                <>
+                  <div className="form-row">
                     <div className="form-field">
-                      <label>Contract Short Name <span className="red">*</span> </label>
-                      <input rules={{ required: "Required" }} {...register("contract_short_name")} type="text" placeholder="Enter Value" />
-                      {errors.contract_short_name && (
-                        <p className="error-text">{errors.contract_short_name.message}</p>
+                      <label>Contract Type <span className="red">*</span></label>
+                      <Controller
+                        name="contract_type_fk"
+                        control={control}
+                        rules={{ required: "Contract Type is required" }}
+                        render={({ field }) => (
+                          <Select
+                            {...field}
+                            classNamePrefix="react-select"
+                            options={contractTypeOptions}
+                            placeholder="Select Contract Type"
+                            isSearchable
+                            isClearable
+                            value={contractTypeOptions.find(opt => opt.value === field.value) || null}
+                            onChange={(opt) => field.onChange(opt?.value || "")}
+                          />
+                        )}
+                      />
+                      {errors.contract_type_fk && (
+                        <p className="error-text">{errors.contract_type_fk.message}</p>
                       )}
+                    </div>
+                    <div className="form-field">
+                      <label>Contractor Name <span className="red">*</span></label>
+                      <Controller
+                        name="contractor_id_fk"
+                        control={control}
+                        rules={{ required: "Contractor Name is required" }}
+                        render={({ field }) => (
+                          <Select
+                            {...field}
+                            classNamePrefix="react-select"
+                            options={contractorOptions}
+                            placeholder="Select Contractor"
+                            isSearchable
+                            isClearable
+                            value={contractorOptions.find(opt => opt.value === field.value) || null}
+                            onChange={(opt) => field.onChange(opt?.value || "")}
+                          />
+                        )}
+                      />
+                      {errors.contractor_id_fk && (
+                        <p className="error-text">{errors.contractor_id_fk.message}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Rest of the Contract Details section remains the same */}
+                  <div className="form-row">
+                    <div className="form-field">
+                      <label>Scope of Contract</label>
+                      <textarea
+                        {...register("scope_of_contract")}
+                        maxLength={200}
+                        rows="3"
+                        placeholder="Enter scope of contract"
+                      ></textarea>
+                      <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                        {watch("scope_of_contract")?.length || 0}/200
+                      </div>
                     </div>
                   </div>
 
                   <div className="form-row">
                     <div className="form-field">
-                      <label>Contract Name<span className="red">*</span></label>
-                      <textarea 
-                      {...register("contract_name", { required: "Contract name is required" })}
-                      name="contract_name"
-                      maxLength={200}
-                      rows="3"
-                      ></textarea>
-                      <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
-                        {watch("contract_name")?.length || 0}/200
-                        {errors.contract_name && <span className="red">{errors.contract_name.message}</span>}
-                      </div>
+                      <label>LOA Letter No <span className="red">*</span> </label>
+                      <input
+                        {...register("loa_letter_number", { required: "LOA Letter No is required" })}
+                        type="text"
+                        placeholder="Enter LOA Letter No"
+                      />
+                      {errors.loa_letter_number && (
+                        <p className="error-text">{errors.loa_letter_number.message}</p>
+                      )}
+                    </div>
+                    <div className="form-field">
+                      <label>LOA Date <span className="red">*</span> </label>
+                      <input
+                        {...register("loa_date", { required: "LOA Date is required" })}
+                        type="date"
+                      />
+                      {errors.loa_date && (
+                        <p className="error-text">{errors.loa_date.message}</p>
+                      )}
                     </div>
                   </div>
+                </>
+              )}
 
-                  { contractStatus === "yes" && (
-                    <>
-                      <div className="form-row">
-                        <div className="form-field">
-                          <label>Contract Type  <span className="red">*</span></label>
-                          <Controller
-                            name="contract_type_fk"
-                            control={control}
-                            rules={{ required: true }}
-                            render={({ field }) => (
-                              <Select
-                                {...field}
-                                classNamePrefix="react-select"
-                                placeholder="Select Project"
-                                isSearchable
-                                isClearable
-                                onChange={(opt) => field.onChange(opt)}
-                              />
-                            )}
-                          />
-                          {errors.contract_type_fk && (
-                            <p className="error-text">{errors.contract_type_fk.message}</p>
-                          )}
-                        </div>
-                        <div className="form-field">
-                          <label>Contractor Name  <span className="red">*</span></label>
-                          <Controller
-                            name="contractor_id_fk"
-                            control={control}
-                            rules={{ required: true }}
-                            render={({ field }) => (
-                              <Select
-                                {...field}
-                                classNamePrefix="react-select"
-                                placeholder="Select Project"
-                                isSearchable
-                                isClearable
-                                onChange={(opt) => field.onChange(opt)}
-                              />
-                            )}
-                          />
-                          {errors.contractor_id_fk && (
-                            <p className="error-text">{errors.contractor_id_fk.message}</p>
-                          )}
-                        </div>
-
-                      </div>
-
-                      <div className="form-row">
-                        <div className="form-field">
-                          <label>Scope of Contract</label>
-                          <textarea 
-                          {...register("scope_of_contract")}
-                          name="scope_of_contract"
-                          maxLength={200}
-                          rows="3"
-                          ></textarea>
-                          <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
-                            {watch("scope_of_contract")?.length || 0}/200
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="form-row">
-                        <div className="form-field">
-                          <label>LOA Letter No <span className="red">*</span> </label>
-                          <input rules={{ required: "Required" }} {...register("loa_letter_number")} type="text" placeholder="Enter LOA Letter No" />
-                          {errors.loa_letter_number && (
-                            <p className="error-text">{errors.loa_letter_number.message}</p>
-                          )}
-                        </div>
-                        <div className="form-field">
-                          <label>LOA Date <span className="red">*</span> </label>
-                          <input rules={{ required: "Required" }} {...register("loa_date")} type="date" placeholder="Select Date" />
-                          {errors.loa_date && (
-                            <p className="error-text">{errors.loa_date.message}</p>
-                          )}
-                        </div>
-                      </div>
-                    </>
+              <div className="form-row">
+                <div className="form-field">
+                  <label>CA No </label>
+                  <input {...register("ca_no")} type="text" placeholder="Enter value" />
+                </div>
+                <div className="form-field">
+                  <label>CA Date </label>
+                  <input {...register("ca_date")} type="date" />
+                </div>
+                <div className="form-field">
+                  <label>Date of Start <span className="red">*</span> </label>
+                  <input
+                    {...register("date_of_start", { required: "Date of Start is required" })}
+                    type="date"
+                  />
+                  {errors.date_of_start && (
+                    <p className="error-text">{errors.date_of_start.message}</p>
                   )}
-
-                    <div className="form-row">
-                      <div className="form-field">
-                        <label>CA No </label>
-                        <input {...register("ca_no")} type="text" placeholder="Enter value" />
-                      </div>
-                      <div className="form-field">
-                        <label>CA Date </label>
-                        <input {...register("ca_date")} type="date" placeholder="Enter value" />
-                      </div>
-                      <div className="form-field">
-                        <label>Date of Start  <span className="red">*</span> </label>
-                        <input rules={{ required: "Required" }} {...register("date_of_start")} type="date" placeholder="Select Date" />
-                        {errors.date_of_start && (
-                          <p className="error-text">{errors.date_of_start.message}</p>
-                        )}
-                      </div>
-                      <div className="form-field">
-                        <label>Original DOC  <span className="red">*</span> </label>
-                        <input rules={{ required: "Required" }} {...register("doc")} type="date" placeholder="Select Date" />
-                        {errors.doc && (
-                          <p className="error-text">{errors.doc.message}</p>
-                        )}
-                      </div>
-                      <div className="form-field rupee-field">
-                        <label>Awarded cost <span className="red">*</span> </label>
-                        <input rules={{ required: "Required" }} {...register("awarded_cost")} type="number" placeholder="Enter Value" />
-                        {errors.awarded_cost && (
-                          <p className="error-text">{errors.awarded_cost.message}</p>
-                        )}
-                      </div>
-                      <div className="form-field">
-                        <label>Target DOC </label>
-                        <input {...register("target_doc")} type="date" placeholder="Enter value" />
-                      </div>
-                      <div className="form-field">
-                        <label>Actual Date of Commissioning  <span className="red">*</span> </label>
-                        <input rules={{ required: "Required" }} {...register("actual_date_of_commissioning")} type="date" placeholder="Select Date" />
-                        {errors.actual_date_of_commissioning && (
-                          <p className="error-text">{errors.actual_date_of_commissioning.message}</p>
-                        )}
-                      </div>
-                      <div className="form-field">
-                        <label>Status of Work  <span className="red">*</span></label>
-                        <Controller
-                          name="contract_status_fk"
-                          control={control}
-                          rules={{ required: true }}
-                          render={({ field }) => (
-                            <Select
-                              {...field}
-                              classNamePrefix="react-select"
-                              placeholder="Select Project"
-                              isSearchable
-                              isClearable
-                              onChange={(opt) => field.onChange(opt)}
-                            />
-                          )}
+                </div>
+                <div className="form-field">
+                  <label>Original DOC <span className="red">*</span> </label>
+                  <input
+                    {...register("doc", { required: "Original DOC is required" })}
+                    type="date"
+                  />
+                  {errors.doc && (
+                    <p className="error-text">{errors.doc.message}</p>
+                  )}
+                </div>
+                <div className="form-field rupee-field">
+                  <label>Awarded cost <span className="red">*</span> </label>
+                  <input
+                    {...register("awarded_cost", { required: "Awarded cost is required" })}
+                    type="number"
+                    placeholder="Enter Value"
+                  />
+                  {errors.awarded_cost && (
+                    <p className="error-text">{errors.awarded_cost.message}</p>
+                  )}
+                </div>
+                <div className="form-field">
+                  <label>Target DOC </label>
+                  <input {...register("target_doc")} type="date" />
+                </div>
+                <div className="form-field">
+                  <label>Actual Date of Commissioning <span className="red">*</span> </label>
+                  <input
+                    {...register("actual_date_of_commissioning", { required: "Actual Date of Commissioning is required" })}
+                    type="date"
+                  />
+                  {errors.actual_date_of_commissioning && (
+                    <p className="error-text">{errors.actual_date_of_commissioning.message}</p>
+                  )}
+                </div>
+                <div className="form-field">
+                  <label>Status of Work <span className="red">*</span></label>
+                  <Controller
+                    name="contract_status_fk"
+                    control={control}
+                    rules={{ required: "Status of Work is required" }}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        classNamePrefix="react-select"
+                        options={contractStatusOptions}
+                        placeholder="Select Status"
+                        isSearchable
+                        isClearable
+                        value={contractStatusOptions.find(opt => opt.value === field.value) || null}
+                        onChange={(opt) => field.onChange(opt?.value || "")}
+                      />
+                    )}
+                  />
+                  {errors.contract_status_fk && (
+                    <p className="error-text">{errors.contract_status_fk.message}</p>
+                  )}
+                </div>
+                <div className="form-field rupee-field">
+                  <label>Detailed Estimated cost </label>
+                  <div className="d-flex align-items-center gap-2">
+                    <input 
+                      {...register("estimated_cost")} 
+                      type="number" 
+                      placeholder="Enter Value" 
+                      className="flex-grow-1"
+					  style={{ minWidth: "300px" }}
+                    />
+                    <Controller
+                      name="estimated_cost_unit"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          {...field}
+                          classNamePrefix="react-select"
+                          options={unitOptions}
+                          placeholder="Unit"
+                          isSearchable={false}
+                          styles={{
+                            container: (base) => ({
+                              ...base,
+                              minWidth: '120px',
+                              width: '120px'
+                            })
+                          }}
+                          value={unitOptions.find(opt => opt.value === field.value) || null}
+                          onChange={(opt) => field.onChange(opt?.value || "")}
                         />
-                        {errors.contract_status_fk && (
-                          <p className="error-text">{errors.contract_status_fk.message}</p>
-                        )}
-                      </div>
-                      <div className="form-field rupee-field">
-                        <label>Detailed Estimated cost </label>
-                        <input {...register("estimated_cost")} type="number" placeholder="Enter Value" />
-                      </div>
-                      <div className="form-field">
-                        <label>Planned date of award </label>
-                        <input {...register("planned_date_of_award")} type="date" placeholder="Enter value" />
-                      </div>
-                      <div className="form-field">
-                        <label>Planned date of completion </label>
-                        <input {...register("planned_date_of_completion")} type="date" placeholder="Enter value" />
-                      </div>
-                      <div className="form-field">
-                        <label>Notice Inviting Tender </label>
-                        <input {...register("contract_notice_inviting_tender")} type="date" placeholder="Enter value" />
-                      </div>
-                      <div className="form-field">
-                        <label>Tender Opening Date </label>
-                        <input {...register("tender_opening_date")} type="date" placeholder="Enter value" />
-                      </div>
-                      <div className="form-field">
-                        <label>Technical Eval. Submission </label>
-                        <input {...register("technical_eval_submission")} type="date" placeholder="Enter value" />
-                      </div>
-                      <div className="form-field">
-                        <label>Financial Eval. Submission </label>
-                        <input {...register("financial_eval_submission")} type="date" placeholder="Enter value" />
-                      </div>
-
-                    </div>
-
+                      )}
+                    />
+                  </div>
+                </div>
+                <div className="form-field">
+                  <label>Planned date of award </label>
+                  <input {...register("planned_date_of_award")} type="date" />
+                </div>
+                <div className="form-field">
+                  <label>Planned date of completion </label>
+                  <input {...register("planned_date_of_completion")} type="date" />
+                </div>
+                <div className="form-field">
+                  <label>Notice Inviting Tender </label>
+                  <input {...register("contract_notice_inviting_tender")} type="date" />
+                </div>
+                <div className="form-field">
+                  <label>Tender Opening Date </label>
+                  <input {...register("tender_opening_date")} type="date" />
+                </div>
+                <div className="form-field">
+                  <label>Technical Eval. Submission </label>
+                  <input {...register("technical_eval_submission")} type="date" />
+                </div>
+                <div className="form-field">
+                  <label>Financial Eval. Submission </label>
+                  <input {...register("financial_eval_submission")} type="date" />
+                </div>
+              </div>
                 </div>
                 <div ref={sectionRefs.closure} className={styles.formSection}>
                   <h6 className="d-flex justify-content-center mt-1 mb-2">Tender Bid Revisions</h6>
@@ -784,7 +1164,15 @@ export default function ContractForm() {
                           tenderBidRevisionsFields.map((item, index) => (
                             <tr key={item.id}>
                               <td>
-                                  <input {...register(`tenderBidRevisions.${index}.revisionno`)} type="text" placeholder="Enter value" defaultValue={`R${index + 1}`} />
+                                  <input 
+                                    {...register(`tenderBidRevisions.${index}.revisionno`)} 
+                                    type="text" 
+                                    placeholder="Enter value" 
+                                    value={generateRevisionNumber(index)}
+                                    readOnly
+                                    className="readonly-input"
+                                    style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                                  />
                               </td>
                               <td>
                                 <input {...register(`tenderBidRevisions.${index}.revision_estimated_cost`)} type="number" placeholder="Enter value" />
@@ -818,7 +1206,9 @@ export default function ContractForm() {
                                 <button
                                   type="button"
                                   className="btn btn-outline-danger"
-                                  onClick={() => removeTenderBidRevisions(index)}
+                                  onClick={() => handleRemoveTenderBidRevision(index)}
+                                  disabled={index === 0} // Disable delete for first row (R1)
+                                  title={index === 0 ? "Cannot delete first revision" : "Delete row"}
                                 >
                                   <MdOutlineDeleteSweep
                                     size="26"
@@ -842,9 +1232,7 @@ export default function ContractForm() {
                     <button
                       type="button"
                       className="btn-2 btn-green"
-                      onClick={() =>
-                        appendTenderBidRevisions({ revisionno: "", revision_estimated_cost: "", revision_planned_date_of_award: "", revision_planned_date_of_completion: "", notice_inviting_tender: "", tender_bid_opening_date: "", technical_eval_approval: "", financial_eval_approval: "", tender_bid_remarks: "" })
-                      }
+                      onClick={handleAppendTenderBidRevision}
                     >
                       <BiListPlus
                         size="24"
@@ -862,268 +1250,325 @@ export default function ContractForm() {
                           ></textarea>
                     </div>
                   </div>
-                   
+                               </div>
+
+            <div ref={sectionRefs.bank} className={styles.formSection}>
+              <h6 className="d-flex justify-content-center mt-1 mb-2">Bank Guarantee Details</h6>
+
+              <div className="d-flex gap-30 align-center justify-content-center">
+                <label>Bank Guarantee Required ?</label>
+                <div className="d-flex gap-20" style={{ padding: "10px" }}>
+                  <label>
+                    <input
+                      type="radio"
+                      value="yes"
+                      {...register("bg_required")}
+                    />
+                    Yes
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="no"
+                      {...register("bg_required")}
+                    />
+                    No
+                  </label>
                 </div>
-                <div ref={sectionRefs.bank} className={styles.formSection}> 
-                  <h6 className="d-flex justify-content-center mt-1 mb-2">Bank Guarantee Details</h6> 
-                  
-                  <div className="d-flex gap-30 align-center justify-content-center">
-                      <label>Bank Guarantee Required ?</label>
-                        <div className="d-flex gap-20" style={{padding: "10px"}}>
-                          <label>
-                            <input
-                              type="radio"
-                              value="yes"
-                              {...register("bg_required")}
-                            />
-                            Yes
-                          </label>
+              </div>
 
-                          <label>
-                            <input
-                              type="radio"
-                              value="no"
-                              {...register("bg_required")}
-                            />
-                            No
-                          </label>
-                        </div>
-                      </div>
-
-                      <br />
-                      {bgDetails === "yes" && (
-                        <>
-                          <div className="table-responsive dataTable ">
-                            <table className="table table-bordered align-middle">
-                              <thead className="table-light">
-                                <tr>
-                                  <th style={{ width: "15%" }}>BG Type <span className="red">*</span> </th>
-                                  <th style={{ width: "15%" }}>Issuing Bank </th>
-                                  <th style={{ width: "15%" }}>BG / FDR Number </th>
-                                  <th style={{ width: "15%" }}>Amount </th>
-                                  <th style={{ width: "15%" }}>BG / FDR Date</th>
-                                  <th style={{ width: "15%" }}>Expiry Date <span className="red">*</span></th>
-                                  <th style={{ width: "15%" }}>Release Date</th>
-                                  <th style={{ width: "15%" }}>Action</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {bgDetailsListFields.length > 0 ? (
-                                  bgDetailsListFields.map((item, index) => (
-                                    <tr key={item.id}>
-                                      <td>
-                                        <Controller
-                                          name={`bgDetailsList.${index}.bg_type_fks`}
-                                          rules={{ required: "required" }}
-                                          control={control}
-                                          render={({ field }) => (
-                                            <Select
-                                              {...field}
-                                              classNamePrefix="react-select"
-                                              placeholder="Select Value"
-                                              isSearchable
-                                            />
-                                          )}
-                                        />
-                                      {errors.bgDetailsList?.[index]?.bg_type_fks && (
-                                        <span className="red">
-                                          {errors.bgDetailsList[index].bg_type_fks.message}
-                                        </span>
-                                      )}
-                                      </td>
-                                      <td>
-                                        <input {...register(`bgDetailsList.${index}.issuing_banks`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`bgDetailsList.${index}.bg_numbers`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td className="rupee-field">
-                                        <input {...register(`bgDetailsList.${index}.bg_values`)} type="number" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`bgDetailsList.${index}.bg_dates`)} type="date" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`bgDetailsList.${index}.bg_valid_uptos`)} type="date" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`bgDetailsList.${index}.release_dates`)} type="date" placeholder="Enter value" />
-                                      </td>
-                                      <td className="text-center d-flex align-center justify-content-center">
-                                        <button
-                                          type="button"
-                                          className="btn btn-outline-danger"
-                                          onClick={() => removeBgDetailsList(index)}
-                                        >
-                                          <MdOutlineDeleteSweep
-                                            size="26"
-                                          />
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan="4" className="text-center text-muted">
-                                      No rows added yet.
-                                    </td>
-                                  </tr>
+              <br />
+              {bgDetails === "yes" && (
+                <>
+                  <div className="table-responsive dataTable ">
+                    <table className="table table-bordered align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: "20%" }}>BG Type <span className="red">*</span> </th>
+                          <th style={{ width: "15%" }}>Issuing Bank </th>
+                          <th style={{ width: "15%" }}>BG / FDR Number </th>
+                          <th style={{ width: "15%" }}>Amount </th>
+                          <th style={{ width: "10%" }}>BG / FDR Date</th>
+                          <th style={{ width: "10%" }}>Expiry Date <span className="red">*</span></th>
+                          <th style={{ width: "10%" }}>Release Date</th>
+                          <th style={{ width: "7%" }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bgDetailsListFields.length > 0 ? (
+                          bgDetailsListFields.map((item, index) => (
+                            <tr key={item.id}>
+                              <td>
+                                <Controller
+                                  name={`bgDetailsList.${index}.bg_type_fks`}
+                                  rules={{ required: "BG Type is required" }}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Select
+                                      {...field}
+                                      classNamePrefix="react-select"
+                                      options={bgTypeOptions}
+                                      placeholder="Select BG Type"
+                                      isSearchable
+                                      value={bgTypeOptions.find(opt => opt.value === field.value) || null}
+                                      onChange={(opt) => field.onChange(opt?.value || "")}
+                                    />
+                                  )}
+                                />
+                                {errors.bgDetailsList?.[index]?.bg_type_fks && (
+                                  <span className="red">
+                                    {errors.bgDetailsList[index].bg_type_fks.message}
+                                  </span>
                                 )}
-                              </tbody>
-                            </table>
-                          </div>
+                              </td>
+                              <td>
+                                <input {...register(`bgDetailsList.${index}.issuing_banks`)} type="text" placeholder="Enter value" />
+                              </td>
+                              <td>
+                                <input {...register(`bgDetailsList.${index}.bg_numbers`)} type="text" placeholder="Enter value" />
+                              </td>
+                              <td className="rupee-field">
+                                <div className="d-flex align-items-center gap-2">
+                                  <input 
+                                    {...register(`bgDetailsList.${index}.bg_values`)} 
+                                    type="number" 
+                                    placeholder="Enter amount" 
+                                    className="flex-grow-1"
+                                    style={{ minWidth: "120px" }}
+                                  />
+                                  <Controller
+                                    name={`bgDetailsList.${index}.bg_unit`}
+                                    control={control}
+                                    render={({ field }) => (
+                                      <Select
+                                        {...field}
+                                        classNamePrefix="react-select"
+                                        options={unitOptions}
+                                        placeholder="Unit"
+                                        isSearchable={false}
+                                        styles={{
+                                          container: (base) => ({
+                                            ...base,
+                                            minWidth: '80px',
+                                            width: '80px'
+                                          }),
+                                          control: (base) => ({
+                                            ...base,
+                                            minHeight: '38px',
+                                            fontSize: '14px'
+                                          })
+                                        }}
+                                        value={unitOptions.find(opt => opt.value === field.value) || null}
+                                        onChange={(opt) => field.onChange(opt?.value || "")}
+                                      />
+                                    )}
+                                  />
+                                </div>
+                              </td>
+                              <td>
+                                <input {...register(`bgDetailsList.${index}.bg_dates`)} type="date" />
+                              </td>
+                              <td>
+                                <input {...register(`bgDetailsList.${index}.bg_valid_uptos`)} type="date" />
+                              </td>
+                              <td>
+                                <input {...register(`bgDetailsList.${index}.release_dates`)} type="date" />
+                              </td>
+                              <td className="text-center d-flex align-center justify-content-center">
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-danger"
+                                  onClick={() => removeBgDetailsList(index)}
+                                >
+                                  <MdOutlineDeleteSweep size="26" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="8" className="text-center text-muted">
+                              No rows added yet.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
 
-                          <div className="d-flex align-center justify-content-center mt-1">
-                            <button
-                              type="button"
-                              className="btn-2 btn-green"
-                              onClick={() =>
-                                appendBgDetailsList({ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_dates: "", bg_valid_uptos: "", release_dates: "" })
-                              }
-                            >
-                              <BiListPlus
-                                size="24"
-                              />
-                            </button>
-                          </div>
-                        </>
-                      )}
+                  <div className="d-flex align-center justify-content-center mt-1">
+                    <button
+                      type="button"
+                      className="btn-2 btn-green"
+                      onClick={() =>
+                        appendBgDetailsList({ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_unit: "Rs", bg_dates: "", bg_valid_uptos: "", release_dates: "" })
+                      }
+                    >
+                      <BiListPlus size="24" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
+            <div ref={sectionRefs.insurance} className={styles.formSection}>
+              <h6 className="d-flex justify-content-center mt-1 mb-2">Insurance Details</h6>
+
+              <div className="d-flex gap-30 align-center justify-content-center">
+                <label>Insurance Required ?</label>
+                <div className="d-flex gap-20" style={{ padding: "10px" }}>
+                  <label>
+                    <input
+                      type="radio"
+                      value="yes"
+                      {...register("insurance_required")}
+                    />
+                    Yes
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="no"
+                      {...register("insurance_required")}
+                    />
+                    No
+                  </label>
                 </div>
-                <div ref={sectionRefs.insurance} className={styles.formSection}>
-                  <h6 className="d-flex justify-content-center mt-1 mb-2">Insurance Details</h6> 
-                  
-                  <div className="d-flex gap-30 align-center justify-content-center">
-                      <label>Insurance Required ?</label>
-                        <div className="d-flex gap-20" style={{padding: "10px"}}>
-                          <label>
-                            <input
-                              type="radio"
-                              value="yes"
-                              {...register("insurance_required")}
-                            />
-                            Yes
-                          </label>
+              </div>
 
-                          <label>
-                            <input
-                              type="radio"
-                              value="no"
-                              {...register("insurance_required")}
-                            />
-                            No
-                          </label>
-                        </div>
-                      </div>
-
-                      <br />
-                      {insuranceRequiredbutton === "yes" && (
-                        <>
-                          <div className="table-responsive dataTable ">
-                            <table className="table table-bordered align-middle">
-                              <thead className="table-light">
-                                <tr>
-                                  <th style={{ width: "15%" }}>Insurance Type  <span className="red">*</span> </th>
-                                  <th style={{ width: "15%" }}>Issuing Agency </th>
-                                  <th style={{ width: "15%" }}>Agency Address </th>
-                                  <th style={{ width: "15%" }}>Insurance Number  </th>
-                                  <th style={{ width: "15%" }}>Insurance Value </th>
-                                  <th style={{ width: "15%" }}>Valid Upto <span className="red">*</span></th>
-                                  <th style={{ width: "15%" }}>Release</th>
-                                  <th style={{ width: "15%" }}>Action</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {insuranceRequiredFields.length > 0 ? (
-                                  insuranceRequiredFields.map((item, index) => (
-                                    <tr key={item.id}>
-                                      
-                                      <td>
-                                        <Controller
-                                          name={`insuranceRequired.${index}.insurance_type_fks`}
-                                          rules={{ required: "required" }}
-                                          control={control}
-                                          render={({ field }) => (
-                                            <Select
-                                              {...field}
-                                              classNamePrefix="react-select"
-                                              placeholder="Select Value"
-                                              isSearchable
-                                            />
-                                          )}
-                                        />
-                                      {errors.insuranceRequired?.[index]?.insurance_type_fks && (
-                                        <span className="red">
-                                          {errors.insuranceRequired[index].insurance_type_fks.message}
-                                        </span>
-                                      )}
-                                      </td>
-                                      <td>
-                                        <input {...register(`insuranceRequired.${index}.issuing_agencys`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`insuranceRequired.${index}.agency_addresss`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`insuranceRequired.${index}.insurance_numbers`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td className="rupee-field">
-                                        <input {...register(`insuranceRequired.${index}.insurance_values`)} type="number" placeholder="Enter value" />
-                                      </td>
-                                      
-                                      <td>
-                                        <input {...register(`insuranceRequired.${index}.insurence_valid_uptos`)} rules={{ required: "required" }} type="date" placeholder="Enter value" />
-                                        {errors.insuranceRequired?.[index]?.insurence_valid_uptos && (
-                                        <span className="red">
-                                          {errors.insuranceRequired[index].insurence_valid_uptos.message}
-                                        </span>
-                                      )}
-                                      </td>
-                                      <td>
-                                        <input {...register(`insuranceRequired.${index}.insuranceStatus`)} type="checkbox" />
-                                      </td>
-                                      <td className="text-center d-flex align-center justify-content-center">
-                                        <button
-                                          type="button"
-                                          className="btn btn-outline-danger"
-                                          onClick={() => removeInsuranceRequired(index)}
-                                        >
-                                          <MdOutlineDeleteSweep
-                                            size="26"
-                                          />
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan="4" className="text-center text-muted">
-                                      No rows added yet.
-                                    </td>
-                                  </tr>
+              <br />
+              {insuranceRequiredbutton === "yes" && (
+                <>
+                  <div className="table-responsive dataTable ">
+                    <table className="table table-bordered align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: "20%" }}>Insurance Type <span className="red">*</span> </th>
+                          <th style={{ width: "15%" }}>Issuing Agency </th>
+                          <th style={{ width: "15%" }}>Agency Address </th>
+                          <th style={{ width: "15%" }}>Insurance Number </th>
+                          <th style={{ width: "10%" }}>Insurance Value </th>
+                          <th style={{ width: "10%" }}>Valid Upto <span className="red">*</span></th>
+                          <th style={{ width: "10%" }}>Release</th>
+                          <th style={{ width: "7%" }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {insuranceRequiredFields.length > 0 ? (
+                          insuranceRequiredFields.map((item, index) => (
+                            <tr key={item.id}>
+                              <td>
+                                <Controller
+                                  name={`insuranceRequired.${index}.insurance_type_fks`}
+                                  rules={{ required: "Insurance Type is required" }}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Select
+                                      {...field}
+                                      classNamePrefix="react-select"
+                                      options={insuranceTypeOptions}
+                                      placeholder="Select Insurance Type"
+                                      isSearchable
+                                      value={insuranceTypeOptions.find(opt => opt.value === field.value) || null}
+                                      onChange={(opt) => field.onChange(opt?.value || "")}
+                                    />
+                                  )}
+                                />
+                                {errors.insuranceRequired?.[index]?.insurance_type_fks && (
+                                  <span className="red">
+                                    {errors.insuranceRequired[index].insurance_type_fks.message}
+                                  </span>
                                 )}
-                              </tbody>
-                            </table>
-                          </div>
+                              </td>
+                              <td>
+                                <input {...register(`insuranceRequired.${index}.issuing_agencys`)} type="text" placeholder="Enter value" />
+                              </td>
+                              <td>
+                                <input {...register(`insuranceRequired.${index}.agency_addresss`)} type="text" placeholder="Enter value" />
+                              </td>
+                              <td>
+                                <input {...register(`insuranceRequired.${index}.insurance_numbers`)} type="text" placeholder="Enter value" />
+                              </td>
+                              <td className="rupee-field">
+                                <div className="d-flex align-items-center gap-2">
+                                  <input 
+                                    {...register(`insuranceRequired.${index}.insurance_values`)} 
+                                    type="number" 
+                                    placeholder="Enter amount" 
+                                    className="flex-grow-1"
+                                    style={{ minWidth: "120px" }}
+                                  />
+                                  <Controller
+                                    name={`insuranceRequired.${index}.insurance_unit`}
+                                    control={control}
+                                    render={({ field }) => (
+                                      <Select
+                                        {...field}
+                                        classNamePrefix="react-select"
+                                        options={unitOptions}
+                                        placeholder="Unit"
+                                        isSearchable={false}
+                                        styles={{
+                                          container: (base) => ({
+                                            ...base,
+                                            minWidth: '80px',
+                                            width: '80px'
+                                          }),
+                                          control: (base) => ({
+                                            ...base,
+                                            minHeight: '38px',
+                                            fontSize: '14px'
+                                          })
+                                        }}
+                                        value={unitOptions.find(opt => opt.value === field.value) || null}
+                                        onChange={(opt) => field.onChange(opt?.value || "")}
+                                      />
+                                    )}
+                                  />
+                                </div>
+                              </td>
+                              <td>
+                                <input {...register(`insuranceRequired.${index}.insurence_valid_uptos`)} type="date" />
+                              </td>
+                              <td>
+                                <input {...register(`insuranceRequired.${index}.insuranceStatus`)} type="checkbox" />
+                              </td>
+                              <td className="text-center d-flex align-center justify-content-center">
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-danger"
+                                  onClick={() => removeInsuranceRequired(index)}
+                                >
+                                  <MdOutlineDeleteSweep size="26" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="8" className="text-center text-muted">
+                              No rows added yet.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
 
-                          <div className="d-flex align-center justify-content-center mt-1">
-                            <button
-                              type="button"
-                              className="btn-2 btn-green"
-                              onClick={() =>
-                                appendInsuranceRequired({ insurance_type_fks: "", issuing_agencys: "", agency_addresss: "", insurance_numbers: "", insurance_values: "", insurence_valid_uptos: "", insuranceStatus: "" })
-                              }
-                            >
-                              <BiListPlus
-                                size="24"
-                              />
-                            </button>
-                          </div>
-                        </>
-                      )}
-
-                </div>
-                <div ref={sectionRefs.milestone} className={styles.formSection}> 
+                  <div className="d-flex align-center justify-content-center mt-1">
+                    <button
+                      type="button"
+                      className="btn-2 btn-green"
+                      onClick={() =>
+                        appendInsuranceRequired({ insurance_type_fks: "", issuing_agencys: "", agency_addresss: "", insurance_numbers: "", insurance_values: "", insurance_unit: "Rs", insurence_valid_uptos: "", insuranceStatus: "" })
+                      }
+                    >
+                      <BiListPlus size="24" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>            <div ref={sectionRefs.milestone} className={styles.formSection}> 
                   <h6 className="d-flex justify-content-center mt-1 mb-2">Milestone Details</h6> 
 
                   {/* milestone */}
@@ -1171,9 +1616,16 @@ export default function ContractForm() {
                                 {milestoneRequiredFields.length > 0 ? (
                                   milestoneRequiredFields.map((item, index) => (
                                     <tr key={item.id}>
-                                      
                                       <td>
-                                        <input {...register(`milestoneRequired.${index}.milestone_ids`)} type="text" placeholder="Enter value" defaultValue={`k-${index + 1}`} />
+                                        <input 
+                                          {...register(`milestoneRequired.${index}.milestone_ids`)} 
+                                          type="text" 
+                                          placeholder="Enter value" 
+                                          value={generateMilestoneId(index)}
+                                          readOnly
+                                          className="readonly-input"
+                                          style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                                        />
                                       </td>
                                       <td>
                                         <input {...register(`milestoneRequired.${index}.milestone_names`)} type="text" placeholder="Enter value" />
@@ -1194,7 +1646,9 @@ export default function ContractForm() {
                                         <button
                                           type="button"
                                           className="btn btn-outline-danger"
-                                          onClick={() => removeMilestoneRequired(index)}
+                                          onClick={() => handleRemoveMilestone(index)}
+                                          disabled={index === 0} // Disable delete for first row (K-1)
+                                          title={index === 0 ? "Cannot delete first milestone" : "Delete row"}
                                         >
                                           <MdOutlineDeleteSweep
                                             size="26"
@@ -1218,9 +1672,7 @@ export default function ContractForm() {
                             <button
                               type="button"
                               className="btn-2 btn-green"
-                              onClick={() =>
-                                appendMilestoneRequired({ milestone_ids: "", milestone_names: "", milestone_dates: "", actual_dates: "", revisions: "", mile_remarks: "" })
-                              }
+                              onClick={handleAppendMilestone}
                             >
                               <BiListPlus
                                 size="24"
@@ -1276,15 +1728,58 @@ export default function ContractForm() {
                                   revisionRequiredFields.map((item, index) => (
                                     <tr key={item.id}>
                                       <td>
-                                      <input {...register(`revisionRequired.${index}.revision_numbers`)} rules={{ required: "required" }} type="text" placeholder="Enter value" defaultValue={`R${index + 1}`} />
-                                      {errors.revisionRequired?.[index]?.revision_numbers && (
-                                        <span className="red">
-                                          {errors.revisionRequired[index].revision_numbers.message}
-                                        </span>
-                                      )}
+                                        <input 
+                                          {...register(`revisionRequired.${index}.revision_numbers`)} 
+                                          type="text" 
+                                          placeholder="Enter value" 
+                                          value={generateRevisionRequiredNumber(index)}
+                                          readOnly
+                                          className="readonly-input"
+                                          style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                                        />
+                                        {errors.revisionRequired?.[index]?.revision_numbers && (
+                                          <span className="red">
+                                            {errors.revisionRequired[index].revision_numbers.message}
+                                          </span>
+                                        )}
                                       </td>
                                       <td className="rupee-field">
-                                        <input {...register(`revisionRequired.${index}.revised_amounts`)} type="number" placeholder="Enter value" />
+                                        <div className="d-flex align-items-center gap-2">
+                                          <input 
+                                            {...register(`revisionRequired.${index}.revised_amounts`)} 
+                                            type="number" 
+                                            placeholder="Enter value" 
+                                            className="flex-grow-1"
+                                            style={{ minWidth: "120px" }}
+                                          />
+                                          <Controller
+                                            name={`revisionRequired.${index}.revision_unit`}
+                                            control={control}
+                                            render={({ field }) => (
+                                              <Select
+                                                {...field}
+                                                classNamePrefix="react-select"
+                                                options={unitOptions}
+                                                placeholder="Unit"
+                                                isSearchable={false}
+                                                styles={{
+                                                  container: (base) => ({
+                                                    ...base,
+                                                    minWidth: '80px',
+                                                    width: '80px'
+                                                  }),
+                                                  control: (base) => ({
+                                                    ...base,
+                                                    minHeight: '38px',
+                                                    fontSize: '14px'
+                                                  })
+                                                }}
+                                                value={unitOptions.find(opt => opt.value === field.value) || null}
+                                                onChange={(opt) => field.onChange(opt?.value || "")}
+                                              />
+                                            )}
+                                          />
+                                        </div>
                                       </td>
                                       <td>
                                         <input {...register(`revisionRequired.${index}.revision_amounts_statuss`)} type="checkbox" />
@@ -1303,7 +1798,9 @@ export default function ContractForm() {
                                         <button
                                           type="button"
                                           className="btn btn-outline-danger"
-                                          onClick={() => removeRevisionRequired(index)}
+                                          onClick={() => handleRemoveRevisionRequired(index)}
+                                          disabled={index === 0} // Disable delete for first row (R1)
+                                          title={index === 0 ? "Cannot delete first revision" : "Delete row"}
                                         >
                                           <MdOutlineDeleteSweep
                                             size="26"
@@ -1327,9 +1824,7 @@ export default function ContractForm() {
                             <button
                               type="button"
                               className="btn-2 btn-green"
-                              onClick={() =>
-                                appendRevisionRequired({ revision_numbers: "", revised_amounts: "", revision_amounts_statuss: "", revised_docs: "", revision_statuss: "", approvalbybankstatus: "" })
-                              }
+                              onClick={handleAppendRevisionRequired}
                             >
                               <BiListPlus
                                 size="24"
@@ -1395,7 +1890,7 @@ export default function ContractForm() {
                                       <td>
                                         <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelMobileNos`)} type="text" placeholder="Enter value" />
                                       </td>
-                                      <td className="rupee-field">
+                                      <td>
                                         <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelEmailIds`)} type="email" placeholder="Enter email" />
                                       </td>
                                       <td className="text-center d-flex align-center justify-content-center">
@@ -1450,7 +1945,7 @@ export default function ContractForm() {
                                   <th style={{ width: "15%" }}>File Type </th>
                                   <th style={{ width: "15%" }}>Name </th>
                                   <th style={{ width: "15%" }}>Attachment</th>
-                                  <th style={{ width: "15%" }}>Action</th>
+                                  <th style={{ width: "7%" }}>Action</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1464,12 +1959,13 @@ export default function ContractForm() {
                                           render={({ field }) => (
                                             <Select
                                               {...field}
+											  options={fileTypeOptions} 
                                               classNamePrefix="react-select"
                                               placeholder="Select File Type"
                                               isSearchable
                                               isClearable
-                                              value={field.value}
-                                              onChange={(opt) => field.onChange(opt)}
+											  value={fileTypeOptions.find(opt => opt.value === field.value) || null}
+											  onChange={(opt) => field.onChange(opt?.value || "")}
                                             />
                                           )}
                                         />
@@ -1544,50 +2040,52 @@ export default function ContractForm() {
 
                 </div>
 
-                {/* Action Buttons */}
-                <div className="d-flex justify-content-center gap-20 mt-4 mb-4">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={handleCancel}
-                    disabled={loading || savingForEdit}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className={`bttttnnn ${styles.saveEditButton}`}
-                    onClick={handleSubmit((data) => onSubmit(data, true))}
-                    disabled={loading || savingForEdit}
-                  >
-                    {savingForEdit ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Saving...
-                      </>
-                    ) : (
-                      "SAVE & EDIT"
-                    )}
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading || savingForEdit}
-                  >
-                    {loading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        {isEdit ? "Updating..." : "Adding..."}
-                      </>
-                    ) : (
-                      isEdit ? "Update Contract" : "Add Contract"
-                    )}
-                  </button>
-                </div>
-
-              </div>
+            {/* Action Buttons */}
+            <div className="d-flex justify-content-center gap-20 mt-4 mb-4">
+          
+			        <button
+			                 type="submit"
+			                 className="btn btn-primary"
+			                 disabled={loading || savingForEdit}
+			               >
+			                 {loading ? (
+			                   <>
+			                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+			                     {isEdit ? "Updating..." : "Adding..."}
+			                   </>
+			                 ) : (
+			                   isEdit ? "Update " : "Add "
+			                 )}
+			               </button>
+              <button
+                type="button"
+                className={`bttttnnn ${styles.saveEditButton}`}
+                onClick={handleSubmit((data) => onSubmit(data, true))}
+                disabled={loading || savingForEdit}
+              >
+                {savingForEdit ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Saving...
+                  </>
+                ) : (
+                  "SAVE & EDIT"
+                )}
+              </button>
+         
+			       <button
+			              type="button"
+			                className="btn btn-secondary"
+			                onClick={handleCancel}
+			                disabled={loading || savingForEdit}
+			              >
+			                Cancel
+							
+			             </button>
             </div>
-        </form>
+          </div>
+        </div>
+      </form>
       <Outlet />
     </div>
   );
