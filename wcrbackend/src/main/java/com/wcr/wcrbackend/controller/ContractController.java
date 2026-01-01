@@ -42,6 +42,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -561,6 +563,7 @@ public class ContractController {
 	}
 	
 	
+	
 
 	@RequestMapping(value = "/saveedit-contract", method = {RequestMethod.GET,RequestMethod.POST})
 	public ModelAndView saveeditContract(@ModelAttribute  Contract contract,RedirectAttributes attributes,HttpSession session){
@@ -605,9 +608,135 @@ public class ContractController {
 			logger.error("Project : " + e.getMessage());
 		}
 		return model;
-	}	
+	}
 	
 	
+	 @PostMapping("/addcontract")
+	    public ResponseEntity<?> addContract(@RequestBody Contract obj, HttpSession session) {
+	        try {
+
+	        	String user_Id = (String) session.getAttribute("userId");
+				String userName = (String) session.getAttribute("userName");
+				String userDesignation = (String) session.getAttribute("designation");
+				
+	            
+	            if (user_Id == null) {
+	                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	                        .body(Map.of(
+	                                "success", false,
+	                                "message", "Session expired. Please login again."
+	                        ));
+	            }
+
+	            obj.setCreated_by_user_id_fk(user_Id);
+	            obj.setUser_id(user_Id);
+	            obj.setUser_name(userName);
+	            obj.setDesignation(userDesignation);
+
+	      
+	            Map<String, Object> response = new HashMap<>();
+
+	            response.put("projectsList", contractService.getProjectsListForContractForm(obj));
+	            response.put("worksList", contractService.getWorkListForContractForm(obj));
+	            response.put("contractFileTypeList", contractService.getContractFileTypeList(obj));
+	            response.put("departmentList", contractService.getDepartmentList());
+	            response.put("hodList", contractService.setHodList());
+	            response.put("dyHodList", contractService.getDyHodList());
+	            response.put("contractors", contractService.getContractorsList());
+	            response.put("contract_type", contractService.getContractTypeList());
+	            response.put("insurance_type", contractService.getInsurenceTypeList());
+	            response.put("contractList", contractService.contractList(obj));
+	            response.put("bankGuaranteeType", contractService.bankGuarantee());
+	            response.put("insurenceType", contractService.insurenceType());
+	            response.put("contract_Status", contractService.getContractStatus());
+	            response.put("contract_Statustype", contractService.getContractStatusType(obj));
+
+	            response.put("success", true);
+	            response.put("message", "Contract master data loaded successfully");
+
+	            return ResponseEntity.ok(response);
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(Map.of(
+	                            "success", false,
+	                            "message", "Error loading contract data",
+	                            "error", e.getMessage()
+	                    ));
+	        }
+	    }
+	
+
+	   
+	 @RequestMapping(value = "/add-contract-form", method = {RequestMethod.GET, RequestMethod.POST}, produces = MediaType.APPLICATION_JSON_VALUE) 
+	    public ResponseEntity<?> addContractForm( @RequestBody(required = false) Contract obj,  HttpSession session) {
+	          
+
+	        try {
+	            if (obj == null) {
+	                obj = new Contract();
+	            }
+
+	            String user_Id = (String) session.getAttribute("userId");
+				String userName = (String) session.getAttribute("userName");
+				String userDesignation = (String) session.getAttribute("designation");
+				
+	            
+	           User uObj = (User) session.getAttribute("user");
+
+	            if (user_Id == null || uObj == null) {
+	                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	                        .body(Map.of(
+	                                "success", false,
+	                                "message", "Session expired. Please login again."
+	                        ));
+	            }
+
+	            obj.setCreated_by_user_id_fk(user_Id);
+	            obj.setUser_id(user_Id);
+	            obj.setUser_name(userName);
+	            obj.setDesignation(userDesignation);
+	            obj.setUser_type_fk(uObj.getUserTypeFk());
+	            obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+	            
+	   
+	            Map<String, Object> response = new HashMap<>();
+
+	            response.put("projectsList", contractService.getProjectsListForContractForm(obj));
+	            response.put("worksList", contractService.getWorkListForContractForm(obj));
+	            response.put("contractFileTypeList", contractService.getContractFileTypeList(obj));
+	            response.put("departmentList", contractService.getDepartmentList());
+	            response.put("hodList", contractService.setHodList());
+	            response.put("dyHodList", contractService.getDyHodList());
+	            response.put("contractors", contractService.getContractorsList());
+	            response.put("contract_type", contractService.getContractTypeList());
+	            response.put("insurance_type", contractService.getInsurenceTypeList());
+	            response.put("contractList", contractService.contractList(obj));
+	            response.put("bankGuaranteeType", contractService.bankGuarantee());
+	            response.put("insurenceType", contractService.insurenceType());
+	            response.put("contract_Statustype", contractService.getContractStatusType(obj));
+	            response.put("contract_Status", contractService.getContractStatus());
+	            response.put("responsiblePeopleList", contractService.getResponsiblePeopleList(obj));
+	            response.put("unitsList", contractService.getUnitsList(obj));
+	            response.put("bankNameList", contractService.getBankNameList(obj));
+
+	            response.put("success", true);
+	            response.put("message", "Add Contract Form master data loaded successfully");
+
+	            return ResponseEntity.ok(response);
+
+	        } catch (Exception e) {
+	            logger.error("Contract : ", e);
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(Map.of(
+	                            "success", false,
+	                            "message", "Error loading contract form data",
+	                            "error", e.getMessage()
+	                    ));
+	        }
+	    }
+	 
 	@RequestMapping(value = "/ajax/getContractStatusLIstFormContractFom", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
 	public List<Contract> getContractStatusLIstFormContractFom(@ModelAttribute Contract obj) {
 		List<Contract> dataList = null;  
@@ -621,8 +750,9 @@ public class ContractController {
 	}
 	
 	@RequestMapping(value = "/ajax/getExecutivesListForContractForm", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
-	public List<Contract> getExecutivesListForContractForm(@ModelAttribute Contract obj) {
+	public List<Contract> getExecutivesListForContractForm(@RequestBody Contract obj) {
 		List<Contract> dataList = null;  
+		System.out.println("DDDDDDDDDDDDDD"+ obj.getDepartment_fk());
 		try {
 			dataList = contractService.getExecutivesListForContractForm(obj);
 		}catch (Exception e) {
@@ -631,8 +761,16 @@ public class ContractController {
 		}
 		return dataList;
 	}
-	
-	
+//	
+//	   @PostMapping(
+//		    value = "/ajax/getExecutivesListForContractForm",
+//		    consumes = MediaType.APPLICATION_JSON_VALUE,
+//		    produces = MediaType.APPLICATION_JSON_VALUE
+//		)
+//		public List<Contract> getExecutivesListForContractForm(@RequestBody Contract obj) throws Exception {
+//		    return contractService.getExecutivesListForContractForm(obj);
+//		}
+
 	@RequestMapping(value = "/ajax/getHodList", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
 	public List<Contract> getHodList(@ModelAttribute Contract obj,HttpSession session) {
 		List<Contract> dataList = null;  
