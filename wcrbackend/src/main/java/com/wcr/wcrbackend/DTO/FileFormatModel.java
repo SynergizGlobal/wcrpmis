@@ -159,7 +159,7 @@ public class FileFormatModel {
 	
 	public static List<String> getP6UpdateFileFormat() {
 		List<String> fileFormat = new ArrayList<String>();
-		String columns = "task_code,status_code,wbs_id,task_name,start_date,end_date,total_float,delete_record_flag";
+		String columns = "Activity ID,status_code,wbs_id,task_name,start_date,end_date,total_float,delete_record_flag";
 		String[] convertedColumnsArray = columns.split(",");
 		for (String column : convertedColumnsArray) {
 			fileFormat.add(column.trim());
