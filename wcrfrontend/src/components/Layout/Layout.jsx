@@ -12,6 +12,8 @@ export default function Layout() {
   const { setPageTitle } = usePageTitle();
   useAutoLogout(25); // ⏰ Auto logout after inactivity (in minutes)
 
+  const isIframe = window.self !== window.top;
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarRef = useRef(null);
 
@@ -70,7 +72,7 @@ export default function Layout() {
 
   return (
     <div className={styles.layout}>
-      <Header toggleSidebar={toggleSidebar} />
+      {!isIframe && <Header toggleSidebar={toggleSidebar} />}
       {sidebarOpen && window.innerWidth <= 767 && (
         <div
           className={`${styles.overlay} ${sidebarOpen ? styles.visible : ""}`}
@@ -78,16 +80,16 @@ export default function Layout() {
         ></div>
       )}
       <div className={`ifNoOverflowHidden ${styles.main}`}>
-        <Sidebar
+        {!isIframe &&  <Sidebar
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           sidebarRef={sidebarRef}
-        />
+        /> }
         <div className={`ifNoOverflow ${styles.content}`}>
           <Outlet />
         </div>
       </div>
-      <Footer />
+      {!isIframe &&  <Footer />}
     </div>
   );
 }

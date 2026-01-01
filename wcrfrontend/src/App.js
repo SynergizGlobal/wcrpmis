@@ -1,3 +1,5 @@
+import BankGuaranteeType from "./components/Admin/ReferenceForms/ReferenceFormsList/BankGuaranteeType/BankGuaranteeType";
+import ReferenceForms from "./components/Admin/ReferenceForms/ReferenceForms";
 import DashboardForm from "./components/Admin/Dashboards/DashboardForm/DashboardForm";
 import Dashboards from "./components/Admin/Dashboards/Dashboards";
 import UserForm from "./components/Admin/Users/UserForm/UserForm";
@@ -119,15 +121,20 @@ function App() {
                   <Route path="issuesform" element={<IssuesForm />} />
                 </Route>
               </Route>
+              <Route path="referenceforms" element={<ReferenceForms />} >
+                
+              </Route>
               <Route path="works" element={<Works />} />
               <Route path="admin" element={<Admin />}>
                 <Route path="users" element={<Users />}>
                   <Route path="userform" element={<UserForm />} />
                 </Route>
-				<Route path="access-dashboards" element={<Dashboards />} >
-              		<Route path="dashboardform" element={<DashboardForm />} />
-				</Route>
-			  </Route>
+                <Route path="access-dashboards" element={<Dashboards />}>
+                          <Route path="dashboardform" element={<DashboardForm />} />
+                </Route>
+                <Route path="reference-forms" element={<ReferenceForms />} />
+			        </Route>
+              <Route path="bank-guarantee-type" element={<BankGuaranteeType />} />
               <Route path="modules" element={<Modules />} />
               <Route path="reports" element={<Reports />} />
               <Route path="documents" element={<Documents />} />
