@@ -1,0 +1,43 @@
+package com.wcr.wcrbackend.reference.model;
+
+import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class TrainingType {
+	
+	private String training_type,binary,dashboard_type,id, la_sub_category,bg_type_old,bg_type_fk, la_category_fk,la_category,contractor_specialization,user_role_name,bg_type,status,contract_type,department,deliverable_type, department_name, contract_id_code,document_type, user_role_code,user_access_type,soft_delete_status,source_of_funds, user_access_table,requirement_stage,unit_type,execution_agency,old_training_type,new_training_type,insurance_type,training_status,training_category,drawing_type,utility_type;
+
+	private String Table_name,project_type_name,project_type,project_type_id,column_name,constraint_name,user_name,work_id_fk_old,risk_area_fk_old,category_new,la_land_status,approval_authority,resource_type,area_short_name,area_short_name_new,referenced_table_name,risk_work_completed,referenced_column_name,count,tName,bg_type_new,binary_new,binary_old;
+	
+	private String structure_file_type,design_file_type,department_new,issue_category_fk_old,stage,department_old,type_fk_old,department_name_new,risk_work_completed_new,department_name_old,department_code_old,department_code_new,contractor_specialization_old
+	,contractor_specialization_new,contract_type_old,contract_type_new,dashboard_type_old,dashboard_type_new,status_old,status_new,deliverable_type_old,
+	deliverable_type_new,document_type_old,document_type_new,value_old,value_new,general_status,execution_status,category,priority,status_of_new,status_of,module_name,module_incharge,incharge_user_id_fk
+	,p6_wbs_category,project_priority,railway_id,section_id,section_name,division_id,division_name,railway_zone, railway_name,railway_name_new,railway_id_val,report_type,revision_status,risk_priority,approval_status,land_type
+	,impact,root_cause,structure_type, user_role_code_new,user_access_table_new,user_access_type_val,short_description,short_description_new,area, item_no,
+	item_no_new,risk_area_fk,risk_area_fk_new,sub_area,sub_area_new,la_sub_category_new,la_category_fk_new,la_category_fk_old,la_sub_category_old,sub_category,
+	zonal_railway_funds,risk_minimum_new,risk_maximum_new,risk_classification_id, resource_type_fk_new,classification, minimum, maximum,alert_level,alert_type,as_built_status,user_type,
+	login_event_type,yesorno,type,notification_type, notification_type_icon,notification_type_icon_new,type_fk_new,notification_type_new, type_fk,web_documents_category,financial_year,
+	risk_work_hod_id, work_id_fk, hod_user_id_fk,designation,work_short_name,work_id_fk_new,hod_user_id_fk_new,sub_work,sub_work_new,
+	 name, order, icon, parent_id, link_url,order_text_update,parent_text,url_text_update,status_fk,order_text,url_text,name_text,statuss,parent_texts,
+	contract_category_fk,risk_revision_id,risk_id_pk_fk, date, issue_category_fk,contract_file_type,issue_file_type,fob_file_type,contract_category_fk_new,issue_other_organization,issue_category_fk_new,project_file_type,work_file_type
+	, template_name, attachment,captiliszedTableName, resource_type_fk,submission_purpose,design_status_submit,la_file_type, sub_resource_type, uploaded_on, uploaded_by,contract_status,contract_status_new,commonAttachment,short_name,
+	soft_delete_status_fk,rr_verification_by, rr_location,rr_boundarywall_Status, bses_file_type, rr_occupancy_status, rr_tenure_status, caste, mother_tongue, rr_type_of_family,marital_status
+	,phase,rr_type_of_use, rr_location_fk, rr_sub_location,work_type,rr_location_fk_old,rr_location_fk_new,executive_user_id_fk,user_id,station_name;
+    
+	private String sub_resource_type_new,resource_type_fk_old,rr_sub_location_new,dashboard_id,dashboard_name,dashboard_icon,dashboard_url,source_table_name,source_field_name,source_field_value,show_left_menu,user_types,user_roles,users,Created_by_user_id_fk,archive_dates,archive_urls;
+	
+	private List<String> access_user_types,access_user_roles,access_users;
+
+	
+	private String [] work_id_fks,executive_user_id_fks,archive_date,archive_url;
+	List<TrainingType> rrExecutivesList;
+	List<TrainingType> landExecutivesList;
+	List<TrainingType> utilityExecutivesList;
+}
