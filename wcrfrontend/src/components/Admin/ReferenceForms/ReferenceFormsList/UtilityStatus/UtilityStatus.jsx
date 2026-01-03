@@ -89,8 +89,9 @@ export default function UtilityStatus() {
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.DELETE}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+	
 		body: JSON.stringify({
-		  utility_status: data[index].utility_status
+		  status: data[index].utility_status
 		})
       });
 
