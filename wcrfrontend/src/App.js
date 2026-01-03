@@ -1,3 +1,7 @@
+import UtilityStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityStatus/UtilityStatus";
+import UtilityRequirementStage from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityRequirementStage/UtilityRequirementStage";
+import UtilityExecutionAgency from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityExecutionAgency/UtilityExecutionAgency";
+import UtilityCategory from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityCategory/UtilityCategory";
 import BankGuaranteeType from "./components/Admin/ReferenceForms/ReferenceFormsList/BankGuaranteeType/BankGuaranteeType";
 import ReferenceForms from "./components/Admin/ReferenceForms/ReferenceForms";
 import DashboardForm from "./components/Admin/Dashboards/DashboardForm/DashboardForm";
@@ -65,7 +69,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <Routes>
             <Route path="/" element={isAuthenticated ? <Navigate to="/home" /> : <Login />} />
-
+ 
             <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/" />}>
               <Route path="home" element={<Home />} />
               <Route path="footer" element={<Footer />} />
@@ -73,46 +77,46 @@ function App() {
               <Route path="header" element={<Header />} />
               <Route path="about" element={<About />} />
               <Route path="dashboard" element={<Dashboard />} />
-
+ 
               <Route path="updateforms" element={<UpdateForms />}>
                 <Route path="project" element={<Project />}>
                   <Route path="projectform" element={<ProjectForm />} />
                 </Route>
-
+ 
                 <Route path="work" element={<Work />}>
                   <Route path="workform" element={<WorkForm />} />
                 </Route>
-
+ 
                 <Route path="land-acquisition" element={<LandAcquisition />}>
                   <Route path="landacquisitionform" element={<LandAcquisitionForm />} />
                 </Route>
-
+ 
                 <Route path="design" element={<DesignDrawing />}>
                   <Route path="add-design-form" element={<DesignDrawingForm />} />
                 </Route>
-
+ 
                 <Route path="ganttbarchart" element={<GanttBarChart />} />
-
+ 
                 <Route path="contract" element={<Contract />}>
                   <Route path="add-contract-form" element={<ContractForm />} />
                 </Route>
-
+ 
                 <Route path="utilityshifting" element={<UtilityShifting />}>
                   <Route path="add-utility-shifting" element={<UtilityShiftingForm />} />
                 </Route>
-
+ 
                 <Route path="structure-form" element={<UpdateStructure />}>
                   <Route path="get-structure-form" element={<UpdateStructureForm />} />
                 </Route>
-
+ 
                 <Route path="contractor" element={<Contractor />}>
                   <Route path="add-contractor-form" element={<ContractorForm />} />
                   </Route>
-				
-				<Route path="structure" element={<AddStructure />}>
-	             <Route path="addstructureform" element={<AddStructureForm />} />
+       
+        <Route path="structure" element={<AddStructure />}>
+               <Route path="addstructureform" element={<AddStructureForm />} />
                 </Route>
-
+ 
                 <Route path="p6-new-data" element={<P6NewData />} />
                 <Route path="new-activities-update" element={<NewActivitiesUpdate />} />
                 <Route path="modify-actuals" element={<ModifyActuals />} />
@@ -120,10 +124,18 @@ function App() {
                 <Route path="issues" element={<Issues />}>
                   <Route path="issuesform" element={<IssuesForm />} />
                 </Route>
-              </Route>
-              <Route path="referenceforms" element={<ReferenceForms />} >
-                
-              </Route>
+         
+           
+      <Route path="referenceforms" element={<ReferenceForms />} />
+	 
+	 
+             </Route>
+           
+ 
+           
+ 
+           
+  
               <Route path="works" element={<Works />} />
               <Route path="admin" element={<Admin />}>
                 <Route path="users" element={<Users />}>
@@ -133,14 +145,18 @@ function App() {
                           <Route path="dashboardform" element={<DashboardForm />} />
                 </Route>
                 <Route path="reference-forms" element={<ReferenceForms />} />
-			        </Route>
+              </Route>
               <Route path="bank-guarantee-type" element={<BankGuaranteeType />} />
+              <Route path="utility-category" element={<UtilityCategory />} />
+              <Route path="utility-execution-agency" element={<UtilityExecutionAgency />} />
+			  <Route path="utility-requirement-stage" element={<UtilityRequirementStage />} />
+			  <Route path="utility-status" element={<UtilityStatus />} />
               <Route path="modules" element={<Modules />} />
               <Route path="reports" element={<Reports />} />
               <Route path="documents" element={<Documents />} />
               <Route path="quicklinks" element={<QuickLinks />} />
             </Route>
-
+ 
             <Route path="*" element={<div style={{
             textAlign: "center",
             marginTop: "20%"

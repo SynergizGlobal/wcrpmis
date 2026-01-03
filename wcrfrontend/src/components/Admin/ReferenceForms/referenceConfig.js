@@ -50,6 +50,23 @@ export const referencePages = {
   "Issues": [],
   "Land Acquisition": [],
   "Others": [],
-  "Utility Shifting": [],
+  "Utility Shifting": [
+	{
+	      name: "Utility Category",
+	      url: "/wcrpmis/utility-category",
+	    },
+      {
+	      name: "UtilityExecutionAgency",
+	      url: "/wcrpmis/utility-execution-agency",
+	    },
+		{
+		      name: "Utility Requirement Stage",
+		      url: "/wcrpmis/utility-requirement-stage",
+		    },
+			{
+			      name: "Utility Status",
+			      url: "/wcrpmis/utility-status",
+			    }
+  ],
   "Works": [],
 };
