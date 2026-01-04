@@ -66,7 +66,19 @@ export const referencePages = {
 			{
 			      name: "Utility Status",
 			      url: "/wcrpmis/utility-status",
-			    }
+			    },
+				{
+				  name: "Utlity Types",
+				   url: "/wcrpmis/utility-types",
+							    },
+								{
+					  name: "Utility Shifting File Typ",
+					url: "/wcrpmis/utility-shifting-filetyp"
+											},	
+											{										
+			name: "Utility Shifting Executives",
+			url: "/wcrpmis/utility-shifting-executives"
+								}									    				
   ],
   "Works": [],
 };

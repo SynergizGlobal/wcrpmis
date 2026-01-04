@@ -1,0 +1,181 @@
+.container {
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+
+.topActions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+
+.searchBox {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.searchBox input {
+  width: 300px;
+  padding: 6px 28px 6px 8px;
+}
+
+.clear {
+  position: absolute;
+  right: calc(50% - 150px);
+  top: 6px;
+  cursor: pointer;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th{
+  text-align: left;
+}
+
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.actionCol {
+  width: 100px;
+  text-align: center;
+}
+
+.editBtn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.editBtn:hover {
+  filter: brightness(80%);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.footerText {
+  margin-top: 10px;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal {
+  width: 500px;
+  background: white;
+  border-radius: 4px;
+}
+
+.modalHeader {
+  background: var(--primary-fade-color);
+  color: white;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.close {
+  cursor: pointer;
+}
+
+.modalBody {
+  padding: 30px;
+}
+
+.modalBody input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 20px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.saveBtn,
+.cancelBtn {
+  background: #e96c00;
+  color: white;
+  border: none;
+  padding: 8px 40px;
+  cursor: pointer;
+}
+
+.cancelBtn {
+  background: #d9534f;
+}
+
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.deleteBtn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.deleteBtn:hover {
+  background-color: #d32f2f;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+.actionCol {
+  text-align: center;
+  width: 120px;
+}
+
+/* Add to your existing CSS */
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 16px;
+}
+
+.noData {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+/* Disabled state */
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}

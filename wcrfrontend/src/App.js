@@ -1,3 +1,6 @@
+import UtilityShiftingExecutives from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityShiftingExecutives/UtilityShiftingExecutives";
+import UtilityShiftingFileTyp from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityShiftingFileTyp/UtilityShiftingFileTyp";
+import UtilityTypes from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityTypes/UtilityTypes";
 import UtilityStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityStatus/UtilityStatus";
 import UtilityRequirementStage from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityRequirementStage/UtilityRequirementStage";
 import UtilityExecutionAgency from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityExecutionAgency/UtilityExecutionAgency";
@@ -124,12 +127,7 @@ function App() {
                 <Route path="issues" element={<Issues />}>
                   <Route path="issuesform" element={<IssuesForm />} />
                 </Route>
-         
-           
-      <Route path="referenceforms" element={<ReferenceForms />} />
-	 
-	 
-             </Route>
+                </Route>
            
  
            
@@ -151,6 +149,9 @@ function App() {
               <Route path="utility-execution-agency" element={<UtilityExecutionAgency />} />
 			  <Route path="utility-requirement-stage" element={<UtilityRequirementStage />} />
 			  <Route path="utility-status" element={<UtilityStatus />} />
+			  <Route path="utility-types" element={<UtilityTypes />} />
+			  <Route path="utility-shifting-filetyp" element={<UtilityShiftingFileTyp />} />
+			  <Route path="utility-shifting-executives" element={<UtilityShiftingExecutives />} />
               <Route path="modules" element={<Modules />} />
               <Route path="reports" element={<Reports />} />
               <Route path="documents" element={<Documents />} />
