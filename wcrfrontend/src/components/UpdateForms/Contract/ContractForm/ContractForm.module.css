@@ -24,7 +24,7 @@
 }
 
 .navBtn.activeTab {
-  background: #ff6b00;
+  background: var(--primary-fade-color);
   color: white;
   border-radius: 4px;
 }

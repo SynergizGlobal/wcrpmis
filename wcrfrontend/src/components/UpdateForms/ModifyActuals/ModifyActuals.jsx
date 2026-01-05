@@ -63,7 +63,13 @@ const isShowTable =
 
   return (
     <div className={styles.container}>
-      <h2 className="pageHeading">Modify Actuals</h2>
+      <div className="pageHeading">
+        <h2>Modify Actuals</h2>
+        <div className="rightBtns">
+         &nbsp;
+        </div>
+      </div>
+      
 
       {/* RADIO OPTIONS */}
       <div className={styles.radioRow}>

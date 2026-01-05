@@ -248,6 +248,9 @@ export default function UpdateStructure() {
       {!isStructureForm && (
         <div className="pageHeading">
           <h2>Structure Form</h2>
+          <div className="rightBtns">
+            &nbsp;
+          </div>
         </div>
       )}
 

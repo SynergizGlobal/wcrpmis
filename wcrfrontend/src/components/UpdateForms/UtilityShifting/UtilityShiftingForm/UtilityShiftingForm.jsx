@@ -763,7 +763,11 @@ export default function UtilityShiftingForm() {
 
               <div className="form-field">
                 <label>Identification Date</label>
-                <input {...register("identification")} type="date" placeholder="Select Date" />
+                <input 
+                  {...register("identification")} 
+                  type="date" 
+                  onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
+                  />
               </div>
 
               <div className="form-field">
@@ -867,7 +871,11 @@ export default function UtilityShiftingForm() {
 
               <div className="form-field">
                 <label>Target Date</label>
-                <input {...register("planned_completion_date")} type="date" placeholder="Select Date" />
+                <input 
+                  {...register("planned_completion_date")} 
+                  type="date" 
+                  onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
+                  />
               </div>
 
               <div className="form-field">
@@ -909,7 +917,11 @@ export default function UtilityShiftingForm() {
 
               <div className="form-field">
                 <label>Start Date</label>
-                <input {...register("start_date")} type="date" placeholder="Select Start Date" />
+                <input 
+                  {...register("start_date")} 
+                  type="date" 
+                  onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
+                  />
               </div>
 
               <div className="form-field">
@@ -935,7 +947,11 @@ export default function UtilityShiftingForm() {
 
               <div className="form-field">
                 <label>Completion Date</label>
-                <input {...register("shifting_completion_date")} type="date" placeholder="Select Completion Date" />
+                <input 
+                {...register("shifting_completion_date")} 
+                type="date" 
+                onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
+                />
               </div>    
             </div>
 
@@ -960,6 +976,7 @@ export default function UtilityShiftingForm() {
                               type="date"
                               {...register(`progressDetails.${index}.progress_dates`)}
                               className="form-control"
+                              onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
                             />
                           </td>
                           <td>

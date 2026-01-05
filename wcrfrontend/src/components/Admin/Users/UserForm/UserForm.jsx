@@ -136,7 +136,7 @@ export default function UserForm() {
       <div className="card">
             <div className="formHeading">
               <h2 className="center-align ps-relative">
-                {isEdit ? "Update Contract" : "Add Contract"}
+                {isEdit ? "Update User" : "Add User"}
               </h2>
             </div>
             <div className="innerPage">

@@ -6,6 +6,7 @@
   display: grid;
   grid-template-columns: 74% 25%;
   gap: 20px;
+  margin: 10px;
 }
 
 .leftSection {
