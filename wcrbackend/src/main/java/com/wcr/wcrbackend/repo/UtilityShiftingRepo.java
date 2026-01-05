@@ -1239,17 +1239,29 @@ public class UtilityShiftingRepo implements IUtilityShiftingRepo {
 			String searchParameter) throws Exception{
 		List<UtilityShifting> objsList = null;
 		try {
-			String qry = "SELECT distinct s.*,s.modified_by,FORMAT(s.modified_date,'dd-MM-yyyy') as modified_date,\r\n"
-					+ "s.hod_user_id_fk,u.user_name,u.designation,chainage, COALESCE(s.modified_date, c.created_date) as progress_date\r\n"
-					+ "from utility_shifting s \r\n"
-					+ "LEFT OUTER JOIN contract c ON s.impacted_contract_id_fk  = c.contract_id \r\n"
-					+ "left join utility_shifting_executives us on c.project_id_fk = us.project_id_fk\r\n"
-					+ "LEFT OUTER JOIN project p ON us.project_id_fk  = p.project_id \r\n"
-					+ "LEFT OUTER JOIN [user] u on s.hod_user_id_fk = u.user_id \r\n"
-					+ "where utility_shifting_id is not null\r\n"
-					+ "";
-			
-			
+//			String qry = "SELECT distinct s.*,s.modified_by,FORMAT(s.modified_date,'dd-MM-yyyy') as modified_date,\r\n"
+//					+ "s.hod_user_id_fk,u.user_name,u.designation,chainage, COALESCE(s.modified_date, c.created_date) as progress_date\r\n"
+//					+ "from utility_shifting s \r\n"
+//					+ "LEFT OUTER JOIN contract c ON s.impacted_contract_id_fk  = c.contract_id \r\n"
+//					+ "left join utility_shifting_executives us on c.project_id_fk = us.project_id_fk\r\n"
+//					+ "LEFT OUTER JOIN project p ON us.project_id_fk  = p.project_id \r\n"
+//					+ "LEFT OUTER JOIN [user] u on s.hod_user_id_fk = u.user_id \r\n"
+//					+ "where utility_shifting_id is not null\r\n"
+//					+ "";
+//			
+			String qry =
+				    "SELECT DISTINCT s.*, " +
+				    "       s.modified_by, " +
+				    "       FORMAT(s.modified_date,'dd-MM-yyyy') AS modified_date, " +
+				    "       s.hod_user_id_fk, u.user_name, u.designation, chainage, " +
+				    "       COALESCE(s.modified_date, s.created_date) AS progress_date " +
+				    "FROM utility_shifting s " +
+				    "LEFT JOIN contract c ON s.impacted_contract_id_fk = c.contract_id " +
+				    "LEFT JOIN utility_shifting_executives us ON c.project_id_fk = us.project_id_fk " +
+				    "LEFT JOIN project p ON us.project_id_fk = p.project_id " +
+				    "LEFT JOIN [user] u ON s.hod_user_id_fk = u.user_id " +
+				    "WHERE s.utility_shifting_id IS NOT NULL ";
+
 			
 			int arrSize = 0;
 		
@@ -1290,7 +1302,8 @@ public class UtilityShiftingRepo implements IUtilityShiftingRepo {
 				arrSize++;
 			}	
 			if(!StringUtils.isEmpty(startIndex) && !StringUtils.isEmpty(offset)) {
-				qry = qry + " order by progress_date DESC offset ? rows  fetch next ? rows only";
+				qry = qry + "ORDER BY COALESCE(s.modified_date, s.created_date) DESC\r\n"
+						+ "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 				arrSize++;
 				arrSize++;
 			}			

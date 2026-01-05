@@ -9,12 +9,12 @@ import { API_BASE_URL } from "../../../../config";
 import { MdOutlineDeleteSweep } from "react-icons/md";
 import { BiListPlus } from "react-icons/bi";
 import { RiAttachment2 } from "react-icons/ri";
-import { RefreshContext } from "../../../../context/RefreshContext"; // ADD THIS IMPORT
+import { RefreshContext } from "../../../../context/RefreshContext";
 
 export default function UtilityShiftingForm() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { setRefresh } = useContext(RefreshContext); // ADD THIS LINE
+  const { setRefresh } = useContext(RefreshContext);
   const isEdit = Boolean(state?.design);
   const [isPrefilled, setIsPrefilled] = useState(false);
 
@@ -484,20 +484,20 @@ export default function UtilityShiftingForm() {
         'impacted_element': data.impacted_element
       };
 
-	  Object.entries(selectFields).forEach(([key, value]) => {
-	    // Only append if value exists and has a valid value
-	    if (value && value.value !== undefined && value.value !== null && value.value !== '') {
-	      formData.append(key, value.value);
-	    }
-	    // Special handling for shifting_status_fk - don't send if empty
-	    else if (key === 'shifting_status_fk') {
-	      // Don't append anything if status is empty
-	      console.log('Skipping empty shifting_status_fk');
-	    }
-	    else if (value !== undefined && value !== null && value !== '') {
-	      formData.append(key, value);
-	    }
-	  });
+      Object.entries(selectFields).forEach(([key, value]) => {
+        // Only append if value exists and has a valid value
+        if (value && value.value !== undefined && value.value !== null && value.value !== '') {
+          formData.append(key, value.value);
+        }
+        // Special handling for shifting_status_fk - don't send if empty
+        else if (key === 'shifting_status_fk') {
+          // Don't append anything if status is empty
+          console.log('Skipping empty shifting_status_fk');
+        }
+        else if (value !== undefined && value !== null && value !== '') {
+          formData.append(key, value);
+        }
+      });
 
       // Add progress details as arrays
       if (data.progressDetails && Array.isArray(data.progressDetails)) {
@@ -663,7 +663,7 @@ export default function UtilityShiftingForm() {
                       placeholder="Select Project"
                       isSearchable
                       isLoading={loading}
-					  isDisabled={isEdit}
+                      isDisabled={isEdit}
                     />
                   )}
                 />
@@ -1012,16 +1012,16 @@ export default function UtilityShiftingForm() {
               </div>
             </div>
 
-            {/* Attachments Section */}
+            {/* Attachments Section - ALL FIELDS MANDATORY */}
             <div className="row mt-1 mb-2">
-              <h3 className="mb-1 d-flex align-center justify-content-center">Attachments</h3>
+              <h3 className="mb-1 d-flex align-center justify-content-center">Attachments <span className="red">*</span></h3>
               <div className="table-responsive dataTable ">
                 <table className="table table-bordered align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: "25%" }}>File Type</th>
-                      <th style={{ width: "35%" }}>Name</th>
-                      <th style={{ width: "25%" }}>Attachment</th>
+                      <th style={{ width: "25%" }}>File Type <span className="red">*</span></th>
+                      <th style={{ width: "35%" }}>Name <span className="red">*</span></th>
+                      <th style={{ width: "25%" }}>Attachment <span className="red">*</span></th>
                       <th style={{ width: "15%" }}>Action</th>
                     </tr>
                   </thead>
@@ -1033,65 +1033,119 @@ export default function UtilityShiftingForm() {
                             <Controller
                               name={`attachments.${index}.attachment_file_types`}
                               control={control}
-                              render={({ field }) => {
+                              rules={{ 
+                                required: "File type is required",
+                                validate: value => value && value.value ? true : "File type is required"
+                              }}
+                              render={({ field, fieldState }) => {
                                 const normalizedValue = field.value && typeof field.value === 'object'
                                   ? field.value
                                   : (field.value ? { value: field.value, label: String(field.value) } : null);
 
                                 return (
-                                  <Select
-                                    {...field}
-                                    value={normalizedValue}
-                                    options={dropdownData.utilityshiftingfiletypeList?.map(item => ({
-                                      value: item.utility_shifting_file_type,
-                                      label: item.utility_shifting_file_type
-                                    })) || []}
-                                    classNamePrefix="react-select"
-                                    placeholder="Select File Type"
-                                    isSearchable
-                                    isClearable
-                                    onChange={(selectedOption) => {
-                                      field.onChange(selectedOption);
-                                    }}
-                                  />
+                                  <div>
+                                    <Select
+                                      {...field}
+                                      value={normalizedValue}
+                                      options={dropdownData.utilityshiftingfiletypeList?.map(item => ({
+                                        value: item.utility_shifting_file_type,
+                                        label: item.utility_shifting_file_type
+                                      })) || []}
+                                      classNamePrefix="react-select"
+                                      placeholder="Select File Type"
+                                      isSearchable
+                                      isClearable
+                                      onChange={(selectedOption) => {
+                                        field.onChange(selectedOption);
+                                      }}
+                                      styles={{
+                                        control: (base) => ({
+                                          ...base,
+                                          borderColor: fieldState.error ? '#dc3545' : base.borderColor,
+                                          '&:hover': {
+                                            borderColor: fieldState.error ? '#dc3545' : base.borderColor
+                                          }
+                                        })
+                                      }}
+                                    />
+                                    {fieldState.error && (
+                                      <span className="red" style={{ fontSize: "12px" }}>
+                                        {fieldState.error.message}
+                                      </span>
+                                    )}
+                                  </div>
                                 );
                               }}
                             />
                           </td>
                           <td>
-                            <input
-                              type="text"
-                              {...register(`attachments.${index}.attachmentNames`)}
-                              className="form-control"
-                              placeholder="File Name"
-                            />
-                            {/* Hidden field for server-side file name (attachmentFileNames) */}
-                            <input
-                              type="hidden"
-                              {...register(`attachments.${index}.attachmentFileNames`)}
-                            />
+                            <div>
+                              <input
+                                type="text"
+                                {...register(`attachments.${index}.attachmentNames`, { 
+                                  required: "File name is required" 
+                                })}
+                                className="form-control"
+                                placeholder="Enter File Name"
+                                style={{
+                                  borderColor: errors.attachments?.[index]?.attachmentNames ? '#dc3545' : undefined
+                                }}
+                              />
+                              {errors.attachments?.[index]?.attachmentNames && (
+                                <span className="red" style={{ fontSize: "12px" }}>
+                                  {errors.attachments[index].attachmentNames.message}
+                                </span>
+                              )}
+                              {/* Hidden field for server-side file name (attachmentFileNames) */}
+                              <input
+                                type="hidden"
+                                {...register(`attachments.${index}.attachmentFileNames`)}
+                              />
+                            </div>
                           </td>
                           <td>
-                            <div className={styles["file-upload-wrapper"]}>
-                              <label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
-                                <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
-                                Upload File
-                              </label>
-                              <input
-                                id={`file-${index}`}
-                                type="file"
-                                {...register(`attachments.${index}.utilityShiftingFiles`)}
-                                className={styles["file-upload-input"]}
-                              />
-                              {watch(`attachments.${index}.utilityShiftingFiles`)?.[0]?.name && (
-                                <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569" }}>
-                                  Selected: {watch(`attachments.${index}.utilityShiftingFiles`)[0].name}
-                                </p>
-                              )}
-                              {isEdit && !watch(`attachments.${index}.utilityShiftingFiles`)?.[0] && editData?.utilityShiftingFilesList?.[index] && (
-                                <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569", fontStyle: "italic" }}>
-                                  File already uploaded: {editData.utilityShiftingFilesList[index].attachment || editData.utilityShiftingFilesList[index].uploaded_file || ''}
-                                </p>
+                            <div>
+                              <div className={styles["file-upload-wrapper"]}>
+                                <label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
+                                  <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
+                                  Upload File
+                                </label>
+                                <input
+                                  id={`file-${index}`}
+                                  type="file"
+                                  {...register(`attachments.${index}.utilityShiftingFiles`, { 
+                                    required: isEdit && !watch(`attachments.${index}.utilityShiftingFiles`)?.[0] && 
+                                             !editData?.utilityShiftingFilesList?.[index] 
+                                             ? "File is required" 
+                                             : !isEdit 
+                                               ? "File is required" 
+                                               : false,
+                                    validate: (files) => {
+                                      // In edit mode, if there's already a file on server, no need to upload new one
+                                      if (isEdit && editData?.utilityShiftingFilesList?.[index]) {
+                                        return true;
+                                      }
+                                      // Otherwise, file is required
+                                      return files && files.length > 0 || "File is required";
+                                    }
+                                  })}
+                                  className={styles["file-upload-input"]}
+                                />
+                                {watch(`attachments.${index}.utilityShiftingFiles`)?.[0]?.name && (
+                                  <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569" }}>
+                                    Selected: {watch(`attachments.${index}.utilityShiftingFiles`)[0].name}
+                                  </p>
+                                )}
+                                {isEdit && !watch(`attachments.${index}.utilityShiftingFiles`)?.[0] && editData?.utilityShiftingFilesList?.[index] && (
+                                  <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569", fontStyle: "italic" }}>
+                                    File already uploaded: {editData.utilityShiftingFilesList[index].attachment || editData.utilityShiftingFilesList[index].uploaded_file || ''}
+                                  </p>
+                                )}
+                              </div>
+                              {errors.attachments?.[index]?.utilityShiftingFiles && (
+                                <span className="red" style={{ fontSize: "12px" }}>
+                                  {errors.attachments[index].utilityShiftingFiles.message}
+                                </span>
                               )}
                             </div>
                           </td>
@@ -1133,6 +1187,13 @@ export default function UtilityShiftingForm() {
                   <BiListPlus size="24" />
                 </button>
               </div>
+              
+              {/* Global attachment validation message */}
+              {attachmentsFields.length === 0 && (
+                <div className="text-center mt-2">
+                  <span className="red">At least one attachment is required</span>
+                </div>
+              )}
             </div>
 
             <div className="form-row">
