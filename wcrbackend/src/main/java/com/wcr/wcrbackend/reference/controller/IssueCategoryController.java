@@ -1,28 +1,31 @@
 package com.wcr.wcrbackend.reference.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.wcr.wcrbackend.DTO.Safety;
-import com.wcr.wcrbackend.constants.PageConstants;
 import com.wcr.wcrbackend.reference.Iservice.IssueCategoryService;
 import com.wcr.wcrbackend.reference.model.TrainingType;
 
 import jakarta.servlet.http.HttpSession;
 
-@Controller
+@RestController
 public class IssueCategoryController {
 
 
@@ -36,21 +39,27 @@ public class IssueCategoryController {
 	@Autowired
 	IssueCategoryService service;
 	
-	@RequestMapping(value="/issue-category",method={RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView issueCategory(HttpSession session,@ModelAttribute TrainingType obj){
-		ModelAndView model = new ModelAndView(PageConstants.issueCategory);
+	@RequestMapping(value = "/issue-category", method = { RequestMethod.GET, RequestMethod.POST })
+	public Map<String, Object> issueCategory(HttpSession session, @RequestBody TrainingType obj) {
+
+		Map<String, Object> map = new HashMap<>();
+
 		try {
 			List<Safety> issueCategoryList = service.getIssueCategoryList();
-			model.addObject("issueCategoryList", issueCategoryList);
+			map.put("issueCategoryList", issueCategoryList);
+
 			TrainingType issueCategoryDetails = service.getIssueCategoryDetails(obj);
-			model.addObject("issueCategoryDetails",issueCategoryDetails);
-		}catch (Exception e) {
-			e.printStackTrace();
-			logger.error("issueCategory : " + e.getMessage());
+			map.put("issueCategoryDetails", issueCategoryDetails);
+
+			map.put("status", "success");
+		} catch (Exception e) {
+			logger.error("issueCategory : " + e.getMessage(), e);
+			map.put("status", "error");
+			map.put("message", e.getMessage());
 		}
-		return model;
+
+		return map;
 	}
-	
 	
 	@RequestMapping(value = "/add-issue-category", method = {RequestMethod.POST})
 	@ResponseBody

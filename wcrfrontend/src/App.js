@@ -2,6 +2,10 @@ import IssueFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/
 import IssuePriority from "./components/Admin/ReferenceForms/ReferenceFormsList/IssuePriority/IssuePriority";
 import IssueOtherOrganisation from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueOtherOrganisation/IssueOtherOrganisation";
 import IssueStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueStatus/IssueStatus";
+import IssueCategory from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueCategory/IssueCategory";
+import IssueCategoryTitle from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueCategoryTitle/IssueCategoryTitle";
+
+import IssueContractCategory from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueContractCategory/IssueContractCategory";
 
 import ApprovalAuthority from "./components/Admin/ReferenceForms/ReferenceFormsList/ApprovalAuthority/ApprovalAuthority";
 import PurposeOfSubmission from "./components/Admin/ReferenceForms/ReferenceFormsList/PurposeOfSubmission/PurposeOfSubmission";
@@ -178,6 +182,10 @@ function App() {
 						<Route path="issue-priority" element={<IssuePriority />} />
 						<Route path="issue-other-organisation" element={<IssueOtherOrganisation />} />
 						<Route path="issue-status" element={<IssueStatus />} />
+						<Route path="issue-contract-category" element={<IssueContractCategory />} />
+						<Route path="issue-category" element={<IssueCategory />} />
+						<Route path="issue-category-title" element={<IssueCategoryTitle />} />
+
 						<Route path="modules" element={<Modules />} />
 						<Route path="reports" element={<Reports />} />
 						<Route path="documents" element={<Documents />} />

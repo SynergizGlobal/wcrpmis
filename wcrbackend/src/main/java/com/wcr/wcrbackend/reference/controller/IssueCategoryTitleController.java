@@ -1,28 +1,26 @@
 package com.wcr.wcrbackend.reference.controller;
 
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import com.wcr.wcrbackend.constants.PageConstants;
 import com.wcr.wcrbackend.reference.Iservice.IssueCategoryTitleService;
 import com.wcr.wcrbackend.reference.model.TrainingType;
 
-import jakarta.servlet.http.HttpSession;
-
-@Controller
+@RestController
 public class IssueCategoryTitleController {
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
@@ -34,26 +32,33 @@ public class IssueCategoryTitleController {
 	@Autowired
 	IssueCategoryTitleService service;
 	
-	
-	@RequestMapping(value="/issue-category-title",method={RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView issueCategoryTitle(HttpSession session,@ModelAttribute TrainingType obj){
-		ModelAndView model = new ModelAndView(PageConstants.issueCategoryTitle);
-		try {
-			
-			List<TrainingType> issueCategoryDetails = service.gtIssueCategoryDetails(obj);
-			model.addObject("issueCategoryDetails",issueCategoryDetails);
-			
-			List<TrainingType> issueCategoryTitleDetails = service.getIssueCategoryTitle(obj);
-			model.addObject("issueCategoryTitleDetails",issueCategoryTitleDetails);
-			
-			List<TrainingType> getTitles = service.getTitles(obj);
-			model.addObject("getTitles",getTitles);
-		}catch (Exception e) {
-			e.printStackTrace();
-			logger.error("issueContractCategory : " + e.getMessage());
-		}
-		return model;
-	}
+		@RequestMapping(value = "/issue-category-title", method = { RequestMethod.GET, RequestMethod.POST })
+	    public Map<String, Object> issueCategoryTitle(@RequestBody TrainingType obj) {
+
+	        Map<String, Object> map = new HashMap<>();
+
+	        try {
+	            List<TrainingType> issueCategoryDetails =
+	                    service.gtIssueCategoryDetails(obj);
+	            map.put("issueCategoryDetails", issueCategoryDetails);
+
+	            List<TrainingType> issueCategoryTitleDetails =
+	                    service.getIssueCategoryTitle(obj);
+	            map.put("issueCategoryTitleDetails", issueCategoryTitleDetails);
+
+	            List<TrainingType> getTitles =
+	                    service.getTitles(obj);
+	            map.put("getTitles", getTitles);
+
+	            map.put("status", "success");
+	        } catch (Exception e) {
+	            logger.error("issueCategoryTitle : " + e.getMessage(), e);
+	            map.put("status", "error");
+	            map.put("message", e.getMessage());
+	        }
+
+	        return map;
+	    }
 	
 	@RequestMapping(value = "/ajax/getTitles", method = { RequestMethod.GET,RequestMethod.POST }, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody

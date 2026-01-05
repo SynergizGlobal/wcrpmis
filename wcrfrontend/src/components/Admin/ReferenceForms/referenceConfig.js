@@ -69,29 +69,37 @@ export const referencePages = {
     },
   ],
 
-  "Issues": [
-  	{
-  		name: "Contract Category",
-  		url: "/wcrpmis/issue-contract-category",
-  	},
-  	{
-  		name: "File Type",
-  		url: "/wcrpmis/issue-file-type",
-  	},
-  	{
-  		name: "Priority",
-  		url: "/wcrpmis/issue-priority",
-  	},
-  	{
-  		name: "Other Organisation",
-  		url: "/wcrpmis/issue-other-organisation",
-  	},
-  	{
-  		name: "Status",
-  		url: "/wcrpmis/issue-status",
-  	},
+	"Issues": [
+		{
+			name: "Category",
+			url: "/wcrpmis/issue-category",
+		},
+		{
+			name: "Category",
+			url: "/wcrpmis/issue-category-title",
+		},
+		{
+			name: "Contract Category",
+			url: "/wcrpmis/issue-contract-category",
+		},
+		{
+			name: "File Type",
+			url: "/wcrpmis/issue-file-type",
+		},
+		{
+			name: "Priority",
+			url: "/wcrpmis/issue-priority",
+		},
+		{
+			name: "Other Organisation",
+			url: "/wcrpmis/issue-other-organisation",
+		},
+		{
+			name: "Status",
+			url: "/wcrpmis/issue-status",
+		},
 
-  ],
+	],
   "Land Acquisition": [],
   "Others": [],
   "Utility Shifting": [

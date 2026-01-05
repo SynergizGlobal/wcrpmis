@@ -38,15 +38,25 @@ public class IssueCategoryTitleDaoImpl implements IssueCategoryTitleDao{
 
 	@Override
 	public List<TrainingType> getIssueCategoryTitle(TrainingType obj) throws Exception {
-		List<TrainingType> objList = null;
-		try {
-			String qry = "SELECT id, issue_category_fk,STRING_AGG(id) as id,STRING_AGG(short_description) as short_description  from issue_category_title group by issue_category_fk";
-			objList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<TrainingType>(TrainingType.class));	
-		}catch(Exception e){ 
-			e.printStackTrace();
-			throw new Exception(e);
-		}
-		return objList;
+	    List<TrainingType> objList;
+	    try {
+	        String qry =
+	            "SELECT issue_category_fk, " +
+	            "STRING_AGG(CAST(id AS VARCHAR), ',') AS id, " +
+	            "STRING_AGG(short_description, ',') AS short_description " +
+	            "FROM issue_category_title " +
+	            "GROUP BY issue_category_fk";
+
+	        objList = jdbcTemplate.query(
+	            qry,
+	            new BeanPropertyRowMapper<>(TrainingType.class)
+	        );
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new Exception(e);
+	    }
+	    return objList;
 	}
 
 	@Override
