@@ -37,7 +37,7 @@ export default function UtilityExecutionAgency() {
       }
 
       const list =
-        json?.utilityExecutionAgencyList?.countList?.map(item => ({
+        json?.utilityExecutionAgencyList?.dlist1?.map(item => ({
           execution_agency: item.execution_agency,
           count: item.count
         })) || [];

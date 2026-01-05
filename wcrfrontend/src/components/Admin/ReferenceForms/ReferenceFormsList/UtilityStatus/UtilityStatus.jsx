@@ -34,7 +34,7 @@ export default function UtilityStatus() {
       const json = await response.json();
 
       const list =
-        json?.utilityStatusList?.countList?.map((item, index) => ({
+        json?.utilityStatusList?.dlist1?.map((item, index) => ({
           id: index,
           utility_status: item.status
         })) || [];

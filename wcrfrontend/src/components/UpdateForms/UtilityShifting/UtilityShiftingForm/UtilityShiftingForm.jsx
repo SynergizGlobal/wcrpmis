@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useContext } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
@@ -9,10 +9,12 @@ import { API_BASE_URL } from "../../../../config";
 import { MdOutlineDeleteSweep } from "react-icons/md";
 import { BiListPlus } from "react-icons/bi";
 import { RiAttachment2 } from "react-icons/ri";
+import { RefreshContext } from "../../../../context/RefreshContext"; // ADD THIS IMPORT
 
 export default function UtilityShiftingForm() {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { setRefresh } = useContext(RefreshContext); // ADD THIS LINE
   const isEdit = Boolean(state?.design);
   const [isPrefilled, setIsPrefilled] = useState(false);
 
@@ -607,6 +609,13 @@ export default function UtilityShiftingForm() {
 
       if (response.data) {
         alert(`✅ Utility Shifting ${isEdit ? 'updated' : 'saved'} successfully!`);
+        
+        // 🔥 TRIGGER REFRESH HERE
+        if (setRefresh) {
+          console.log("🔄 Triggering refresh for Utility Shifting list...");
+          setRefresh(prev => !prev); // Toggle refresh state
+        }
+        
         navigate("/updateforms/utilityshifting");
       } else {
         alert(`❌ Failed to ${isEdit ? 'update' : 'save'} Utility Shifting`);
@@ -619,6 +628,7 @@ export default function UtilityShiftingForm() {
       setFormLoading(false);
     }
   };
+  
   if (loading) {
     return <div className={styles.container}>Loading form data...</div>;
   }

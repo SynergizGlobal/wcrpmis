@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+
+import React, { useState, useEffect, useRef, useContext } from "react";
 import Select from "react-select";
 import styles from './UtilityShifting.module.css';
 import { CirclePlus } from "lucide-react";
@@ -7,11 +8,13 @@ import { MdEditNote } from "react-icons/md";
 import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
+import { RefreshContext } from "../../../context/RefreshContext"; // ADD THIS IMPORT
 
 export default function UtilityShifting() {
   const location = useLocation();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { refresh } = useContext(RefreshContext); // ADD THIS LINE
   const [utilityShiftingList, setUtilityShiftingList] = useState([]);
   const [uploadedFilesList, setUploadedFilesList] = useState([]);
   const [filteredUploadedFiles, setFilteredUploadedFiles] = useState([]);
@@ -55,6 +58,15 @@ export default function UtilityShifting() {
     fetchUtilityShiftingList();
     fetchUploadedFilesList();
   }, []);
+
+  // ADD THIS USEEFFECT TO LISTEN FOR REFRESH CHANGES
+  useEffect(() => {
+    if (refresh) {
+      console.log("🔄 Refresh triggered, refetching data...");
+      fetchUtilityShiftingList();
+      fetchUploadedFilesList();
+    }
+  }, [refresh]); // Watch for refresh context changes
 
   // Reset to page 1 when filters change
   useEffect(() => {

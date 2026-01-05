@@ -66,7 +66,7 @@ public class UtilityStatusController {
 		    Map<String, Object> response = new HashMap<>();
 
 		    try {
-		        Safety obj = new Safety(); // ✅ CREATE OBJECT
+		        Safety obj = new Safety(); 
 		        Safety utilityStatusList = service.getUtilityStatusList(obj);
 
 		        response.put("status", "success");
