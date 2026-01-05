@@ -25,20 +25,42 @@ export const referencePages = {
     },
   ],
 
+
   "Design": [
-    {
-      name: "Drawing Type",
-      url: "/wrpmis/drawing-type",
-    },
-    {
-      name: "Approval Authority",
-      url: "/wrpmis/approval-authority",
-    },
-    {
-      name: "Stage",
-      url: "/wrpmis/stage",
-    },
+  	{
+  		name: "As Built Status",
+  		url: "/wcrpmis/as-built-status",
+  	},
+  	{
+  		name: "Drawing Type",
+  		url: "/wcrpmis/drawing-type",
+  	},
+  	{
+  		name: "Approval Authority",
+  		url: "/wcrpmis/approval-authority",
+  	},
+  	{
+  		name: "Stage",
+  		url: "/wcrpmis/stage",
+  	},
+  	{
+  		name: "Submitted By",
+  		url: "/wcrpmis/submitted-by",
+  	},
+  	{
+  		name: "Design File Type",
+  		url: "/wcrpmis/design-file-type",
+  	},
+  	{
+  		name: "Purpose of submission",
+  		url: "/wcrpmis/purpose-of-submission",
+  	},
+  	{
+  		name: "Design Executives",
+  		url: "/wcrpmis/design-executives",
+  	},
   ],
+
 
   "Execution & Monitoring": [
     {
@@ -47,7 +69,29 @@ export const referencePages = {
     },
   ],
 
-  "Issues": [],
+  "Issues": [
+  	{
+  		name: "Contract Category",
+  		url: "/wcrpmis/issue-contract-category",
+  	},
+  	{
+  		name: "File Type",
+  		url: "/wcrpmis/issue-file-type",
+  	},
+  	{
+  		name: "Priority",
+  		url: "/wcrpmis/issue-priority",
+  	},
+  	{
+  		name: "Other Organisation",
+  		url: "/wcrpmis/issue-other-organisation",
+  	},
+  	{
+  		name: "Status",
+  		url: "/wcrpmis/issue-status",
+  	},
+
+  ],
   "Land Acquisition": [],
   "Others": [],
   "Utility Shifting": [
