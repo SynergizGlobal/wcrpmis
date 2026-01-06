@@ -1097,7 +1097,7 @@ if (!Array.isArray(allSubCategories)) {
 
                           <div className="d-flex align-center justify-content-center w-100 mb-1 mt-1">
                             <NavLink 
-                              to="/add-issue-form"
+                              to="/updateforms/issues/issuesform"
                               className="btn btn-primary"
                             >
                                 Raise An Issue
