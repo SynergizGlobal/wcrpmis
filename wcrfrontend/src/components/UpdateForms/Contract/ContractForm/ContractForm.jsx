@@ -64,7 +64,7 @@ export default function ContractForm() {
       milestone_requried: "",
       revision_requried: "",
       contractors_key_requried: "",
-      estimated_cost_unit: "Rs", // Added unit field with default Rs
+      estimated_cost_units: "Rs", // Changed to match DB field name
 
       executives: [{ department_fks: "", responsible_people_id_fks: "" }],
       tenderBidRevisions: [{ revisionno: "R1", revision_estimated_cost: "", revision_planned_date_of_award: "", revision_planned_date_of_completion: "", notice_inviting_tender: "", tender_bid_opening_date: "", technical_eval_approval: "", financial_eval_approval: "", tender_bid_remarks: "" }],
@@ -237,7 +237,7 @@ export default function ContractForm() {
           // HOD: designation and user_name
           const hodList = response.data.hodList || [];
           const hodOpts = hodList.map(hod => ({
-             value: hod.user_id || hod.id || hod.designation + "_" + hod.user_name,
+               value: hod.user_id || hod.id || hod.designation + "_" + hod.user_name,
             label:`${hod.designation} - ${hod.user_name}`
           }));
           setHodOptions(hodOpts);
@@ -245,7 +245,7 @@ export default function ContractForm() {
           // Dy HOD: designation and user_name
           const dyHodList = response.data.dyHodList || [];
           const dyHodOpts = dyHodList.map(dyHod => ({
-            value: dyHod.user_id || dyHod.id || dyHod.designation + "_" + dyHod.user_name,
+            value: dyHod.dy_hod_user_id_fk,
             label: `${dyHod.designation} - ${dyHod.user_name}`
           }));
           setDyHodOptions(dyHodOpts);
@@ -261,8 +261,8 @@ export default function ContractForm() {
           // Contract Type
           const contractTypes = response.data.contract_type || [];
           const contractTypeOpts = contractTypes.map(type => ({
-            value: type.id || type.value,
-            label: type.name || type.label
+            value: type.contract_type_fk,
+            label: type.contract_type_fk
           }));
           setContractTypeOptions(contractTypeOpts);
 
@@ -413,58 +413,223 @@ export default function ContractForm() {
     }
 
     try {
-      const formData = new FormData();
+      // Create a flattened object from form data that matches your Contract model
+      const formattedData = {
+        // Basic contract info - matching your INSERT query fields
+        project_id_fk: data.project_id_fk,
+        contract_status: data.contract_status || "No", // Default to "No" if not selected
+        hod_user_id_fk: data.hod_user_id_fk,
+        dy_hod_user_id_fk: data.dy_hod_user_id_fk,
+        contract_department: data.contract_department,
+        contract_short_name: data.contract_short_name,
+        bank_funded: data.bank_funded || "No",
+        bank_name: data.bank_name || "",
+        type_of_review: data.type_of_review || "",
+        contract_name: data.contract_name,
+        contract_type_fk: data.contract_type_fk,
+        contractor_id_fk: data.contractor_id_fk,
+        bg_required: data.bg_required || "No",
+        insurance_required: data.insurance_required || "No",
+        milestone_requried: data.milestone_requried || "No",
+        revision_requried: data.revision_requried || "No",
+        contractors_key_requried: data.contractors_key_requried || "No",
+        
+        // Contract details section - matching INSERT query
+        scope_of_contract: data.scope_of_contract || "",
+        loa_letter_number: data.loa_letter_number || "",
+        loa_date: data.loa_date || "",
+        ca_no: data.ca_no || "",
+        ca_date: data.ca_date || "",
+        date_of_start: data.date_of_start || "",
+        doc: data.doc || "",
+        awarded_cost: data.awarded_cost || "",
+        awarded_cost_units: "Rs", // Hardcoded or from form field
+        target_doc: data.target_doc || "",
+        actual_completion_date: data.actual_date_of_commissioning || "", // This might be actual_completion_date
+        contract_status_fk: data.contract_status_fk || "Not Started",
+        estimated_cost: data.estimated_cost || "",
+        estimated_cost_units: data.estimated_cost_units || "Rs", // Changed to match DB field name
+        planned_date_of_award: data.planned_date_of_award || "",
+        planned_date_of_completion: data.planned_date_of_completion || "",
+        contract_notice_inviting_tender: data.contract_notice_inviting_tender || "",
+        tender_opening_date: data.tender_opening_date || "",
+        technical_eval_submission: data.technical_eval_submission || "",
+        financial_eval_submission: data.financial_eval_submission || "",
+        remarks: data.remarks || "",
+        
+        // Fields with default values (some might be needed from form)
+        status: "Active", // Default value
+        is_contract_closure_initiated: "No", // Default value
+        
+        // Note: These fields are in your INSERT query but not in current form:
+        completed_cost: "",
+        contract_closure_date: "",
+        completion_certificate_release: "",
+        final_takeover: "",
+        final_bill_release: "",
+        defect_liability_period: "",
+        retention_money_release: "",
+        pbg_release: "",
+        contract_ifas_code: "",
+        
+        // Arrays - formatted according to your INSERT queries
+        // 1. Bank Guarantee Details
+        bankGuaranteeList: JSON.stringify(data.bgDetailsList.map(item => ({
+          bg_type_fk: item.bg_type_fks,
+          issuing_bank: item.issuing_banks,
+          bg_number: item.bg_numbers,
+          bg_value: item.bg_values,
+          bg_value_units: item.bg_unit || "Rs",
+          bg_date: item.bg_dates,
+          valid_upto: item.bg_valid_uptos,
+          release_date: item.release_dates
+        })) || []),
+        
+        // 2. Tender Bid Revisions
+        tenderBidRevisionsList: JSON.stringify(data.tenderBidRevisions.map(item => ({
+          revision_no: item.revisionno,
+          revision_estimated_cost: item.revision_estimated_cost,
+          revision_planned_date_of_award: item.revision_planned_date_of_award,
+          revision_planned_date_of_completion: item.revision_planned_date_of_completion,
+          notice_inviting_tender: item.notice_inviting_tender,
+          tender_bid_opening_date: item.tender_bid_opening_date,
+          technical_eval_approval: item.technical_eval_approval,
+          financial_eval_approval: item.financial_eval_approval,
+          tender_bid_remarks: item.tender_bid_remarks
+        })) || []),
+        
+        // 3. Insurance Details
+        insuranceList: JSON.stringify(data.insuranceRequired.map(item => ({
+          insurance_type_fk: item.insurance_type_fks,
+          issuing_agency: item.issuing_agencys,
+          agency_address: item.agency_addresss,
+          insurance_number: item.insurance_numbers,
+          insurance_value: item.insurance_values,
+          insurance_value_units: item.insurance_unit || "Rs",
+          valid_upto: item.insurence_valid_uptos,
+          released_fk: item.insuranceStatus ? "Yes" : "No"
+        })) || []),
+        
+        // 4. Milestone Details
+        milestoneList: JSON.stringify(data.milestoneRequired.map(item => ({
+          milestone_id: item.milestone_ids,
+          milestone_name: item.milestone_names,
+          milestone_date: item.milestone_dates,
+          actual_date: item.actual_dates,
+          revision: item.revisions,
+          remarks: item.mile_remarks,
+          status: "Active"
+        })) || []),
+        
+        // 5. Revision Required
+        revisionList: JSON.stringify(data.revisionRequired.map(item => ({
+          revision_number: item.revision_numbers,
+          revised_amount: item.revised_amounts,
+          revised_amount_units: item.revision_unit || "Rs",
+          revised_doc: item.revised_docs,
+          revision_amounts_statuss: item.revision_amounts_statuss ? "Yes" : "No",
+          approval_by_bank: item.approvalbybankstatus ? "Yes" : "No",
+          remarks: item.revision_statuss ? "Completed" : "Pending"
+        })) || []),
+        
+        // 6. Contractor's Key Personnel
+        contractorsKeyPersonnelList: JSON.stringify(data.contractorsKeyRequried.map(item => ({
+          name: item.contractKeyPersonnelNames,
+          designation: item.contractKeyPersonnelDesignations,
+          mobile_no: item.contractKeyPersonnelMobileNos,
+          email_id: item.contractKeyPersonnelEmailIds
+        })) || []),
+        
+        // 7. Executives
+        executivesList: JSON.stringify(data.executives.map(item => ({
+          department_fk: item.department_fks,
+          responsible_people_id_fk: item.responsible_people_id_fks
+        })) || []),
+      };
 
+      // Debug log to see what data is being sent
+      console.log("Sending data to backend:", formattedData);
+
+      // Create FormData for file uploads
+      const formData = new FormData();
+      
       // Append all form fields to FormData
-      Object.keys(data).forEach(key => {
-        if (key !== 'documentsTable') {
-          if (typeof data[key] === 'object' && data[key] !== null) {
-            formData.append(key, JSON.stringify(data[key]));
-          } else {
-            formData.append(key, data[key] || '');
-          }
+      Object.keys(formattedData).forEach(key => {
+        if (formattedData[key] !== undefined && formattedData[key] !== null) {
+          formData.append(key, formattedData[key]);
         }
       });
 
-      // Handle file uploads separately
+      // Handle file uploads separately for documents
       data.documentsTable?.forEach((doc, index) => {
         if (doc.contractDocumentFiles && doc.contractDocumentFiles[0]) {
-          formData.append(`document_${index}`, doc.contractDocumentFiles[0]);
+          formData.append(`document_file_${index}`, doc.contractDocumentFiles[0]);
           formData.append(`document_name_${index}`, doc.contractDocumentNames || '');
           formData.append(`document_type_${index}`, doc.contract_file_types || '');
         }
       });
 
+      // Add documents list to FormData
+      const documentsList = data.documentsTable?.map((doc, index) => ({
+        name: doc.contractDocumentNames || '',
+        contract_file_type_fk: doc.contract_file_types || ''
+      })) || [];
+      
+      formData.append("documentsList", JSON.stringify(documentsList));
+
+      // Log FormData for debugging
+      console.log("FormData entries:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
+
       let response;
       if (isEdit) {
-        // Update existing contract
-        response = await api.put(`${API_BASE_URL}/contracts/${row.id}`, formData, {
+        // Update existing contract - adjust endpoint as needed
+        response = await api.post(`${API_BASE_URL}/contract/update-contract`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
-        // Create new contract
-        response = await api.post(`${API_BASE_URL}/contracts`, formData, {
+        // Create new contract using the provided endpoint
+        response = await api.post(`${API_BASE_URL}/contract/add-contract`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
 
-      if (saveForEdit) {
-        // If saving for edit, stay on the page and show success message
-        alert("Contract saved successfully! You can continue editing.");
-        // If this was a new contract, we might want to update the URL or form mode
-        if (!isEdit && response.data?.id) {
-          // Optionally update to edit mode with the new ID
-          console.log("New contract created with ID:", response.data.id);
-          // You could navigate to edit mode or just refresh the form
+      console.log("Backend response:", response.data);
+
+      if (response.data) {
+        if (saveForEdit) {
+          // If saving for edit, stay on the page and show success message
+          alert("Contract saved successfully! You can continue editing.");
+          // If this was a new contract, we might want to update the URL or form mode
+          if (!isEdit && response.data?.contractId) {
+            console.log("New contract created with ID:", response.data.contractId);
+          }
+        } else {
+          // Normal save, go back to previous page
+          const successMessage = isEdit 
+            ? "Contract updated successfully!" 
+            : `Contract ${response.data.contractId || response.data.success || ''} added successfully!`;
+          alert(successMessage);
+          navigate(-1); // Go back to previous page
         }
       } else {
-        // Normal save, go back to previous page
-        alert(isEdit ? "Contract updated successfully!" : "Contract added successfully!");
-        navigate(-1); // Go back to previous page
+        throw new Error('No response data received from server');
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert(`Error: ${error.response?.data?.message || error.message}`);
+      console.error("Error response:", error.response);
+      
+      // More detailed error message
+      let errorMessage = "Failed to save contract";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(`Error: ${errorMessage}`);
     } finally {
       if (saveForEdit) {
         setSavingForEdit(false);
@@ -693,21 +858,6 @@ export default function ContractForm() {
                     <p className="red">Contract Department is required</p>
                   )}
                 </div>
-                <div className="form-field">
-                  <label>Contract Short Name <span className="red">*</span></label>
-                  <input
-                    type="text"
-                    maxLength={100}
-                    {...register("contract_short_name", { required: "Contract Short Name is required" })}
-                    placeholder="Enter Value"
-                  />
-                  <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
-                    {watch("contract_short_name")?.length || 0}/100
-                  </div>
-                  {errors.contract_short_name && (
-                    <p className="red">{errors.contract_short_name.message}</p>
-                  )}
-                </div>
 
                 <div className="form-field">
                   <label>Bank Funded</label>
@@ -724,6 +874,7 @@ export default function ContractForm() {
                       <input
                         type="radio"
                         value="no"
+                        defaultChecked
                         {...register("bank_funded")}
                       />
                       No
@@ -881,14 +1032,20 @@ export default function ContractForm() {
 
             <div ref={sectionRefs.details} className={styles.formSection}>
               <h6 className="d-flex justify-content-center mt-1 mb-2">Contract Details</h6>
+              
+              {/* Contract Short Name is now ONLY in Contract Details section */}
               <div className="form-row">
                 <div className="form-field">
                   <label>Contract Short Name <span className="red">*</span> </label>
                   <input
-                    {...register("contract_short_name", { required: "Contract Short Name is required" })}
                     type="text"
+                    maxLength={100}
+                    {...register("contract_short_name", { required: "Contract Short Name is required" })}
                     placeholder="Enter Value"
                   />
+                  <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                    {watch("contract_short_name")?.length || 0}/100
+                  </div>
                   {errors.contract_short_name && (
                     <p className="error-text">{errors.contract_short_name.message}</p>
                   )}
@@ -937,29 +1094,7 @@ export default function ContractForm() {
                         <p className="error-text">{errors.contract_type_fk.message}</p>
                       )}
                     </div>
-                    <div className="form-field">
-                      <label>Contractor Name <span className="red">*</span></label>
-                      <Controller
-                        name="contractor_id_fk"
-                        control={control}
-                        rules={{ required: "Contractor Name is required" }}
-                        render={({ field }) => (
-                          <Select
-                            {...field}
-                            classNamePrefix="react-select"
-                            options={contractorOptions}
-                            placeholder="Select Contractor"
-                            isSearchable
-                            isClearable
-                            value={contractorOptions.find(opt => opt.value === field.value) || null}
-                            onChange={(opt) => field.onChange(opt?.value || "")}
-                          />
-                        )}
-                      />
-                      {errors.contractor_id_fk && (
-                        <p className="error-text">{errors.contractor_id_fk.message}</p>
-                      )}
-                    </div>
+         
                   </div>
 
                   {/* Rest of the Contract Details section remains the same */}
@@ -1089,10 +1224,10 @@ export default function ContractForm() {
                       type="number" 
                       placeholder="Enter Value" 
                       className="flex-grow-1"
-					  style={{ minWidth: "300px" }}
+					            style={{ minWidth: "300px" }}
                     />
                     <Controller
-                      name="estimated_cost_unit"
+                      name="estimated_cost_units"
                       control={control}
                       render={({ field }) => (
                         <Select
@@ -1140,117 +1275,118 @@ export default function ContractForm() {
                   <input {...register("financial_eval_submission")} type="date" />
                 </div>
               </div>
-                </div>
-                <div ref={sectionRefs.closure} className={styles.formSection}>
-                  <h6 className="d-flex justify-content-center mt-1 mb-2">Tender Bid Revisions</h6>
-                  <div className="table-responsive dataTable ">
-                    <table className="table table-bordered align-middle">
-                      <thead className="table-light">
-                        <tr>
-                          <th style={{ width: "15%" }}>Revision No </th>
-                          <th style={{ width: "15%" }}>Detailed Estimated cost</th>
-                          <th style={{ width: "15%" }}>Planned date of award</th>
-                          <th style={{ width: "15%" }}>Planned date of completion</th>
-                          <th style={{ width: "15%" }}>Notice Inviting Tender</th>
-                          <th style={{ width: "15%" }}>Tender Opening Date</th>
-                          <th style={{ width: "15%" }}>Tech. Eval. Approval</th>
-                          <th style={{ width: "15%" }}>Fin. Eval. Approval</th>
-                          <th style={{ width: "42%" }}>Remarks</th>
-                          <th style={{ width: "15%" }}>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {tenderBidRevisionsFields.length > 0 ? (
-                          tenderBidRevisionsFields.map((item, index) => (
-                            <tr key={item.id}>
-                              <td>
-                                  <input 
-                                    {...register(`tenderBidRevisions.${index}.revisionno`)} 
-                                    type="text" 
-                                    placeholder="Enter value" 
-                                    value={generateRevisionNumber(index)}
-                                    readOnly
-                                    className="readonly-input"
-                                    style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
-                                  />
-                              </td>
-                              <td>
-                                <input {...register(`tenderBidRevisions.${index}.revision_estimated_cost`)} type="number" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <input {...register(`tenderBidRevisions.${index}.revision_planned_date_of_award`)} type="date" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <input {...register(`tenderBidRevisions.${index}.revision_planned_date_of_completion`)} type="date" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <input {...register(`tenderBidRevisions.${index}.notice_inviting_tender`)} type="text" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <input {...register(`tenderBidRevisions.${index}.tender_bid_opening_date`)} type="date" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <input {...register(`tenderBidRevisions.${index}.technical_eval_approval`)} type="text" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <input {...register(`tenderBidRevisions.${index}.financial_eval_approval`)} type="text" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <textarea 
-                                    {...register(`tenderBidRevisions.${index}.tender_bid_remarks`)}
-                                    name="tender_bid_remarks"
-                                    rows="3"
-                                    ></textarea>
-                              </td>
-                              <td className="text-center d-flex align-center justify-content-center">
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-danger"
-                                  onClick={() => handleRemoveTenderBidRevision(index)}
-                                  disabled={index === 0} // Disable delete for first row (R1)
-                                  title={index === 0 ? "Cannot delete first revision" : "Delete row"}
-                                >
-                                  <MdOutlineDeleteSweep
-                                    size="26"
-                                  />
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="4" className="text-center text-muted">
-                              No rows added yet.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+            </div>
 
-                  <div className="d-flex align-center justify-content-center mt-1">
-                    <button
-                      type="button"
-                      className="btn-2 btn-green"
-                      onClick={handleAppendTenderBidRevision}
-                    >
-                      <BiListPlus
-                        size="24"
-                      />
-                    </button>
-                  </div>
-                  
-                  <div className="form-row">
-                    <div className="form-field">
-                      <label>Remarks </label>
-                      <textarea 
-                          {...register("remarks")}
-                          name="remarks"
-                          rows="3"
-                          ></textarea>
-                    </div>
-                  </div>
-                               </div>
+            <div ref={sectionRefs.closure} className={styles.formSection}>
+              <h6 className="d-flex justify-content-center mt-1 mb-2">Tender Bid Revisions</h6>
+              <div className="table-responsive dataTable ">
+                <table className="table table-bordered align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th style={{ width: "15%" }}>Revision No </th>
+                      <th style={{ width: "15%" }}>Detailed Estimated cost</th>
+                      <th style={{ width: "15%" }}>Planned date of award</th>
+                      <th style={{ width: "15%" }}>Planned date of completion</th>
+                      <th style={{ width: "15%" }}>Notice Inviting Tender</th>
+                      <th style={{ width: "15%" }}>Tender Opening Date</th>
+                      <th style={{ width: "15%" }}>Tech. Eval. Approval</th>
+                      <th style={{ width: "15%" }}>Fin. Eval. Approval</th>
+                      <th style={{ width: "42%" }}>Remarks</th>
+                      <th style={{ width: "15%" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tenderBidRevisionsFields.length > 0 ? (
+                      tenderBidRevisionsFields.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>
+                              <input 
+                                {...register(`tenderBidRevisions.${index}.revisionno`)} 
+                                type="text" 
+                                placeholder="Enter value" 
+                                value={generateRevisionNumber(index)}
+                                readOnly
+                                className="readonly-input"
+                                style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                              />
+                          </td>
+                          <td>
+                            <input {...register(`tenderBidRevisions.${index}.revision_estimated_cost`)} type="number" placeholder="Enter value" />
+                          </td>
+                          <td>
+                            <input {...register(`tenderBidRevisions.${index}.revision_planned_date_of_award`)} type="date" placeholder="Enter value" />
+                          </td>
+                          <td>
+                            <input {...register(`tenderBidRevisions.${index}.revision_planned_date_of_completion`)} type="date" placeholder="Enter value" />
+                          </td>
+                          <td>
+                            <input {...register(`tenderBidRevisions.${index}.notice_inviting_tender`)} type="text" placeholder="Enter value" />
+                          </td>
+                          <td>
+                            <input {...register(`tenderBidRevisions.${index}.tender_bid_opening_date`)} type="date" placeholder="Enter value" />
+                          </td>
+                          <td>
+                            <input {...register(`tenderBidRevisions.${index}.technical_eval_approval`)} type="text" placeholder="Enter value" />
+                          </td>
+                          <td>
+                            <input {...register(`tenderBidRevisions.${index}.financial_eval_approval`)} type="text" placeholder="Enter value" />
+                          </td>
+                          <td>
+                            <textarea 
+                                {...register(`tenderBidRevisions.${index}.tender_bid_remarks`)}
+                                name="tender_bid_remarks"
+                                rows="3"
+                                ></textarea>
+                          </td>
+                          <td className="text-center d-flex align-center justify-content-center">
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger"
+                              onClick={() => handleRemoveTenderBidRevision(index)}
+                              disabled={index === 0} // Disable delete for first row (R1)
+                              title={index === 0 ? "Cannot delete first revision" : "Delete row"}
+                            >
+                              <MdOutlineDeleteSweep
+                                size="26"
+                              />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="text-center text-muted">
+                          No rows added yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="d-flex align-center justify-content-center mt-1">
+                <button
+                  type="button"
+                  className="btn-2 btn-green"
+                  onClick={handleAppendTenderBidRevision}
+                >
+                  <BiListPlus
+                    size="24"
+                  />
+                </button>
+              </div>
+              
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Remarks </label>
+                  <textarea 
+                      {...register("remarks")}
+                      name="remarks"
+                      rows="3"
+                      ></textarea>
+                </div>
+              </div>
+            </div>
 
             <div ref={sectionRefs.bank} className={styles.formSection}>
               <h6 className="d-flex justify-content-center mt-1 mb-2">Bank Guarantee Details</h6>
@@ -1270,6 +1406,7 @@ export default function ContractForm() {
                     <input
                       type="radio"
                       value="no"
+                      defaultChecked
                       {...register("bg_required")}
                     />
                     No
@@ -1429,6 +1566,7 @@ export default function ContractForm() {
                     <input
                       type="radio"
                       value="no"
+                      defaultChecked
                       {...register("insurance_required")}
                     />
                     No
@@ -1589,6 +1727,7 @@ export default function ContractForm() {
                             <input
                               type="radio"
                               value="no"
+                              defaultChecked
                               {...register("milestone_requried")}
                             />
                             No
@@ -1700,6 +1839,7 @@ export default function ContractForm() {
                             <input
                               type="radio"
                               value="no"
+                              defaultChecked
                               {...register("revision_requried")}
                             />
                             No
@@ -1855,6 +1995,7 @@ export default function ContractForm() {
                             <input
                               type="radio"
                               value="no"
+                              defaultChecked
                               {...register("contractors_key_requried")}
                             />
                             No

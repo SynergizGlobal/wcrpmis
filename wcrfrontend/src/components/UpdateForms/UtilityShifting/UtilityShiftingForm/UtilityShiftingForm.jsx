@@ -52,6 +52,7 @@ export default function UtilityShiftingForm() {
       execution_agency_fk: "",
       hod_user_id_fk: "",
       utility_type_fk: "",
+      utility_category_fk: "",
       utility_description: "",
       location_name: "",
       custodian: "",
@@ -283,6 +284,12 @@ export default function UtilityShiftingForm() {
         valueKey: 'utility_type_fk', 
         labelKey: 'utility_type_fk' 
       },
+       'utility_category_fk': { 
+        data: dropdownData.utilityCategoryList, 
+        valueKey: 'utility_category_fk', 
+        labelKey: 'utility_category_fk',
+        getDesignLabel: (d) => d.utility_category_fk || d.utility_category
+      },
       'impacted_contract_id_fk': { 
         data: dropdownData.impactedContractsList, 
         valueKey: 'contract_id_fk', 
@@ -477,6 +484,7 @@ export default function UtilityShiftingForm() {
         'execution_agency_fk': data.execution_agency_fk,
         'hod_user_id_fk': data.hod_user_id_fk,
         'utility_type_fk': data.utility_type_fk,
+        'utility_category_fk': data.utility_category_fk,
         'impacted_contract_id_fk': data.impacted_contract_id_fk,
         'requirement_stage_fk': data.requirement_stage_fk,
         'unit_fk': data.unit_fk,
@@ -737,6 +745,26 @@ export default function UtilityShiftingForm() {
                 />
                 {errors.utility_type_fk && <span className="red">Required</span>}
               </div>
+                  <div className="form-field">
+                <label>Utility Category</label>
+                <Controller
+                  name="utility_category_fk"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      options={dropdownData.utilityCategoryList?.map(item => ({
+                        value: item.utility_category_fk,
+                        label: item.utility_category_fk
+                      })) || []}
+                      classNamePrefix="react-select"
+                      placeholder="Select Utility Category"
+                      isSearchable
+                      isLoading={loading}
+                    />
+                  )}
+                />
+              </div>
 
               <div className="form-field">
                 <label>Utility Description <span className="red">*</span></label>
@@ -763,11 +791,7 @@ export default function UtilityShiftingForm() {
 
               <div className="form-field">
                 <label>Identification Date</label>
-                <input 
-                  {...register("identification")} 
-                  type="date" 
-                  onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
-                  />
+                <input {...register("identification")} type="date" placeholder="Select Date" />
               </div>
 
               <div className="form-field">
@@ -871,11 +895,7 @@ export default function UtilityShiftingForm() {
 
               <div className="form-field">
                 <label>Target Date</label>
-                <input 
-                  {...register("planned_completion_date")} 
-                  type="date" 
-                  onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
-                  />
+                <input {...register("planned_completion_date")} type="date" placeholder="Select Date" />
               </div>
 
               <div className="form-field">
@@ -917,11 +937,7 @@ export default function UtilityShiftingForm() {
 
               <div className="form-field">
                 <label>Start Date</label>
-                <input 
-                  {...register("start_date")} 
-                  type="date" 
-                  onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
-                  />
+                <input {...register("start_date")} type="date" placeholder="Select Start Date" />
               </div>
 
               <div className="form-field">
@@ -947,11 +963,7 @@ export default function UtilityShiftingForm() {
 
               <div className="form-field">
                 <label>Completion Date</label>
-                <input 
-                {...register("shifting_completion_date")} 
-                type="date" 
-                onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
-                />
+                <input {...register("shifting_completion_date")} type="date" placeholder="Select Completion Date" />
               </div>    
             </div>
 
@@ -976,7 +988,6 @@ export default function UtilityShiftingForm() {
                               type="date"
                               {...register(`progressDetails.${index}.progress_dates`)}
                               className="form-control"
-                              onClick={(e) => { if (e.nativeEvent.isTrusted) { e.target.showPicker?.(); } }}
                             />
                           </td>
                           <td>
