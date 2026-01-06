@@ -8,7 +8,6 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -25,7 +25,7 @@ import com.wcr.wcrbackend.reference.model.TrainingType;
 import com.wcr.wcrbackend.service.UserService;
 
 import jakarta.servlet.http.HttpSession;
-@Controller
+@RestController
 public class DesignResponsibleExecutivesController {
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
@@ -70,12 +70,14 @@ public class DesignResponsibleExecutivesController {
 	    Map<String, Object> result = new HashMap<>();
 
 	    try {
+	        List<TrainingType> projectDetails =
+	                mainService.getProjectDetails(obj);
 	        List<TrainingType> executivesDetails =
 	                mainService.getExecutivesDetails(obj);
 
 	        List<TrainingType> usersDetails =
 	                mainService.getUsersDetails(obj);
-
+	        result.put("projectDetails", projectDetails);
 	        result.put("executivesDetails", executivesDetails);
 	        result.put("usersDetails", usersDetails);
 	        result.put("status", "success");
@@ -92,9 +94,9 @@ public class DesignResponsibleExecutivesController {
 	}
 
 	
-	@RequestMapping(value = "/ajax/getWorkWiseDesignResponsibleUsers", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/ajax/getProjectWiseDesignResponsibleUsers", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public List<TrainingType> getWorkWiseDesignResponsibleUsers(@ModelAttribute TrainingType obj,HttpSession session) {
+	public List<TrainingType> getProjectWiseDesignResponsibleUsers(@RequestBody TrainingType obj,HttpSession session) {
 		List<TrainingType> contractorsFilterList = null;  
 		try {
 			User uObj = (User) session.getAttribute("user");

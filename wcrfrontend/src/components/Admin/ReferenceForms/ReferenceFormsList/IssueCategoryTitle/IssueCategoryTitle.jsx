@@ -219,36 +219,55 @@ export default function IssueCategoryTitle() {
                   <th className={styles.actionCol}>Action</th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredRows.map(r => (
-                  <tr key={r.id}>
-                    <td>{r.issueCategory}</td>
-                    <td>{r.titles.join(", ")}</td>
-                    <td className={styles.actionCol}>
-                      <button
-                        className={styles.editBtn}
-                        onClick={() => handleEdit(r)}
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() => handleDelete(r)}
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+			  <tbody>
+			    {filteredRows.map(r => (
+			      <tr key={r.id}>
+			        {/* ISSUE CATEGORY */}
+			        <td>{r.issueCategory}</td>
 
-                {filteredRows.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="center-align">
-                      No records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+			        {/* TITLES → show like Responsible Executives */}
+			        <td>
+			          {Array.isArray(r.titles) && r.titles.length > 0 ? (
+			            r.titles.map((title, idx) => (
+			              <div key={idx}>
+			                &#9656; {title}
+			              </div>
+			            ))
+			          ) : (
+			            <span>-</span>
+			          )}
+			        </td>
+
+			        {/* ACTIONS */}
+			        <td className={styles.actionCol}>
+			          <button
+			            className={styles.editBtn}
+			            onClick={() => handleEdit(r)}
+			            title="Edit"
+			          >
+			            <FaEdit />
+			          </button>
+
+			          <button
+			            className={styles.deleteBtn}
+			            onClick={() => handleDelete(r)}
+			            title="Delete"
+			          >
+			            <FaTrash />
+			          </button>
+			        </td>
+			      </tr>
+			    ))}
+
+			    {filteredRows.length === 0 && (
+			      <tr>
+			        <td colSpan={3} className="center-align">
+			          No records found
+			        </td>
+			      </tr>
+			    )}
+			  </tbody>
+
             </table>
           </div>
 		  <div className={styles.footerText}>

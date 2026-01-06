@@ -179,47 +179,62 @@ export default function IssueCategory() {
                 </tr>
               </thead>
 
-              <tbody>
-                {filteredRows.map(r => (
-                  <tr key={r.id}>
-                    <td>{r.category}</td>
-                    <td>{r.issueCount ? `(${r.issueCount})` : ""}</td>
-                    <td>
-                      {r.issueCategoryTitleCount
-                        ? `(${r.issueCategoryTitleCount})`
-                        : ""}
-                    </td>
-                    <td>
-                      {r.issueContractCategoryCount
-                        ? `(${r.issueContractCategoryCount})`
-                        : ""}
-                    </td>
+			  <tbody>
+			    {filteredRows.map(r => {
+			      const canDelete =
+			        !r.issueCount &&
+			        !r.issueCategoryTitleCount &&
+			        !r.issueContractCategoryCount;
 
-                    <td className={styles.actionCol}>
-                      <button
-                        className={styles.editBtn}
-                        onClick={() => handleEdit(r)}
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() => handleDelete(r)}
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+			      return (
+			        <tr key={r.id}>
+			          <td>{r.category}</td>
+			          <td>{r.issueCount ? `(${r.issueCount})` : ""}</td>
+			          <td>
+			            {r.issueCategoryTitleCount
+			              ? `(${r.issueCategoryTitleCount})`
+			              : ""}
+			          </td>
+			          <td>
+			            {r.issueContractCategoryCount
+			              ? `(${r.issueContractCategoryCount})`
+			              : ""}
+			          </td>
 
-                {filteredRows.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="center-align">
-                      No records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+			          <td className={styles.actionCol}>
+			            {/* EDIT → always visible */}
+			            <button
+			              className={styles.editBtn}
+			              onClick={() => handleEdit(r)}
+			              title="Edit"
+			            >
+			              <FaEdit />
+			            </button>
+
+			            {/* DELETE → only if no FK references */}
+			            {canDelete && (
+			              <button
+			                className={styles.deleteBtn}
+			                onClick={() => handleDelete(r)}
+			                title="Delete"
+			              >
+			                <FaTrash />
+			              </button>
+			            )}
+			          </td>
+			        </tr>
+			      );
+			    })}
+
+			    {filteredRows.length === 0 && (
+			      <tr>
+			        <td colSpan={5} className="center-align">
+			          No records found
+			        </td>
+			      </tr>
+			    )}
+			  </tbody>
+
             </table>
           </div>
 

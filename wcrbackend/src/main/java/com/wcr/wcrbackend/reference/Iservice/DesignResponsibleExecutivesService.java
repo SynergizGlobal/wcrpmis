@@ -13,7 +13,7 @@ public interface DesignResponsibleExecutivesService {
 
 	boolean updateDesignExecutives(TrainingType obj) throws Exception;
 
-	List<TrainingType> getWorkDetails(TrainingType obj) throws Exception;
+	List<TrainingType> getProjectDetails(TrainingType obj) throws Exception;
 	
 	List<TrainingType> getUsersDetails(TrainingType obj) throws Exception;
 

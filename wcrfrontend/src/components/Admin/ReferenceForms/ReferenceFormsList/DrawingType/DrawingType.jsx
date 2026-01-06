@@ -9,24 +9,34 @@ export default function DrawingType() {
   const [search, setSearch] = useState("");
   const [value, setValue] = useState("");
   const [mode, setMode] = useState("add");
-  const [editIndex, setEditIndex] = useState(null);
+  const [selectedRow, setSelectedRow] = useState(null);
 
-  /* ================= FETCH LIST ================= */
+  /* ================= FETCH ================= */
   const fetchDrawingTypes = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/drawing-type`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}) 
+        body: JSON.stringify({})
       });
 
       const json = await res.json();
 
-      const list = (json.drawingTypeList || [])
-        .map(item => item.drawing_type)
-        .filter(Boolean);
+      const list = json.drawingTypeList || [];
+      const countList = json.drawingTypeDetails?.countList || [];
 
-      setData(list);
+      const countMap = {};
+      countList.forEach(d => {
+        countMap[`${d.drawing_type}|${d.tName}`] = Number(d.count || 0);
+      });
+
+      const merged = list.map((d, idx) => ({
+        id: idx + 1,
+        drawingType: d.drawing_type,
+        designCount: countMap[`${d.drawing_type}|design`] || 0
+      }));
+
+      setData(merged);
     } catch (err) {
       console.error("Failed to load Drawing Type", err);
     }
@@ -37,29 +47,36 @@ export default function DrawingType() {
   }, []);
 
   /* ================= FILTER ================= */
-  const filteredData = data.filter(item =>
-    item.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredData = data.filter(item => {
+    const term = search.toLowerCase();
+    return (
+      (item.drawingType || "").toLowerCase().includes(term) ||
+      String(item.designCount || "").includes(term)
+    );
+  });
 
   /* ================= ADD ================= */
   const handleAddClick = () => {
     setMode("add");
     setValue("");
-    setEditIndex(null);
+    setSelectedRow(null);
     setShowModal(true);
   };
 
   /* ================= EDIT ================= */
-  const handleEditClick = (item, index) => {
+  const handleEditClick = row => {
     setMode("edit");
-    setValue(item);
-    setEditIndex(index);
+    setValue(row.drawingType);
+    setSelectedRow(row); // ✅ FIXED
     setShowModal(true);
   };
 
   /* ================= SAVE ================= */
   const handleSave = async () => {
-    if (!value.trim()) return;
+    if (!value.trim()) {
+      window.alert("Drawing Type is required");
+      return;
+    }
 
     const formData = new FormData();
 
@@ -71,10 +88,9 @@ export default function DrawingType() {
         body: formData
       });
 
-      alert("Drawing Type added successfully.");
-    } 
-    else if (mode === "edit" && editIndex !== null) {
-      formData.append("value_old", data[editIndex]);
+      window.alert("Drawing Type added successfully.");
+    } else if (mode === "edit" && selectedRow) {
+      formData.append("value_old", selectedRow.drawingType);
       formData.append("value_new", value.trim());
 
       await fetch(`${API_BASE_URL}/update-drawing-type`, {
@@ -82,28 +98,33 @@ export default function DrawingType() {
         body: formData
       });
 
-      alert("Drawing Type updated successfully.");
+      window.alert("Drawing Type updated successfully.");
     }
 
     setShowModal(false);
     setValue("");
-    setEditIndex(null);
+    setSelectedRow(null);
     fetchDrawingTypes();
   };
 
   /* ================= DELETE ================= */
-  const handleDelete = async (item) => {
-    if (!window.confirm(`Delete "${item}" ?`)) return;
+  const handleDelete = async row => {
+    if (row.designCount > 0) {
+      window.alert("Cannot delete. Drawing Type is in use.");
+      return;
+    }
+
+    if (!window.confirm(`Delete "${row.drawingType}" ?`)) return;
 
     const formData = new FormData();
-    formData.append("drawing_type", item);
+    formData.append("drawing_type", row.drawingType);
 
     await fetch(`${API_BASE_URL}/delete-drawing-type`, {
       method: "POST",
       body: formData
     });
 
-    alert("Drawing Type deleted successfully.");
+    window.alert("Drawing Type deleted successfully.");
     fetchDrawingTypes();
   };
 
@@ -115,14 +136,12 @@ export default function DrawingType() {
         </div>
 
         <div className="innerPage">
-          {/* ADD */}
           <div className={styles.topActions}>
             <button className="btn btn-primary" onClick={handleAddClick}>
               + Add Drawing Type
             </button>
           </div>
 
-          {/* SEARCH */}
           <div className={styles.searchBox}>
             <input
               type="text"
@@ -137,61 +156,60 @@ export default function DrawingType() {
             )}
           </div>
 
-          {/* TABLE */}
           <div className={`dataTable ${styles.tableWrapper}`}>
             <table className={styles.table}>
               <thead>
                 <tr>
                   <th>Drawing Type</th>
+                  <th>Design</th>
                   <th className={styles.actionCol}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredData.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item}</td>
+                {filteredData.map(row => (
+                  <tr key={row.id}>
+                    <td>{row.drawingType}</td>
+                    <td>{row.designCount > 0 ? `(${row.designCount})` : ""}</td>
                     <td className={styles.actionCol}>
-                      <div className={styles.actionButtons}>
-                        <button
-                          className={styles.editBtn}
-                          onClick={() => handleEditClick(item, index)}
-                          title="Edit"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className={styles.deleteBtn}
-                          onClick={() => handleDelete(item)}
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
+                      <button
+                        className={styles.editBtn}
+                        onClick={() => handleEditClick(row)}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => handleDelete(row)}
+                      >
+                        <FaTrash />
+                      </button>
                     </td>
                   </tr>
                 ))}
+
+                {filteredData.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="center-align">
+                      No records found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
 
           <div className={styles.footerText}>
-            Showing {filteredData.length} of {filteredData.length} entries
+            Showing {filteredData.length} of {data.length} entries
           </div>
         </div>
       </div>
 
-      {/* MODAL */}
       {showModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
-              <span>
-                {mode === "add" ? "Add Drawing Type" : "Edit Drawing Type"}
-              </span>
-              <span
-                className={styles.close}
-                onClick={() => setShowModal(false)}
-              >
+              <span>{mode === "add" ? "Add" : "Edit"} Drawing Type</span>
+              <span className={styles.close} onClick={() => setShowModal(false)}>
                 ✕
               </span>
             </div>
@@ -199,9 +217,9 @@ export default function DrawingType() {
             <div className={styles.modalBody}>
               <input
                 type="text"
-                placeholder="Drawing Type"
                 value={value}
                 onChange={e => setValue(e.target.value)}
+                placeholder="Drawing Type"
               />
 
               <div className={styles.modalActions}>

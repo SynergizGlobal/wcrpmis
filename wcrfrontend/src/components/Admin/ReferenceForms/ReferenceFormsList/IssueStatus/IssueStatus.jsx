@@ -155,30 +155,42 @@ export default function IssueStatus() {
                   <th className={styles.actionCol}>Action</th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredData.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.status}</td>
-                    <td>{item.count}</td>
-                    <td className={styles.actionCol}>
-                      <div className={styles.actionButtons}>
-                        <button
-                          className={styles.editBtn}
-                          onClick={() => handleEditClick(item, index)}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className={styles.deleteBtn}
-                          onClick={() => handleDelete(item)}
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+			  <tbody>
+			    {filteredData.map((item, index) => {
+			      const canDelete = !item.count || item.count === 0;
+
+			      return (
+			        <tr key={index}>
+			          <td>{item.status}</td>
+			          <td>{item.count}</td>
+
+			          <td className={styles.actionCol}>
+			            <div className={styles.actionButtons}>
+			              {/* EDIT → always visible */}
+			              <button
+			                className={styles.editBtn}
+			                onClick={() => handleEditClick(item, index)}
+			                title="Edit"
+			              >
+			                <FaEdit />
+			              </button>
+
+			              {/* DELETE → only if no dependency */}
+			              {canDelete && (
+			                <button
+			                  className={styles.deleteBtn}
+			                  onClick={() => handleDelete(item)}
+			                  title="Delete"
+			                >
+			                  <FaTrash />
+			                </button>
+			              )}
+			            </div>
+			          </td>
+			        </tr>
+			      );
+			    })}
+			  </tbody>
             </table>
           </div>
 

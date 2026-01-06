@@ -17,9 +17,6 @@ export default function IssueContractCategory() {
 	const [issueCategoryOld, setIssueCategoryOld] = useState("");
 	const [contractRows, setContractRows] = useState([""]);
 	
-
-
-
 	/* ================= FETCH ================= */
 	const fetchData = async () => {
 		const res = await fetch(`${API_BASE_URL}/issue-contract-category`, {
@@ -219,21 +216,55 @@ export default function IssueContractCategory() {
 								</tr>
 							</thead>
 							<tbody>
-								{filteredRows.map(r => (
-									<tr key={r.id}>
-										<td>{r.issueCategory}</td>
-										<td>{r.contractCategories.join(", ")}</td>
-										<td className={styles.actionCol}>
-											<button className={styles.editBtn} onClick={() => handleEdit(r)}>
-												<FaEdit />
-											</button>
-											<button className={styles.deleteBtn} onClick={() => handleDelete(r)}>
-												<FaTrash />
-											</button>
-										</td>
-									</tr>
-								))}
+							  {filteredRows.map(r => (
+							    <tr key={r.id}>
+							      {/* ISSUE CATEGORY */}
+							      <td>{r.issueCategory}</td>
+
+							      {/* CONTRACT CATEGORIES → vertical like Responsible Executives */}
+							      <td>
+							        {Array.isArray(r.contractCategories) &&
+							        r.contractCategories.length > 0 ? (
+							          r.contractCategories.map((cat, idx) => (
+							            <div key={idx}>
+							              &#9656; {cat}
+							            </div>
+							          ))
+							        ) : (
+							          <span>-</span>
+							        )}
+							      </td>
+
+							      {/* ACTIONS */}
+							      <td className={styles.actionCol}>
+							        <button
+							          className={styles.editBtn}
+							          onClick={() => handleEdit(r)}
+							          title="Edit"
+							        >
+							          <FaEdit />
+							        </button>
+
+							        <button
+							          className={styles.deleteBtn}
+							          onClick={() => handleDelete(r)}
+							          title="Delete"
+							        >
+							          <FaTrash />
+							        </button>
+							      </td>
+							    </tr>
+							  ))}
+
+							  {filteredRows.length === 0 && (
+							    <tr>
+							      <td colSpan={3} className="center-align">
+							        No records found
+							      </td>
+							    </tr>
+							  )}
 							</tbody>
+
 						</table>
 						</div>
 						<div className={styles.footerText}>

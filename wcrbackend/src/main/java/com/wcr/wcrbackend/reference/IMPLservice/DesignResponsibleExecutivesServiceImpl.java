@@ -31,8 +31,8 @@ public class DesignResponsibleExecutivesServiceImpl implements DesignResponsible
 	}
 
 	@Override
-	public List<TrainingType> getWorkDetails(TrainingType obj) throws Exception {
-		return dao.getWorkDetails(obj);
+	public List<TrainingType> getProjectDetails(TrainingType obj) throws Exception {
+		return dao.getProjectDetails(obj);
 	}
 
 	@Override
