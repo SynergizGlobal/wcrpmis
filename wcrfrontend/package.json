@@ -24,6 +24,7 @@
     "react-select": "^5.10.2",
     "react-toastify": "^11.0.5",
     "sweetalert": "^2.1.2",
+    "sweetalert2": "^11.26.17",
     "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5"
   },

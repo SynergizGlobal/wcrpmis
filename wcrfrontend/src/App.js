@@ -1,12 +1,12 @@
+import LandAcquisitionProcessForm from "./components/UpdateForms/LandAcquisitionProcess/LandAcquisitionProcessForm/LandAcquisitionProcessForm";
+import LandAcquisitionProcess from "./components/UpdateForms/LandAcquisitionProcess/LandAcquisitionProcess";
 import IssueFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueFileType/IssueFileType";
 import IssuePriority from "./components/Admin/ReferenceForms/ReferenceFormsList/IssuePriority/IssuePriority";
 import IssueOtherOrganisation from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueOtherOrganisation/IssueOtherOrganisation";
 import IssueStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueStatus/IssueStatus";
 import IssueCategory from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueCategory/IssueCategory";
 import IssueCategoryTitle from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueCategoryTitle/IssueCategoryTitle";
-
 import IssueContractCategory from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueContractCategory/IssueContractCategory";
-
 import ApprovalAuthority from "./components/Admin/ReferenceForms/ReferenceFormsList/ApprovalAuthority/ApprovalAuthority";
 import PurposeOfSubmission from "./components/Admin/ReferenceForms/ReferenceFormsList/PurposeOfSubmission/PurposeOfSubmission";
 import DesignExecutives from "./components/Admin/ReferenceForms/ReferenceFormsList/DesignExecutives/DesignExecutives";
@@ -15,7 +15,6 @@ import SubmittedBy from "./components/Admin/ReferenceForms/ReferenceFormsList/Su
 import Stage from "./components/Admin/ReferenceForms/ReferenceFormsList/Stage/Stage";
 import AsBuiltStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/AsBuiltStatus/AsBuiltStatus";
 import DrawingType from "./components/Admin/ReferenceForms/ReferenceFormsList/DrawingType/DrawingType";
-
 import UtilityShiftingExecutives from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityShiftingExecutives/UtilityShiftingExecutives";
 import UtilityShiftingFileTyp from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityShiftingFileTyp/UtilityShiftingFileTyp";
 import UtilityTypes from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityTypes/UtilityTypes";
@@ -77,15 +76,15 @@ import ProjectForm from "./components/UpdateForms/Project/ProjectForm/ProjectFor
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./queryClient";
 function App() {
-	const [message, setMessage] = useState("Loading...");
-	const isAuthenticated = localStorage.getItem("token");
-	useEffect(() => {
-		fetch(`${API_BASE_URL}/api/test`).then(res => {
-			if (!res.ok) throw new Error("Network error");
-			return res.text();
-		}).then(data => setMessage(data)).catch(() => setMessage("❌ Could not connect to backend"));
-	}, []);
-	return <PageTitleProvider>
+  const [message, setMessage] = useState("Loading...");
+  const isAuthenticated = localStorage.getItem("token");
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/test`).then(res => {
+      if (!res.ok) throw new Error("Network error");
+      return res.text();
+    }).then(data => setMessage(data)).catch(() => setMessage("❌ Could not connect to backend"));
+  }, []);
+  return <PageTitleProvider>
 		<BrowserRouter basename="/wcrpmis">
 			<QueryClientProvider client={queryClient}>
 				<Routes>
@@ -112,6 +111,10 @@ function App() {
 								<Route path="landacquisitionform" element={<LandAcquisitionForm />} />
 							</Route>
 
+							<Route path="landacquisitionprocess" element={<LandAcquisitionProcess />} >
+								<Route path="landacquisitionprocessform" element={<LandAcquisitionProcessForm />} />
+  							</Route>
+							
 							<Route path="design" element={<DesignDrawing />}>
 								<Route path="add-design-form" element={<DesignDrawingForm />} />
 							</Route>
@@ -194,9 +197,9 @@ function App() {
 					</Route>
 
 					<Route path="*" element={<div style={{
-						textAlign: "center",
-						marginTop: "20%"
-					}}>
+            textAlign: "center",
+            marginTop: "20%"
+          }}>
 						<h2>{message}</h2>
 					</div>} />
 				</Routes>
