@@ -17,12 +17,16 @@ export const referencePages = {
     },
     {
       name: "Contract File Type",
-      url: "/wrpmis/contract-file-type",
+      url: "/wcrpmis/contract-file-type",
     },
     {
-      name: "Contract Type",
-      url: "/wrpmis/contract-type",
+      name: "Contractor Specialization",
+      url: "/wcrpmis/contractor-specialization",
     },
+	{
+	      name: "Contract Type",
+	      url: "/wcrpmis/contract-type",
+	    },
   ],
 
 

@@ -1,3 +1,6 @@
+import ContractType from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractType/ContractType";
+import ContractorSpecialization from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractorSpecialization/ContractorSpecialization";
+import ContractFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractFileType/ContractFileType";
 import LandAcquisitionProcessForm from "./components/UpdateForms/LandAcquisitionProcess/LandAcquisitionProcessForm/LandAcquisitionProcessForm";
 import LandAcquisitionProcess from "./components/UpdateForms/LandAcquisitionProcess/LandAcquisitionProcess";
 import IssueFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueFileType/IssueFileType";
@@ -111,7 +114,7 @@ function App() {
 								<Route path="landacquisitionform" element={<LandAcquisitionForm />} />
 							</Route>
 
-							<Route path="landacquisitionprocess" element={<LandAcquisitionProcess />} >
+							<Route path="landacquisitionprocess" element={<LandAcquisitionProcess />}>
 								<Route path="landacquisitionprocessform" element={<LandAcquisitionProcessForm />} />
   							</Route>
 							
@@ -148,12 +151,10 @@ function App() {
 							<Route path="issues" element={<Issues />}>
 								<Route path="issuesform" element={<IssuesForm />} />
 							</Route>
-						</Route>
-
-
-
-
-
+						<Route path="referenceforms" element={<ReferenceForms />} />
+                        
+            
+         </Route>
 
 						<Route path="works" element={<Works />} />
 						<Route path="admin" element={<Admin />}>
@@ -166,6 +167,10 @@ function App() {
 							<Route path="reference-forms" element={<ReferenceForms />} />
 						</Route>
 						<Route path="bank-guarantee-type" element={<BankGuaranteeType />} />
+						<Route path="contract-file-type" element={<ContractFileType />} />
+						<Route path="contractor-specialization" element={<ContractorSpecialization />} />
+						<Route path="contract-type" element={<ContractType />} />
+					
 						<Route path="utility-category" element={<UtilityCategory />} />
 						<Route path="utility-execution-agency" element={<UtilityExecutionAgency />} />
 						<Route path="utility-requirement-stage" element={<UtilityRequirementStage />} />
@@ -208,3 +213,4 @@ function App() {
 	</PageTitleProvider>;
 }
 export default App;
+            <Route path="referenceforms" element={<ReferenceForms />} />

@@ -49,12 +49,10 @@
 
 .actionButtons {
   display: flex;
+  gap: 8px;
   justify-content: center;
 }
 
-.actionButtons button:not(:last-child) {
-  margin-right: 8px;
-}
 .editBtn {
   background: var(--primary-color);
   color: white;
@@ -65,7 +63,7 @@
 }
 
 .deleteBtn {
-  background: #f44336;
+  background: #d9534f;
   color: white;
   border: none;
   padding: 6px 8px;
@@ -110,10 +108,43 @@
   padding: 30px;
 }
 
-.modalBody input {
+.inputContainer {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.inputContainer label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  pointer-events: none;
+  transition: 0.2s ease all;
+  color: #999;
+}
+
+.inputContainer input:focus + label,
+.inputContainer input:not(:placeholder-shown) + label {
+  top: -20px;
+  left: 0;
+  font-size: 12px;
+  color: var(--primary-color);
+}
+
+.inputContainer input {
   width: 100%;
   padding: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 5px;
+}
+
+.errorInput {
+  border-color: red !important;
+}
+
+.errorMsg {
+  color: red;
+  font-size: 12px;
+  display: block;
+  margin-top: 5px;
 }
 
 .modalActions {
@@ -129,8 +160,21 @@
   border: none;
   padding: 8px 40px;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .cancelBtn {
   background: #d9534f;
+}
+
+.findLengths {
+  display: none;
+}
+
+.close-message {
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 500;
 }
