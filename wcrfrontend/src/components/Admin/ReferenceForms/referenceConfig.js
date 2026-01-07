@@ -104,7 +104,35 @@ export const referencePages = {
 		},
 
 	],
-  "Land Acquisition": [],
+	"Land Acquisition": [
+			{
+				name: "Category",
+				url: "/wcrpmis/la-category",
+			},
+
+			{
+				name: "Category",
+				url: "/wcrpmis/la-sub-category",
+			},
+			{
+				name: "Status",
+				url: "/wcrpmis/la-status",
+			},
+			{
+				name: "File Type",
+				url: "/wcrpmis/la-file-type",
+			},
+			{
+				name: "Status",
+				url: "/wcrpmis/la-land-status",
+			},
+			{
+				name: "Executives",
+				url: "/wcrpmis/la-executives",
+			},
+
+
+	  ],
   "Others": [],
   "Utility Shifting": [
 	{

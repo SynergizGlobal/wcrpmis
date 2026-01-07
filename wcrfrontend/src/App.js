@@ -1,6 +1,13 @@
 import ContractType from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractType/ContractType";
 import ContractorSpecialization from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractorSpecialization/ContractorSpecialization";
 import ContractFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractFileType/ContractFileType";
+import LandAcquisitionExecutives from "./components/Admin/ReferenceForms/ReferenceFormsList/LandAcquisitionExecutives/LandAcquisitionExecutives";
+import LAFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/LAFileType/LAFileType";
+import LALandStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/LALandStatus/LALandStatus";
+import LAStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/LAStatus/LAStatus";
+import LACategory from "./components/Admin/ReferenceForms/ReferenceFormsList/LACategory/LACategory";
+import LASubCategory from "./components/Admin/ReferenceForms/ReferenceFormsList/LASubCategory/LASubCategory";
+
 import LandAcquisitionProcessForm from "./components/UpdateForms/LandAcquisitionProcess/LandAcquisitionProcessForm/LandAcquisitionProcessForm";
 import LandAcquisitionProcess from "./components/UpdateForms/LandAcquisitionProcess/LandAcquisitionProcess";
 import IssueFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueFileType/IssueFileType";
@@ -193,6 +200,12 @@ function App() {
 						<Route path="issue-contract-category" element={<IssueContractCategory />} />
 						<Route path="issue-category" element={<IssueCategory />} />
 						<Route path="issue-category-title" element={<IssueCategoryTitle />} />
+						<Route path="la-executives" element={<LandAcquisitionExecutives />} />
+						<Route path="la-land-status" element={<LALandStatus />} />
+						<Route path="la-status" element={<LAStatus />} />
+						<Route path="la-file-type" element={<LAFileType />} />
+						<Route path="la-category" element={<LACategory />} />
+						<Route path="la-sub-category" element={<LASubCategory />} />
 
 						<Route path="modules" element={<Modules />} />
 						<Route path="reports" element={<Reports />} />

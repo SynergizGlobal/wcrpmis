@@ -22,18 +22,17 @@
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  overflow-y: auto;
   z-index: 999;
 }
- 
+
 .modal {
   width: 500px;
   background: white;
   border-radius: 4px;
+  margin: 40px auto;
 }
- 
+
 .modalHeader {
   background: var(--primary-fade-color);
   color: white;
