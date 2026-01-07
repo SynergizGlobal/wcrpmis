@@ -1,3 +1,6 @@
+import BankName from "./components/Admin/ReferenceForms/ReferenceFormsList/BankName/BankName";
+import RevisionStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/RevisionStatus/RevisionStatus";
+import InsuranceType from "./components/Admin/ReferenceForms/ReferenceFormsList/InsuranceType/InsuranceType";
 import ContractType from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractType/ContractType";
 import ContractorSpecialization from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractorSpecialization/ContractorSpecialization";
 import ContractFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractFileType/ContractFileType";
@@ -7,7 +10,6 @@ import LALandStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/L
 import LAStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/LAStatus/LAStatus";
 import LACategory from "./components/Admin/ReferenceForms/ReferenceFormsList/LACategory/LACategory";
 import LASubCategory from "./components/Admin/ReferenceForms/ReferenceFormsList/LASubCategory/LASubCategory";
-
 import LandAcquisitionProcessForm from "./components/UpdateForms/LandAcquisitionProcess/LandAcquisitionProcessForm/LandAcquisitionProcessForm";
 import LandAcquisitionProcess from "./components/UpdateForms/LandAcquisitionProcess/LandAcquisitionProcess";
 import IssueFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/IssueFileType/IssueFileType";
@@ -161,8 +163,11 @@ function App() {
 						<Route path="referenceforms" element={<ReferenceForms />} />
                         
             
-         </Route>
-
+         
+            
+         
+          </Route>
+			
 						<Route path="works" element={<Works />} />
 						<Route path="admin" element={<Admin />}>
 							<Route path="users" element={<Users />}>
@@ -174,10 +179,12 @@ function App() {
 							<Route path="reference-forms" element={<ReferenceForms />} />
 						</Route>
 						<Route path="bank-guarantee-type" element={<BankGuaranteeType />} />
-						<Route path="contractFileType" element={<ContractFileType />} />
+					    <Route path="contractFileType" element={<ContractFileType />} />
 						<Route path="contractorSpecialization" element={<ContractorSpecialization />} />
 						<Route path="contractType" element={<ContractType />} />
-					
+						<Route path="insuranceType" element={<InsuranceType />} />
+						<Route path="revisionStatus" element={<RevisionStatus />} />
+						<Route path="bankName" element={<BankName />} />
 						<Route path="utility-category" element={<UtilityCategory />} />
 						<Route path="utility-execution-agency" element={<UtilityExecutionAgency />} />
 						<Route path="utility-requirement-stage" element={<UtilityRequirementStage />} />
@@ -185,7 +192,7 @@ function App() {
 						<Route path="utility-types" element={<UtilityTypes />} />
 						<Route path="utility-shifting-filetyp" element={<UtilityShiftingFileTyp />} />
 						<Route path="utility-shifting-executives" element={<UtilityShiftingExecutives />} />
-						
+	
 						<Route path="asBuiltStatus" element={<AsBuiltStatus />} />
 						<Route path="drawingType" element={<DrawingType />} />
 						<Route path="approvalAuthority" element={<ApprovalAuthority />} />

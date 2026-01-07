@@ -1,14 +1,17 @@
 package com.wcr.wcrbackend.reference.controller;
 
+import java.util.HashMap;
 import java.util.List;
-
-
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,21 +40,49 @@ public class BankNameController {
 	@Autowired
 	BankNameService service;
 	
-	@RequestMapping(value="/bank-name",method={RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView BankName(HttpSession session,@ModelAttribute Bank obj){
-		ModelAndView model = new ModelAndView(PageConstants.bankName);
-		try {
-			List<Bank> BankNameList = service.getBankNamesList();
-			model.addObject("BankNameList", BankNameList);
-			Bank bankNameDetails = service.getBankNameDetails(obj);
-			model.addObject("bankNameDetails", bankNameDetails);
-		}catch (Exception e) {
-			e.printStackTrace();
-			logger.error("BankName : " + e.getMessage());
-		}
-		return model;
-	}
+//	@RequestMapping(value="/bank-name",method={RequestMethod.GET,RequestMethod.POST})
+//	public ModelAndView BankName(HttpSession session,@ModelAttribute Bank obj){
+//		ModelAndView model = new ModelAndView(PageConstants.bankName);
+//		try {
+//			List<Bank> BankNameList = service.getBankNamesList();
+//			model.addObject("BankNameList", BankNameList);
+//			Bank bankNameDetails = service.getBankNameDetails(obj);
+//			model.addObject("bankNameDetails", bankNameDetails);
+//		}catch (Exception e) {
+//			e.printStackTrace();
+//			logger.error("BankName : " + e.getMessage());
+//		}
+//		return model;
+//	}
+//	
 	
+	
+	@GetMapping("/bank-name")
+	public ResponseEntity<Map<String, Object>> getBankName(HttpSession session) {
+
+	    Map<String, Object> response = new HashMap<>();
+
+	    try {
+	        List<Bank> bankNameList =
+	                service.getBankNamesList();
+
+	        Bank bankNameDetails =
+	                service.getBankNameDetails(new Bank());
+
+	        response.put("success", true);
+	        response.put("bankNameList", bankNameList);
+	        response.put("bankNameDetails", bankNameDetails);
+
+	        return ResponseEntity.ok(response);
+
+	    } catch (Exception e) {
+	        logger.error("getBankName : " + e.getMessage(), e);
+	        response.put("success", false);
+	        response.put("message", "Failed to fetch Bank Name data");
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    }
+	}
+
 	
 	@RequestMapping(value = "/add-bank-name", method = {RequestMethod.POST})
 	@ResponseBody

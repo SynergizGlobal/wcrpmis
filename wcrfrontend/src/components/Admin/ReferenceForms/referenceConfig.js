@@ -27,6 +27,18 @@ export const referencePages = {
 			name: "Contract Type",
 			url: "/wcrpmis/contractType",
 		},
+		{
+	   name: "Insurance Type",
+	    url: "/wcrpmis/insuranceType",
+			  },
+	{
+	  name: "Revision Status",
+      url: "/wcrpmis/revisionStatus",
+			  		  },		  
+   {
+	 name: "Bank Name",
+	url: "/wcrpmis/bankName",
+	  },	
 	],
 
 

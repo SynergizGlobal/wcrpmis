@@ -12,13 +12,10 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.util.StringUtils;
-
 import com.wcr.wcrbackend.common.CommonMethods;
 import com.wcr.wcrbackend.reference.Idao.ContractResponsibleExecutivesDao;
 import com.wcr.wcrbackend.reference.model.TrainingType;
@@ -60,11 +57,11 @@ public class ContractResponsibleExecutivesDaoImpl implements ContractResponsible
 
 			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
 			int executivesArrSize = 0,workSize = 0;;
-			int len = obj.getWork_id_fks().length;
-			if(!StringUtils.isEmpty(obj.getWork_id_fks()) && obj.getWork_id_fks().length > 0) {
-				obj.setWork_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getWork_id_fks()));
-				if(executivesArrSize < obj.getWork_id_fks().length) {
-					executivesArrSize = obj.getWork_id_fks().length;
+			int len = obj.getProject_id_fks().length;
+			if(!StringUtils.isEmpty(obj.getProject_id_fks()) && obj.getProject_id_fks().length > 0) {
+				obj.setProject_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getProject_id_fks()));
+				if(executivesArrSize < obj.getProject_id_fks().length) {
+					executivesArrSize = obj.getProject_id_fks().length;
 				}
 			}
 			if(executivesArrSize == 1 ) {
@@ -80,16 +77,16 @@ public class ContractResponsibleExecutivesDaoImpl implements ContractResponsible
 			}
 			for (int i = 0; i < executivesArrSize; i++){
 				List<String> executives = null;
-				if(!StringUtils.isEmpty(obj.getExecutive_user_id_fks()[i]) && !StringUtils.isEmpty(obj.getWork_id_fks()[i])){
+				if(!StringUtils.isEmpty(obj.getExecutive_user_id_fks()[i]) && !StringUtils.isEmpty(obj.getProject_id_fks()[i])){
 					if(obj.getExecutive_user_id_fks()[i].contains(",")) {
 						executives = new ArrayList<String>(Arrays.asList(obj.getExecutive_user_id_fks()[i].split(",")));
 					}else {
 						executives = new ArrayList<String>(Arrays.asList(obj.getExecutive_user_id_fks()[i]));
 					}
 					for(String eObj : executives) {
-						if(!eObj.equals("null") && !StringUtils.isEmpty(obj.getWork_id_fks()) &&  !StringUtils.isEmpty(eObj)) {
+						if(!eObj.equals("null") && !StringUtils.isEmpty(obj.getProject_id_fks()) &&  !StringUtils.isEmpty(eObj)) {
 							TrainingType fileObj = new TrainingType();
-							fileObj.setWork_id_fk(obj.getWork_id_fks()[i]);
+							fileObj.setProject_id_fk(obj.getProject_id_fks()[i]);
 							fileObj.setExecutive_user_id_fk(eObj);
 							paramSource = new BeanPropertySqlParameterSource(fileObj);
 							 count = namedParamJdbcTemplate.update(qry3, paramSource);
@@ -120,7 +117,7 @@ public class ContractResponsibleExecutivesDaoImpl implements ContractResponsible
 			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);	
 			if(!StringUtils.isEmpty(obj.getExecutive_user_id_fks()) && obj.getExecutive_user_id_fks().length > 0) {
 					
-					String conDeleteQry = "DELETE from contractexecutives where work_id_fk = :work_id_fk_old";		 
+					String conDeleteQry = "DELETE from contractexecutives where project_id_fk = :project_id_fk_old";		 
 					BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
 					count = namedParamJdbcTemplate.update(conDeleteQry, paramSource);
 			}
@@ -129,10 +126,10 @@ public class ContractResponsibleExecutivesDaoImpl implements ContractResponsible
 
 			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
 			int executivesArrSize = 0;
-			if(!StringUtils.isEmpty(obj.getWork_id_fks()) && obj.getWork_id_fks().length > 0) {
-				obj.setWork_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getWork_id_fks()));
-				if(executivesArrSize < obj.getWork_id_fks().length) {
-					executivesArrSize = obj.getWork_id_fks().length;
+			if(!StringUtils.isEmpty(obj.getProject_id_fks()) && obj.getProject_id_fks().length > 0) {
+				obj.setProject_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getProject_id_fks()));
+				if(executivesArrSize < obj.getProject_id_fks().length) {
+					executivesArrSize = obj.getProject_id_fks().length;
 				}
 			}
 			if(executivesArrSize == 1 ) {
@@ -155,9 +152,9 @@ public class ContractResponsibleExecutivesDaoImpl implements ContractResponsible
 						executives = new ArrayList<String>(Arrays.asList(obj.getExecutive_user_id_fks()[i]));
 					}
 					for(String eObj : executives) {
-						if(!eObj.equals("null") && !StringUtils.isEmpty(obj.getWork_id_fks()[i]) &&  !StringUtils.isEmpty(eObj)) {
+						if(!eObj.equals("null") && !StringUtils.isEmpty(obj.getProject_id_fks()[i]) &&  !StringUtils.isEmpty(eObj)) {
 							TrainingType fileObj = new TrainingType();
-							fileObj.setWork_id_fk(obj.getWork_id_fks()[i]);
+							fileObj.setProject_id_fk(obj.getProject_id_fks()[i]);
 							fileObj.setExecutive_user_id_fk(eObj);
 							paramSource = new BeanPropertySqlParameterSource(fileObj);
 							 count = namedParamJdbcTemplate.update(qry3, paramSource);
@@ -182,7 +179,7 @@ public class ContractResponsibleExecutivesDaoImpl implements ContractResponsible
 	public List<TrainingType> getWorkDetails(TrainingType obj) throws Exception {
 		List<TrainingType> objList = null;
 		try {
-			String qry = "SELECT  work_id as work_id_fk, work_short_name FROM work ";
+			String qry = "SELECT  project_id as project_id_fk, project_name FROM project ";
 			
 			objList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<TrainingType>(TrainingType.class));		
 		}catch(Exception e){ 
@@ -197,8 +194,8 @@ public class ContractResponsibleExecutivesDaoImpl implements ContractResponsible
 		List<TrainingType> objList = null;
 		try {
 			String qry = "	select distinct user_id,user_name,designation from( " + 
-					"	select distinct ur.user_id,ur.user_name,w.work_id,ur.designation from project w " + 
-					"	inner join contract c on c.project_id_fk_fk=w.project_id " + 
+					"	select distinct ur.user_id,ur.user_name,w.project_id,ur.designation from project w " + 
+					"	inner join contract c on c.project_id_fk=w.project_id " + 
 					"	left join [user] u on c.hod_user_id_fk = u.user_id  " + 
 					"	left join [user] ur on u.user_id = ur.reporting_to_id_srfk  " + 
 					"   left join [user] us on c.dy_hod_user_id_fk = us.user_id "+
@@ -206,16 +203,16 @@ public class ContractResponsibleExecutivesDaoImpl implements ContractResponsible
 					"	where  ur.user_name is not null) as a where 0=0 ";
 
 			int arrSize = 0;
-			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getWork_id_fk())) {
-				qry = qry + " and work_id = ? ";
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				qry = qry + " and project_id = ? ";
 				arrSize++;
 			}
 			
 			Object[] pValues = new Object[arrSize];
 			int i = 0;
 			
-			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getWork_id_fk())) {
-				pValues[i++] = obj.getWork_id_fk();
+			if(!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
+				pValues[i++] = obj.getProject_id_fk();
 			}
 			
 			objList = jdbcTemplate.query( qry,pValues, new BeanPropertyRowMapper<TrainingType>(TrainingType.class));		

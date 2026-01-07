@@ -1,14 +1,18 @@
 package com.wcr.wcrbackend.reference.controller;
 
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,25 +44,60 @@ public class ContractResponsibleExecutivesController {
 	@Autowired
 	ContractResponsibleExecutivesService mainService;
 	
-	@RequestMapping(value="/contract-executives",method={RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView executives(HttpSession session,@ModelAttribute TrainingType obj){
-		ModelAndView model = new ModelAndView(PageConstants.contractExecutives);
-		try {
-			
-			List<TrainingType> executivesDetails = mainService.getExecutivesDetails(obj);
-			model.addObject("executivesDetails",executivesDetails);
-			
-			List<TrainingType> workDetails = mainService.getWorkDetails(obj);
-			model.addObject("workDetails",workDetails);
-			
-			List<TrainingType> usersDetails = mainService.getUsersDetails(obj);
-			model.addObject("usersDetails",usersDetails);
-		}catch (Exception e) {
-			e.printStackTrace();
-			logger.error("executives : " + e.getMessage());
-		}
-		return model;
+//	@RequestMapping(value="/contract-executives",method={RequestMethod.GET,RequestMethod.POST})
+//	public ModelAndView executives(HttpSession session,@ModelAttribute TrainingType obj){
+//		ModelAndView model = new ModelAndView(PageConstants.contractExecutives);
+//		try {
+//			
+//			List<TrainingType> executivesDetails = mainService.getExecutivesDetails(obj);
+//			model.addObject("executivesDetails",executivesDetails);
+//			
+//			List<TrainingType> workDetails = mainService.getWorkDetails(obj);
+//			model.addObject("workDetails",workDetails);
+//			
+//			List<TrainingType> usersDetails = mainService.getUsersDetails(obj);
+//			model.addObject("usersDetails",usersDetails);
+//		}catch (Exception e) {
+//			e.printStackTrace();
+//			logger.error("executives : " + e.getMessage());
+//		}
+//		return model;
+//	}
+	
+	
+	@GetMapping("/contract-executives")
+	public ResponseEntity<Map<String, Object>> getContractExecutives(
+	        HttpSession session) {
+
+	    Map<String, Object> response = new HashMap<>();
+
+	    try {
+	        TrainingType obj = new TrainingType(); // prevent NPE in DAO
+
+	        List<TrainingType> executivesDetails =
+	                mainService.getExecutivesDetails(obj);
+
+	        List<TrainingType> workDetails =
+	                mainService.getWorkDetails(obj);
+
+	        List<TrainingType> usersDetails =
+	                mainService.getUsersDetails(obj);
+
+	        response.put("success", true);
+	        response.put("executivesDetails", executivesDetails);
+	        response.put("workDetails", workDetails);
+	        response.put("usersDetails", usersDetails);
+
+	        return ResponseEntity.ok(response);
+
+	    } catch (Exception e) {
+	        logger.error("getContractExecutives : " + e.getMessage(), e);
+	        response.put("success", false);
+	        response.put("message", "Failed to fetch Contract Executives data");
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    }
 	}
+
 	
 	@RequestMapping(value = "/ajax/getWorkWiseContractResponsibleUsers", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody

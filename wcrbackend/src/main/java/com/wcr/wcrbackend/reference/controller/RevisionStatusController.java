@@ -1,15 +1,17 @@
 package com.wcr.wcrbackend.reference.controller;
 
+import java.util.HashMap;
 import java.util.List;
-
-
-
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,21 +39,48 @@ public class RevisionStatusController {
 	@Autowired
 	RevisionStatusService service;
 	
-	@RequestMapping(value="/revision-status",method={RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView revisionStatus(HttpSession session,@ModelAttribute TrainingType obj){
-		ModelAndView model = new ModelAndView(PageConstants.revisionStatus);
-		try {
-			List<Risk> revisionStatusList = service.getRevisionStatusList();
-			model.addObject("revisionStatusList", revisionStatusList);
-			TrainingType revisionStatusDetails = service.getRevisionStatusDetails(obj);
-			model.addObject("revisionStatusDetails",revisionStatusDetails);
-		}catch (Exception e) {
-			e.printStackTrace();
-			logger.error("revisionStatus : " + e.getMessage());
-		}
-		return model;
-	}
+//	@RequestMapping(value="/revision-status",method={RequestMethod.GET,RequestMethod.POST})
+//	public ModelAndView revisionStatus(HttpSession session,@ModelAttribute TrainingType obj){
+//		ModelAndView model = new ModelAndView(PageConstants.revisionStatus);
+//		try {
+//			List<Risk> revisionStatusList = service.getRevisionStatusList();
+//			model.addObject("revisionStatusList", revisionStatusList);
+//			TrainingType revisionStatusDetails = service.getRevisionStatusDetails(obj);
+//			model.addObject("revisionStatusDetails",revisionStatusDetails);
+//		}catch (Exception e) {
+//			e.printStackTrace();
+//			logger.error("revisionStatus : " + e.getMessage());
+//		}
+//		return model;
+//	}
 	
+	
+	@GetMapping("/revision-status")
+	public ResponseEntity<Map<String, Object>> getRevisionStatus(HttpSession session) {
+
+	    Map<String, Object> response = new HashMap<>();
+
+	    try {
+	        List<Risk> revisionStatusList =
+	                service.getRevisionStatusList();
+
+	        TrainingType revisionStatusDetails =
+	                service.getRevisionStatusDetails(new TrainingType());
+
+	        response.put("success", true);
+	        response.put("revisionStatusList", revisionStatusList);
+	        response.put("revisionStatusDetails", revisionStatusDetails);
+
+	        return ResponseEntity.ok(response);
+
+	    } catch (Exception e) {
+	        logger.error("getRevisionStatus : " + e.getMessage(), e);
+	        response.put("success", false);
+	        response.put("message", "Failed to fetch Revision Status data");
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    }
+	}
+
 	
 	@RequestMapping(value = "/add-revision-status", method = {RequestMethod.POST})
 	@ResponseBody
