@@ -12,43 +12,23 @@ export default function LAStatus() {
 	const [value, setValue] = useState("");
 	const [oldValue, setOldValue] = useState("");
 
-	/* ================= LOAD STATUS + COUNT ================= */
+	/* ================= LOAD ================= */
 	const fetchLALandStatus = async () => {
 		try {
-			const res = await fetch(`${API_BASE_URL}/la-land-status`, {
+			const res = await fetch(`${API_BASE_URL}/la-status`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({})
 			});
 
 			const json = await res.json();
-			if (json.status !== "SUCCESS") return;
-
-			// ✅ Correct paths
-			const statusList =
-				json.landAcquisitionStatusDetails?.dList1 || [];
-
-			const countList =
-				json.landAcquisitionStatusDetails?.countList || [];
-
-			// Build count map → { status : count }
-			const countMap = {};
-			countList.forEach(c => {
-				countMap[c.la_land_status] = Number(c.count || 0);
-			});
-
-			// Merge status + count
-			const merged = statusList.map(s => ({
-				la_land_status: s.la_land_status,
-				count: countMap[s.la_land_status] || 0
-			}));
-
-			setData(merged);
+			if (!json.status) return;
+			setData(json.laStatusList || []);
 		} catch (err) {
-			console.error("Failed to load LA Land Status", err);
+			console.error("Failed to load LA Status", err);
+			alert("Failed to load data");
 		}
 	};
-
 
 	useEffect(() => {
 		fetchLALandStatus();
@@ -56,9 +36,7 @@ export default function LAStatus() {
 
 	/* ================= FILTER ================= */
 	const filteredData = data.filter(item =>
-		item.la_land_status
-			.toLowerCase()
-			.includes(search.toLowerCase())
+		item.status?.toLowerCase().includes(search.toLowerCase())
 	);
 
 	/* ================= ADD ================= */
@@ -72,28 +50,31 @@ export default function LAStatus() {
 	/* ================= EDIT ================= */
 	const handleEditClick = item => {
 		setMode("edit");
-		setValue(item.la_land_status);
-		setOldValue(item.la_land_status);
+		setValue(item.status);
+		setOldValue(item.status);
 		setShowModal(true);
 	};
 
 	/* ================= SAVE ================= */
 	const handleSave = async () => {
-		if (!value.trim()) return;
+		if (!value.trim()) {
+			alert("Status is required");
+			return;
+		}
 
 		try {
 			const url =
 				mode === "add"
-					? "/add-la-land-status"
-					: "/update-la-land-status";
+					? "/add-la-status"
+					: "/update-la-status";
 
 			const payload =
 				mode === "add"
-					? { la_land_status: value.trim() }
+					? { status: value.trim() }
 					: {
-							value_old: oldValue,
-							value_new: value.trim()
-					  };
+						status_old: oldValue,
+						status_new: value.trim()
+					};
 
 			const res = await fetch(`${API_BASE_URL}${url}`, {
 				method: "POST",
@@ -103,12 +84,12 @@ export default function LAStatus() {
 
 			const json = await res.json();
 
-			if (json.status === "SUCCESS") {
+			if (json.status) {
 				alert(json.message || "Operation successful");
 				setShowModal(false);
 				fetchLALandStatus();
 			} else {
-				alert(json.message || "Operation failed");
+				alert(json.error || "Operation failed");
 			}
 		} catch (err) {
 			console.error("Save failed", err);
@@ -118,31 +99,25 @@ export default function LAStatus() {
 
 	/* ================= DELETE ================= */
 	const handleDelete = async item => {
-		if (item.count > 0) return;
-
 		if (
-			!window.confirm(
-				`Are you sure you want to delete "${item.la_land_status}"?`
-			)
+			!window.confirm(`Are you sure you want to delete "${item.status}"?`)
 		)
 			return;
 
 		try {
-			const res = await fetch(`${API_BASE_URL}/delete-la-land-status`, {
+			const res = await fetch(`${API_BASE_URL}/delete-la-status`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					la_land_status: item.la_land_status
-				})
+				body: JSON.stringify({ status: item.status })
 			});
 
 			const json = await res.json();
 
-			if (json.status === "SUCCESS") {
+			if (json.status) {
 				alert(json.message || "Deleted successfully");
 				fetchLALandStatus();
 			} else {
-				alert(json.message || "Delete failed");
+				alert(json.error || "Delete failed");
 			}
 		} catch (err) {
 			console.error("Delete failed", err);
@@ -155,7 +130,7 @@ export default function LAStatus() {
 		<div className={styles.container}>
 			<div className="card">
 				<div className="formHeading">
-					<h2 className="center-align">Land Acquisition Status</h2>
+					<h2 className="center-align">Status</h2>
 				</div>
 
 				<div className="innerPage">
@@ -178,48 +153,38 @@ export default function LAStatus() {
 							</span>
 						)}
 					</div>
-
 					<div className={`dataTable ${styles.tableWrapper}`}>
 						<table className={styles.table}>
 							<thead>
 								<tr>
 									<th>Status</th>
-									<th>LA Files</th>
 									<th className={styles.actionCol}>Action</th>
 								</tr>
 							</thead>
 							<tbody>
 								{filteredData.map((item, index) => (
 									<tr key={index}>
-										<td>{item.la_land_status}</td>
-										<td className="center-align">
-											({item.count})
-										</td>
+										<td>{item.status}</td>
 										<td className={styles.actionCol}>
 											<button
 												className={styles.editBtn}
 												onClick={() => handleEditClick(item)}
-												title="Edit"
 											>
 												<FaEdit />
 											</button>
-
-											{item.count === 0 && (
-												<button
-													className={styles.deleteBtn}
-													onClick={() => handleDelete(item)}
-													title="Delete"
-												>
-													<FaTrash />
-												</button>
-											)}
+											<button
+												className={styles.deleteBtn}
+												onClick={() => handleDelete(item)}
+											>
+												<FaTrash />
+											</button>
 										</td>
 									</tr>
 								))}
 
 								{filteredData.length === 0 && (
 									<tr>
-										<td colSpan={3} className="center-align">
+										<td colSpan="2" className="center-align">
 											No records found
 										</td>
 									</tr>
@@ -227,10 +192,9 @@ export default function LAStatus() {
 							</tbody>
 						</table>
 					</div>
-
-					<div className={styles.footerText}>
-						Showing {filteredData.length} entries of {filteredData.length} entries
-					</div>
+				</div>
+				<div className={styles.footerText}>
+					<spam>Showing {filteredData.length} entries of {filteredData.length} entries </spam>
 				</div>
 			</div>
 
@@ -239,13 +203,8 @@ export default function LAStatus() {
 				<div className={styles.modalOverlay}>
 					<div className={styles.modal}>
 						<div className={styles.modalHeader}>
-							<span>
-								{mode === "add" ? "Add Status" : "Update Status"}
-							</span>
-							<span
-								className={styles.close}
-								onClick={() => setShowModal(false)}
-							>
+							<h4>{mode === "add" ? "Add Status" : "Update Status"}</h4>
+							<span className={styles.close} onClick={() => setShowModal(false)}>
 								✕
 							</span>
 						</div>

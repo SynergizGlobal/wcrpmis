@@ -155,7 +155,7 @@ export default function LALandStatus() {
 		<div className={styles.container}>
 			<div className="card">
 				<div className="formHeading">
-					<h2 className="center-align">Land Acquisition Status</h2>
+					<h2 className="center-align">Land Status</h2>
 				</div>
 
 				<div className="innerPage">

@@ -50,33 +50,60 @@ export default function AsBuiltStatus() {
 
   /* ================= SAVE ================= */
   const handleSave = async () => {
-    if (!value.trim()) return;
+    if (!value.trim()) {
+      alert("Status cannot be empty");
+      return;
+    }
 
     const formData = new FormData();
+    let url = "";
+    let successMsg = "";
+    let errorMsg = "";
 
     if (mode === "add") {
       formData.append("as_built_status", value.trim());
-
-      await fetch(`${API_BASE_URL}/add-as-built-status`, {
-        method: "POST",
-        body: formData
-      });
+      url = `${API_BASE_URL}/add-as-built-status`;
+      successMsg = "Status added successfully";
+      errorMsg = "Failed to add status";
 
     } else if (mode === "edit" && editIndex !== null) {
       formData.append("value_old", data[editIndex]);
       formData.append("value_new", value.trim());
+      url = `${API_BASE_URL}/update-as-built-status`;
+      successMsg = "Status updated successfully";
+      errorMsg = "Failed to update status";
+    }
 
-      await fetch(`${API_BASE_URL}/update-as-built-status`, {
+    try {
+      const res = await fetch(url, {
         method: "POST",
         body: formData
       });
-    }
 
-    setShowModal(false);
-    setValue("");
-    setEditIndex(null);
-    fetchStatuses(); // reload from DB
+      let message = "";
+      try {
+        const json = await res.json();
+        message = json?.message;
+      } catch (e) {
+      }
+
+      if (res.ok) {
+        alert(message || successMsg);
+
+        setShowModal(false);
+        setValue("");
+        setEditIndex(null);
+        fetchStatuses(); // reload from DB
+      } else {
+        alert(message || errorMsg);
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Server error. Please try again.");
+    }
   };
+
 
   /* ================= DELETE ================= */
   const handleDelete = async (item) => {
