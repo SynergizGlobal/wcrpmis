@@ -79,10 +79,14 @@ export const referencePages = {
 
 	"Execution & Monitoring": [
 		{
-			name: "As Built Status",
-			url: "/wcrpmis/asBuiltStatus",
-		},
-	],
+	      name: "StructureType",
+	      url: "/wcrpmis/structure-type",
+	    },
+	    {
+	      name: "ResourceType",
+	      url: "/wcrpmis/resource-type",
+	    },
+	  ],
 
 	"Issues": [
 		{
@@ -142,7 +146,29 @@ export const referencePages = {
 		},
 	],
 
-	"Others": [],
+	"Others": [
+	        {
+	        name: "DashBoard Type",
+	        url: "/wcrpmis/dashboard-type",
+	      }, 
+		  {
+			name: "UserType",
+			url: "/wcrpmis/user-type",		    
+		  },
+		  {
+		     name: "General Status",
+		  	 url: "/wcrpmis/general-status",		    
+		  },
+		  {
+	  	     name: "Execution Status",
+	  	  	 url: "/wcrpmis/execution-status",		    
+	  	  },
+		  {
+		     name: "Module",
+		     url: "/wcrpmis/module",
+		  }, 
+	    ],
+		
 	"Utility Shifting": [
 		{
 			name: "Utility Category",

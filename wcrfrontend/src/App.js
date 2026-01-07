@@ -35,6 +35,12 @@ import UtilityRequirementStage from "./components/Admin/ReferenceForms/Reference
 import UtilityExecutionAgency from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityExecutionAgency/UtilityExecutionAgency";
 import UtilityCategory from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityCategory/UtilityCategory";
 import BankGuaranteeType from "./components/Admin/ReferenceForms/ReferenceFormsList/BankGuaranteeType/BankGuaranteeType";
+import StructureType from "./components/Admin/ReferenceForms/ReferenceFormsList/StructureType/StructureType";
+import ExecutionStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/ExecutionStatus/ExecutionStatus";
+import GeneralStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/GeneralStatus/GeneralStatus";
+import UserType from "./components/Admin/ReferenceForms/ReferenceFormsList/UserType/UserType";
+import Module from "./components/Admin/ReferenceForms/ReferenceFormsList/Module/Module";
+import DashboardType from "./components/Admin/ReferenceForms/ReferenceFormsList/DashboardType/DashboardType";
 import ReferenceForms from "./components/Admin/ReferenceForms/ReferenceForms";
 import DashboardForm from "./components/Admin/Dashboards/DashboardForm/DashboardForm";
 import Dashboards from "./components/Admin/Dashboards/Dashboards";
@@ -179,6 +185,12 @@ function App() {
 							<Route path="reference-forms" element={<ReferenceForms />} />
 						</Route>
 						<Route path="bank-guarantee-type" element={<BankGuaranteeType />} />
+						<Route path="dashboard-type" element={<DashboardType />} />
+		                <Route path="module" element={<Module />} />
+						<Route path="user-type" element={<UserType />} />
+						<Route path="general-status" element={<GeneralStatus />} />
+						<Route path="execution-status" element={<ExecutionStatus />} />
+						<Route path="structure-type" element={<StructureType />} />
 					    <Route path="contractFileType" element={<ContractFileType />} />
 						<Route path="contractorSpecialization" element={<ContractorSpecialization />} />
 						<Route path="contractType" element={<ContractType />} />
