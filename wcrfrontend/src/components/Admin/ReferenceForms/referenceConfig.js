@@ -1,168 +1,165 @@
 export const referenceModules = [
-  "Contracts",
-  "Design",
-  "Execution & Monitoring",
-  "Issues",
-  "Land Acquisition",
-  "Others",
-  "Utility Shifting",
-  "Works",
+	"Contracts",
+	"Design",
+	"Execution & Monitoring",
+	"Issues",
+	"Land Acquisition",
+	"Others",
+	"Utility Shifting",
+	"Works",
 ];
 
 export const referencePages = {
-  "Contracts": [
-    {
-      name: "Bank Guarantee Type",
-      url: "/wcrpmis/bank-guarantee-type",
-    },
-    {
-      name: "Contract File Type",
-      url: "/wcrpmis/contract-file-type",
-    },
-    {
-      name: "Contractor Specialization",
-      url: "/wcrpmis/contractor-specialization",
-    },
-	{
-	      name: "Contract Type",
-	      url: "/wcrpmis/contract-type",
-	    },
-  ],
+	"Contracts": [
+		{
+			name: "Bank Guarantee Type",
+			url: "/wcrpmis/bank-guarantee-type",
+		},
+		{
+			name: "Contract File Type",
+			url: "/wcrpmis/contractFileType",
+		},
+		{
+			name: "Contractor Specialization",
+			url: "/wcrpmis/contractorSpecialization",
+		},
+		{
+			name: "Contract Type",
+			url: "/wcrpmis/contractType",
+		},
+	],
 
 
-  "Design": [
-  	{
-  		name: "As Built Status",
-  		url: "/wcrpmis/as-built-status",
-  	},
-  	{
-  		name: "Drawing Type",
-  		url: "/wcrpmis/drawing-type",
-  	},
-  	{
-  		name: "Approval Authority",
-  		url: "/wcrpmis/approval-authority",
-  	},
-  	{
-  		name: "Stage",
-  		url: "/wcrpmis/stage",
-  	},
-  	{
-  		name: "Submitted By",
-  		url: "/wcrpmis/submitted-by",
-  	},
-  	{
-  		name: "Design File Type",
-  		url: "/wcrpmis/design-file-type",
-  	},
-  	{
-  		name: "Purpose of submission",
-  		url: "/wcrpmis/purpose-of-submission",
-  	},
-  	{
-  		name: "Design Executives",
-  		url: "/wcrpmis/design-executives",
-  	},
-  ],
+	"Design": [
+		{
+			name: "As Built Status",
+			url: "/wcrpmis/asBuiltStatus",
+		},
+		{
+			name: "Drawing Type",
+			url: "/wcrpmis/drawingType",
+		},
+		{
+			name: "Approval Authority",
+			url: "/wcrpmis/approvalAuthority",
+		},
+		{
+			name: "Stage",
+			url: "/wcrpmis/stage",
+		},
+		{
+			name: "Submitted By",
+			url: "/wcrpmis/submittedBy",
+		},
+		{
+			name: "Design File Type",
+			url: "/wcrpmis/designFileType",
+		},
+		{
+			name: "Purpose of Submission",
+			url: "/wcrpmis/purposeOfSubmission",
+		},
+		{
+			name: "Design Executives",
+			url: "/wcrpmis/designExecutives",
+		},
+	],
 
-
-  "Execution & Monitoring": [
-    {
-      name: "As Built Status",
-      url: "/wrpmis/as-built-status",
-    },
-  ],
+	"Execution & Monitoring": [
+		{
+			name: "As Built Status",
+			url: "/wcrpmis/asBuiltStatus",
+		},
+	],
 
 	"Issues": [
 		{
 			name: "Category",
-			url: "/wcrpmis/issue-category",
+			url: "/wcrpmis/issueCategory",
 		},
 		{
-			name: "Category",
-			url: "/wcrpmis/issue-category-title",
+			name: "Category Title",
+			url: "/wcrpmis/issueCategoryTitle",
 		},
 		{
 			name: "Contract Category",
-			url: "/wcrpmis/issue-contract-category",
+			url: "/wcrpmis/issueContractCategory",
 		},
 		{
 			name: "File Type",
-			url: "/wcrpmis/issue-file-type",
+			url: "/wcrpmis/issueFileType",
 		},
 		{
 			name: "Priority",
-			url: "/wcrpmis/issue-priority",
+			url: "/wcrpmis/issuePriority",
 		},
 		{
 			name: "Other Organisation",
-			url: "/wcrpmis/issue-other-organisation",
+			url: "/wcrpmis/issueOtherOrganisation",
 		},
 		{
 			name: "Status",
-			url: "/wcrpmis/issue-status",
+			url: "/wcrpmis/issueStatus",
 		},
-
 	],
+
 	"Land Acquisition": [
-			{
-				name: "Category",
-				url: "/wcrpmis/la-category",
-			},
-
-			{
-				name: "Category",
-				url: "/wcrpmis/la-sub-category",
-			},
-			{
-				name: "Status",
-				url: "/wcrpmis/la-status",
-			},
-			{
-				name: "File Type",
-				url: "/wcrpmis/la-file-type",
-			},
-			{
-				name: "Status",
-				url: "/wcrpmis/la-land-status",
-			},
-			{
-				name: "Executives",
-				url: "/wcrpmis/la-executives",
-			},
-
-
-	  ],
-  "Others": [],
-  "Utility Shifting": [
-	{
-	      name: "Utility Category",
-	      url: "/wcrpmis/utility-category",
-	    },
-      {
-	      name: "UtilityExecutionAgency",
-	      url: "/wcrpmis/utility-execution-agency",
-	    },
 		{
-		      name: "Utility Requirement Stage",
-		      url: "/wcrpmis/utility-requirement-stage",
-		    },
-			{
-			      name: "Utility Status",
-			      url: "/wcrpmis/utility-status",
-			    },
-				{
-				  name: "Utlity Types",
-				   url: "/wcrpmis/utility-types",
-							    },
-								{
-					  name: "Utility Shifting File Typ",
-					url: "/wcrpmis/utility-shifting-filetyp"
-											},	
-											{										
+			name: "Category",
+			url: "/wcrpmis/laCategory",
+		},
+		{
+			name: "Sub Category",
+			url: "/wcrpmis/laSubCategory",
+		},
+		{
+			name: "Status",
+			url: "/wcrpmis/laStatus",
+		},
+		{
+			name: "File Type",
+			url: "/wcrpmis/laFileType",
+		},
+		{
+			name: "Land Status",
+			url: "/wcrpmis/laLandStatus",
+		},
+		{
+			name: "Executives",
+			url: "/wcrpmis/laExecutives",
+		},
+	],
+
+	"Others": [],
+	"Utility Shifting": [
+		{
+			name: "Utility Category",
+			url: "/wcrpmis/utility-category",
+		},
+		{
+			name: "UtilityExecutionAgency",
+			url: "/wcrpmis/utility-execution-agency",
+		},
+		{
+			name: "Utility Requirement Stage",
+			url: "/wcrpmis/utility-requirement-stage",
+		},
+		{
+			name: "Utility Status",
+			url: "/wcrpmis/utility-status",
+		},
+		{
+			name: "Utlity Types",
+			url: "/wcrpmis/utility-types",
+		},
+		{
+			name: "Utility Shifting File Typ",
+			url: "/wcrpmis/utility-shifting-filetyp"
+		},
+		{
 			name: "Utility Shifting Executives",
 			url: "/wcrpmis/utility-shifting-executives"
-								}									    				
-  ],
-  "Works": [],
+		}
+	],
+	"Works": [],
 };

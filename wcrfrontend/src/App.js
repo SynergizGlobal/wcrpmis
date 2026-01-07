@@ -174,9 +174,9 @@ function App() {
 							<Route path="reference-forms" element={<ReferenceForms />} />
 						</Route>
 						<Route path="bank-guarantee-type" element={<BankGuaranteeType />} />
-						<Route path="contract-file-type" element={<ContractFileType />} />
-						<Route path="contractor-specialization" element={<ContractorSpecialization />} />
-						<Route path="contract-type" element={<ContractType />} />
+						<Route path="contractFileType" element={<ContractFileType />} />
+						<Route path="contractorSpecialization" element={<ContractorSpecialization />} />
+						<Route path="contractType" element={<ContractType />} />
 					
 						<Route path="utility-category" element={<UtilityCategory />} />
 						<Route path="utility-execution-agency" element={<UtilityExecutionAgency />} />
@@ -185,27 +185,31 @@ function App() {
 						<Route path="utility-types" element={<UtilityTypes />} />
 						<Route path="utility-shifting-filetyp" element={<UtilityShiftingFileTyp />} />
 						<Route path="utility-shifting-executives" element={<UtilityShiftingExecutives />} />
-						<Route path="as-built-status" element={<AsBuiltStatus />} />
-						<Route path="drawing-type" element={<DrawingType />} />
-						<Route path="approval-authority" element={<ApprovalAuthority />} />
+						
+						<Route path="asBuiltStatus" element={<AsBuiltStatus />} />
+						<Route path="drawingType" element={<DrawingType />} />
+						<Route path="approvalAuthority" element={<ApprovalAuthority />} />
 						<Route path="stage" element={<Stage />} />
-						<Route path="submitted-by" element={<SubmittedBy />} />
-						<Route path="design-file-type" element={<DesignFileType />} />
-						<Route path="purpose-of-submission" element={<PurposeOfSubmission />} />
-						<Route path="design-executives" element={<DesignExecutives />} />
-						<Route path="issue-file-type" element={<IssueFileType />} />
-						<Route path="issue-priority" element={<IssuePriority />} />
-						<Route path="issue-other-organisation" element={<IssueOtherOrganisation />} />
-						<Route path="issue-status" element={<IssueStatus />} />
-						<Route path="issue-contract-category" element={<IssueContractCategory />} />
-						<Route path="issue-category" element={<IssueCategory />} />
-						<Route path="issue-category-title" element={<IssueCategoryTitle />} />
-						<Route path="la-executives" element={<LandAcquisitionExecutives />} />
-						<Route path="la-land-status" element={<LALandStatus />} />
-						<Route path="la-status" element={<LAStatus />} />
-						<Route path="la-file-type" element={<LAFileType />} />
-						<Route path="la-category" element={<LACategory />} />
-						<Route path="la-sub-category" element={<LASubCategory />} />
+						<Route path="submittedBy" element={<SubmittedBy />} />
+						<Route path="designFileType" element={<DesignFileType />} />
+						<Route path="purposeOfSubmission" element={<PurposeOfSubmission />} />
+						<Route path="designExecutives" element={<DesignExecutives />} />
+
+						<Route path="issueFileType" element={<IssueFileType />} />
+						<Route path="issuePriority" element={<IssuePriority />} />
+						<Route path="issueOtherOrganisation" element={<IssueOtherOrganisation />} />
+						<Route path="issueStatus" element={<IssueStatus />} />
+						<Route path="issueContractCategory" element={<IssueContractCategory />} />
+						<Route path="issueCategory" element={<IssueCategory />} />
+						<Route path="issueCategoryTitle" element={<IssueCategoryTitle />} />
+
+						<Route path="laExecutives" element={<LandAcquisitionExecutives />} />
+						<Route path="laLandStatus" element={<LALandStatus />} />
+						<Route path="laStatus" element={<LAStatus />} />
+						<Route path="laFileType" element={<LAFileType />} />
+						<Route path="laCategory" element={<LACategory />} />
+						<Route path="laSubCategory" element={<LASubCategory />} />
+
 
 						<Route path="modules" element={<Modules />} />
 						<Route path="reports" element={<Reports />} />
