@@ -33,8 +33,10 @@ public class ContractResponsibleExecutivesDaoImpl implements ContractResponsible
 	public List<TrainingType> getExecutivesDetails(TrainingType obj) throws Exception {
 		List<TrainingType> objList = null;
 		try {
-			String qry = "SELECT  STRING_AGG(u.user_name , ',') user_name,STRING_AGG(u.user_id , ',') user_id FROM contractexecutives re "
-					+ "LEFT JOIN [user] u on re.executive_user_id_fk = u.user_id ";
+			String qry = "SELECT  project_id_fk, project_name, STRING_AGG(u.user_name , ',') user_name,STRING_AGG(u.user_id , ',') user_id FROM contractexecutives re\n"
+					+ "LEFT JOIN [user] u on re.executive_user_id_fk = u.user_id\n"
+					+ "left join project p on re.project_id_fk = p.project_id\n"
+					+ "GROUP BY re.project_id_fk, p.project_name;";
 			
 			objList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<TrainingType>(TrainingType.class));		
 		}catch(Exception e){ 

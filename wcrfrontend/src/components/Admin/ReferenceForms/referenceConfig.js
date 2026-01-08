@@ -39,6 +39,10 @@ export const referencePages = {
 	 name: "Bank Name",
 	url: "/wcrpmis/bankName",
 	  },	
+		{
+			name: "Contract Executives",
+			url: "/wcrpmis/contractExecutives",
+		},	
 	],
 
 
@@ -163,10 +167,7 @@ export const referencePages = {
 	  	     name: "Execution Status",
 	  	  	 url: "/wcrpmis/execution-status",		    
 	  	  },
-		  {
-		     name: "Module",
-		     url: "/wcrpmis/module",
-		  }, 
+	
 	    ],
 		
 	"Utility Shifting": [

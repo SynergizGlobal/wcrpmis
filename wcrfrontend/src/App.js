@@ -1,6 +1,7 @@
 import BankName from "./components/Admin/ReferenceForms/ReferenceFormsList/BankName/BankName";
 import RevisionStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/RevisionStatus/RevisionStatus";
 import InsuranceType from "./components/Admin/ReferenceForms/ReferenceFormsList/InsuranceType/InsuranceType";
+import ContractExecutives from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractExecutives/ContractExecutives";
 import ContractType from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractType/ContractType";
 import ContractorSpecialization from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractorSpecialization/ContractorSpecialization";
 import ContractFileType from "./components/Admin/ReferenceForms/ReferenceFormsList/ContractFileType/ContractFileType";
@@ -39,7 +40,6 @@ import StructureType from "./components/Admin/ReferenceForms/ReferenceFormsList/
 import ExecutionStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/ExecutionStatus/ExecutionStatus";
 import GeneralStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/GeneralStatus/GeneralStatus";
 import UserType from "./components/Admin/ReferenceForms/ReferenceFormsList/UserType/UserType";
-import Module from "./components/Admin/ReferenceForms/ReferenceFormsList/Module/Module";
 import DashboardType from "./components/Admin/ReferenceForms/ReferenceFormsList/DashboardType/DashboardType";
 import ReferenceForms from "./components/Admin/ReferenceForms/ReferenceForms";
 import DashboardForm from "./components/Admin/Dashboards/DashboardForm/DashboardForm";
@@ -186,7 +186,7 @@ function App() {
 						</Route>
 						<Route path="bank-guarantee-type" element={<BankGuaranteeType />} />
 						<Route path="dashboard-type" element={<DashboardType />} />
-		                <Route path="module" element={<Module />} />
+		           
 						<Route path="user-type" element={<UserType />} />
 						<Route path="general-status" element={<GeneralStatus />} />
 						<Route path="execution-status" element={<ExecutionStatus />} />
@@ -194,10 +194,12 @@ function App() {
 					    <Route path="contractFileType" element={<ContractFileType />} />
 						<Route path="contractorSpecialization" element={<ContractorSpecialization />} />
 						<Route path="contractType" element={<ContractType />} />
+						<Route path="contractExecutives" element={<ContractExecutives />} />
 						<Route path="insuranceType" element={<InsuranceType />} />
 						<Route path="revisionStatus" element={<RevisionStatus />} />
 						<Route path="bankName" element={<BankName />} />
 						<Route path="utility-category" element={<UtilityCategory />} />
+				
 						<Route path="utility-execution-agency" element={<UtilityExecutionAgency />} />
 						<Route path="utility-requirement-stage" element={<UtilityRequirementStage />} />
 						<Route path="utility-status" element={<UtilityStatus />} />

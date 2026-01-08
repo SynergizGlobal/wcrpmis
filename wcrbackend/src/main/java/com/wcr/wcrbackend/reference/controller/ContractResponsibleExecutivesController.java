@@ -18,18 +18,19 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.wcr.wcrbackend.DTO.User;
-import com.wcr.wcrbackend.constants.PageConstants;
+import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.reference.Iservice.ContractResponsibleExecutivesService;
 import com.wcr.wcrbackend.reference.Iservice.RrResponsibleExecutivesService;
 import com.wcr.wcrbackend.reference.model.TrainingType;
+import com.wcr.wcrbackend.service.UserService;
 
 import jakarta.servlet.http.HttpSession;
 
-@Controller
+@RestController
 public class ContractResponsibleExecutivesController {
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
@@ -43,6 +44,9 @@ public class ContractResponsibleExecutivesController {
 	
 	@Autowired
 	ContractResponsibleExecutivesService mainService;
+	
+	@Autowired
+	UserService userService;
 	
 //	@RequestMapping(value="/contract-executives",method={RequestMethod.GET,RequestMethod.POST})
 //	public ModelAndView executives(HttpSession session,@ModelAttribute TrainingType obj){
@@ -85,7 +89,7 @@ public class ContractResponsibleExecutivesController {
 
 	        response.put("success", true);
 	        response.put("executivesDetails", executivesDetails);
-	        response.put("workDetails", workDetails);
+	        response.put("projectDetails", workDetails);
 	        response.put("usersDetails", usersDetails);
 
 	        return ResponseEntity.ok(response);
@@ -99,14 +103,15 @@ public class ContractResponsibleExecutivesController {
 	}
 
 	
-	@RequestMapping(value = "/ajax/getWorkWiseContractResponsibleUsers", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/ajax/getProjectWiseContractResponsibleUsers", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public List<TrainingType> getWorkWiseContractResponsibleUsers(@ModelAttribute TrainingType obj,HttpSession session) {
+	public List<TrainingType> getProjectWiseContractResponsibleUsers(@ModelAttribute TrainingType obj,HttpSession session) {
 		List<TrainingType> contractorsFilterList = null;  
 		try {
 			User uObj = (User) session.getAttribute("user");
-			obj.setUser_role_code(uObj.getUser_role_code());
-			obj.setUser_id(uObj.getUser_id());
+			String userRoleNameFk = uObj.getUserRoleNameFk();
+			obj.setUser_role_code(userService.getRoleCode(userRoleNameFk));
+			obj.setUser_id(uObj.getUserId());
 			contractorsFilterList = mainService.getUsersDetails(obj);
 		}catch (Exception e) {
 			e.printStackTrace();
