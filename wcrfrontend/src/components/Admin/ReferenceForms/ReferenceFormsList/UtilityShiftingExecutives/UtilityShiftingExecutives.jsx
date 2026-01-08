@@ -1,315 +1,352 @@
-
-import React, { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaTimes } from "react-icons/fa";
-import "react-toastify/dist/ReactToastify.css";
+import React, { useEffect, useState } from "react";
+import { API_BASE_URL } from "../../../../../config.js";
+import { FaEdit, FaPlus, FaTimes } from "react-icons/fa";
 import styles from "./UtilityShiftingExecutives.module.css";
-import { API_BASE_URL } from "../../../../../config";
-
-const API_ENDPOINTS = {
-  GET: "/utility-shifting-executives",
-  ADD: "/add-utility-shifting-executive",
-  UPDATE: "/update-utility-shifting-executive",
-  DELETE: "/delete-utility-shifting-executive"
-};
 
 export default function UtilityShiftingExecutives() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [search, setSearch] = useState("");
-  const [value, setValue] = useState("");
-  const [mode, setMode] = useState("add");
-  const [editId, setEditId] = useState(null);
-  const [editIndex, setEditIndex] = useState(null);
-  const [saving, setSaving] = useState(false);
+	/* ================= STATE ================= */
+	const [rows, setRows] = useState([]);
+	const [projects, setProjects] = useState([]);
+	const [users, setUsers] = useState([]);
+	const [search, setSearch] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [showModal, setShowModal] = useState(false);
+	const [mode, setMode] = useState("add");
 
-  /* ================= FETCH ================= */
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
+	const [selectedProject, setSelectedProject] = useState("");
+	const [executiveRows, setExecutiveRows] = useState([""]);
+	const [editRow, setEditRow] = useState(null);
 
-      const json = await response.json();
+	/* ================= LOAD DATA ================= */
+	const fetchLandExecutives = async () => {
+		setLoading(true);
+		try {
+			const res = await fetch(
+				`${API_BASE_URL}/utility-shifting-executives`,
+				{
+					method: "GET",
+					headers: { "Content-Type": "application/json" },
+					credentials: "include"
+				}
+			);
+			if (!res.ok) {
+				throw new Error(`HTTP ${res.status}`);
+			}
 
-      const list =
-        json?.UtilityShiftingExecutivesDetails?.dlist1?.map((item) => ({
-          id: item.id,
-          utility_shifting_executive: item.utility_shifting_executive
-        })) || [];
+			const json = await res.json();
 
-      setData(list.filter((i) => i.utility_shifting_executive));
-    } catch (error) {
-      console.error(error);
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+			if (json.status !== "SUCCESS") return;
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+			setRows(json.executivesDetails || []);
+			setProjects(json.projectDetails || []);
+			setUsers(json.usersDetails || []);
+		} catch (err) {
+			console.error("Failed to fetch executives", err);
+		}
+		finally {
+			setLoading(false);
+		}
+	};
 
-  /* ================= FILTER ================= */
-  const filteredData = data.filter((item) =>
-    item.utility_shifting_executive
-      ?.toLowerCase()
-      .includes(search.toLowerCase())
-  );
+	useEffect(() => {
+		fetchLandExecutives();
+	}, []);
 
-  /* ================= ADD ================= */
-  const handleAddClick = () => {
-    setMode("add");
-    setValue("");
-    setEditId(null);
-    setEditIndex(null);
-    setShowModal(true);
-  };
+	/* ================= SEARCH ================= */
+	const filteredData = rows.filter(r => {
+		const term = search.toLowerCase();
+		return (
+			(r.project_name || "").toLowerCase().includes(term) ||
+			(r.user_name || "").toLowerCase().includes(term)
+		);
+	});
 
-  /* ================= EDIT ================= */
-  const handleEditClick = (item, index) => {
-    setMode("edit");
-    setValue(item.utility_shifting_executive);
-    setEditId(item.id);
-    setEditIndex(index);
-    setShowModal(true);
-  };
+	/* ================= HANDLERS ================= */
+	const addExecutiveRow = () =>
+		setExecutiveRows(prev => [...prev, ""]);
 
-  /* ================= DELETE ================= */
-  const handleDeleteClick = async (id, index) => {
-    if (!window.confirm("Are you sure you want to delete this Utility Shifting Executive?")) {
-      return;
-    }
+	const removeExecutiveRow = index =>
+		setExecutiveRows(prev => prev.filter((_, i) => i !== index));
 
-    try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.DELETE}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          utility_shifting_executive: data[index].utility_shifting_executive
-        })
-      });
+	const updateExecutiveRow = (index, value) => {
+		const updated = [...executiveRows];
+		updated[index] = value;
+		setExecutiveRows(updated);
+	};
 
-      const result = await response.json();
+	const handleAdd = () => {
+		setMode("add");
+		setSelectedProject("");
+		setExecutiveRows([""]);
+		setEditRow(null);
+		setShowModal(true);
+	};
 
-      if (!result.success) {
-        throw new Error(result.message);
-      }
+	const handleEdit = row => {
+		setMode("edit");
+		setSelectedProject(row.project_id_fk);
+		setExecutiveRows(
+			row.user_id
+				? row.user_id.split(",").map(v => v.trim())
+				: [""]
+		);
+		setEditRow(row);
+		setShowModal(true);
+	};
 
-      setData((prev) => prev.filter((_, i) => i !== index));
-    } catch (error) {
-      console.error(error);
-      alert("Failed to delete utility shifting executive");
-    }
-  };
+	/* ================= SAVE ================= */
+	const handleSave = async () => {
+		const executives = [...new Set(executiveRows.filter(Boolean))];
 
-  /* ================= SAVE ================= */
-  const handleSave = async () => {
-    if (!value.trim()) {
-      alert("Please enter a utility shifting executive");
-      return;
-    }
+		if (!selectedProject || executives.length === 0) {
+			alert("Please select project and executive(s)");
+			return;
+		}
 
-    try {
-      setSaving(true);
-      let response;
+		const payload = {
+			project_id_fks: [selectedProject],
+			executive_user_id_fks: [executives.join(",")]
+		};
 
-      if (mode === "add") {
-        // ADD
-        response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADD}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            utility_shifting_executive: value.trim()
-          })
-        });
-      } else {
-        // UPDATE (POST)
-        response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.UPDATE}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            value_old: data[editIndex].utility_shifting_executive,
-            value_new: value.trim()
-          })
-        });
-      }
+		if (mode === "edit") {
+			payload.project_id_fk_old = editRow.project_id_fk;
+		}
 
-      const result = await response.json();
+		const url =
+			mode === "add"
+				? "/add-utility-shifting-executives"
+				: "/update-utility-shifting-executives";
 
-      if (!result.success) {
-        throw new Error(result.message);
-      }
+		try {
+			const res = await fetch(`${API_BASE_URL}${url}`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
+				body: JSON.stringify(payload)
+			});
 
-      if (mode === "add") {
-        setData((prev) => [
-          {
-            id: result.id ?? Date.now(),
-            utility_shifting_executive: value.trim()
-          },
-          ...prev
-        ]);
-      } else {
-        setData((prev) =>
-          prev.map((item, index) =>
-            index === editIndex
-              ? { ...item, utility_shifting_executive: value.trim() }
-              : item
-          )
-        );
-      }
+			const json = await res.json();
 
-      setShowModal(false);
-      setValue("");
-      setEditId(null);
-      setEditIndex(null);
-    } catch (error) {
-      console.error(error);
-      alert(`Failed to ${mode === "add" ? "add" : "update"} utility shifting executive`);
-    } finally {
-      setSaving(false);
-    }
-  };
+			if (json.status === "SUCCESS") {
+				alert(json.message);
+				setShowModal(false);
+				fetchLandExecutives();
+			} else {
+				alert(json.message || "Operation failed");
+			}
+		} catch (err) {
+			console.error("Save failed", err);
+			alert("Server error");
+		}
+	};
 
-  /* ================= UI ================= */
-  return (
-    <div className={styles.container}>
-      <div className="card">
-        <div className="formHeading">
-          <h2 className="center-align">Utility Shifting Executives</h2>
-        </div>
+	/* ================= JSX ================= */
+	return (
+		<div className={styles.container}>
+			<div className="card">
+				<div className="formHeading">
+					<h2 className="center-align">
+						Utility Shifting Executives
+					</h2>
+				</div>
 
-        <div className="innerPage">
-          <div className={styles.topActions}>
-            <button
-              className="btn btn-primary"
-              onClick={handleAddClick}
-              disabled={loading}
-            >
-              + Add Utility Shifting Executive
-            </button>
-          </div>
+				<div className="innerPage">
+					<div className={styles.topActions}>
+						<button
+							className="btn btn-primary"
+							onClick={handleAdd}
+						>
+							+ Add Executives
+						</button>
+					</div>
 
-          <div className={styles.searchBox}>
-            <input
-              type="text"
-              placeholder="Search utility shifting executives..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              disabled={loading}
-            />
-            {search && (
-              <span
-                className={styles.clear}
-                onClick={() => setSearch("")}
-              >
-                <FaTimes />
-              </span>
-            )}
-          </div>
+					<div className={styles.searchBox}>
+						<input
+							placeholder="Search"
+							value={search}
+							onChange={e =>
+								setSearch(e.target.value)
+							}
+						/>
+					</div>
+					<div className={`dataTable ${styles.tableWrapper}`}>
+						<table className={styles.table}>
+							<thead>
+								<tr>
+									<th>Project</th>
+									<th>Executives</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody>
+								{loading ?
+									<tr>
+										<td colSpan={3} align="center">Processing...</td>
+									</tr>
+									: filteredData.length === 0 && (
+										<tr>
+											<td colSpan="3" align="center">
+												No records found
+											</td>
+										</tr>
+									)}
 
-          <div className={`dataTable ${styles.tableWrapper}`}>
-            {loading ? (
-              <div className={styles.loading}>Loading utility shifting executives...</div>
-            ) : (
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Utility Shifting Executive</th>
-                    <th className={styles.actionCol}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.length ? (
-                    filteredData.map((item, index) => (
-                      <tr key={item.id ?? index}>
-                        <td>{item.utility_shifting_executive}</td>
-                        <td className={styles.actionCol}>
-                          <div className={styles.actionButtons}>
-                            <button
-                              className={styles.editBtn}
-                              onClick={() => handleEditClick(item, index)}
-                              title="Edit"
-                            >
-                              <FaEdit />
-                            </button>
-                            <button
-                              className={styles.deleteBtn}
-                              onClick={() => handleDeleteClick(item.id, index)}
-                              title="Delete"
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="2" className={styles.noData}>
-                        {search ? "No matching results found" : "No utility shifting executives available"}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      </div>
+								{filteredData.map((r, i) => (
+									<tr key={i}>
+										<td>{r.project_name}</td>
+										<td>
+											{r.user_name
+												?.split(",")
+												.map((n, idx) => (
+													<div key={idx}>
+														▶ {n.trim()}
+													</div>
+												))}
+										</td>
+										<td>
+											<button
+												className={
+													styles.editBtn
+												}
+												onClick={() =>
+													handleEdit(r)
+												}
+											>
+												<FaEdit />
+											</button>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+					<div className={styles.footerText}>
+						Showing 1 to {filteredData.length} of {filteredData.length} entries
+					</div>
+				</div>
+			</div>
 
-      {/* MODAL */}
-      {showModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <span>
-                {mode === "add"
-                  ? "Add Utility Shifting Executive"
-                  : "Edit Utility Shifting Executive"}
-              </span>
-              <FaTimes
-                className={styles.close}
-                onClick={() => !saving && setShowModal(false)}
-                title="Close"
-              />
-            </div>
+			{/* ================= MODAL ================= */}
+			{showModal && (
+				<div className={styles.modalOverlay}>
+					<div className={styles.modal}>
+						<div className={styles.modalHeader}>
 
-            <div className={styles.modalBody}>
-              <input
-                type="text"
-                placeholder="Enter utility shifting executive name"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                autoFocus
-                disabled={saving}
-                onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              />
+							<h4>
+								{mode === "add"
+									? "Add Executives"
+									: "Update Executives"}
+							</h4>
+						</div>
+						<div className={styles.modalBody}>
+							<div className={styles.row}>
+								<div className={styles.col}>
+									<p className={styles.searchableLabel}>
+										Project
+									</p>
+									<select
+										value={selectedProject}
+										onChange={e => {
+											setSelectedProject(
+												e.target.value
+											);
+											setExecutiveRows([""]);
+										}}
+									>
+										<option value="">
+											Select Project
+										</option>
+										{projects.map(p => (
+											<option
+												key={p.project_id_fk}
+												value={p.project_id_fk}
+											>
+												{p.project_name}
+											</option>
+										))}
+									</select>
+								</div>
+								<div className={`${styles.col} ${styles.boxGrey}`}>
 
-              <div className={styles.modalActions}>
-                <button 
-                  className="btn btn-primary" 
-                  onClick={handleSave}
-                  disabled={saving || !value.trim()}
-                >
-                  {saving ? "Saving..." : mode === "add" ? "ADD" : "UPDATE"}
-                </button>
-                <button
-                  className="btn btn-white"
-                  onClick={() => setShowModal(false)}
-                  disabled={saving}
-                >
-                  CANCEL
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+									{executiveRows.map((v, i) => (
+										<div key={i} className={styles.contractRow}>
+											<select
+												value={v}
+												disabled={!selectedProject}
+												onChange={e =>
+													updateExecutiveRow(
+														i,
+														e.target.value
+													)
+												}
+											>
+												<option value="">
+													Select Executive
+												</option>
+												{users.map(u => (
+													<option
+														key={u.user_id}
+														value={u.user_id}
+														disabled={
+															executiveRows.includes(
+																u.user_id
+															) &&
+															u.user_id !== v
+														}
+													>
+														{u.user_name}
+													</option>
+												))}
+											</select>
+
+											{executiveRows.length >
+												1 && (
+													<button
+														className={styles.removeBtn}
+
+														onClick={() =>
+															removeExecutiveRow(
+																i
+															)
+														}
+													>
+														<FaTimes />
+													</button>
+												)}
+										</div>
+									))}
+
+									<button
+										className="btn btn-primary"
+										onClick={addExecutiveRow}>
+										<FaPlus /> Add
+									</button>
+								</div>
+							</div>
+
+							<div className={styles.modalActions}>
+								<button
+									className="btn btn-primary"
+									onClick={handleSave}
+								>
+									{mode === "add"
+										? "ADD"
+										: "UPDATE"}
+								</button>
+								<button
+									className="btn btn-white"
+
+									onClick={() =>
+										setShowModal(false)
+									}
+								>
+									CANCEL
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
 }

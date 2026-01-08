@@ -13,11 +13,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.util.StringUtils;
 
 import com.wcr.wcrbackend.common.CommonMethods;
@@ -31,16 +27,15 @@ public class UtilityResponsibleExecutivesDaoImpl implements UtilityResponsibleEx
 	
 	@Autowired
 	JdbcTemplate jdbcTemplate ;
-//	@Autowired
-//	DataSourceTransactionManager transactionManager;
+
 	@Override
 	public List<TrainingType> getExecutivesDetails(TrainingType obj) throws Exception {
 		List<TrainingType> objList = null;
 		try {
-			String qry = "SELECT  work_id_fk, work_short_name, STRING_AGG(u.user_name , ',') user_name,STRING_AGG(u.user_id , ',') user_id FROM utility_shifting_executives re "
+			String qry = "SELECT  project_id_fk, project_name, STRING_AGG(u.user_name , ',') user_name,STRING_AGG(u.user_id , ',') user_id FROM utility_shifting_executives re "
 					+ "LEFT JOIN [user] u on re.executive_user_id_fk = u.user_id "
-					+ "left join work w on re.work_id_fk = w.work_id "
-					+ "GROUP BY work_id_fk,work_short_name;";
+					+ "left join project p on re.project_id_fk = p.project_id "
+					+ "GROUP BY project_id_fk, project_name";
 			
 			objList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<TrainingType>(TrainingType.class));		
 		}catch(Exception e){ 
@@ -53,20 +48,19 @@ public class UtilityResponsibleExecutivesDaoImpl implements UtilityResponsibleEx
 	public boolean addUtilityShiftingExecutives(TrainingType obj) throws Exception {
 		int count = 0;
 		boolean flag = false;
-		TransactionDefinition def = new DefaultTransactionDefinition();
-//		TransactionStatus status = transactionManager.getTransaction(def);
+
 		try {
 			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);	
-			String qry3 = "INSERT into utility_shifting_executives (work_id_fk,executive_user_id_fk) "
-					+ "VALUES (:work_id_fk,:executive_user_id_fk)";
+			String qry3 = "INSERT into utility_shifting_executives (project_id_fk, executive_user_id_fk) "
+					+ "VALUES (:project_id_fk,:executive_user_id_fk)";
 
 			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
 			int executivesArrSize = 0,workSize = 0;;
-			int len = obj.getWork_id_fks().length;
-			if(!StringUtils.isEmpty(obj.getWork_id_fks()) && obj.getWork_id_fks().length > 0) {
-				obj.setWork_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getWork_id_fks()));
-				if(executivesArrSize < obj.getWork_id_fks().length) {
-					executivesArrSize = obj.getWork_id_fks().length;
+			int len = obj.getProject_id_fks().length;
+			if(!StringUtils.isEmpty(obj.getProject_id_fks()) && obj.getProject_id_fks().length > 0) {
+				obj.setProject_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getProject_id_fks()));
+				if(executivesArrSize < obj.getProject_id_fks().length) {
+					executivesArrSize = obj.getProject_id_fks().length;
 				}
 			}
 			if(executivesArrSize == 1 ) {
@@ -82,16 +76,16 @@ public class UtilityResponsibleExecutivesDaoImpl implements UtilityResponsibleEx
 			}
 			for (int i = 0; i < executivesArrSize; i++){
 				List<String> executives = null;
-				if(!StringUtils.isEmpty(obj.getExecutive_user_id_fks()[i]) && !StringUtils.isEmpty(obj.getWork_id_fks()[i])){
+				if(!StringUtils.isEmpty(obj.getExecutive_user_id_fks()[i]) && !StringUtils.isEmpty(obj.getProject_id_fks()[i])){
 					if(obj.getExecutive_user_id_fks()[i].contains(",")) {
 						executives = new ArrayList<String>(Arrays.asList(obj.getExecutive_user_id_fks()[i].split(",")));
 					}else {
 						executives = new ArrayList<String>(Arrays.asList(obj.getExecutive_user_id_fks()[i]));
 					}
 					for(String eObj : executives) {
-						if(!eObj.equals("null") && !StringUtils.isEmpty(obj.getWork_id_fks()) &&  !StringUtils.isEmpty(eObj)) {
+						if(!eObj.equals("null") && !StringUtils.isEmpty(obj.getProject_id_fks()) &&  !StringUtils.isEmpty(eObj)) {
 							TrainingType fileObj = new TrainingType();
-							fileObj.setWork_id_fk(obj.getWork_id_fks()[i]);
+							fileObj.setProject_id_fk(obj.getProject_id_fks()[i]);
 							fileObj.setExecutive_user_id_fk(eObj);
 							paramSource = new BeanPropertySqlParameterSource(fileObj);
 							 count = namedParamJdbcTemplate.update(qry3, paramSource);
@@ -103,9 +97,7 @@ public class UtilityResponsibleExecutivesDaoImpl implements UtilityResponsibleEx
 				}
 			
 			}		
-//			transactionManager.commit(status);
 		} catch (Exception e) {
-//			transactionManager.rollback(status);
 			e.printStackTrace();
 			throw new Exception(e);
 		} 
@@ -115,25 +107,23 @@ public class UtilityResponsibleExecutivesDaoImpl implements UtilityResponsibleEx
 	public boolean updateUtilityShiftingExecutives(TrainingType obj) throws Exception {
 		int count = 0;
 		boolean flag = false;
-		TransactionDefinition def = new DefaultTransactionDefinition();
-//		TransactionStatus status = transactionManager.getTransaction(def);
 		try {
 			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);	
 			if(!StringUtils.isEmpty(obj.getExecutive_user_id_fks()) && obj.getExecutive_user_id_fks().length > 0) {
 					
-					String conDeleteQry = "DELETE from utility_shifting_executives where work_id_fk = :work_id_fk_old";		 
+					String conDeleteQry = "DELETE from utility_shifting_executives where project_id_fk = :project_id_fk_old";		 
 					BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
 					count = namedParamJdbcTemplate.update(conDeleteQry, paramSource);
 			}
-			String qry3 = "INSERT into utility_shifting_executives (work_id_fk,executive_user_id_fk) "
-					+ "VALUES (:work_id_fk,:executive_user_id_fk)";
+			String qry3 = "INSERT into utility_shifting_executives (project_id_fk,executive_user_id_fk) "
+					+ "VALUES (:project_id_fk,:executive_user_id_fk)";
 
 			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);
 			int executivesArrSize = 0;
-			if(!StringUtils.isEmpty(obj.getWork_id_fks()) && obj.getWork_id_fks().length > 0) {
-				obj.setWork_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getWork_id_fks()));
-				if(executivesArrSize < obj.getWork_id_fks().length) {
-					executivesArrSize = obj.getWork_id_fks().length;
+			if(!StringUtils.isEmpty(obj.getProject_id_fks()) && obj.getProject_id_fks().length > 0) {
+				obj.setProject_id_fks(CommonMethods.replaceEmptyByNullInSringArray(obj.getProject_id_fks()));
+				if(executivesArrSize < obj.getProject_id_fks().length) {
+					executivesArrSize = obj.getProject_id_fks().length;
 				}
 			}
 			if(executivesArrSize == 1 ) {
@@ -156,9 +146,9 @@ public class UtilityResponsibleExecutivesDaoImpl implements UtilityResponsibleEx
 						executives = new ArrayList<String>(Arrays.asList(obj.getExecutive_user_id_fks()[i]));
 					}
 					for(String eObj : executives) {
-						if(!eObj.equals("null") && !StringUtils.isEmpty(obj.getWork_id_fks()[i]) &&  !StringUtils.isEmpty(eObj)) {
+						if(!eObj.equals("null") && !StringUtils.isEmpty(obj.getProject_id_fks()[i]) &&  !StringUtils.isEmpty(eObj)) {
 							TrainingType fileObj = new TrainingType();
-							fileObj.setWork_id_fk(obj.getWork_id_fks()[i]);
+							fileObj.setProject_id_fk(obj.getProject_id_fks()[i]);
 							fileObj.setExecutive_user_id_fk(eObj);
 							paramSource = new BeanPropertySqlParameterSource(fileObj);
 							 count = namedParamJdbcTemplate.update(qry3, paramSource);
@@ -170,20 +160,17 @@ public class UtilityResponsibleExecutivesDaoImpl implements UtilityResponsibleEx
 				}
 			
 			}		
-//			transactionManager.commit(status);
 		} catch (Exception e) {
-//			transactionManager.rollback(status);
 			e.printStackTrace();
 			throw new Exception(e);
 		} 
 		return flag;
 	}
 	@Override
-	public List<TrainingType> getWorkDetails(TrainingType obj) throws Exception {
+	public List<TrainingType> getProjectDetails(TrainingType obj) throws Exception {
 		List<TrainingType> objList = null;
 		try {
-			String qry = "SELECT  work_id_fk, w.work_short_name FROM utility_shifting us "
-					+ "left join  work w on us.work_id_fk = w.work_id group by work_id_fk,w.work_short_name ";
+			String qry = "SELECT  project_id as project_id_fk, project_name FROM project ";
 			
 			objList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<TrainingType>(TrainingType.class));		
 		}catch(Exception e){ 
