@@ -525,6 +525,10 @@ public class ContractController {
 			contract.setUser_name(userName);
 			contract.setDesignation(userDesignation);
 			
+		//	System.out.println("HOD ID FK = " + contract.getHod_user_id_fk());
+			System.out.println("Documentsss = "  + contract.getAttachment());
+
+			
 			User uObj = (User) session.getAttribute("user");
 			contract.setUser_type_fk(uObj.getUserTypeFk());
 			contract.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
