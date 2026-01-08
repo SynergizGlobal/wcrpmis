@@ -28,21 +28,21 @@ export const referencePages = {
 			url: "/wcrpmis/contractType",
 		},
 		{
-	   name: "Insurance Type",
-	    url: "/wcrpmis/insuranceType",
-			  },
-	{
-	  name: "Revision Status",
-      url: "/wcrpmis/revisionStatus",
-			  		  },		  
-   {
-	 name: "Bank Name",
-	url: "/wcrpmis/bankName",
-	  },	
+			name: "Insurance Type",
+			url: "/wcrpmis/insuranceType",
+		},
+		{
+			name: "Revision Status",
+			url: "/wcrpmis/revisionStatus",
+		},
+		{
+			name: "Bank Name",
+			url: "/wcrpmis/bankName",
+		},
 		{
 			name: "Contract Executives",
 			url: "/wcrpmis/contractExecutives",
-		},	
+		},
 	],
 
 
@@ -83,14 +83,14 @@ export const referencePages = {
 
 	"Execution & Monitoring": [
 		{
-	      name: "StructureType",
-	      url: "/wcrpmis/structure-type",
-	    },
-	    {
-	      name: "ResourceType",
-	      url: "/wcrpmis/resource-type",
-	    },
-	  ],
+			name: "StructureType",
+			url: "/wcrpmis/structure-type",
+		},
+		{
+			name: "ResourceType",
+			url: "/wcrpmis/resource-type",
+		},
+	],
 
 	"Issues": [
 		{
@@ -151,25 +151,25 @@ export const referencePages = {
 	],
 
 	"Others": [
-	        {
-	        name: "DashBoard Type",
-	        url: "/wcrpmis/dashboard-type",
-	      }, 
-		  {
+		{
+			name: "DashBoard Type",
+			url: "/wcrpmis/dashboard-type",
+		},
+		{
 			name: "UserType",
-			url: "/wcrpmis/user-type",		    
-		  },
-		  {
-		     name: "General Status",
-		  	 url: "/wcrpmis/general-status",		    
-		  },
-		  {
-	  	     name: "Execution Status",
-	  	  	 url: "/wcrpmis/execution-status",		    
-	  	  },
-	
-	    ],
-		
+			url: "/wcrpmis/user-type",
+		},
+		{
+			name: "General Status",
+			url: "/wcrpmis/general-status",
+		},
+		{
+			name: "Execution Status",
+			url: "/wcrpmis/execution-status",
+		},
+
+	],
+
 	"Utility Shifting": [
 		{
 			name: "Utility Category",
@@ -200,13 +200,17 @@ export const referencePages = {
 			url: "/wcrpmis/utility-shifting-executives"
 		}
 	],
-		"Works": [
-		
+	"Works": [
+
 		{
-		  name: "Department",
-	    	url: "/wcrpmis/department",
-				},
-		
-		
+			name: "Department",
+			url: "/wcrpmis/department",
+		},
+		{
+			name: "Department",
+			url: "/wcrpmis/railway",
+		},
+
+
 	],
 };

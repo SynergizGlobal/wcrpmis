@@ -1,4 +1,5 @@
 import Department from "./components/Admin/ReferenceForms/ReferenceFormsList/Department/Department";
+import Railway from "./components/Admin/ReferenceForms/ReferenceFormsList/Railway/Railway";
 import BankName from "./components/Admin/ReferenceForms/ReferenceFormsList/BankName/BankName";
 import RevisionStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/RevisionStatus/RevisionStatus";
 import InsuranceType from "./components/Admin/ReferenceForms/ReferenceFormsList/InsuranceType/InsuranceType";
@@ -238,6 +239,7 @@ function App() {
 						<Route path="documents" element={<Documents />} />
 						<Route path="quicklinks" element={<QuickLinks />} />
 						<Route path="department" element={<Department />} />
+						<Route path="railway" element={<Railway />} />
 
 					</Route>
 
