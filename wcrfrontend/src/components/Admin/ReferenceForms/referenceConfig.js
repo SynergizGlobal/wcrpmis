@@ -200,5 +200,13 @@ export const referencePages = {
 			url: "/wcrpmis/utility-shifting-executives"
 		}
 	],
-	"Works": [],
+		"Works": [
+		
+		{
+		  name: "Department",
+	    	url: "/wcrpmis/department",
+				},
+		
+		
+	],
 };
