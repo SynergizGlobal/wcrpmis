@@ -259,9 +259,9 @@ export default function UtilityShiftingExecutives() {
 										{projects.map(p => (
 											<option
 												key={p.project_id_fk}
-												value={p.project_id_fk}
+												value={p.project_id_fk} 
 											>
-												{p.project_name}
+												{p.project_id_fk} - {p.project_name}
 											</option>
 										))}
 									</select>
@@ -294,7 +294,7 @@ export default function UtilityShiftingExecutives() {
 															u.user_id !== v
 														}
 													>
-														{u.user_name}
+														{u.designation} - {u.user_name}
 													</option>
 												))}
 											</select>
