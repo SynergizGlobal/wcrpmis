@@ -694,7 +694,7 @@ export default function DesignDrawing() {
 											<td>
 												{uf.uploaded_file ? (
 													<a
-														href={`/DESIGN_REVISION_FILES/${uf.uploaded_file}`}
+														href={`${API_BASE_URL}/DESIGN_UPLOADED_FILES/${uf.uploaded_file}`}
 														download
 														style={{ color: "blue", textDecoration: "underline" }}
 													>

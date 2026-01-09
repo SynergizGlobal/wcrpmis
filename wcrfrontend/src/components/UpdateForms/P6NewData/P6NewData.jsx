@@ -1325,7 +1325,19 @@ export default function P6NewData() {
 										<td>{data.upload_type}</td>
 										<td>{data.data_date}</td>
 										<td>{data.soft_delete_status_fk}</td>
-										<td>{data.p6_file_path}</td>
+										<td>
+											{data.p6_file_path ? (
+												<a
+													href={`${API_BASE_URL}/P6_FILES/${data.p6_file_path}`}
+													download
+													style={{ color: "blue", textDecoration: "underline" }}
+												>
+													{data.p6_file_path}
+												</a>
+											) : (
+												""
+											)}
+										</td>
 										<td>{data.uploaded_by_user_id_fk}</td>
 										<td>{data.uploaded_date}</td>
 									</tr>

@@ -873,8 +873,8 @@ export default function DesignDrawingForm() {
 															) : watch(`revisionDetailsFields.${index}.uploadFileNames`) ? (
 																<p>
 																	<a
-																		href={`/wrpmis/DESIGN_REVISION_FILES/${watch(`revisionDetailsFields.${index}.uploadFileNames`)}`}
-																		target="_blank"
+																		href={`${API_BASE_URL}/DESIGN_REVISION_FILES/${watch(`revisionDetailsFields.${index}.uploadFileNames`)}`}
+																		style={{ color: "blue", textDecoration: "underline" }}
 																		rel="noopener noreferrer"
 																	>
 																		{watch(`revisionDetailsFields.${index}.uploadFileNames`)}
