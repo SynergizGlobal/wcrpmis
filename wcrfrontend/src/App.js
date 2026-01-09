@@ -1,3 +1,4 @@
+import DocumentType from "./components/Admin/ReferenceForms/ReferenceFormsList/DocumentType/DocumentType";
 import Department from "./components/Admin/ReferenceForms/ReferenceFormsList/Department/Department";
 import Railway from "./components/Admin/ReferenceForms/ReferenceFormsList/Railway/Railway";
 import BankName from "./components/Admin/ReferenceForms/ReferenceFormsList/BankName/BankName";
@@ -240,6 +241,8 @@ function App() {
 						<Route path="quicklinks" element={<QuickLinks />} />
 						<Route path="department" element={<Department />} />
 						<Route path="railway" element={<Railway />} />
+						<Route path="documentType" element={<DocumentType />} />
+
 
 					</Route>
 

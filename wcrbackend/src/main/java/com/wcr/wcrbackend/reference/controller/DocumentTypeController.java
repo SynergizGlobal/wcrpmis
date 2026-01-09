@@ -1,16 +1,19 @@
 package com.wcr.wcrbackend.reference.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -20,7 +23,7 @@ import com.wcr.wcrbackend.reference.model.TrainingType;
 
 import jakarta.servlet.http.HttpSession;
 
-@Controller
+@RestController
 public class DocumentTypeController {
 
 	@InitBinder
@@ -34,18 +37,22 @@ public class DocumentTypeController {
 	DocumentTypeService service;
 	
 	@RequestMapping(value="/document-type",method={RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView documentType(HttpSession session,@ModelAttribute TrainingType obj){
-		ModelAndView model = new ModelAndView(PageConstants.documentType);
+	public Map<String, Object> documentType(HttpSession session){
+		Map<String, Object> res = new HashMap<>();
+		TrainingType obj = new TrainingType();
 		try {
 			List<TrainingType> documentTypeList = service.getDocumentTypesList();
-			model.addObject("documentTypeList", documentTypeList);
+			res.put("documentTypeList", documentTypeList);
 			TrainingType documentTypeDetails = service.getDocumentTypeDetails(obj);
-			model.addObject("documentTypeDetails",documentTypeDetails);
+			res.put("documentTypeDetails",documentTypeDetails);
+			res.put("message", "success");
 		}catch (Exception e) {
 			e.printStackTrace();
+			res.put("error", e);
+			res.put("message","failed to fetch (or) something went wrong..");
 			logger.error("documentType : " + e.getMessage());
 		}
-		return model;
+		return res;
 	}
 	
 	
@@ -71,22 +78,21 @@ public class DocumentTypeController {
 	
 	@RequestMapping(value = "/update-document-type", method = {RequestMethod.POST})
 	@ResponseBody
-	public ModelAndView updateDocumentType(@ModelAttribute TrainingType obj,RedirectAttributes attributes){
-		ModelAndView model = new ModelAndView();
+	public Map<String, Object> updateDocumentType(@ModelAttribute TrainingType obj){
+		Map<String, Object> res = new HashMap<>();
 		try{
-			model.setViewName("redirect:/document-type");
 			boolean flag =  service.updateDocumentType(obj);
 			if(flag) {
-				attributes.addFlashAttribute("success", "Document Type Updated Succesfully.");
+				res.put("message", "Document Type Updated Succesfully.");
 			}
 			else {
-				attributes.addFlashAttribute("error","Updating Document Type is failed. Try again.");
+				res.put("message	","Updating Document Type is failed. Try again.");
 			}
 		}catch (Exception e) {
-			attributes.addFlashAttribute("error","Updating Document Type is failed. Try again.");
-			logger.error("updateDocumentType : " + e.getMessage());
+			res.put("error",e);
+			res.put("error", "Failed to update");
 		}
-		return model;
+		return res;
 	}
 	
 	@RequestMapping(value = "/delete-document-type", method = {RequestMethod.POST})
