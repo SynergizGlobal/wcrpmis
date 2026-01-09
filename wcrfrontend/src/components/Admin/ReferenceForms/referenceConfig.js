@@ -170,31 +170,31 @@ export const referencePages = {
 	"Utility Shifting": [
 		{
 			name: "Utility Category",
-			url: "/wcrpmis/utility-category",
+			url: "/wcrpmis/utilityCategory",
 		},
 		{
 			name: "UtilityExecutionAgency",
-			url: "/wcrpmis/utility-execution-agency",
+			url: "/wcrpmis/utilityExecutionagency",
 		},
 		{
 			name: "Utility Requirement Stage",
-			url: "/wcrpmis/utility-requirement-stage",
+			url: "/wcrpmis/utilityRequirementstage",
 		},
 		{
 			name: "Utility Status",
-			url: "/wcrpmis/utility-status",
+			url: "/wcrpmis/utilityStatus",
 		},
 		{
 			name: "Utlity Types",
-			url: "/wcrpmis/utility-types",
+			url: "/wcrpmis/utilityTypes",
 		},
 		{
 			name: "Utility Shifting File Typ",
-			url: "/wcrpmis/utility-shifting-filetyp"
+			url: "/wcrpmis/utilityShiftingfiletyp"
 		},
 		{
 			name: "Utility Shifting Executives",
-			url: "/wcrpmis/utility-shifting-executives"
+			url: "/wcrpmis/utilityShiftingexecutives"
 		}
 	],
 		"Works": [
@@ -208,7 +208,7 @@ export const referencePages = {
 		  url: "/wcrpmis/projectType",
 						},
 					{
-			name: "Department",
+			name: "Railway",
 			url: "/wcrpmis/railway",
 		},
 	

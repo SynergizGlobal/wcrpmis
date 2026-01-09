@@ -198,14 +198,14 @@ function App() {
 						<Route path="insuranceType" element={<InsuranceType />} />
 						<Route path="revisionStatus" element={<RevisionStatus />} />
 						<Route path="bankName" element={<BankName />} />
-						<Route path="utility-category" element={<UtilityCategory />} />
+						<Route path="utilityCategory" element={<UtilityCategory />} />
 				
-						<Route path="utility-execution-agency" element={<UtilityExecutionAgency />} />
-						<Route path="utility-requirement-stage" element={<UtilityRequirementStage />} />
-						<Route path="utility-status" element={<UtilityStatus />} />
-						<Route path="utility-types" element={<UtilityTypes />} />
-						<Route path="utility-shifting-filetyp" element={<UtilityShiftingFileTyp />} />
-						<Route path="utility-shifting-executives" element={<UtilityShiftingExecutives />} />
+						<Route path="utilityExecutionagency" element={<UtilityExecutionAgency />} />
+						<Route path="utilityRequirementstage" element={<UtilityRequirementStage />} />
+						<Route path="utilityStatus" element={<UtilityStatus />} />
+						<Route path="utilityTypes" element={<UtilityTypes />} />
+						<Route path="utilityShiftingfiletyp" element={<UtilityShiftingFileTyp />} />
+						<Route path="utilityShiftingexecutives" element={<UtilityShiftingExecutives />} />
 	
 						<Route path="asBuiltStatus" element={<AsBuiltStatus />} />
 						<Route path="drawingType" element={<DrawingType />} />
