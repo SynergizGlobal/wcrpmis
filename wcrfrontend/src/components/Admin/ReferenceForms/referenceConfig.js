@@ -86,10 +86,7 @@ export const referencePages = {
 	      name: "StructureType",
 	      url: "/wcrpmis/structure-type",
 	    },
-	    {
-	      name: "ResourceType",
-	      url: "/wcrpmis/resource-type",
-	    },
+	  
 	  ],
 
 	"Issues": [

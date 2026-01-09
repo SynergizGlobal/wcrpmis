@@ -478,7 +478,7 @@ export default function Department() {
     <div className={styles.container}>
       <div className="card">
         <div className="formHeading">
-          <h2 className="center-align">Department Management</h2>
+          <h2 className="center-align">Department</h2>
         </div>
 
         <div className="innerPage">
