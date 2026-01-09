@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FaEdit, FaTrash, FaTimes, FaPlusCircle, FaSearch } from "react-icons/fa";
 import styles from "./Department.module.css";
 import { API_BASE_URL } from "../../../../../config";
 import Swal from "sweetalert2";
 
 const API_ENDPOINTS = {
-  GET: "/department",
+  GET: "/get-department",
   ADD: "/add-department",
   UPDATE: "/update-department",
   DELETE: "/delete-department"
@@ -14,6 +14,7 @@ const API_ENDPOINTS = {
 export default function Department() {
   const [data, setData] = useState([]);
   const [tablesList, setTablesList] = useState([]);
+  const [deletableData, setDeletableData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -32,14 +33,15 @@ export default function Department() {
     department_code_old: ""
   });
   const [mode, setMode] = useState("add");
-  const [editId, setEditId] = useState(null);
   const [editIndex, setEditIndex] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [editErrors, setEditErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   /* ================= FETCH DATA ================= */
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET}`, {
@@ -50,6 +52,9 @@ export default function Department() {
 
       const json = await response.json();
 
+      console.log("API Response:", json); // DEBUG: Check the actual response structure
+
+      // Process data like JSP does
       const departmentList = json?.departmentDetails?.dList1?.map((item) => ({
         id: item.id || Date.now() + Math.random(),
         department: item.department,
@@ -58,25 +63,54 @@ export default function Department() {
         counts: json?.departmentDetails?.countList?.filter(count => count.department === item.department) || []
       })) || [];
 
-      const tables = json?.departmentDetails?.tablesList?.map(item => ({
-        tName: item.tName,
-        captiliszedTableName: item.tName ? item.tName.replace(/_/g, ' ') : ''
+      // Store deletable data separately (like dList in JSP)
+      const deletableList = json?.departmentDetails?.dList?.map(item => ({
+        department: item.department,
       })) || [];
 
+      // FIXED: Handle nested table names like in JSP
+      const tables = [];
+      const tablesFromApi = json?.departmentDetails?.tablesList || [];
+      
+      tablesFromApi.forEach(tObj => {
+        // Check if tObj.tName is an array (like in JSP) or a string
+        if (Array.isArray(tObj.tName)) {
+          tObj.tName.forEach(tableName => {
+            tables.push({
+              tName: tableName,
+              captiliszedTableName: tableName ? tableName.replace(/_/g, ' ') : ''
+            });
+          });
+        } else if (tObj.tName) {
+          // If it's a string, treat it as single item
+          tables.push({
+            tName: tObj.tName,
+            captiliszedTableName: tObj.tName ? tObj.tName.replace(/_/g, ' ') : ''
+          });
+        }
+      });
+
       setData(departmentList.filter((i) => i.department));
+      setDeletableData(deletableList);
       setTablesList(tables);
+      
+      // Clear messages after fetch
+      setSuccessMessage("");
+      setErrorMessage("");
     } catch (error) {
       console.error("Fetch error:", error);
       setData([]);
       setTablesList([]);
+      setDeletableData([]);
+      setErrorMessage("Failed to load departments");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   /* ================= VALIDATION ================= */
   const validateInput = () => {
@@ -85,57 +119,29 @@ export default function Department() {
     const trimmedName = formData.department_name.trim();
     const trimmedCode = formData.contract_id_code.trim();
     
+    // Basic validation
     if (!trimmedDept) newErrors.department = "Department ID is required";
     if (!trimmedName) newErrors.department_name = "Department Name is required";
     if (!trimmedCode) newErrors.contract_id_code = "Department Code is required";
     
+    // Duplicate check (like JSP's doValidate function)
     if (mode === "add") {
-      const exists = data.some(item => 
-        item.department.toLowerCase() === trimmedDept.toLowerCase() ||
-        item.department_name.toLowerCase() === trimmedName.toLowerCase() ||
+      const existingDept = data.find(item => 
+        item.department.toLowerCase() === trimmedDept.toLowerCase()
+      );
+      const existingName = data.find(item => 
+        item.department_name.toLowerCase() === trimmedName.toLowerCase()
+      );
+      const existingCode = data.find(item => 
         item.contract_id_code.toLowerCase() === trimmedCode.toLowerCase()
       );
       
-      if (exists) {
-        const deptExists = data.some(item => item.department.toLowerCase() === trimmedDept.toLowerCase());
-        const nameExists = data.some(item => item.department_name.toLowerCase() === trimmedName.toLowerCase());
-        const codeExists = data.some(item => item.contract_id_code.toLowerCase() === trimmedCode.toLowerCase());
-        
-        if (deptExists && nameExists && codeExists) {
-          newErrors.all = `"${trimmedDept}" & "${trimmedName}" & "${trimmedCode}" already exist`;
-        } else {
-          if (deptExists) newErrors.department = `"${trimmedDept}" already exists`;
-          if (nameExists) newErrors.department_name = `"${trimmedName}" already exists`;
-          if (codeExists) newErrors.contract_id_code = `"${trimmedCode}" already exists`;
-        }
-      }
-    } else if (mode === "edit") {
-      const exists = data.some((item, index) => 
-        index !== editIndex && (
-          item.department.toLowerCase() === trimmedDept.toLowerCase() ||
-          item.department_name.toLowerCase() === trimmedName.toLowerCase() ||
-          item.contract_id_code.toLowerCase() === trimmedCode.toLowerCase()
-        )
-      );
-      
-      if (exists) {
-        const deptExists = data.some((item, index) => 
-          index !== editIndex && item.department.toLowerCase() === trimmedDept.toLowerCase()
-        );
-        const nameExists = data.some((item, index) => 
-          index !== editIndex && item.department_name.toLowerCase() === trimmedName.toLowerCase()
-        );
-        const codeExists = data.some((item, index) => 
-          index !== editIndex && item.contract_id_code.toLowerCase() === trimmedCode.toLowerCase()
-        );
-        
-        if (deptExists && nameExists && codeExists) {
-          newErrors.all = `"${trimmedDept}" & "${trimmedName}" & "${trimmedCode}" already exist`;
-        } else {
-          if (deptExists) newErrors.department = `"${trimmedDept}" already exists`;
-          if (nameExists) newErrors.department_name = `"${trimmedName}" already exists`;
-          if (codeExists) newErrors.contract_id_code = `"${trimmedCode}" already exists`;
-        }
+      if (existingDept && existingName && existingCode) {
+        newErrors.all = `"${trimmedDept}" & "${trimmedName}" & "${trimmedCode}" already exist`;
+      } else {
+        if (existingDept) newErrors.department = `"${trimmedDept}" already exists`;
+        if (existingName) newErrors.department_name = `"${trimmedName}" already exists`;
+        if (existingCode) newErrors.contract_id_code = `"${trimmedCode}" already exists`;
       }
     }
     
@@ -148,39 +154,48 @@ export default function Department() {
     const trimmedName = editFormData.department_name_new.trim();
     const trimmedCode = editFormData.department_code_new.trim();
     
+    // Basic validation
     if (!trimmedDept) newErrors.department_new = "Department ID is required";
     if (!trimmedName) newErrors.department_name_new = "Department Name is required";
     if (!trimmedCode) newErrors.department_code_new = "Department Code is required";
     
-    const exists = data.some((item, index) => 
-      index !== editIndex && (
-        item.department.toLowerCase() === trimmedDept.toLowerCase() ||
-        item.department_name.toLowerCase() === trimmedName.toLowerCase() ||
-        item.contract_id_code.toLowerCase() === trimmedCode.toLowerCase()
-      )
+    // Duplicate check excluding current item (like JSP's doValidateUpdate)
+    const existingDept = data.find((item, index) => 
+      index !== editIndex && 
+      item.department.toLowerCase() === trimmedDept.toLowerCase()
+    );
+    const existingName = data.find((item, index) => 
+      index !== editIndex && 
+      item.department_name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    const existingCode = data.find((item, index) => 
+      index !== editIndex && 
+      item.contract_id_code.toLowerCase() === trimmedCode.toLowerCase()
     );
     
-    if (exists) {
-      const deptExists = data.some((item, index) => 
-        index !== editIndex && item.department.toLowerCase() === trimmedDept.toLowerCase()
-      );
-      const nameExists = data.some((item, index) => 
-        index !== editIndex && item.department_name.toLowerCase() === trimmedName.toLowerCase()
-      );
-      const codeExists = data.some((item, index) => 
-        index !== editIndex && item.contract_id_code.toLowerCase() === trimmedCode.toLowerCase()
-      );
-      
-      if (deptExists && nameExists && codeExists) {
-        newErrors.all = `"${trimmedDept}" & "${trimmedName}" & "${trimmedCode}" already exist`;
-      } else {
-        if (deptExists) newErrors.department_new = `"${trimmedDept}" already exists`;
-        if (nameExists) newErrors.department_name_new = `"${trimmedName}" already exists`;
-        if (codeExists) newErrors.department_code_new = `"${trimmedCode}" already exists`;
-      }
+    if (existingDept && existingName && existingCode) {
+      newErrors.all = `"${trimmedDept}" & "${trimmedName}" & "${trimmedCode}" already exist`;
+    } else {
+      if (existingDept) newErrors.department_new = `"${trimmedDept}" already exists`;
+      if (existingName) newErrors.department_name_new = `"${trimmedName}" already exists`;
+      if (existingCode) newErrors.department_code_new = `"${trimmedCode}" already exists`;
     }
     
     return newErrors;
+  };
+
+  /* ================= CHECK IF DEPARTMENT CAN BE DELETED ================= */
+  const canDeleteDepartment = (department) => {
+    // Check if department exists in deletableData (like JSP does)
+    const isDeletable = deletableData.some(item => item.department === department);
+    return isDeletable; // In JSP, if it's in dList, it CAN be deleted (shows delete button)
+  };
+
+  /* ================= CHECK IF DEPARTMENT CAN BE EDITED ================= */
+  const canEditDepartment = (item) => {
+    // In JSP, edit button is always shown but checks counts when clicked
+    // So we'll show the button but check in handleEditClick
+    return true;
   };
 
   /* ================= HANDLE INPUT CHANGE ================= */
@@ -228,7 +243,9 @@ export default function Department() {
 
   /* ================= EDIT ================= */
   const handleEditClick = (item, index) => {
-    if (item.counts && item.counts.length > 0) {
+    // Check if department has counts in any table (like JSP does)
+    const hasCounts = item.counts && item.counts.length > 0;
+    if (hasCounts) {
       setShowErrorModal(true);
       return;
     }
@@ -249,6 +266,12 @@ export default function Department() {
 
   /* ================= DELETE ================= */
   const handleDeleteClick = async (item, index) => {
+    // Check if department can be deleted (exists in dList)
+    if (!canDeleteDepartment(item.department)) {
+      return; // No delete button should be shown anyway
+    }
+
+    // Check if it has counts
     if (item.counts && item.counts.length > 0) {
       setShowErrorModal(true);
       return;
@@ -319,25 +342,17 @@ export default function Department() {
           throw new Error(result.message);
         }
 
-        setData((prev) => [
-          {
-            id: result.id || Date.now() + Math.random(),
-            department: formData.department.trim(),
-            department_name: formData.department_name.trim(),
-            contract_id_code: formData.contract_id_code.trim(),
-            counts: []
-          },
-          ...prev
-        ]);
-
+        // Refresh data to get updated counts
+        await fetchData();
+        
         setShowModal(false);
         setFormData({ department: "", department_name: "", contract_id_code: "" });
         setErrors({});
         
-        Swal.fire('Success!', 'Department added successfully', 'success');
+        setSuccessMessage("Department added successfully");
       } catch (error) {
         console.error(error);
-        Swal.fire('Error', 'Failed to add department', 'error');
+        setErrorMessage("Failed to add department");
       } finally {
         setSaving(false);
       }
@@ -369,19 +384,9 @@ export default function Department() {
           throw new Error(result.message);
         }
 
-        setData((prev) =>
-          prev.map((item, index) =>
-            index === editIndex
-              ? { 
-                  ...item, 
-                  department: editFormData.department_new.trim(),
-                  department_name: editFormData.department_name_new.trim(),
-                  contract_id_code: editFormData.department_code_new.trim()
-                }
-              : item
-          )
-        );
-
+        // Refresh data to get updated counts
+        await fetchData();
+        
         setShowModal(false);
         setEditFormData({
           department_new: "",
@@ -393,28 +398,14 @@ export default function Department() {
         });
         setEditErrors({});
         
-        Swal.fire('Success!', 'Department updated successfully', 'success');
+        setSuccessMessage("Department updated successfully");
       } catch (error) {
         console.error(error);
-        Swal.fire('Error', 'Failed to update department', 'error');
+        setErrorMessage("Failed to update department");
       } finally {
         setSaving(false);
       }
     }
-  };
-
-  /* ================= FILTER DATA ================= */
-  const filteredData = data.filter((item) =>
-    item.department?.toLowerCase().includes(search.toLowerCase()) ||
-    item.department_name?.toLowerCase().includes(search.toLowerCase()) ||
-    item.contract_id_code?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  /* ================= GET COUNT FOR TABLE ================= */
-  const getCountForTable = (item, tableName) => {
-    if (!item.counts || !Array.isArray(item.counts)) return null;
-    const countObj = item.counts.find(count => count.tName === tableName);
-    return countObj ? `(${countObj.count})` : null;
   };
 
   /* ================= MODAL CLOSE ================= */
@@ -436,12 +427,51 @@ export default function Department() {
   };
 
   /* ================= KEY HANDLER ================= */
-  const handleKeyDown = (e, formType) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSave();
     } else if (e.key === 'Escape') {
       handleModalClose();
     }
+  };
+
+  /* ================= GET COUNT FOR TABLE ================= */
+  const getCountForTable = (item, tableName) => {
+    if (!item.counts || !Array.isArray(item.counts)) return null;
+    const countObj = item.counts.find(count => count.tName === tableName);
+    return countObj ? `(${countObj.count})` : null;
+  };
+
+  /* ================= RENDER MESSAGES ================= */
+  const renderMessages = () => {
+    if (successMessage) {
+      return (
+        <div className="center-align m-1 close-message" style={{ color: 'green' }}>
+          {successMessage}
+        </div>
+      );
+    }
+    if (errorMessage) {
+      return (
+        <div className="center-align m-1 close-message" style={{ color: 'red' }}>
+          {errorMessage}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  /* ================= FILTER DATA ================= */
+  const filteredData = data.filter((item) =>
+    item.department?.toLowerCase().includes(search.toLowerCase()) ||
+    item.department_name?.toLowerCase().includes(search.toLowerCase()) ||
+    item.contract_id_code?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  /* ================= SHOW DELETE BUTTON ================= */
+  const showDeleteButton = (department) => {
+    // Only show delete button if department is in deletableData (dList)
+    return canDeleteDepartment(department);
   };
 
   return (
@@ -452,6 +482,9 @@ export default function Department() {
         </div>
 
         <div className="innerPage">
+          {/* Display success/error messages */}
+          {renderMessages()}
+
           <div className={styles.topActions}>
             <button
               className="btn btn-primary"
@@ -486,7 +519,21 @@ export default function Department() {
 
           <div className={`dataTable ${styles.tableWrapper}`}>
             {loading ? (
-              <div className="center-align p-20">Loading departments...</div>
+              <div className="center-align p-20">
+                <div className="preloader-wrapper big active">
+                  <div className="spinner-layer spinner-blue-only">
+                    <div className="circle-clipper left">
+                      <div className="circle"></div>
+                    </div>
+                    <div className="gap-patch">
+                      <div className="circle"></div>
+                    </div>
+                    <div className="circle-clipper right">
+                      <div className="circle"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
               <table className={styles.table}>
                 <thead>
@@ -497,7 +544,7 @@ export default function Department() {
                     {tablesList.map((table, index) => (
                       <th key={index}>{table.captiliszedTableName}</th>
                     ))}
-                    <th className={styles.actionCol}>Actions</th>
+                    <th className={`${styles.actionCol} ${styles.fixedActionCol}`}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -533,7 +580,7 @@ export default function Department() {
                             {getCountForTable(item, table.tName)}
                           </td>
                         ))}
-                        <td className={styles.actionCol}>
+                        <td className={`${styles.actionCol} ${styles.fixedActionCol}`}>
                           <div className={styles.actionButtons}>
                             <button
                               className={styles.editBtn}
@@ -542,13 +589,15 @@ export default function Department() {
                             >
                               <FaEdit />
                             </button>
-                            <button
-                              className={styles.deleteBtn}
-                              onClick={() => handleDeleteClick(item, index)}
-                              title="Delete"
-                            >
-                              <FaTrash />
-                            </button>
+                            {showDeleteButton(item.department) && (
+                              <button
+                                className={styles.deleteBtn}
+                                onClick={() => handleDeleteClick(item, index)}
+                                title="Delete"
+                              >
+                                <FaTrash />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -595,7 +644,7 @@ export default function Department() {
                       placeholder="Enter department ID"
                       value={formData.department}
                       onChange={handleInputChange}
-                      onKeyDown={(e) => handleKeyDown(e, 'add')}
+                      onKeyDown={handleKeyDown}
                       autoFocus
                       disabled={saving}
                       className={errors.department ? "error" : ""}
@@ -612,7 +661,7 @@ export default function Department() {
                       placeholder="Enter department name"
                       value={formData.department_name}
                       onChange={handleInputChange}
-                      onKeyDown={(e) => handleKeyDown(e, 'add')}
+                      onKeyDown={handleKeyDown}
                       disabled={saving}
                       className={errors.department_name ? "error" : ""}
                     />
@@ -628,7 +677,7 @@ export default function Department() {
                       placeholder="Enter department code"
                       value={formData.contract_id_code}
                       onChange={handleInputChange}
-                      onKeyDown={(e) => handleKeyDown(e, 'add')}
+                      onKeyDown={handleKeyDown}
                       disabled={saving}
                       className={errors.contract_id_code ? "error" : ""}
                     />
@@ -656,7 +705,7 @@ export default function Department() {
                       placeholder="Enter department ID"
                       value={editFormData.department_new}
                       onChange={handleEditInputChange}
-                      onKeyDown={(e) => handleKeyDown(e, 'edit')}
+                      onKeyDown={handleKeyDown}
                       autoFocus
                       disabled={saving}
                       className={editErrors.department_new ? "error" : ""}
@@ -673,7 +722,7 @@ export default function Department() {
                       placeholder="Enter department name"
                       value={editFormData.department_name_new}
                       onChange={handleEditInputChange}
-                      onKeyDown={(e) => handleKeyDown(e, 'edit')}
+                      onKeyDown={handleKeyDown}
                       disabled={saving}
                       className={editErrors.department_name_new ? "error" : ""}
                     />
@@ -689,7 +738,7 @@ export default function Department() {
                       placeholder="Enter department code"
                       value={editFormData.department_code_new}
                       onChange={handleEditInputChange}
-                      onKeyDown={(e) => handleKeyDown(e, 'edit')}
+                      onKeyDown={handleKeyDown}
                       disabled={saving}
                       className={editErrors.department_code_new ? "error" : ""}
                     />

@@ -157,45 +157,86 @@ public class DepartmentDaoImpl implements DepartmentDao{
 		}
 		return list;
 	}
+//
+//	@Override
+//	public boolean updateDepartment(TrainingType obj) throws Exception {
+//		boolean flag = false;
+//		int count = 0;
+//		try {
+//			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+//			List<TrainingType> tablesList = getTablesList(obj);
+//			List<TrainingType> list = getDataDetails(obj);
+//			obj.setdList(list);
+//
+//			String disableQry = "Alter Table department NOCHECK Constraint All ";
+//			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
+//			namedParamJdbcTemplate.update(disableQry, paramSource);	
+//			
+//			String  updatereferenceTableQry = "UPDATE department SET department= :department_new,department_name= :department_name_new,contract_id_code= :department_code_new WHERE department= :department_old " ;
+//			paramSource = new BeanPropertySqlParameterSource(obj);		 
+//			count = namedParamJdbcTemplate.update(updatereferenceTableQry, paramSource);	
+//			
+//			for (TrainingType bObj : obj.getdList()) {
+//				
+//				String updateTableQry = "UPDATE "+bObj.getTable_name()+" SET "+bObj.getColumn_name()+" =:department_new WHERE "+bObj.getColumn_name()+"= :department_old " ;
+//				
+//				 paramSource = new BeanPropertySqlParameterSource(obj);		 
+//				 namedParamJdbcTemplate.update(updateTableQry, paramSource);	
+//			}
+//			String  enableQry =	"Alter Table department CHECK Constraint All";
+//			paramSource = new BeanPropertySqlParameterSource(obj);	
+//			namedParamJdbcTemplate.update(enableQry, paramSource);
+//			if(count > 0) {
+//				flag = true;
+//			}
+//		}catch(Exception e){ 
+//			e.printStackTrace();
+//			throw new Exception(e);
+//		}
+//		return flag;
+//	}
 
+	
 	@Override
 	public boolean updateDepartment(TrainingType obj) throws Exception {
-		boolean flag = false;
-		int count = 0;
-		try {
-			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
-			List<TrainingType> tablesList = getTablesList(obj);
-			List<TrainingType> list = getDataDetails(obj);
-			obj.setdList(list);
+	    boolean flag = false;
+	    int count = 0;
+	    try {
+	        NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+	        List<TrainingType> tablesList = getTablesList(obj);
+	        List<TrainingType> list = getDataDetails(obj);
+	        obj.setdList(list);
 
-			String disableQry = "Alter Table department NOCHECK Constraint All ";
-			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
-			namedParamJdbcTemplate.update(disableQry, paramSource);	
-			
-			String  updatereferenceTableQry = "UPDATE department SET department= :department_new,department_name= :department_name_new,contract_id_code= :department_code_new WHERE department= :department_old " ;
-			paramSource = new BeanPropertySqlParameterSource(obj);		 
-			count = namedParamJdbcTemplate.update(updatereferenceTableQry, paramSource);	
-			
-			for (TrainingType bObj : obj.getdList()) {
-				
-				String updateTableQry = "UPDATE "+bObj.getTable_name()+" SET "+bObj.getColumn_name()+" =:department_new WHERE "+bObj.getColumn_name()+"= :department_old " ;
-				
-				 paramSource = new BeanPropertySqlParameterSource(obj);		 
-				 namedParamJdbcTemplate.update(updateTableQry, paramSource);	
-			}
-			String  enableQry =	"Alter Table department CHECK Constraint All";
-			paramSource = new BeanPropertySqlParameterSource(obj);	
-			namedParamJdbcTemplate.update(enableQry, paramSource);
-			if(count > 0) {
-				flag = true;
-			}
-		}catch(Exception e){ 
-			e.printStackTrace();
-			throw new Exception(e);
-		}
-		return flag;
+	        String disableQry = "Alter Table department NOCHECK Constraint All ";
+	        BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
+	        namedParamJdbcTemplate.update(disableQry, paramSource);	
+	        
+	        String updatereferenceTableQry = "UPDATE department SET department= :department_new,department_name= :department_name_new,contract_id_code= :department_code_new WHERE department= :department_old ";
+	        paramSource = new BeanPropertySqlParameterSource(obj);		 
+	        count = namedParamJdbcTemplate.update(updatereferenceTableQry, paramSource);	
+	        
+	        for (TrainingType bObj : obj.getdList()) {
+	            // FIX: Wrap table name in brackets for SQL Server reserved keywords
+	            String tableName = bObj.getTable_name();
+	            String updateTableQry = "UPDATE [" + tableName + "] SET " + bObj.getColumn_name() + " = :department_new WHERE " + bObj.getColumn_name() + " = :department_old";
+	            
+	            paramSource = new BeanPropertySqlParameterSource(obj);		 
+	            namedParamJdbcTemplate.update(updateTableQry, paramSource);	
+	        }
+	        
+	        String enableQry = "Alter Table department CHECK Constraint All";
+	        paramSource = new BeanPropertySqlParameterSource(obj);	
+	        namedParamJdbcTemplate.update(enableQry, paramSource);
+	        
+	        if(count > 0) {
+	            flag = true;
+	        }
+	    } catch(Exception e) { 
+	        e.printStackTrace();
+	        throw new Exception(e);
+	    }
+	    return flag;
 	}
-
 	@Override
 	public boolean deleteDepartment(TrainingType obj) throws Exception {
 		boolean flag = false;

@@ -1,6 +1,8 @@
-import DocumentType from "./components/Admin/ReferenceForms/ReferenceFormsList/DocumentType/DocumentType";
+import ProjectType from "./components/Admin/ReferenceForms/ReferenceFormsList/ProjectType/ProjectType";
 import Department from "./components/Admin/ReferenceForms/ReferenceFormsList/Department/Department";
+import DocumentType from "./components/Admin/ReferenceForms/ReferenceFormsList/DocumentType/DocumentType";
 import Railway from "./components/Admin/ReferenceForms/ReferenceFormsList/Railway/Railway";
+
 import BankName from "./components/Admin/ReferenceForms/ReferenceFormsList/BankName/BankName";
 import RevisionStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/RevisionStatus/RevisionStatus";
 import InsuranceType from "./components/Admin/ReferenceForms/ReferenceFormsList/InsuranceType/InsuranceType";
@@ -170,12 +172,7 @@ function App() {
 								<Route path="issuesform" element={<IssuesForm />} />
 							</Route>
 						<Route path="referenceforms" element={<ReferenceForms />} />
-                        
-            
-         
-            
-         
-          </Route>
+                     </Route>
 			
 						<Route path="works" element={<Works />} />
 						<Route path="admin" element={<Admin />}>
@@ -213,7 +210,7 @@ function App() {
 						<Route path="asBuiltStatus" element={<AsBuiltStatus />} />
 						<Route path="drawingType" element={<DrawingType />} />
 						<Route path="approvalAuthority" element={<ApprovalAuthority />} />
-						<Route path="stage" element={<Stage />} />
+						<Route path="designStage" element={<Stage />} />
 						<Route path="submittedBy" element={<SubmittedBy />} />
 						<Route path="designFileType" element={<DesignFileType />} />
 						<Route path="purposeOfSubmission" element={<PurposeOfSubmission />} />
@@ -240,7 +237,8 @@ function App() {
 						<Route path="documents" element={<Documents />} />
 						<Route path="quicklinks" element={<QuickLinks />} />
 						<Route path="department" element={<Department />} />
-						<Route path="railway" element={<Railway />} />
+						<Route path="projectType" element={<ProjectType />} />
+	          <Route path="railway" element={<Railway />} />
 						<Route path="documentType" element={<DocumentType />} />
 
 
@@ -258,4 +256,3 @@ function App() {
 	</PageTitleProvider>;
 }
 export default App;
-            <Route path="referenceforms" element={<ReferenceForms />} />

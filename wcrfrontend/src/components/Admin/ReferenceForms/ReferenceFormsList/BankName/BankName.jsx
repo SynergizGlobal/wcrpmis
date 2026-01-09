@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaTimes, FaPlusCircle } from "react-icons/fa";
-import "react-toastify/dist/ReactToastify.css";
+import React, { useState, useEffect, useCallback } from "react";
+import { FaEdit, FaTrash, FaTimes, FaPlusCircle, FaSearch } from "react-icons/fa";
 import styles from "./BankName.module.css";
 import { API_BASE_URL } from "../../../../../config";
 import Swal from "sweetalert2";
@@ -15,6 +14,7 @@ const API_ENDPOINTS = {
 export default function BankName() {
   const [data, setData] = useState([]);
   const [tablesList, setTablesList] = useState([]);
+  const [deletableData, setDeletableData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -23,8 +23,6 @@ export default function BankName() {
   const [value, setValue] = useState("");
   const [updateValue, setUpdateValue] = useState("");
   const [updateOldValue, setUpdateOldValue] = useState("");
-  const [mode, setMode] = useState("add");
-  const [editId, setEditId] = useState(null);
   const [editIndex, setEditIndex] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -33,7 +31,8 @@ export default function BankName() {
   const [errorMessage, setErrorMessage] = useState("");
 
   /* ================= FETCH DATA ================= */
-  const fetchData = async () => {
+  /* ================= FETCH DATA ================= */
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET}`, {
@@ -42,73 +41,106 @@ export default function BankName() {
       });
 
       const json = await response.json();
-
-      const bankNameList = json?.bankNameDetails?.bankNameList1?.map((item, index) => ({
-        id: index,
-        bank_name: item.bank_name,
-        counts: json?.bankNameDetails?.countList?.filter(count => count.bank_name_fk === item.bank_name) || []
-      })) || [];
-
-      const tables = json?.bankNameDetails?.tablesList?.map(item => ({
-        tName: item.tName,
-        captiliszedTableName: item.captiliszedTableName
-      })) || [];
-
-      setData(bankNameList.filter((i) => i.bank_name));
-      setTablesList(tables);
+      console.log("API Response:", json); // Debug log
 
       if (json.success) {
-        setSuccessMessage(json.success);
-        setTimeout(() => setSuccessMessage(""), 3000);
-      }
-      if (json.error) {
-        setErrorMessage(json.error);
-        setTimeout(() => setErrorMessage(""), 3000);
-      }
+        // Process the JSON data directly
+        const bankNameList = json?.bankNameList || [];
+        const bankNameDetails = json?.bankNameDetails || {};
+        
+        // Get bankNameList1 from bankNameDetails (like in JSP)
+        const bankNameList1 = bankNameDetails?.bankNameList1 || [];
+        const countList = bankNameDetails?.countList || [];
+        const tablesList = bankNameDetails?.tablesList || [];
+        const deletableBankNames = bankNameDetails?.bankNameList || [];
+        
+        // Process bank names
+        const processedData = bankNameList1.map((item, index) => ({
+          id: index + 1,
+          bank_name: item.bank_name || "",
+          counts: countList.filter(count => count.bank_name_fk === item.bank_name) || []
+        }));
 
+        // Process tables list
+        const processedTables = tablesList.map(item => ({
+          tName: item.tName || "",
+          captiliszedTableName: item.captiliszedTableName || item.tName || ""
+        }));
+
+        // Process deletable data
+        const processedDeletable = deletableBankNames.map(item => ({
+          bank_name: item.bank_name
+        }));
+
+        setData(processedData);
+        setTablesList(processedTables);
+        setDeletableData(processedDeletable);
+        
+        // Clear messages
+        setSuccessMessage("");
+        setErrorMessage("");
+        
+      } else {
+        setErrorMessage(json.message || "Failed to load bank names");
+      }
+      
     } catch (error) {
       console.error("Fetch error:", error);
       setData([]);
       setTablesList([]);
+      setDeletableData([]);
       setErrorMessage("Failed to load bank names");
-      setTimeout(() => setErrorMessage(""), 3000);
     } finally {
       setLoading(false);
     }
-  };
-
+  }, []);
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   /* ================= VALIDATION ================= */
   const validateInput = (inputValue, isUpdate = false, oldValue = "") => {
-    const errors = {};
+    const newErrors = {};
     const trimmedValue = inputValue.trim();
     
     if (!trimmedValue) {
-      errors.bank_name = "Bank Name is required";
-      return errors;
+      newErrors.bank_name = "Bank Name is required";
+      return newErrors;
     }
     
+    // Check for duplicates (like JSP's doValidate function)
     if (isUpdate) {
-      const exists = data.some(item => 
-        item.bank_name.toLowerCase() === trimmedValue.toLowerCase() && 
-        item.bank_name.toLowerCase() !== oldValue.toLowerCase()
+      // For update, exclude the current value
+      const exists = data.some((item, index) => 
+        index !== editIndex && 
+        item.bank_name.toLowerCase() === trimmedValue.toLowerCase()
       );
       if (exists) {
-        errors.bank_name = `${trimmedValue} already exists`;
+        newErrors.bank_name = `${trimmedValue} already exists`;
       }
     } else {
+      // For add, check all values
       const exists = data.some(item => 
         item.bank_name.toLowerCase() === trimmedValue.toLowerCase()
       );
       if (exists) {
-        errors.bank_name = `${trimmedValue} already exists`;
+        newErrors.bank_name = `${trimmedValue} already exists`;
       }
     }
     
-    return errors;
+    return newErrors;
+  };
+
+  /* ================= CHECK IF CAN DELETE ================= */
+  const canDeleteBankName = (bankName) => {
+    return deletableData.some(item => item.bank_name === bankName);
+  };
+
+  /* ================= CHECK IF CAN EDIT ================= */
+  const canEditBankName = (item) => {
+    // Check if has counts in any table
+    const hasCounts = item.counts && item.counts.length > 0;
+    return !hasCounts;
   };
 
   /* ================= HANDLE INPUT CHANGE ================= */
@@ -134,7 +166,6 @@ export default function BankName() {
 
   /* ================= ADD ================= */
   const handleAddClick = () => {
-    setMode("add");
     setValue("");
     setErrors({});
     setShowModal(true);
@@ -142,8 +173,8 @@ export default function BankName() {
 
   /* ================= EDIT ================= */
   const handleEditClick = (item, index) => {
-    const isInUse = item.counts && item.counts.length > 0;
-    if (isInUse) {
+    // Check if can be edited
+    if (!canEditBankName(item)) {
       setShowErrorModal(true);
       return;
     }
@@ -156,11 +187,14 @@ export default function BankName() {
   };
 
   /* ================= DELETE ================= */
-  const handleDeleteClick = async (index) => {
-    const item = data[index];
-    
-    const isInUse = item.counts && item.counts.length > 0;
-    if (isInUse) {
+  const handleDeleteClick = async (item, index) => {
+    // Check if can be deleted
+    if (!canDeleteBankName(item.bank_name)) {
+      return;
+    }
+
+    // Check if has counts
+    if (!canEditBankName(item)) {
       setShowErrorModal(true);
       return;
     }
@@ -181,6 +215,7 @@ export default function BankName() {
     }
 
     try {
+      // Submit form like JSP does
       const formData = new FormData();
       formData.append("bank_name", item.bank_name);
 
@@ -189,15 +224,19 @@ export default function BankName() {
         body: formData
       });
 
-      const result = await response.json();
+      const text = await response.text();
+      console.log("Delete response:", text);
 
-      if (result.success) {
-        setData((prev) => prev.filter((_, i) => i !== index));
+      if (response.ok) {
+        // Remove item from local state
+        setData(prev => prev.filter((_, i) => i !== index));
+        setDeletableData(prev => prev.filter(d => d.bank_name !== item.bank_name));
+        
         Swal.fire('Deleted!', 'Record has been deleted', 'success');
         setSuccessMessage("Record deleted successfully");
         setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        throw new Error(result.message || "Failed to delete");
+        throw new Error('Failed to delete bank name');
       }
     } catch (error) {
       console.error(error);
@@ -207,9 +246,10 @@ export default function BankName() {
     }
   };
 
-  /* ================= SAVE ================= */
+  /* ================= SAVE (ADD) ================= */
   const handleSave = async () => {
     const validationErrors = validateInput(value);
+    
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -217,42 +257,53 @@ export default function BankName() {
 
     try {
       setSaving(true);
-
-      const payload = {
-        bank_name: value.trim()
-      };
+      
+      // Submit form like JSP does
+      const formData = new FormData();
+      formData.append("bank_name", value.trim());
 
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADD}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+        body: formData
       });
 
-      const result = await response.json();
+      const text = await response.text();
+      console.log("Add response:", text);
 
-      if (result.success) {
-        setData(prev => [
-          { id: data.length, bank_name: value.trim(), counts: [] },
-          ...prev
-        ]);
+      if (response.ok) {
+        // Refresh data
+        await fetchData();
+        
         setShowModal(false);
         setValue("");
-        Swal.fire("Success!", "Bank Name added successfully", "success");
+        setErrors({});
+        
+        // Extract success message
+        const parser = new DOMParser();
+        const htmlDoc = parser.parseFromString(text, 'text/html');
+        const successDiv = htmlDoc.querySelector('.close-message');
+        if (successDiv) {
+          setSuccessMessage(successDiv.textContent);
+        } else {
+          setSuccessMessage("Bank name added successfully");
+        }
+        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        throw new Error(result.message);
+        throw new Error('Failed to add bank name');
       }
-    } catch (e) {
-      Swal.fire("Error", "Failed to add bank name", "error");
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Failed to add bank name");
+      setTimeout(() => setErrorMessage(""), 3000);
     } finally {
       setSaving(false);
     }
   };
 
-  /* ================= UPDATE ================= */
+  /* ================= SAVE (UPDATE) ================= */
   const handleUpdate = async () => {
     const validationErrors = validateInput(updateValue, true, updateOldValue);
+    
     if (Object.keys(validationErrors).length > 0) {
       setUpdateErrors(validationErrors);
       return;
@@ -260,56 +311,49 @@ export default function BankName() {
 
     try {
       setSaving(true);
-
-      const payload = {
-        bank_name_old: updateOldValue,
-        bank_name_new: updateValue.trim()
-      };
+      
+      // Submit form like JSP does
+      const formData = new FormData();
+      formData.append("bank_name_new", updateValue.trim());
+      formData.append("bank_name_old", updateOldValue.trim());
 
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.UPDATE}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+        body: formData
       });
 
-      const result = await response.json();
+      const text = await response.text();
+      console.log("Update response:", text);
 
-      if (result.success) {
-        setData(prev =>
-          prev.map((item, index) =>
-            index === editIndex
-              ? { ...item, bank_name: updateValue.trim() }
-              : item
-          )
-        );
-
+      if (response.ok) {
+        // Refresh data
+        await fetchData();
+        
         setShowUpdateModal(false);
         setUpdateValue("");
         setUpdateOldValue("");
-
-        Swal.fire("Success!", "Bank Name updated successfully", "success");
+        setUpdateErrors({});
+        
+        // Extract success message
+        const parser = new DOMParser();
+        const htmlDoc = parser.parseFromString(text, 'text/html');
+        const successDiv = htmlDoc.querySelector('.close-message');
+        if (successDiv) {
+          setSuccessMessage(successDiv.textContent);
+        } else {
+          setSuccessMessage("Bank name updated successfully");
+        }
+        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        throw new Error(result.message);
+        throw new Error('Failed to update bank name');
       }
-    } catch (err) {
-      Swal.fire("Error", "Failed to update bank name", "error");
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Failed to update bank name");
+      setTimeout(() => setErrorMessage(""), 3000);
     } finally {
       setSaving(false);
     }
-  };
-
-  /* ================= FILTER DATA ================= */
-  const filteredData = data.filter((item) =>
-    item.bank_name?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  /* ================= GET COUNT FOR TABLE ================= */
-  const getCountForTable = (item, tableName) => {
-    if (!item.counts || !Array.isArray(item.counts)) return null;
-    const countObj = item.counts.find(count => count.tName === tableName);
-    return countObj ? `(${countObj.count})` : null;
   };
 
   /* ================= MODAL CLOSE ================= */
@@ -330,6 +374,10 @@ export default function BankName() {
     }
   };
 
+  const removeErrorMsg = () => {
+    setUpdateErrors({});
+  };
+
   /* ================= KEY HANDLER ================= */
   const handleKeyDown = (e, type = "add") => {
     if (e.key === 'Enter') {
@@ -341,8 +389,40 @@ export default function BankName() {
     }
   };
 
-  const removeErrorMsg = () => {
-    setUpdateErrors({});
+  /* ================= RENDER MESSAGES ================= */
+  const renderMessages = () => {
+    if (successMessage) {
+      return (
+        <div className="center-align m-1 close-message" style={{ color: 'green' }}>
+          {successMessage}
+        </div>
+      );
+    }
+    if (errorMessage) {
+      return (
+        <div className="center-align m-1 close-message" style={{ color: 'red' }}>
+          {errorMessage}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  /* ================= FILTER DATA ================= */
+  const filteredData = data.filter((item) =>
+    item.bank_name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  /* ================= GET COUNT FOR TABLE ================= */
+  const getCountForTable = (item, tableName) => {
+    if (!item.counts || !Array.isArray(item.counts)) return null;
+    const countObj = item.counts.find(count => count.tName === tableName);
+    return countObj ? `(${countObj.count})` : null;
+  };
+
+  /* ================= SHOW DELETE BUTTON ================= */
+  const showDeleteButton = (bank_name) => {
+    return canDeleteBankName(bank_name);
   };
 
   return (
@@ -352,19 +432,10 @@ export default function BankName() {
           <h2 className="center-align">Bank Name</h2>
         </div>
 
-        {/* Success/Error Messages */}
-        {successMessage && (
-          <div className={`center-align m-1 ${styles.successMessage}`}>
-            {successMessage}
-          </div>
-        )}
-        {errorMessage && (
-          <div className={`center-align m-1 ${styles.errorMessage}`}>
-            {errorMessage}
-          </div>
-        )}
-
         <div className="innerPage">
+          {/* Display success/error messages */}
+          {renderMessages()}
+
           <div className={styles.topActions}>
             <button
               className="btn btn-primary"
@@ -383,12 +454,16 @@ export default function BankName() {
               onChange={(e) => setSearch(e.target.value)}
               disabled={loading}
             />
-            {search && (
+            {search ? (
               <span
                 className={styles.clear}
                 onClick={() => setSearch("")}
               >
                 <FaTimes />
+              </span>
+            ) : (
+              <span className={styles.searchIcon}>
+                <FaSearch />
               </span>
             )}
           </div>
@@ -409,7 +484,6 @@ export default function BankName() {
                     </div>
                   </div>
                 </div>
-                <div>Loading bank names...</div>
               </div>
             ) : (
               <table className={styles.table} id="bank_name_table">
@@ -449,13 +523,15 @@ export default function BankName() {
                             >
                               <FaEdit />
                             </button>
-                            <button
-                              className={styles.deleteBtn}
-                              onClick={() => handleDeleteClick(index)}
-                              title="Delete"
-                            >
-                              <FaTrash />
-                            </button>
+                            {showDeleteButton(item.bank_name) && (
+                              <button
+                                className={styles.deleteBtn}
+                                onClick={() => handleDeleteClick(item, index)}
+                                title="Delete"
+                              >
+                                <FaTrash />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -471,12 +547,6 @@ export default function BankName() {
               </table>
             )}
           </div>
-          
-          {!loading && filteredData.length > 0 && (
-            <div className={`center-align ${styles.footerText}`}>
-              Showing {filteredData.length} of {data.length} records
-            </div>
-          )}
         </div>
       </div>
 
@@ -499,6 +569,7 @@ export default function BankName() {
                 <input
                   type="text"
                   id="bank_name_text"
+                  name="bank_name"
                   placeholder="Enter bank name"
                   value={value}
                   onChange={handleInputChange}
@@ -507,8 +578,11 @@ export default function BankName() {
                   disabled={saving}
                   className={errors.bank_name ? "error" : ""}
                 />
+                <label htmlFor="bank_name_text">Bank Name</label>
                 {errors.bank_name && (
-                  <span className="error-msg" style={{color: 'red', fontSize: '12px'}}>{errors.bank_name}</span>
+                  <span id="bank_nameError" className="error-msg" style={{color: 'red', fontSize: '12px'}}>
+                    {errors.bank_name}
+                  </span>
                 )}
               </div>
 
@@ -555,6 +629,7 @@ export default function BankName() {
                 <input
                   type="text"
                   id="bank_name_text1"
+                  name="bank_name_new"
                   placeholder="Enter bank name"
                   value={updateValue}
                   onChange={handleUpdateInputChange}
@@ -563,9 +638,12 @@ export default function BankName() {
                   disabled={saving}
                   className={updateErrors.bank_name ? "error" : ""}
                 />
-                <input type="hidden" id="bank_name_old_text" value={updateOldValue} />
+                <input type="hidden" id="bank_name_old_text" name="bank_name_old" value={updateOldValue} />
+                <label htmlFor="bank_name_text1">Bank Name</label>
                 {updateErrors.bank_name && (
-                  <span className="error-msg" style={{color: 'red', fontSize: '12px'}}>{updateErrors.bank_name}</span>
+                  <span id="bank_name_text1Error" className="error-msg" style={{color: 'red', fontSize: '12px'}}>
+                    {updateErrors.bank_name}
+                  </span>
                 )}
               </div>
 
