@@ -4,239 +4,272 @@ import { API_BASE_URL } from "../../../../../config.js";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
 export default function DrawingType() {
-  const [data, setData] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [search, setSearch] = useState("");
-  const [value, setValue] = useState("");
-  const [mode, setMode] = useState("add");
-  const [selectedRow, setSelectedRow] = useState(null);
+	const [data, setData] = useState([]);
+	const [showModal, setShowModal] = useState(false);
+	const [search, setSearch] = useState("");
+	const [value, setValue] = useState("");
+	const [mode, setMode] = useState("add");
+	const [selectedRow, setSelectedRow] = useState(null);
+	const [columns, setColumns] = useState([]);
 
-  /* ================= FETCH ================= */
-  const fetchDrawingTypes = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/drawing-type`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
+	/* ================= FETCH ================= */
+	const fetchDrawingTypes = async () => {
+		try {
+			const res = await fetch(`${API_BASE_URL}/drawing-type`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({})
+			});
 
-      const json = await res.json();
+			const json = await res.json();
 
-      const list = json.drawingTypeList || [];
-      const countList = json.drawingTypeDetails?.countList || [];
+			const drawingTypeList = json.drawingTypeList || [];
+			const tablesList = json.drawingTypeDetails?.tablesList || [];
+			const countList = json.drawingTypeDetails?.countList || [];
 
-      const countMap = {};
-      countList.forEach(d => {
-        countMap[`${d.drawing_type}|${d.tName}`] = Number(d.count || 0);
-      });
+			/* ---- DISTINCT FK TABLE NAMES ---- */
+			const columnNames = [
+				...new Set(
+					tablesList
+						.map(t => t?.tName)
+						.filter(Boolean)
+				)
+			];
 
-      const merged = list.map((d, idx) => ({
-        id: idx + 1,
-        drawingType: d.drawing_type,
-        designCount: countMap[`${d.drawing_type}|design`] || 0
-      }));
+			setColumns(columnNames);
 
-      setData(merged);
-    } catch (err) {
-      console.error("Failed to load Drawing Type", err);
-    }
-  };
+			/* ---- drawing_type | table -> count ---- */
+			const countMap = {};
+			countList.forEach(c => {
+				if (c?.drawing_type && c?.tName) {
+					countMap[`${c.drawing_type}|${c.tName}`] = Number(c.count || 0);
+				}
+			});
 
-  useEffect(() => {
-    fetchDrawingTypes();
-  }, []);
+			/* ---- MERGE DATA ---- */
+			const merged = drawingTypeList.map((d, idx) => {
+				const counts = {};
+				columnNames.forEach(col => {
+					counts[col] = countMap[`${d.drawing_type}|${col}`] || 0;
+				});
 
-  /* ================= FILTER ================= */
-  const filteredData = data.filter(item => {
-    const term = search.toLowerCase();
-    return (
-      (item.drawingType || "").toLowerCase().includes(term) ||
-      String(item.designCount || "").includes(term)
-    );
-  });
+				return {
+					id: idx + 1,
+					drawingType: d.drawing_type ?? "",
+					counts
+				};
+			});
 
-  /* ================= ADD ================= */
-  const handleAddClick = () => {
-    setMode("add");
-    setValue("");
-    setSelectedRow(null);
-    setShowModal(true);
-  };
+			setData(merged);
 
-  /* ================= EDIT ================= */
-  const handleEditClick = row => {
-    setMode("edit");
-    setValue(row.drawingType);
-    setSelectedRow(row); // ✅ FIXED
-    setShowModal(true);
-  };
+		} catch (err) {
+			console.error("Failed to load Drawing Type", err);
+		}
+	};
 
-  /* ================= SAVE ================= */
-  const handleSave = async () => {
-    if (!value.trim()) {
-      window.alert("Drawing Type is required");
-      return;
-    }
 
-    const formData = new FormData();
+	useEffect(() => {
+		fetchDrawingTypes();
+	}, []);
 
-    if (mode === "add") {
-      formData.append("drawing_type", value.trim());
+	/* ================= FILTER ================= */
+	const filteredData = data.filter(item => {
+		const term = search.toLowerCase();
+		return (
+			(item.drawingType || "").toLowerCase().includes(term) ||
+			String(item.designCount || "").includes(term)
+		);
+	});
 
-      await fetch(`${API_BASE_URL}/add-drawing-type`, {
-        method: "POST",
-        body: formData
-      });
+	/* ================= ADD ================= */
+	const handleAddClick = () => {
+		setMode("add");
+		setValue("");
+		setSelectedRow(null);
+		setShowModal(true);
+	};
 
-      window.alert("Drawing Type added successfully.");
-    } else if (mode === "edit" && selectedRow) {
-      formData.append("value_old", selectedRow.drawingType);
-      formData.append("value_new", value.trim());
+	/* ================= EDIT ================= */
+	const handleEditClick = row => {
+		setMode("edit");
+		setValue(row.drawingType);
+		setSelectedRow(row); // ✅ FIXED
+		setShowModal(true);
+	};
 
-      await fetch(`${API_BASE_URL}/update-drawing-type`, {
-        method: "POST",
-        body: formData
-      });
+	/* ================= SAVE ================= */
+	const handleSave = async () => {
+		if (!value.trim()) {
+			window.alert("Drawing Type is required");
+			return;
+		}
 
-      window.alert("Drawing Type updated successfully.");
-    }
+		const formData = new FormData();
 
-    setShowModal(false);
-    setValue("");
-    setSelectedRow(null);
-    fetchDrawingTypes();
-  };
+		if (mode === "add") {
+			formData.append("drawing_type", value.trim());
 
-  /* ================= DELETE ================= */
-  const handleDelete = async row => {
-    if (row.designCount > 0) {
-      window.alert("Cannot delete. Drawing Type is in use.");
-      return;
-    }
+			await fetch(`${API_BASE_URL}/add-drawing-type`, {
+				method: "POST",
+				body: formData
+			});
 
-    if (!window.confirm(`Delete "${row.drawingType}" ?`)) return;
+			window.alert("Drawing Type added successfully.");
+		} else if (mode === "edit" && selectedRow) {
+			formData.append("value_old", selectedRow.drawingType);
+			formData.append("value_new", value.trim());
 
-    const formData = new FormData();
-    formData.append("drawing_type", row.drawingType);
+			await fetch(`${API_BASE_URL}/update-drawing-type`, {
+				method: "POST",
+				body: formData
+			});
 
-    await fetch(`${API_BASE_URL}/delete-drawing-type`, {
-      method: "POST",
-      body: formData
-    });
+			window.alert("Drawing Type updated successfully.");
+		}
 
-    window.alert("Drawing Type deleted successfully.");
-    fetchDrawingTypes();
-  };
+		setShowModal(false);
+		setValue("");
+		setSelectedRow(null);
+		fetchDrawingTypes();
+	};
 
-  return (
-    <div className={styles.container}>
-      <div className="card">
-        <div className="formHeading">
-          <h2 className="center-align">Drawing Type</h2>
-        </div>
+	/* ================= DELETE ================= */
+	const handleDelete = async row => {
+		if (row.designCount > 0) {
+			window.alert("Cannot delete. Drawing Type is in use.");
+			return;
+		}
 
-        <div className="innerPage">
-          <div className={styles.topActions}>
-            <button className="btn btn-primary" onClick={handleAddClick}>
-              + Add Drawing Type
-            </button>
-          </div>
+		if (!window.confirm(`Delete "${row.drawingType}" ?`)) return;
 
-          <div className={styles.searchBox}>
-            <input
-              type="text"
-              placeholder="Search"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            {search && (
-              <span className={styles.clear} onClick={() => setSearch("")}>
-                ✕
-              </span>
-            )}
-          </div>
+		const formData = new FormData();
+		formData.append("drawing_type", row.drawingType);
 
-          <div className={`dataTable ${styles.tableWrapper}`}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Drawing Type</th>
-                  <th>Design</th>
-                  <th className={styles.actionCol}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.map(row => (
-                  <tr key={row.id}>
-                    <td>{row.drawingType}</td>
-                    <td>{row.designCount > 0 ? `(${row.designCount})` : ""}</td>
-                    <td className={styles.actionCol}>
-                      <button
-                        className={styles.editBtn}
-                        onClick={() => handleEditClick(row)}
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() => handleDelete(row)}
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+		await fetch(`${API_BASE_URL}/delete-drawing-type`, {
+			method: "POST",
+			body: formData
+		});
 
-                {filteredData.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="center-align">
-                      No records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+		window.alert("Drawing Type deleted successfully.");
+		fetchDrawingTypes();
+	};
 
-          <div className={styles.footerText}>
-            Showing {filteredData.length} of {data.length} entries
-          </div>
-        </div>
-      </div>
+	return (
+		<div className={styles.container}>
+			<div className="card">
+				<div className="formHeading">
+					<h2 className="center-align">Drawing Type</h2>
+				</div>
 
-      {showModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <span>{mode === "add" ? "Add" : "Edit"} Drawing Type</span>
-              <span className={styles.close} onClick={() => setShowModal(false)}>
-                ✕
-              </span>
-            </div>
+				<div className="innerPage">
+					<div className={styles.topActions}>
+						<button className="btn btn-primary" onClick={handleAddClick}>
+							+ Add Drawing Type
+						</button>
+					</div>
 
-            <div className={styles.modalBody}>
-              <input
-                type="text"
-                value={value}
-                onChange={e => setValue(e.target.value)}
-                placeholder="Drawing Type"
-              />
+					<div className={styles.searchBox}>
+						<input
+							type="text"
+							placeholder="Search"
+							value={search}
+							onChange={e => setSearch(e.target.value)}
+						/>
+						{search && (
+							<span className={styles.clear} onClick={() => setSearch("")}>
+								✕
+							</span>
+						)}
+					</div>
 
-              <div className={styles.modalActions}>
-                <button className="btn btn-primary" onClick={handleSave}>
-                  {mode === "add" ? "ADD" : "UPDATE"}
-                </button>
-                <button
-                  className="btn btn-white"
-                  onClick={() => setShowModal(false)}
-                >
-                  CANCEL
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+					<div className={`dataTable ${styles.tableWrapper}`}>
+						<table className={styles.table}>
+							<thead>
+								<tr>
+									<th>Drawing Type</th>
+									{columns.map(c => (
+										<th key={c}>{c.toUpperCase()}</th>
+									))}
+									<th className={styles.actionCol}>Action</th>
+								</tr>
+							</thead>
+							<tbody>
+								{filteredData.map(row => (
+									<tr key={row.id}>
+										<td>{row.drawingType}</td>
+										{columns.map(c => (
+											<td key={c}>
+												{row.counts[c] ? `(${row.counts[c]})` : ""}
+											</td>
+										))}
+						<td className={styles.actionCol}>
+											<button
+												className={styles.editBtn}
+												onClick={() => handleEditClick(row)}
+											>
+												<FaEdit />
+											</button>
+											{row.designCount === 0 && <button
+												className={styles.deleteBtn}
+												onClick={() => handleDelete(row)}
+											>
+												<FaTrash />
+											</button>
+											}
+										</td>
+									</tr>
+								))}
+
+								{filteredData.length === 0 && (
+									<tr>
+										<td colSpan={3} className="center-align">
+											No records found
+										</td>
+									</tr>
+								)}
+							</tbody>
+						</table>
+					</div>
+
+					<div className={styles.footerText}>
+						Showing {filteredData.length} of {data.length} entries
+					</div>
+				</div>
+			</div>
+
+			{showModal && (
+				<div className={styles.modalOverlay}>
+					<div className={styles.modal}>
+						<div className={styles.modalHeader}>
+							<span>{mode === "add" ? "Add" : "Edit"} Drawing Type</span>
+							<span className={styles.close} onClick={() => setShowModal(false)}>
+								✕
+							</span>
+						</div>
+
+						<div className={styles.modalBody}>
+							<input
+								type="text"
+								value={value}
+								onChange={e => setValue(e.target.value)}
+								placeholder="Drawing Type"
+							/>
+
+							<div className={styles.modalActions}>
+								<button className="btn btn-primary" onClick={handleSave}>
+									{mode === "add" ? "ADD" : "UPDATE"}
+								</button>
+								<button
+									className="btn btn-white"
+									onClick={() => setShowModal(false)}
+								>
+									CANCEL
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
 }
