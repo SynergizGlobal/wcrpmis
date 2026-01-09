@@ -5,20 +5,23 @@ import styles from './StructureType.module.css';
 import api from "../../../../../api/axiosInstance";
 import { API_BASE_URL } from "../../../../../config";
 
-const INITIAL_DATA = [
-
-];
 
 export default function StructureType() {
-  const [data, setData] = useState(INITIAL_DATA);
+  const [data, setData] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
   const [value, setValue] = useState("");
   const [mode, setMode] = useState("add"); // add | edit
   const [editIndex, setEditIndex] = useState(null);
+  const [rows, setRows] = useState([]);
+  const [tables, setTables] = useState([]);
+  const [oldValue, setOldValue] = useState("");
 
-  const filteredData = data.filter(item =>
-    item.toLowerCase().includes(search.toLowerCase())
+
+  const filteredData = rows.filter(row =>
+    row.structure_type
+      .toLowerCase()
+      .includes(search.toLowerCase())
   );
 
   /* ===== ADD ===== */
@@ -30,12 +33,13 @@ export default function StructureType() {
   };
 
   /* ===== EDIT ===== */
-  const handleEditClick = (item, index) => {
+  const handleEditClick = (item) => {
     setMode("edit");
     setValue(item);
-    setEditIndex(index);
+    setOldValue(item);   // ✅ store real old value
     setShowModal(true);
   };
+
   
   useEffect(() => {
     loadStructureTypes();
@@ -43,31 +47,72 @@ export default function StructureType() {
 
   const loadStructureTypes = async () => {
     try {
-      const res = await api.get(`${API_BASE_URL}/api/structure-type/list`);
-      setData(
-        res.data
-          .map(item => item.structure_type)
-          .filter(Boolean)
-      );
+      const res = await api.get(`${API_BASE_URL}/structure-type`);
+
+      const details = res.data.details;
+      const masterList = details.dList1 || [];
+      const countList = details.countList || [];
+      const tablesList = details.tablesList || [];
+
+      /* Build row-wise data */
+      const mappedRows = masterList.map(st => {
+        const counts = {};
+
+        tablesList.forEach(t => {
+          counts[t.tName] = 0;
+        });
+
+        countList.forEach(c => {
+          if (c.structure_type === st.structure_type) {
+            counts[c.tName] = c.count;
+          }
+        });
+
+        return {
+          structure_type: st.structure_type,
+          counts
+        };
+      });
+
+      setRows(mappedRows);
+      setTables(tablesList);
+
     } catch (err) {
       console.error("Error loading structure types", err);
     }
   };
 
 
+
   /* ===== SAVE ===== */
   const handleSave = async () => {
     if (!value.trim()) return;
+	console.log("HANDLE SAVE CALLED, mode =", mode);
 
     try {
+      const params = new URLSearchParams();
+
       if (mode === "add") {
-        await api.post(`${API_BASE_URL}/api/structure-type/add`, {
-          structure_type: value.trim()
+        params.append("structure_type", value.trim());
+
+        await fetch(`${API_BASE_URL}/add-structure-type`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: params.toString()
         });
-      } else if (mode === "edit" && editIndex !== null) {
-        await api.put(`${API_BASE_URL}/api/structure-type/update`, {
-          value_old: data[editIndex],
-          value_new: value.trim()
+
+      } else if (mode === "edit") {
+		params.append("value_old", oldValue);
+		params.append("value_new", value.trim());
+
+        await fetch(`${API_BASE_URL}/update-structure-type`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: params.toString()
         });
       }
 
@@ -75,6 +120,7 @@ export default function StructureType() {
       setShowModal(false);
       setValue("");
       setEditIndex(null);
+
     } catch (err) {
       console.error("Save failed", err);
     }
@@ -84,11 +130,19 @@ export default function StructureType() {
     if (!window.confirm(`Delete "${item}" ?`)) return;
 
     try {
-      await api.delete(`${API_BASE_URL}/api/structure-type/delete`, {
-        data: { structure_type: item }
+      const params = new URLSearchParams();
+      params.append("structure_type", item);
+
+      await fetch(`${API_BASE_URL}/delete-structure-type`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params.toString()
       });
 
       await loadStructureTypes();
+
     } catch (err) {
       console.error("Delete failed", err);
     }
@@ -138,33 +192,46 @@ export default function StructureType() {
           {/* TABLE */}
           <div className={`dataTable ${styles.tableWrapper}`}>
             <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Structure Type</th>
-                  <th className={styles.actionCol}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item}</td>
-                    <td className={styles.actionCol}>
-                      <button
-                        className={styles.editBtn}
-                        onClick={() => handleEditClick(item, index)}
-                      >
-                        ✎
-                      </button>
-					  <button
-                         className={styles.deleteBtn}
-                         onClick={() => handleDelete(item)}
-                           >
-                         <FaTrash />
-                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+			<thead>
+			  <tr>
+			    <th>Structure Type</th>
+
+			    {tables.map(t => (
+			      <th key={t.tName}>{t.captiliszedTableName}</th>
+			    ))}
+
+			    <th className={styles.actionCol}>Action</th>
+			  </tr>
+			</thead>
+			<tbody>
+			  {filteredData.map((row, index) => (
+			    <tr key={index}>
+			      <td>{row.structure_type}</td>
+
+			      {tables.map(t => (
+			        <td key={t.tName} className={styles.countCol}>
+			          {row.counts[t.tName] || ""}
+			        </td>
+			      ))}
+
+			      <td className={styles.actionCol}>
+			        <button
+			          className={styles.editBtn}
+			          onClick={() => handleEditClick(row.structure_type, index)}
+			        >
+			          ✎
+			        </button>
+
+			        <button
+			          className={styles.deleteBtn}
+			          onClick={() => handleDelete(row.structure_type)}
+			        >
+			          <FaTrash />
+			        </button>
+			      </td>
+			    </tr>
+			  ))}
+			</tbody>
             </table>
           </div>
 
@@ -202,6 +269,7 @@ export default function StructureType() {
 
               <div className={styles.modalActions}>
                 <button
+				  type="button"
                   className="btn btn-primary"
                   onClick={handleSave}
                 >
