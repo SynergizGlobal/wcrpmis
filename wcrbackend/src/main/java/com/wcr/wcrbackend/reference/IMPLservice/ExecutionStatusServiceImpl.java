@@ -10,21 +10,24 @@ import com.wcr.wcrbackend.reference.Iservice.ExecutionStatusService;
 import com.wcr.wcrbackend.reference.model.Safety;
 import com.wcr.wcrbackend.reference.model.TrainingType;
 
-
-
 @Service
 public class ExecutionStatusServiceImpl implements ExecutionStatusService{
 	@Autowired
-	private ExecutionStatusDao dao;
+	ExecutionStatusDao dao;
 
 	@Override
-	public List<TrainingType> getExecutionStatusList() throws Exception {
+	public List<Safety> getExecutionStatusList() throws Exception {
 		return dao.getExecutionStatusList();
 	}
 
 	@Override
 	public boolean addExecutionStatus(TrainingType obj) throws Exception {
 		return dao.addExecutionStatus(obj);
+	}
+
+	@Override
+	public TrainingType getExecutionStatusDetails(TrainingType obj) throws Exception {
+		return dao.getExecutionStatusDetails(obj);
 	}
 
 	@Override

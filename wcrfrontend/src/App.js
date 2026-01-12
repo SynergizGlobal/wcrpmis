@@ -42,6 +42,7 @@ import UtilityExecutionAgency from "./components/Admin/ReferenceForms/ReferenceF
 import UtilityCategory from "./components/Admin/ReferenceForms/ReferenceFormsList/UtilityCategory/UtilityCategory";
 import BankGuaranteeType from "./components/Admin/ReferenceForms/ReferenceFormsList/BankGuaranteeType/BankGuaranteeType";
 import StructureType from "./components/Admin/ReferenceForms/ReferenceFormsList/StructureType/StructureType";
+import YesOrNoStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/YesOrNoStatus/YesOrNoStatus";
 import ExecutionStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/ExecutionStatus/ExecutionStatus";
 import GeneralStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/GeneralStatus/GeneralStatus";
 import UserType from "./components/Admin/ReferenceForms/ReferenceFormsList/UserType/UserType";
@@ -190,6 +191,7 @@ function App() {
 						<Route path="user-type" element={<UserType />} />
 						<Route path="general-status" element={<GeneralStatus />} />
 						<Route path="execution-status" element={<ExecutionStatus />} />
+						<Route path="yes-or-no-status" element={<YesOrNoStatus />} />
 						<Route path="structure-type" element={<StructureType />} />
 					    <Route path="contractFileType" element={<ContractFileType />} />
 						<Route path="contractorSpecialization" element={<ContractorSpecialization />} />

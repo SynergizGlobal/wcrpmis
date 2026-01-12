@@ -164,7 +164,15 @@ export const referencePages = {
 	  	     name: "Execution Status",
 	  	  	 url: "/wcrpmis/execution-status",		    
 	  	  },
-	
+		  /*{
+  		     name: "Module",
+  		     url: "/wcrpmis/module",
+  		  },*/ 
+  		  {
+	  	     name: "Yes OR NO",
+	  	  	 url: "/wcrpmis/yes-or-no-status",		    
+	  	  },
+
 	    ],
 		
 	"Utility Shifting": [

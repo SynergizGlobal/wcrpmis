@@ -7,9 +7,11 @@ import com.wcr.wcrbackend.reference.model.TrainingType;
 
 public interface ExecutionStatusDao {
 	
-	public List<TrainingType> getExecutionStatusList() throws Exception;
+	public List<Safety> getExecutionStatusList() throws Exception;
 
 	public boolean addExecutionStatus(TrainingType obj) throws Exception;
+
+	public TrainingType getExecutionStatusDetails(TrainingType obj) throws Exception;
 
 	public boolean updateExecutionStatus(TrainingType obj) throws Exception;
 

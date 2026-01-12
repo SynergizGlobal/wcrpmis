@@ -1,6 +1,8 @@
 package com.wcr.wcrbackend.reference.IMPLdao;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -11,13 +13,13 @@ import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import com.wcr.wcrbackend.reference.Idao.ExecutionStatusDao;
-import com.wcr.wcrbackend.reference.model.Safety;
+import com.wcr.wcrbackend.reference.Idao.YesOrNoStatusDao;
 import com.wcr.wcrbackend.reference.model.TrainingType;
 
-
 @Repository
-public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
+public class YesOrNoStatusDaoImpl implements YesOrNoStatusDao{
+
+
 	@Autowired
 	DataSource dataSource;
 	
@@ -25,44 +27,12 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 	JdbcTemplate jdbcTemplate ;
 
 	@Override
-	public List<Safety> getExecutionStatusList() throws Exception {
-		List<Safety> objsList = null;
-		try {
-			String qry ="select execution_status from execution_status ";
-			objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Safety>(Safety.class));	
-		}catch(Exception e){ 
-		throw new Exception(e);
-		}
-		return objsList;
-	}
-
-	@Override
-	public boolean addExecutionStatus(TrainingType obj) throws Exception {
-		boolean flag = false;
-		try {
-			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
-			String insertQry = "INSERT INTO execution_status"
-					+ "( execution_status) VALUES (:execution_status)";
-			
-			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
-			int count = namedParamJdbcTemplate.update(insertQry, paramSource);			
-			if(count > 0) {
-				flag = true;
-			}
-		}catch(Exception e){ 
-			e.printStackTrace();
-			throw new Exception(e);
-		}
-		return flag;
-	}
-
-	@Override
-	public TrainingType getExecutionStatusDetails(TrainingType obj) throws Exception {
+	public TrainingType getYesOrNoStatusDetails(TrainingType obj) throws Exception {
 		List<TrainingType> objsList = null;
 		List<TrainingType> objsList1 = null;
 		TrainingType sObj =null;
 		try {
-			String qry ="select execution_status from execution_status ";
+			String qry ="select yesorno from yesorno_status ";
 			
 			objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<TrainingType>(TrainingType.class));		
 			obj.setdList1(objsList);
@@ -76,7 +46,7 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 				int i = 1;
 				for (TrainingType bObj : obj.getdList()) {
 					
-					qry1 = qry1 +"select "+bObj.getColumn_name()+" as execution_status,count("+bObj.getColumn_name()+") as count,'"+bObj.getTable_name()+"' as tName from "+bObj.getTable_name()+" where "+bObj.getColumn_name()+" <> '' group by "+bObj.getColumn_name()+"  ";
+					qry1 = qry1 +"select "+bObj.getColumn_name()+" as yesorno,count("+bObj.getColumn_name()+") as count,'"+bObj.getTable_name()+"' as tName from "+bObj.getTable_name()+" where "+bObj.getColumn_name()+" <> '' group by "+bObj.getColumn_name()+"  ";
 					if( list.size() >  i) {
 						qry1 = qry1 + " UNION ";
 						i++;
@@ -87,11 +57,11 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 				obj.setCountList(objsList1);
 				if(objsList1.size() > 0) {
 					Object[] pValues  = new Object[objsList1.size()];
-					  String qry2 = "select execution_status from execution_status where execution_status NOT IN (?";
+					  String qry2 = "select yesorno from yesorno_status where yesorno NOT IN (?";
 	
 						int j =0, p=1;
 						for (TrainingType aObj : obj.getdList()) {
-							pValues[j++] = aObj.getExecution_status();
+							pValues[j++] = aObj.getYesorno();
 							if( objsList1.size() >  p) {
 								qry2 = qry2 + ",?";
 								p++;
@@ -126,7 +96,7 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 					"from sysforeignkeys fkx \r\n" + 
 					"inner join sys.tables t on object_name(fkx.rkeyid)=t.name \r\n" + 
 					"inner join sys.schemas s on s.schema_id=t.schema_id \r\n" + 
-					"where object_name(fkx.rkeyid)='execution_status' and s.name='dbo'\r\n" + 
+					"where object_name(fkx.rkeyid)='yesorno_status' and s.name='dbo'\r\n" + 
 					"order by object_name(fkx.fkeyid), fkx.keyno";
 			
 			tablesList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<TrainingType>(TrainingType.class));		
@@ -150,7 +120,7 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 					"from sysforeignkeys fkx \r\n" + 
 					"inner join sys.tables t on object_name(fkx.rkeyid)=t.name \r\n" + 
 					"inner join sys.schemas s on s.schema_id=t.schema_id \r\n" + 
-					"where object_name(fkx.rkeyid)='execution_status' and s.name='dbo'\r\n" + 
+					"where object_name(fkx.rkeyid)='yesorno_status' and s.name='dbo'\r\n" + 
 					"order by object_name(fkx.fkeyid), fkx.keyno";
 			
 			 list = jdbcTemplate.query( qry, new BeanPropertyRowMapper<TrainingType>(TrainingType.class));		
@@ -161,8 +131,30 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 		return list;
 	}
 
+
+
 	@Override
-	public boolean updateExecutionStatus(TrainingType obj) throws Exception {
+	public boolean addYesOrNoStatus(TrainingType obj) throws Exception {
+		boolean flag = false;
+		try {
+			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+			String insertQry = "INSERT INTO yesorno_status"
+					+ "( yesorno) VALUES (:yesorno)";
+			
+			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
+			int count = namedParamJdbcTemplate.update(insertQry, paramSource);			
+			if(count > 0) {
+				flag = true;
+			}
+		}catch(Exception e){ 
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+		return flag;
+	}
+
+	@Override
+	public boolean updateYesOrNoStatus(TrainingType obj) throws Exception {
 		boolean flag = false;
 		int count = 0;
 		try {
@@ -171,11 +163,11 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 			List<TrainingType> list = getDataDetails(obj);
 			obj.setdList(list);
 
-			String disableQry = "Alter Table execution_status NOCHECK Constraint All";
+			String disableQry = "Alter Table yesorno_status NOCHECK Constraint All ";
 			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
 			namedParamJdbcTemplate.update(disableQry, paramSource);	
 			
-			String  updatereferenceTableQry = "UPDATE execution_status SET execution_status= :value_new WHERE execution_status= :value_old " ;
+			String  updatereferenceTableQry = "UPDATE yesorno_status SET yesorno= :value_new WHERE yesorno= :value_old " ;
 			paramSource = new BeanPropertySqlParameterSource(obj);		 
 			count = namedParamJdbcTemplate.update(updatereferenceTableQry, paramSource);	
 			
@@ -186,7 +178,7 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 				 paramSource = new BeanPropertySqlParameterSource(obj);		 
 				 namedParamJdbcTemplate.update(updateTableQry, paramSource);	
 			}
-			String  enableQry =	"Alter Table execution_status CHECK Constraint All";
+			String  enableQry =	"Alter Table yesorno_status CHECK Constraint All";
 			paramSource = new BeanPropertySqlParameterSource(obj);	
 			namedParamJdbcTemplate.update(enableQry, paramSource);
 			if(count > 0) {
@@ -200,13 +192,13 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 	}
 
 	@Override
-	public boolean deleteExecutionStatus(TrainingType obj) throws Exception {
+	public boolean deleteYesOrNoStatus(TrainingType obj) throws Exception {
 		boolean flag = false;
 		int count = 0;
 		try {
 			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
 
-			String deleteQry ="DELETE from execution_status WHERE execution_status= :execution_status; ";
+			String deleteQry ="DELETE from yesorno_status WHERE yesorno= :yesorno; ";
 			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
 			 count = namedParamJdbcTemplate.update(deleteQry, paramSource);
 			if(count > 0) {
@@ -217,4 +209,5 @@ public class ExecutionStatusDaoImpl implements ExecutionStatusDao{
 		}
 		return flag;
 	}
+
 }
