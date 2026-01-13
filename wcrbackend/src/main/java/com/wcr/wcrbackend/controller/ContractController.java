@@ -513,8 +513,18 @@ public class ContractController {
     
 
 	@RequestMapping(value = "/add-contract", method = {RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView addContract(@ModelAttribute  Contract contract,RedirectAttributes attributes,HttpSession session){
-		ModelAndView model = new ModelAndView();
+	@ResponseBody	
+	public Map<String, Object> addContract1(@ModelAttribute  Contract contract, HttpSession session){
+//		ModelAndView model = new ModelAndView();
+		Map<String, Object> res = new HashMap<>();
+		
+		System.out.println("Getting inside the controlle");
+		System.out.println("Getting inside the controlle");
+		System.out.println("Getting inside the controlle");
+		System.out.println("Getting inside the controlle");
+		System.out.println("Getting inside the controlle");
+		System.out.println("Getting inside the controlle");
+
 		try{
 			String user_Id = (String) session.getAttribute("userId");
 			String userName = (String) session.getAttribute("userName");
@@ -555,15 +565,21 @@ public class ContractController {
 		
 			String contractid =  contractService.addContract(contract);			
 			if(!StringUtils.isEmpty(contractid)) {
-				attributes.addFlashAttribute("success", "Contract "+contractid+" Added Succesfully."); 
+//				attributes.addFlashAttribute("success", "Contract "+contractid+" Added Succesfully.");
+				res.put("success", "Contract "+contractid+" Added Succesfully."); 
+
 			} else {
-				attributes.addFlashAttribute("error","Adding Contract is failed. Try again.");
+//				attributes.addFlashAttribute("error","Adding Contract is failed. Try again.");
+				res.put("error","Adding Contract is failed. Try again.");
+
 			}
 		 }catch (Exception e) {
-			attributes.addFlashAttribute("error","Adding Contract is failed. Try again.");
+//			attributes.addFlashAttribute("error","Adding Contract is failed. Try again.");
+				res.put("error","Adding Contract is failed. Try again.");
+
 			logger.error("Project : " + e.getMessage());
 		}
-		return model;
+		return res;
 	}
 	
 	

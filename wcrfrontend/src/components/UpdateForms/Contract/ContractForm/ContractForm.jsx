@@ -406,238 +406,166 @@ export default function ContractForm() {
   }, [isEdit, row, setValue]);
 
   const onSubmit = async (data, saveForEdit = false) => {
-    if (saveForEdit) {
-      setSavingForEdit(true);
-    } else {
-      setLoading(true);
-    }
+    if (saveForEdit) setSavingForEdit(true);
+    else setLoading(true);
+
+    // ✅ helper: return number or null
+    const toIntOrNull = (v) => {
+      if (v === undefined || v === null || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    // ✅ helper: clean string
+    const toStr = (v) => (v === undefined || v === null ? "" : String(v));
 
     try {
-      // Create a flattened object from form data that matches your Contract model
-      const formattedData = {
-        // Basic contract info - matching your INSERT query fields
-        project_id_fk: data.project_id_fk,
-        contract_status: data.contract_status || "No", // Default to "No" if not selected
-        hod_user_id_fk: data.hod_user_id_fk,
-        dy_hod_user_id_fk: data.dy_hod_user_id_fk,
-        contract_department: data.contract_department,
-        contract_short_name: data.contract_short_name,
-        bank_funded: data.bank_funded || "No",
-        bank_name: data.bank_name || "",
-        type_of_review: data.type_of_review || "",
-        contract_name: data.contract_name,
-        contract_type_fk: data.contract_type_fk,
-        contractor_id_fk: data.contractor_id_fk,
-        bg_required: data.bg_required || "No",
-        insurance_required: data.insurance_required || "No",
-        milestone_requried: data.milestone_requried || "No",
-        revision_requried: data.revision_requried || "No",
-        contractors_key_requried: data.contractors_key_requried || "No",
-        
-        // Contract details section - matching INSERT query
-        scope_of_contract: data.scope_of_contract || "",
-        loa_letter_number: data.loa_letter_number || "",
-        loa_date: data.loa_date || "",
-        ca_no: data.ca_no || "",
-        ca_date: data.ca_date || "",
-        date_of_start: data.date_of_start || "",
-        doc: data.doc || "",
-        awarded_cost: data.awarded_cost || "",
-        awarded_cost_units: "Rs", // Hardcoded or from form field
-        target_doc: data.target_doc || "",
-        actual_completion_date: data.actual_date_of_commissioning || "", // This might be actual_completion_date
-        contract_status_fk: data.contract_status_fk || "Not Started",
-        estimated_cost: data.estimated_cost || "",
-        estimated_cost_units: data.estimated_cost_units || "Rs", // Changed to match DB field name
-        planned_date_of_award: data.planned_date_of_award || "",
-        planned_date_of_completion: data.planned_date_of_completion || "",
-        contract_notice_inviting_tender: data.contract_notice_inviting_tender || "",
-        tender_opening_date: data.tender_opening_date || "",
-        technical_eval_submission: data.technical_eval_submission || "",
-        financial_eval_submission: data.financial_eval_submission || "",
-        remarks: data.remarks || "",
-        
-        // Fields with default values (some might be needed from form)
-        status: "Active", // Default value
-        is_contract_closure_initiated: "No", // Default value
-        
-        // Note: These fields are in your INSERT query but not in current form:
-        completed_cost: "",
-        contract_closure_date: "",
-        completion_certificate_release: "",
-        final_takeover: "",
-        final_bill_release: "",
-        defect_liability_period: "",
-        retention_money_release: "",
-        pbg_release: "",
-        contract_ifas_code: "",
-        
-        // Arrays - formatted according to your INSERT queries
-        // 1. Bank Guarantee Details
-        bankGuaranteeList: JSON.stringify(data.bgDetailsList.map(item => ({
-          bg_type_fk: item.bg_type_fks,
-          issuing_bank: item.issuing_banks,
-          bg_number: item.bg_numbers,
-          bg_value: item.bg_values,
-          bg_value_units: item.bg_unit || "Rs",
-          bg_date: item.bg_dates,
-          valid_upto: item.bg_valid_uptos,
-          release_date: item.release_dates
-        })) || []),
-        
-        // 2. Tender Bid Revisions
-        tenderBidRevisionsList: JSON.stringify(data.tenderBidRevisions.map(item => ({
-          revision_no: item.revisionno,
-          revision_estimated_cost: item.revision_estimated_cost,
-          revision_planned_date_of_award: item.revision_planned_date_of_award,
-          revision_planned_date_of_completion: item.revision_planned_date_of_completion,
-          notice_inviting_tender: item.notice_inviting_tender,
-          tender_bid_opening_date: item.tender_bid_opening_date,
-          technical_eval_approval: item.technical_eval_approval,
-          financial_eval_approval: item.financial_eval_approval,
-          tender_bid_remarks: item.tender_bid_remarks
-        })) || []),
-        
-        // 3. Insurance Details
-        insuranceList: JSON.stringify(data.insuranceRequired.map(item => ({
-          insurance_type_fk: item.insurance_type_fks,
-          issuing_agency: item.issuing_agencys,
-          agency_address: item.agency_addresss,
-          insurance_number: item.insurance_numbers,
-          insurance_value: item.insurance_values,
-          insurance_value_units: item.insurance_unit || "Rs",
-          valid_upto: item.insurence_valid_uptos,
-          released_fk: item.insuranceStatus ? "Yes" : "No"
-        })) || []),
-        
-        // 4. Milestone Details
-        milestoneList: JSON.stringify(data.milestoneRequired.map(item => ({
-          milestone_id: item.milestone_ids,
-          milestone_name: item.milestone_names,
-          milestone_date: item.milestone_dates,
-          actual_date: item.actual_dates,
-          revision: item.revisions,
-          remarks: item.mile_remarks,
-          status: "Active"
-        })) || []),
-        
-        // 5. Revision Required
-        revisionList: JSON.stringify(data.revisionRequired.map(item => ({
-          revision_number: item.revision_numbers,
-          revised_amount: item.revised_amounts,
-          revised_amount_units: item.revision_unit || "Rs",
-          revised_doc: item.revised_docs,
-          revision_amounts_statuss: item.revision_amounts_statuss ? "Yes" : "No",
-          approval_by_bank: item.approvalbybankstatus ? "Yes" : "No",
-          remarks: item.revision_statuss ? "Completed" : "Pending"
-        })) || []),
-        
-        // 6. Contractor's Key Personnel
-        contractorsKeyPersonnelList: JSON.stringify(data.contractorsKeyRequried.map(item => ({
-          name: item.contractKeyPersonnelNames,
-          designation: item.contractKeyPersonnelDesignations,
-          mobile_no: item.contractKeyPersonnelMobileNos,
-          email_id: item.contractKeyPersonnelEmailIds
-        })) || []),
-        
-        // 7. Executives
-        executivesList: JSON.stringify(data.executives.map(item => ({
-          department_fk: item.department_fks,
-          responsible_people_id_fk: item.responsible_people_id_fks
-        })) || []),
+      const payload = {
+        // ✅ FK fields should be numbers
+        project_id_fk: toIntOrNull(data?.project_id_fk),
+        hod_user_id_fk: toIntOrNull(data?.hod_user_id_fk),
+        dy_hod_user_id_fk: toIntOrNull(data?.dy_hod_user_id_fk),
+        contract_type_fk: toIntOrNull(data?.contract_type_fk),
+        contractor_id_fk: toIntOrNull(data?.contractor_id_fk),
+
+        // strings
+        contract_status: toStr(data?.contract_status || "No"),
+        contract_department: toStr(data?.contract_department),
+        contract_short_name: toStr(data?.contract_short_name),
+        bank_funded: toStr(data?.bank_funded || "No"),
+        bank_name: toStr(data?.bank_name),
+        type_of_review: toStr(data?.type_of_review),
+        contract_name: toStr(data?.contract_name),
+
+        scope_of_contract: toStr(data?.scope_of_contract),
+        loa_letter_number: toStr(data?.loa_letter_number),
+        loa_date: toStr(data?.loa_date),
+        ca_no: toStr(data?.ca_no),
+        ca_date: toStr(data?.ca_date),
+        date_of_start: toStr(data?.date_of_start),
+        doc: toStr(data?.doc),
+
+        awarded_cost: toStr(data?.awarded_cost),
+        awarded_cost_units: "Rs",
+        estimated_cost: toStr(data?.estimated_cost),
+        estimated_cost_units: toStr(data?.estimated_cost_units || "Rs"),
+
+        planned_date_of_award: toStr(data?.planned_date_of_award),
+        planned_date_of_completion: toStr(data?.planned_date_of_completion),
+
+        tender_opening_date: toStr(data?.tender_opening_date),
+        technical_eval_submission: toStr(data?.technical_eval_submission),
+        financial_eval_submission: toStr(data?.financial_eval_submission),
+        remarks: toStr(data?.remarks),
+
+        status: "Active",
+        is_contract_closure_initiated: "No",
+
+        // ============================
+        // ✅ Lists - make *_fk numeric
+        // ============================
+
+        bankGauranree: (data?.bgDetailsList || [])
+          .filter(x => toIntOrNull(x?.bg_type_fks) !== null) // ✅ only valid rows
+          .map(x => ({
+            bg_type_fk: toIntOrNull(x?.bg_type_fks),
+            issuing_bank: toStr(x?.issuing_banks),
+            bg_number: toStr(x?.bg_numbers),
+            bg_value: toStr(x?.bg_values),
+            bg_value_units: toStr(x?.bg_unit || "Rs"),
+            bg_date: toStr(x?.bg_dates),
+            bg_valid_upto: toStr(x?.bg_valid_uptos),
+            release_date: toStr(x?.release_dates)
+          })),
+
+        insurence: (data?.insuranceRequired || [])
+          .filter(x => toIntOrNull(x?.insurance_type_fks) !== null)
+          .map(x => ({
+            insurance_type_fk: toIntOrNull(x?.insurance_type_fks),
+            issuing_agency: toStr(x?.issuing_agencys),
+            agency_address: toStr(x?.agency_addresss),
+            insurance_number: toStr(x?.insurance_numbers),
+            insurance_value: toStr(x?.insurance_values),
+            insurance_value_units: toStr(x?.insurance_unit || "Rs"),
+            insurence_valid_upto: toStr(x?.insurence_valid_uptos),
+            released_fk: x?.insuranceStatus ? "Yes" : "No"
+          })),
+
+        milestones: (data?.milestoneRequired || [])
+          .filter(x => toStr(x?.milestone_names).trim() !== "")
+          .map(x => ({
+            milestone_id: toIntOrNull(x?.milestone_ids),
+            milestone_name: toStr(x?.milestone_names),
+            milestone_date: toStr(x?.milestone_dates),
+            actual_date: toStr(x?.actual_dates),
+            revision: toStr(x?.revisions),
+            mile_remark: toStr(x?.mile_remarks),
+            status: "Active"
+          })),
+
+        contract_revision: (data?.revisionRequired || [])
+          .filter(x => toStr(x?.revision_numbers).trim() !== "")
+          .map(x => ({
+            revision_number: toStr(x?.revision_numbers),
+            revised_amount: toStr(x?.revised_amounts),
+            revised_amount_units: toStr(x?.revision_unit || "Rs"),
+            revised_doc: toStr(x?.revised_docs),
+            revision_amounts_status: x?.revision_amounts_statuss ? "Yes" : "No",
+            approval_by_bank: x?.approvalbybankstatus ? "Yes" : "No",
+            revision_status: x?.revision_statuss ? "Completed" : "Pending"
+          })),
+
+        contractKeyPersonnels: (data?.contractorsKeyRequried || [])
+          .filter(x => toStr(x?.contractKeyPersonnelNames).trim() !== "")
+          .map(x => ({
+            name: toStr(x?.contractKeyPersonnelNames),
+            designation: toStr(x?.contractKeyPersonnelDesignations),
+            mobile_no: toStr(x?.contractKeyPersonnelMobileNos),
+            email_id: toStr(x?.contractKeyPersonnelEmailIds)
+          })),
+
+        executivesList: (data?.executives || [])
+          .filter(x => toIntOrNull(x?.department_fks) !== null && toIntOrNull(x?.responsible_people_id_fks) !== null)
+          .map(x => ({
+            department_fk: toIntOrNull(x?.department_fks),
+            responsible_people_id_fk: toIntOrNull(x?.responsible_people_id_fks)
+          })),
+
+        // ✅ documents: remove blank rows and force contract_file_type_fk numeric
+        contractDocuments: (data?.documentsTable || [])
+          .filter(d => toStr(d?.contractDocumentNames).trim() !== "" && toIntOrNull(d?.contract_file_types) !== null)
+          .map(d => ({
+            name: toStr(d?.contractDocumentNames),
+            contract_file_type_fk: toIntOrNull(d?.contract_file_types)
+          }))
       };
 
-      // Debug log to see what data is being sent
-      console.log("Sending data to backend:", formattedData);
+      console.log("✅ Payload:", payload);
 
-      // Create FormData for file uploads
-      const formData = new FormData();
-      
-      // Append all form fields to FormData
-      Object.keys(formattedData).forEach(key => {
-        if (formattedData[key] !== undefined && formattedData[key] !== null) {
-          formData.append(key, formattedData[key]);
-        }
+      const url = isEdit
+        ? `${API_BASE_URL}/contract/update-contract`
+        : `${API_BASE_URL}/contract/add-contract`;
+
+      const response = await api.post(url, payload, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true
       });
-
-      // Handle file uploads separately for documents
-      data.documentsTable?.forEach((doc, index) => {
-        if (doc.contractDocumentFiles && doc.contractDocumentFiles[0]) {
-          formData.append(`document_file_${index}`, doc.contractDocumentFiles[0]);
-          formData.append(`document_name_${index}`, doc.contractDocumentNames || '');
-          formData.append(`document_type_${index}`, doc.contract_file_types || '');
-        }
-      });
-
-      // Add documents list to FormData
-      const documentsList = data.documentsTable?.map((doc, index) => ({
-        name: doc.contractDocumentNames || '',
-        contract_file_type_fk: doc.contract_file_types || ''
-      })) || [];
-      
-      formData.append("documentsList", JSON.stringify(documentsList));
-
-      // Log FormData for debugging
-      console.log("FormData entries:");
-      for (let pair of formData.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
-      }
-
-      let response;
-      if (isEdit) {
-        // Update existing contract - adjust endpoint as needed
-        response = await api.post(`${API_BASE_URL}/contract/update-contract`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      } else {
-        // Create new contract using the provided endpoint
-        response = await api.post(`${API_BASE_URL}/contract/add-contract`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      }
-
-      console.log("Backend response:", response.data);
 
       if (response.data) {
-        if (saveForEdit) {
-          // If saving for edit, stay on the page and show success message
-          alert("Contract saved successfully! You can continue editing.");
-          // If this was a new contract, we might want to update the URL or form mode
-          if (!isEdit && response.data?.contractId) {
-            console.log("New contract created with ID:", response.data.contractId);
-          }
-        } else {
-          // Normal save, go back to previous page
-          const successMessage = isEdit 
-            ? "Contract updated successfully!" 
-            : `Contract ${response.data.contractId || response.data.success || ''} added successfully!`;
-          alert(successMessage);
-          navigate(-1); // Go back to previous page
-        }
-      } else {
-        throw new Error('No response data received from server');
+        if (saveForEdit) alert("Contract saved successfully! You can continue editing.");
+        else alert(isEdit ? "Contract updated successfully!" : "Contract added successfully!");
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
-      console.error("Error response:", error.response);
-      
-      // More detailed error message
-      let errorMessage = "Failed to save contract";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      alert(`Error: ${errorMessage}`);
+      console.error(error);
+      alert(error?.response?.data?.message || error.message || "Failed");
     } finally {
-      if (saveForEdit) {
-        setSavingForEdit(false);
-      } else {
-        setLoading(false);
-      }
+      if (saveForEdit) setSavingForEdit(false);
+      else setLoading(false);
     }
   };
+
+
+
 
   const handleCancel = () => {
     if (window.confirm("Are you sure you want to cancel? Any unsaved changes will be lost.")) {
