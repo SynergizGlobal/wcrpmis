@@ -20,6 +20,7 @@ export default function Issues({}) {
     const { refresh } = useContext(RefreshContext);
 	const [issues, setIssues] = useState([]); // raw issues from backend
 	const [loading, setLoading] = useState(false);
+	const [pageSize, setPageSize] = useState(10);
 
 	// UI state: search, pagination
 	const [search, setSearch] = useState("");
@@ -382,7 +383,57 @@ export default function Issues({}) {
 
 
 
- 
+	  const renderPageButtons = (page, totalPages, setPageFn) => {
+	  	if (totalPages <= 1) return null;
+
+	  	const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+	  		.filter((p) => {
+	  			if (p <= 2 || p > totalPages - 2) return true;
+	  			if (p >= page - 1 && p <= page + 1) return true;
+	  			return false;
+	  		})
+	  		.reduce((acc, p, idx, arr) => {
+	  			if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+	  			acc.push(p);
+	  			return acc;
+	  		}, []);
+
+	  	return (
+	  		<div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+	  			<button
+	  				disabled={page === 1}
+	  				onClick={() => setPageFn(page - 1)}
+	  				className="pageBtn"
+	  			>
+	  				‹
+	  			</button>
+
+	  			{pages.map((item, idx) =>
+	  				item === "..." ? (
+	  					<span key={`ellipsis-${idx}`} style={{ padding: "0 6px" }}>
+	  						...
+	  					</span>
+	  				) : (
+	  					<button
+	  						key={`page-${item}`}
+	  						onClick={() => setPageFn(item)}
+	  						className={`pageBtn ${item === page ? "activePage" : ""}`}
+	  					>
+	  						{item}
+	  					</button>
+	  				)
+	  			)}
+
+	  			<button
+	  				disabled={page === totalPages}
+	  				onClick={() => setPageFn(page + 1)}
+	  				className="pageBtn"
+	  			>
+	  				›
+	  			</button>
+	  		</div>
+	  	);
+	  };
 	
 
 	
@@ -504,7 +555,9 @@ export default function Issues({}) {
                         <label>Show </label>
                         <select
                           value={perPage}
-                          onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
+                          onChange={(e) => { setPerPage(Number(e.target.value));
+							setPageSize(Number(e.target.value));
+							 setPage(1); }}
                         >
                           {[5, 10, 20, 50, 100].map((size) => (
                             <option key={size} value={size}>{size}</option>
@@ -578,34 +631,15 @@ export default function Issues({}) {
 
                 </div>
                  {/* PAGINATION */}
-				 <div className={styles.paginationBar}>
-				   <span>
-				     {totalRecords === 0
-				       ? "0 - 0"
-				       : `${(page - 1) * perPage + 1} - ${Math.min(
-				           page * perPage,
-				           totalRecords
-				         )}`}{" "}
-				     of {totalRecords}
-				   </span>
+				 <div className="paginationRow">
+				 	<div className="paginationInfo">
+				 		Showing {(page - 1) * pageSize + 1} –{" "}
+				 		{Math.min(page * pageSize, totalRecords)} of {totalRecords} entires
+				 	</div>
 
-				   <div className={styles.paginationBtns}>
-				     <button
-				       onClick={() => page > 1 && setPage(page - 1)}
-				       disabled={page === 1}
-				     >
-				       {"<"}
-				     </button>
-
-				     <button className={styles.activePage}>{page}</button>
-
-				     <button
-				       onClick={() => page < totalPages && setPage(page + 1)}
-				       disabled={page === totalPages}
-				     >
-				       {">"}
-				     </button>
-				   </div>
+				 	<div className="paginationControls">
+				 		{renderPageButtons(page, totalPages, setPage)}
+				 	</div>
 				 </div>
 
               </div>

@@ -10,44 +10,61 @@ export default function IssueCategory() {
   const [showModal, setShowModal] = useState(false);
   const [mode, setMode] = useState("add");
   const [search, setSearch] = useState("");
-
+  const [loading, setLoading] = useState(false);
   const [issueCategory, setIssueCategory] = useState("");
   const [issueCategoryOld, setIssueCategoryOld] = useState("");
+  const [columns, setColumns] = useState([]);
 
-  /* ================= FETCH ================= */
   const fetchData = async () => {
-    const res = await fetch(`${API_BASE_URL}/issue-category`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
-    });
+	setLoading(true);
+	try {
+		const res = await fetch(`${API_BASE_URL}/issue-category`, {
+		     method: "POST",
+		     headers: { "Content-Type": "application/json" },
+		     body: JSON.stringify({})
+		   });
 
-    const json = await res.json();
-    if (json.status !== "success") return;
+		   const json = await res.json();
+		   if (json.status !== "success") return;
 
-    const categoryList = json.issueCategoryList || [];
-    const countList = json.issueCategoryDetails?.countList || [];
+		   const categoryList = json.issueCategoryList || [];
 
+		   const tablesList = json.issueCategoryDetails?.tablesList || [];
+		   const countList = json.issueCategoryDetails?.countList || [];
 
-    // Build countMap → category|table
-    const countMap = {};
-    countList.forEach(c => {
-      countMap[`${c.category}|${c.tName}`] = Number(c.count || 0);
-    });
+		   const colList = [...new Set(tablesList.map(t => t.tName).filter(Boolean))];
 
-    // Merge category + counts
-    const merged = categoryList.map((c, idx) => ({
-      id: idx + 1,
-      category: c.category,
-      issueCount: countMap[`${c.category}|issue`] || 0,
-      issueCategoryTitleCount:
-        countMap[`${c.category}|issue_category_title`] || 0,
-      issueContractCategoryCount:
-        countMap[`${c.category}|issue_contarct_category`] || 0
-    }));
+		   setColumns(colList);
 
-    setRows(merged);
+		   const countMap = {};
+		   countList.forEach(c => {
+		     countMap[`${c.category}|${c.tName}`] = Number(c.count || 0);
+		   });
+
+		   const merged = categoryList.map((c, idx) => {
+		     const row = {
+		       id: idx + 1,
+		       category: c.category
+		     };
+
+		     colList.forEach(tName => {
+		       row[tName] = countMap[`${c.category}|${tName}`] || 0; 
+		     });
+
+		     return row;
+		   });
+
+		   setRows(merged);
+	}
+	catch(error){
+		console.error("Failed to load data", error);
+	}
+	finally{
+		setLoading(false);
+	}
+   
   };
+
 
   useEffect(() => {
     fetchData();
@@ -168,74 +185,81 @@ export default function IssueCategory() {
           </div>
 
           <div className={`dataTable ${styles.tableWrapper}`}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Issue</th>
-                  <th>Category Title</th>
-                  <th>Contract Category</th>
-                  <th className={styles.actionCol}>Action</th>
-                </tr>
-              </thead>
+		  <table className={styles.table}>
+		    <thead>
+		      <tr>
+		        <th>Category</th>
 
-			  <tbody>
-			    {filteredRows.map(r => {
-			      const canDelete =
-			        !r.issueCount &&
-			        !r.issueCategoryTitleCount &&
-			        !r.issueContractCategoryCount;
+		        {/* ✅ dynamic headers */}
+		        {columns.map(col => (
+		          <th key={col}>
+		            {col.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase())}
+		          </th>
+		        ))}
 
-			      return (
-			        <tr key={r.id}>
-			          <td>{r.category}</td>
-			          <td>{r.issueCount ? `(${r.issueCount})` : ""}</td>
-			          <td>
-			            {r.issueCategoryTitleCount
-			              ? `(${r.issueCategoryTitleCount})`
-			              : ""}
-			          </td>
-			          <td>
-			            {r.issueContractCategoryCount
-			              ? `(${r.issueContractCategoryCount})`
-			              : ""}
-			          </td>
+		        <th className={styles.actionCol}>Action</th>
+		      </tr>
+		    </thead>
 
-			          <td className={styles.actionCol}>
-			            {/* EDIT → always visible */}
-			            <button
-			              className={styles.editBtn}
-			              onClick={() => handleEdit(r)}
-			              title="Edit"
-			            >
-			              <FaEdit />
-			            </button>
+			<tbody>
+			  {loading ? (
+			    <tr>
+			      <td colSpan={columns.length + 2} align="center" >
+			        Processing...
+			      </td>
+			    </tr>
+			  ) : (
+			    <>
+			      {filteredRows.map(r => {
+			        // ✅ can delete only if all dynamic counts are 0
+			        const canDelete = columns.every(col => !r[col] || r[col] === 0);
 
-			            {/* DELETE → only if no FK references */}
-			            {canDelete && (
+			        return (
+			          <tr key={r.id}>
+			            <td>{r.category}</td>
+
+			            {/* ✅ dynamic column values */}
+			            {columns.map(col => (
+			              <td key={col}>{r[col] ? `(${r[col]})` : ""}</td>
+			            ))}
+
+			            <td className={styles.actionCol}>
+			              {/* EDIT → always visible */}
 			              <button
-			                className={styles.deleteBtn}
-			                onClick={() => handleDelete(r)}
-			                title="Delete"
+			                className={styles.editBtn}
+			                onClick={() => handleEdit(r)}
+			                title="Edit"
 			              >
-			                <FaTrash />
+			                <FaEdit />
 			              </button>
-			            )}
+
+			              {/* DELETE → only if no FK references */}
+			              {canDelete && (
+			                <button
+			                  className={styles.deleteBtn}
+			                  onClick={() => handleDelete(r)}
+			                  title="Delete"
+			                >
+			                  <FaTrash />
+			                </button>
+			              )}
+			            </td>
+			          </tr>
+			        );
+			      })}
+
+			      {filteredRows.length === 0 && (
+			        <tr>
+			          <td colSpan={columns.length + 2} className="center-align">
+			            No records found
 			          </td>
 			        </tr>
-			      );
-			    })}
+			      )}
+			    </>
+			  )}
+			</tbody>
 
-			    {filteredRows.length === 0 && (
-			      <tr>
-			        <td colSpan={5} className="center-align">
-			          No records found
-			        </td>
-			      </tr>
-			    )}
-			  </tbody>
-
-            </table>
+		  </table>
           </div>
 
           {/* FOOTER */}

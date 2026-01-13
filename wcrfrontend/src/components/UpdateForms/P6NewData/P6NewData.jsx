@@ -990,14 +990,14 @@ export default function P6NewData() {
 									  <input
 									    type="date"
 									    placeholder="Select Date"
-									    {...revisedRegister("baseline.data_date", {
+									    {...revisedRegister("revised.data_date", {
 									      required: "This field is required"
 									    })}
 									  />
 
-									  {revisedErrors?.baseline?.data_date && (
+									  {revisedErrors?.revised?.data_date && (
 									    <span className="red">
-									      {revisedErrors.baseline.data_date.message}
+									      {revisedErrors.revised.data_date.message}
 									    </span>
 									  )}
 									</div>
@@ -1138,14 +1138,14 @@ export default function P6NewData() {
 									  <input
 									    type="date"
 									    placeholder="Select Date"
-									    {...updateRegister("baseline.data_date", {
+									    {...updateRegister("update.data_date", {
 									      required: "This field is required"
 									    })}
 									  />
 
-									  {updateErrors?.baseline?.data_date && (
+									  {updateErrors?.update?.data_date && (
 									    <span className="red">
-									      {updateErrors.baseline.data_date.message}
+									      {updateErrors.update.data_date.message}
 									    </span>
 									  )}
 									</div>
@@ -1156,7 +1156,8 @@ export default function P6NewData() {
 										<div className={`${styles["file-upload-wrapper"]} ${styles.fileUpload}`}>
 											<label htmlFor={`Cardfile-3`} className={styles["file-upload-label-icon"]}>
 												<RiAttachment2 size={20} style={{ marginRight: "6px" }} />
-												Upload File
+												Upload P6 Export File<spam className='red'>*</spam>
+
 											</label>
 											<input
 												id="Cardfile-3"

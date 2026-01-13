@@ -210,7 +210,7 @@ export default function DocumentType() {
                     ))}
 
                     <td className={styles.actionCol}>
-                      <div className={styles.actionBtns}>
+					<div className={styles.actionButtons}>
                         <button
                           className={styles.editBtn}
                           onClick={() => handleEdit(r)}

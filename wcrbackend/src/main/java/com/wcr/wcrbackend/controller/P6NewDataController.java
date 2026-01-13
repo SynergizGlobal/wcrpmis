@@ -390,7 +390,7 @@ System.out.println();
 	            try {
 	                String counts = p6newdataService.uploadP6WBSActivities(wbsList, activitiesList, p6data);
 //	                attributes.addFlashAttribute("error", counts);
-	                res.put("error", counts);
+	                res.put("success", counts);
 	            } catch (Exception e) {
 	                handleException(e, attributes);
 	                res.put("error", e);
@@ -855,7 +855,8 @@ System.out.println();
 
 	@RequestMapping(value = "/revised-p6-new-activities", method = { RequestMethod.POST })
 	@ResponseBody
-	public Map<String, Object> revisedP6NewActivities(@ModelAttribute P6Data p6data, RedirectAttributes attributes,
+	public Map<String, Object> revisedP6NewActivities(
+			@ModelAttribute P6Data p6data, RedirectAttributes attributes,
 			HttpSession session) {
 		Map<String, Object> response = new HashMap<>();
 		XSSFWorkbook workbook = null;

@@ -210,7 +210,8 @@ export default function Railway() {
 											</td>
 										))}
 
-										<td>
+										<td >
+										<div className={styles.actionButtons}>
 										<button
 										  className={styles.editBtn}
 										  onClick={() => handleEdit(r)}
@@ -230,6 +231,7 @@ export default function Railway() {
 												</button>
 
 											)}
+											</div>
 										</td>
 									</tr>
 								))}
