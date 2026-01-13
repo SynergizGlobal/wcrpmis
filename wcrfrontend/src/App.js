@@ -1,8 +1,8 @@
+import OverviewDashboard from "./components/Admin/OverviewDashboard/OverviewDashboard";
 import ProjectType from "./components/Admin/ReferenceForms/ReferenceFormsList/ProjectType/ProjectType";
 import Department from "./components/Admin/ReferenceForms/ReferenceFormsList/Department/Department";
 import DocumentType from "./components/Admin/ReferenceForms/ReferenceFormsList/DocumentType/DocumentType";
 import Railway from "./components/Admin/ReferenceForms/ReferenceFormsList/Railway/Railway";
-
 import BankName from "./components/Admin/ReferenceForms/ReferenceFormsList/BankName/BankName";
 import RevisionStatus from "./components/Admin/ReferenceForms/ReferenceFormsList/RevisionStatus/RevisionStatus";
 import InsuranceType from "./components/Admin/ReferenceForms/ReferenceFormsList/InsuranceType/InsuranceType";
@@ -184,6 +184,7 @@ function App() {
 								<Route path="dashboardform" element={<DashboardForm />} />
 							</Route>
 							<Route path="reference-forms" element={<ReferenceForms />} />
+							<Route path="left-menu" element={<OverviewDashboard />} />
 						</Route>
 						<Route path="bank-guarantee-type" element={<BankGuaranteeType />} />
 						<Route path="dashboard-type" element={<DashboardType />} />
