@@ -15,7 +15,7 @@ import { RiAttachment2 } from 'react-icons/ri';
 export default function ContractForm() {
   const [activeTab, setActiveTab] = useState("managers");
   const navigate = useNavigate();
-  const { state } = useLocation(); // passed when editing
+  const { state } = useLocation(); 
   const row = state?.data || null;
   const isEdit = !!row;
 
@@ -59,19 +59,20 @@ export default function ContractForm() {
       contract_name: "",
       contract_type_fk: "",
       contractor_id_fk: "",
+      contract_ifas_code: "",
       bg_required: "",
       insurance_required: "",
       milestone_requried: "",
       revision_requried: "",
       contractors_key_requried: "",
-      estimated_cost_units: "Rs", // Changed to match DB field name
+      estimated_cost_units: "", 
 
-      executives: [{ department_fks: "", responsible_people_id_fks: "" }],
+      executives: [{ department_fks: "", responsible_people_id_fks: [] }],
       tenderBidRevisions: [{ revisionno: "R1", revision_estimated_cost: "", revision_planned_date_of_award: "", revision_planned_date_of_completion: "", notice_inviting_tender: "", tender_bid_opening_date: "", technical_eval_approval: "", financial_eval_approval: "", tender_bid_remarks: "" }],
-      bgDetailsList: [{ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_unit: "Rs", bg_dates: "", bg_valid_uptos: "", release_dates: "" }],
-      insuranceRequired: [{ insurance_type_fks: "", issuing_agencys: "", agency_addresss: "", insurance_numbers: "", insurance_values: "", insurance_unit: "Rs", insurence_valid_uptos: "", insuranceStatus: "" }],
+      bgDetailsList: [{ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_unit: "", bg_dates: "", bg_valid_uptos: "", release_dates: "" }],
+      insuranceRequired: [{ insurance_type_fks: "", issuing_agencys: "", agency_addresss: "", insurance_numbers: "", insurance_values: "", insurance_unit: "", insurence_valid_uptos: "", insuranceStatus: "" }],
       milestoneRequired: [{ milestone_ids: "K-1", milestone_names: "", milestone_dates: "", actual_dates: "", revisions: "", mile_remarks: "" }],
-      revisionRequired: [{ revision_numbers: "R1", revised_amounts: "", revision_unit: "Rs", revision_amounts_statuss: "", revised_docs: "", revision_statuss: "", approvalbybankstatus: "" }],
+      revisionRequired: [{ revision_numbers: "R1", revised_amounts: "", revision_unit: "", revision_amounts_statuss: "", revised_docs: "", revision_statuss: "", approvalbybankstatus: "" }],
       contractorsKeyRequried: [{ contractKeyPersonnelNames: "", contractKeyPersonnelDesignations: "", contractKeyPersonnelMobileNos: "", contractKeyPersonnelEmailIds: "" }],
       documentsTable: [{ contract_file_types: "", contractDocumentNames: "", contractDocumentFiles: "" }],
     }
@@ -237,7 +238,7 @@ export default function ContractForm() {
           // HOD: designation and user_name
           const hodList = response.data.hodList || [];
           const hodOpts = hodList.map(hod => ({
-               value: hod.user_id || hod.id || hod.designation + "_" + hod.user_name,
+            value: hod.user_id,
             label:`${hod.designation} - ${hod.user_name}`
           }));
           setHodOptions(hodOpts);
@@ -269,18 +270,12 @@ export default function ContractForm() {
           // Contractors
           const contractors = response.data.contractors || [];
           const contractorOpts = contractors.map(contractor => ({
-            value: contractor.id || contractor.value,
-            label: contractor.name || contractor.label
+            value: contractor.contractor_id_fk,
+            label: contractor.contractor_name
           }));
           setContractorOptions(contractorOpts);
 
-          // Responsible People (Executives)
-		  const responsiblePeople = response.data.responsiblePeopleList || [];
-		  const executiveOpts = responsiblePeople.map(person => ({
-		    value: person.id || person.value, // This should be a unique ID
-		    label: `${person.designation || ''} - ${person.user_name || person.name || person.label}`.trim()
-		  }));
-		  setExecutiveOptions(executiveOpts);
+  
           // Bank Guarantee Type
           const bgTypes = response.data.bankGuaranteeType || [];
           const bgTypeOpts = bgTypes.map(type => ({
@@ -314,28 +309,13 @@ export default function ContractForm() {
           setBankNameOptions(bankNameOpts);
 
           // Unit Options - Added this section
-          // If API returns unit options, use them, otherwise use default ones
           const units = response.data.unitsList || [];
           let unitOpts = units.map(unit => ({
               value: unit.id || unit.value,
               label: unit.unit || unit.label
             }));
           
-          // Check if "Rs" exists in unit options
-          const hasRs = unitOpts.some(unit => 
-            unit.value === "Rs" || unit.label === "Rs" || 
-            unit.value === "₹" || unit.label === "₹" ||
-            unit.value === "INR" || unit.label === "INR"
-          );
-          
-          // If "Rs" doesn't exist, add it as the first option
-          if (!hasRs) {
-            unitOpts = [
-              { value: "Rs", label: "Rs" },
-              ...unitOpts
-            ];
-          }
-          
+      
           setUnitOptions(unitOpts);
 		  
 		  const fileTypes = response.data.contractFileTypeList || [];
@@ -368,8 +348,8 @@ export default function ContractForm() {
       
       if (response.data && Array.isArray(response.data)) {
         const executiveOpts = response.data.map(person => ({
-          value: person.user_id || person.id || `${person.designation}_${person.user_name}`,
-          label: `${person.designation || ''} - ${person.user_name || person.name || ''}`.trim()
+          value: person.hod_user_id_fk ,
+          label: `${person.designation || ''} - ${person.user_name || ''}`.trim()
         }));
         
         // Store executives for this department
@@ -409,149 +389,368 @@ export default function ContractForm() {
     if (saveForEdit) setSavingForEdit(true);
     else setLoading(true);
 
-    // ✅ helper: return number or null
-    const toIntOrNull = (v) => {
-      if (v === undefined || v === null || v === "") return null;
-      const n = Number(v);
-      return Number.isFinite(n) ? n : null;
+    /* ===============================
+       HELPERS
+       =============================== */
+
+    // ✅ append only when value is present (not null/undefined/empty)
+    const appendIf = (fd, key, value) => {
+      if (value === undefined || value === null) return;
+      const v = String(value).trim();
+      if (v === "" || v === "null" || v === "undefined") return;
+      fd.append(key, v);
     };
 
-    // ✅ helper: clean string
-    const toStr = (v) => (v === undefined || v === null ? "" : String(v));
+    // ✅ append array only when array items are present
+    const appendArrayIf = (fd, key, arr) => {
+      if (!Array.isArray(arr)) return;
+      arr
+        .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
+        .forEach((v) => fd.append(key, String(v).trim()));
+    };
+
+    // ✅ check revision row has at least one filled value
+    const hasAnyRevisionField = (r) => {
+      return (
+        (r?.revision_estimated_cost && String(r.revision_estimated_cost).trim() !== "") ||
+        (r?.revision_planned_date_of_award && String(r.revision_planned_date_of_award).trim() !== "") ||
+        (r?.revision_planned_date_of_completion && String(r.revision_planned_date_of_completion).trim() !== "") ||
+        (r?.notice_inviting_tender && String(r.notice_inviting_tender).trim() !== "") ||
+        (r?.tender_bid_opening_date && String(r.tender_bid_opening_date).trim() !== "") ||
+        (r?.technical_eval_approval && String(r.technical_eval_approval).trim() !== "") ||
+        (r?.financial_eval_approval && String(r.financial_eval_approval).trim() !== "") ||
+        (r?.tender_bid_remarks && String(r.tender_bid_remarks).trim() !== "")
+      );
+    };
 
     try {
-      const payload = {
-        // ✅ FK fields should be numbers
-        project_id_fk: toIntOrNull(data?.project_id_fk),
-        hod_user_id_fk: toIntOrNull(data?.hod_user_id_fk),
-        dy_hod_user_id_fk: toIntOrNull(data?.dy_hod_user_id_fk),
-        contract_type_fk: toIntOrNull(data?.contract_type_fk),
-        contractor_id_fk: toIntOrNull(data?.contractor_id_fk),
+      const formData = new FormData();
 
-        // strings
-        contract_status: toStr(data?.contract_status || "No"),
-        contract_department: toStr(data?.contract_department),
-        contract_short_name: toStr(data?.contract_short_name),
-        bank_funded: toStr(data?.bank_funded || "No"),
-        bank_name: toStr(data?.bank_name),
-        type_of_review: toStr(data?.type_of_review),
-        contract_name: toStr(data?.contract_name),
+      /* ===============================
+         BASIC FIELDS (append only if present)
+         =============================== */
+      appendIf(formData, "project_id_fk", data?.project_id_fk);
+      appendIf(formData, "hod_user_id_fk", data?.hod_user_id_fk);
+      appendIf(formData, "dy_hod_user_id_fk", data?.dy_hod_user_id_fk);
 
-        scope_of_contract: toStr(data?.scope_of_contract),
-        loa_letter_number: toStr(data?.loa_letter_number),
-        loa_date: toStr(data?.loa_date),
-        ca_no: toStr(data?.ca_no),
-        ca_date: toStr(data?.ca_date),
-        date_of_start: toStr(data?.date_of_start),
-        doc: toStr(data?.doc),
+      appendIf(formData, "contract_type_fk", data?.contract_type_fk);
+      appendIf(formData, "contractor_id_fk", data?.contractor_id_fk);
+      appendIf(formData, "contract_status_fk", data?.contract_status_fk);
 
-        awarded_cost: toStr(data?.awarded_cost),
-        awarded_cost_units: "Rs",
-        estimated_cost: toStr(data?.estimated_cost),
-        estimated_cost_units: toStr(data?.estimated_cost_units || "Rs"),
+      appendIf(formData, "contract_ifas_code", data?.contract_ifas_code);
 
-        planned_date_of_award: toStr(data?.planned_date_of_award),
-        planned_date_of_completion: toStr(data?.planned_date_of_completion),
+      appendIf(formData, "contract_status", data?.contract_status);
+      appendIf(formData, "contract_department", data?.contract_department);
 
-        tender_opening_date: toStr(data?.tender_opening_date),
-        technical_eval_submission: toStr(data?.technical_eval_submission),
-        financial_eval_submission: toStr(data?.financial_eval_submission),
-        remarks: toStr(data?.remarks),
+      appendIf(formData, "contract_short_name", data?.contract_short_name);
+      appendIf(formData, "contract_name", data?.contract_name);
 
-        status: "Active",
-        is_contract_closure_initiated: "No",
+      appendIf(formData, "bank_funded", data?.bank_funded || "No");
+      appendIf(formData, "bank_name", data?.bank_name);
+      appendIf(formData, "type_of_review", data?.type_of_review);
 
-        // ============================
-        // ✅ Lists - make *_fk numeric
-        // ============================
+      appendIf(formData, "scope_of_contract", data?.scope_of_contract);
+      appendIf(formData, "loa_letter_number", data?.loa_letter_number);
+      appendIf(formData, "loa_date", data?.loa_date);
+      appendIf(formData, "ca_no", data?.ca_no);
+      appendIf(formData, "ca_date", data?.ca_date);
 
-        bankGauranree: (data?.bgDetailsList || [])
-          .filter(x => toIntOrNull(x?.bg_type_fks) !== null) // ✅ only valid rows
-          .map(x => ({
-            bg_type_fk: toIntOrNull(x?.bg_type_fks),
-            issuing_bank: toStr(x?.issuing_banks),
-            bg_number: toStr(x?.bg_numbers),
-            bg_value: toStr(x?.bg_values),
-            bg_value_units: toStr(x?.bg_unit || "Rs"),
-            bg_date: toStr(x?.bg_dates),
-            bg_valid_upto: toStr(x?.bg_valid_uptos),
-            release_date: toStr(x?.release_dates)
-          })),
+      appendIf(formData, "date_of_start", data?.date_of_start);
+      appendIf(formData, "doc", data?.doc);
 
-        insurence: (data?.insuranceRequired || [])
-          .filter(x => toIntOrNull(x?.insurance_type_fks) !== null)
-          .map(x => ({
-            insurance_type_fk: toIntOrNull(x?.insurance_type_fks),
-            issuing_agency: toStr(x?.issuing_agencys),
-            agency_address: toStr(x?.agency_addresss),
-            insurance_number: toStr(x?.insurance_numbers),
-            insurance_value: toStr(x?.insurance_values),
-            insurance_value_units: toStr(x?.insurance_unit || "Rs"),
-            insurence_valid_upto: toStr(x?.insurence_valid_uptos),
-            released_fk: x?.insuranceStatus ? "Yes" : "No"
-          })),
+      appendIf(formData, "awarded_cost", data?.awarded_cost);
+      appendIf(formData, "awarded_cost_units", data?.awarded_cost_units);
 
-        milestones: (data?.milestoneRequired || [])
-          .filter(x => toStr(x?.milestone_names).trim() !== "")
-          .map(x => ({
-            milestone_id: toIntOrNull(x?.milestone_ids),
-            milestone_name: toStr(x?.milestone_names),
-            milestone_date: toStr(x?.milestone_dates),
-            actual_date: toStr(x?.actual_dates),
-            revision: toStr(x?.revisions),
-            mile_remark: toStr(x?.mile_remarks),
-            status: "Active"
-          })),
+      appendIf(formData, "estimated_cost", data?.estimated_cost);
+      appendIf(formData, "estimated_cost_units", data?.estimated_cost_units);
 
-        contract_revision: (data?.revisionRequired || [])
-          .filter(x => toStr(x?.revision_numbers).trim() !== "")
-          .map(x => ({
-            revision_number: toStr(x?.revision_numbers),
-            revised_amount: toStr(x?.revised_amounts),
-            revised_amount_units: toStr(x?.revision_unit || "Rs"),
-            revised_doc: toStr(x?.revised_docs),
-            revision_amounts_status: x?.revision_amounts_statuss ? "Yes" : "No",
-            approval_by_bank: x?.approvalbybankstatus ? "Yes" : "No",
-            revision_status: x?.revision_statuss ? "Completed" : "Pending"
-          })),
+      appendIf(formData, "planned_date_of_award", data?.planned_date_of_award);
+      appendIf(formData, "planned_date_of_completion", data?.planned_date_of_completion);
 
-        contractKeyPersonnels: (data?.contractorsKeyRequried || [])
-          .filter(x => toStr(x?.contractKeyPersonnelNames).trim() !== "")
-          .map(x => ({
-            name: toStr(x?.contractKeyPersonnelNames),
-            designation: toStr(x?.contractKeyPersonnelDesignations),
-            mobile_no: toStr(x?.contractKeyPersonnelMobileNos),
-            email_id: toStr(x?.contractKeyPersonnelEmailIds)
-          })),
+      appendIf(formData, "tender_opening_date", data?.tender_opening_date);
+      appendIf(formData, "technical_eval_submission", data?.technical_eval_submission);
+      appendIf(formData, "financial_eval_submission", data?.financial_eval_submission);
 
-        executivesList: (data?.executives || [])
-          .filter(x => toIntOrNull(x?.department_fks) !== null && toIntOrNull(x?.responsible_people_id_fks) !== null)
-          .map(x => ({
-            department_fk: toIntOrNull(x?.department_fks),
-            responsible_people_id_fk: toIntOrNull(x?.responsible_people_id_fks)
-          })),
+      appendIf(formData, "remarks", data?.remarks);
 
-        // ✅ documents: remove blank rows and force contract_file_type_fk numeric
-        contractDocuments: (data?.documentsTable || [])
-          .filter(d => toStr(d?.contractDocumentNames).trim() !== "" && toIntOrNull(d?.contract_file_types) !== null)
-          .map(d => ({
-            name: toStr(d?.contractDocumentNames),
-            contract_file_type_fk: toIntOrNull(d?.contract_file_types)
-          }))
-      };
+      // fixed values
+      appendIf(formData, "status", "Active");
+      appendIf(formData, "is_contract_closure_initiated", "No");
 
-      console.log("✅ Payload:", payload);
+      /* ===============================
+         EXECUTIVES → BACKEND FORMAT
+         department_fks[], responsible_people_id_fks[], filecounts[]
+         =============================== */
 
+      const department_fks = [];
+      const responsible_people_id_fks = [];
+      const filecounts = [];
+
+      (data.executives || []).forEach((row) => {
+        const dept = row.department_fks || "";
+        const execArr = Array.isArray(row.responsible_people_id_fks)
+          ? row.responsible_people_id_fks.filter(Boolean)
+          : [];
+
+        if (dept && execArr.length > 0) {
+          department_fks.push(dept);
+          filecounts.push(String(execArr.length));
+          execArr.forEach((execId) => responsible_people_id_fks.push(execId));
+        }
+      });
+
+      appendArrayIf(formData, "department_fks", department_fks);
+      appendArrayIf(formData, "responsible_people_id_fks", responsible_people_id_fks);
+      appendArrayIf(formData, "filecounts", filecounts);
+
+      /* ===============================
+         TENDER BID REVISIONS → BACKEND ARRAY FORMAT
+         revisionno[], revision_estimated_cost[], etc
+         =============================== */
+
+      const revisions = (data.tenderBidRevisions || [])
+        .map((r, idx) => ({
+          revisionno: r?.revisionno || generateRevisionNumber(idx),
+          revision_estimated_cost: r?.revision_estimated_cost || "",
+          revision_planned_date_of_award: r?.revision_planned_date_of_award || "",
+          revision_planned_date_of_completion: r?.revision_planned_date_of_completion || "",
+          notice_inviting_tender: r?.notice_inviting_tender || "",
+          tender_bid_opening_date: r?.tender_bid_opening_date || "",
+          technical_eval_approval: r?.technical_eval_approval || "",
+          financial_eval_approval: r?.financial_eval_approval || "",
+          tender_bid_remarks: r?.tender_bid_remarks || ""
+        }))
+        .filter(hasAnyRevisionField);
+
+      // ✅ append only if at least one revision row is filled
+	  if (revisions.length > 0) {
+	    revisions.forEach((r) => formData.append("revisionno[]", r.revisionno));
+	    revisions.forEach((r) => formData.append("revision_estimated_cost[]", r.revision_estimated_cost));
+	    revisions.forEach((r) => formData.append("revision_planned_date_of_award[]", r.revision_planned_date_of_award));
+	    revisions.forEach((r) => formData.append("revision_planned_date_of_completion[]", r.revision_planned_date_of_completion));
+	    revisions.forEach((r) => formData.append("notice_inviting_tender[]", r.notice_inviting_tender));
+	    revisions.forEach((r) => formData.append("tender_bid_opening_date[]", r.tender_bid_opening_date));
+	    revisions.forEach((r) => formData.append("technical_eval_approval[]", r.technical_eval_approval));
+	    revisions.forEach((r) => formData.append("financial_eval_approval[]", r.financial_eval_approval));
+	    revisions.forEach((r) => formData.append("tender_bid_remarks[]", r.tender_bid_remarks));
+	  }
+
+	
+
+		/* ===============================
+		   BANK GUARANTEE - FLAT ARRAY FORMAT
+		   =============================== */
+		console.log("🏦 Bank Guarantee data being sent:", data?.bgDetailsList);
+
+		const bankGuarantees = (data?.bgDetailsList || [])
+		  .filter((x) => x?.bg_type_fks && x?.bg_type_fks.trim() !== "");
+
+		console.log("🏦 Filtered Bank Guarantees:", bankGuarantees);
+
+		if (bankGuarantees.length > 0) {
+		  bankGuarantees.forEach((x) => {
+		    console.log(`🏦 Adding bank guarantee:`, x);
+		    
+		    // FLAT ARRAY FORMAT - matches backend getters
+		    appendIf(formData, "bg_type_fks[]", x.bg_type_fks);
+		    appendIf(formData, "issuing_banks[]", x.issuing_banks);
+		    appendIf(formData, "bg_numbers[]", x.bg_numbers);
+		    appendIf(formData, "bg_values[]", x.bg_values);
+		    appendIf(formData, "bg_valid_uptos[]", x.bg_valid_uptos); // NOTE: bg_valid_uptos (not valid_upto)
+		    appendIf(formData, "bg_dates[]", x.bg_dates);
+		    appendIf(formData, "release_dates[]", x.release_dates);
+		    appendIf(formData, "bg_value_unitss[]", x.bg_unit); // NOTE: bg_value_unitss (plural with extra 's')
+		  });
+		  
+		  console.log(`🏦 Total bank guarantees to save: ${bankGuarantees.length}`);
+		} else {
+		  console.log("🏦 No bank guarantees to save");
+		}
+		
+		/* ===============================
+		   INSURANCE - FLAT ARRAY FORMAT
+		   =============================== */
+		console.log("🏥 Insurance data being sent:", data?.insuranceRequired);
+
+		const insuranceEntries = (data?.insuranceRequired || [])
+		  .filter((x) => x?.insurance_type_fks && x?.insurance_type_fks.trim() !== "");
+
+		console.log("🏥 Filtered Insurance entries:", insuranceEntries);
+
+		if (insuranceEntries.length > 0) {
+		  insuranceEntries.forEach((x) => {
+		    console.log(`🏥 Adding insurance entry:`, x);
+		    
+		    // FLAT ARRAY FORMAT - matches backend getters
+		    // Note: field names must match backend getter names exactly
+		    appendIf(formData, "insurance_type_fks[]", x.insurance_type_fks);
+		    appendIf(formData, "issuing_agencys[]", x.issuing_agencys);
+		    appendIf(formData, "agency_addresss[]", x.agency_addresss);
+		    appendIf(formData, "insurance_numbers[]", x.insurance_numbers);
+		    appendIf(formData, "insurance_values[]", x.insurance_values);
+		    appendIf(formData, "insurence_valid_uptos[]", x.insurence_valid_uptos); // Note spelling: "insurence" not "insurance"
+		    appendIf(formData, "insuranceStatus[]", x.insuranceStatus ? "Yes" : "No"); // Convert boolean to "Yes"/"No"
+		    appendIf(formData, "insurance_value_unitss[]", x.insurance_unit);
+		    
+		    // Optional fields that might be in your form but not in SQL
+		    // appendIf(formData, "insurence_remarks[]", x.insurence_remarks);
+		    // appendIf(formData, "insurance_revisions[]", x.insurance_revisions);
+		  });
+		  
+		  console.log(`🏥 Total insurance entries to save: ${insuranceEntries.length}`);
+		} else {
+		  console.log("🏥 No insurance entries to save");
+		}
+		
+		
+		/* ===============================
+		   MILESTONES - FLAT ARRAY FORMAT
+		   =============================== */
+		console.log("📅 Milestone data being sent:", data?.milestoneRequired);
+
+		const milestoneEntries = (data?.milestoneRequired || [])
+		  .filter((x) => x?.milestone_names && x?.milestone_names.trim() !== "");
+
+		console.log("📅 Filtered Milestone entries:", milestoneEntries);
+
+		if (milestoneEntries.length > 0) {
+		  milestoneEntries.forEach((x) => {
+		    console.log(`📅 Adding milestone entry:`, x);
+		    
+		    appendIf(formData, "milestone_ids[]", x.milestone_ids);
+		    appendIf(formData, "milestone_names[]", x.milestone_names);
+		    appendIf(formData, "milestone_dates[]", x.milestone_dates);
+		    appendIf(formData, "actual_dates[]", x.actual_dates);
+		    appendIf(formData, "revisions[]", x.revisions);
+		    appendIf(formData, "mile_remarks[]", x.mile_remarks);
+		  });
+		  
+		  console.log(`📅 Total milestone entries to save: ${milestoneEntries.length}`);
+		} else {
+		  console.log("📅 No milestone entries to save");
+		}
+
+		/* ===============================
+		   CONTRACT REVISION - FLAT ARRAY FORMAT
+		   =============================== */
+		console.log("📝 Contract Revision data being sent:", data?.revisionRequired);
+
+		// Get all revision entries
+		const allRevisionEntries = data?.revisionRequired || [];
+
+		console.log("📝 Total Revision entries:", allRevisionEntries.length);
+
+		if (allRevisionEntries.length > 0) {
+		  allRevisionEntries.forEach((x, i) => {
+		    console.log(`📝 Processing revision entry ${i}:`, x);
+		    
+		    // Convert checkbox values to "Yes"/"No" strings
+		    const revisionStatus = x.revision_statuss ? "Yes" : "No";
+		    const revisionAmountsStatus = x.revision_amounts_statuss ? "Yes" : "No";
+		    const approvalByBank = x.approvalbybankstatus ? "Yes" : "No";
+		    
+		    // CRITICAL: Always append ALL fields, even if empty, to initialize arrays in backend
+		    // Use formData.append (not appendIf) to ensure arrays are created
+		    
+		    // Required fields for array initialization
+		    formData.append("revision_numbers[]", x.revision_numbers || "");
+		    formData.append("revised_amounts[]", x.revised_amounts || "");
+		    formData.append("revised_docs[]", x.revised_docs || "");
+		    formData.append("revision_remarks[]", ""); // EMPTY STRING - but MUST be sent
+		    formData.append("revision_statuss[]", revisionStatus);
+		    formData.append("revised_amount_unitss[]", x.revision_unit || "");
+		    formData.append("revision_amounts_statuss[]", revisionAmountsStatus);
+		    formData.append("approval_by_bank[]", approvalByBank);
+		  });
+		  
+		  console.log(`📝 Processed ${allRevisionEntries.length} revision entries`);
+		  
+		  // Debug: Show what was sent
+		  console.log("🔍 Revision fields sent to backend:");
+		  for (let pair of formData.entries()) {
+		    if (pair[0].includes('revision') || pair[0].includes('revised') || pair[0].includes('approval')) {
+		      console.log(`  ${pair[0]} = ${pair[1]}`);
+		    }
+		  }
+		} else {
+		  console.log("📝 No revision entries to process");
+		}
+		
+		
+		/* ===============================
+		   CONTRACTOR'S KEY PERSONNEL - FLAT ARRAY FORMAT
+		   =============================== */
+		console.log("👷 Contractor's Key Personnel data being sent:", data?.contractorsKeyRequried);
+
+		const keyPersonnelEntries = (data?.contractorsKeyRequried || [])
+		  .filter((x) => x?.contractKeyPersonnelNames && x?.contractKeyPersonnelNames.trim() !== "");
+
+		console.log("👷 Filtered Key Personnel entries:", keyPersonnelEntries);
+
+		if (keyPersonnelEntries.length > 0) {
+		  keyPersonnelEntries.forEach((x) => {
+		    console.log(`👷 Adding key personnel entry:`, x);
+		    
+		    // FLAT ARRAY FORMAT - matches backend getters
+		    appendIf(formData, "contractKeyPersonnelNames[]", x.contractKeyPersonnelNames);
+		    appendIf(formData, "contractKeyPersonnelMobileNos[]", x.contractKeyPersonnelMobileNos);
+		    appendIf(formData, "contractKeyPersonnelEmailIds[]", x.contractKeyPersonnelEmailIds);
+		    appendIf(formData, "contractKeyPersonnelDesignations[]", x.contractKeyPersonnelDesignations);
+		  });
+		  
+		  console.log(`👷 Total key personnel entries to save: ${keyPersonnelEntries.length}`);
+		} else {
+		  console.log("👷 No key personnel entries to save");
+		}
+		
+		/* ===============================
+		   DOCUMENTS - Alternative approach
+		   =============================== */
+		console.log("📄 Documents data being sent:", data?.documentsTable);
+
+		const documentEntries = data?.documentsTable || [];
+
+		if (documentEntries.length > 0) {
+		  documentEntries.forEach((doc, index) => {
+		    // Always send metadata arrays to maintain indices
+		    formData.append("contractDocumentNames[]", doc.contractDocumentNames || "");
+		    formData.append("contractDocumentFileNames[]", 
+		      doc.contractDocumentFiles?.[0]?.name || doc.contractDocumentNames || "");
+		    formData.append("contract_file_types[]", doc.contract_file_types || "");
+		    
+		    // Send file if exists, otherwise empty blob
+		    if (doc.contractDocumentFiles && doc.contractDocumentFiles.length > 0) {
+		      const file = doc.contractDocumentFiles[0];
+		      if (file instanceof File) {
+		        formData.append("contractDocumentFiles", file);
+		      } else {
+		        // Fallback: empty blob
+		        formData.append("contractDocumentFiles", new Blob([]), "");
+		      }
+		    } else {
+		      // Empty blob to maintain array position
+		      formData.append("contractDocumentFiles", new Blob([]), "");
+		    }
+		  });
+		  
+		  console.log(`📄 Processed ${documentEntries.length} document entries`);
+		} else {
+		  console.log("📄 No document entries");
+		}
+
+      /* ===============================
+         SUBMIT
+         =============================== */
       const url = isEdit
         ? `${API_BASE_URL}/contract/update-contract`
         : `${API_BASE_URL}/contract/add-contract`;
 
-      const response = await api.post(url, payload, {
-        headers: { "Content-Type": "application/json" },
+      const response = await api.post(url, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true
       });
 
-      if (response.data) {
+      if (response?.data) {
         if (saveForEdit) alert("Contract saved successfully! You can continue editing.");
         else alert(isEdit ? "Contract updated successfully!" : "Contract added successfully!");
       }
@@ -855,93 +1054,106 @@ export default function ContractForm() {
                       <th style={{ width: "15%" }}>Action</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {executiveFields.length > 0 ? (
-                      executiveFields.map((item, index) => (
-                        <tr key={item.id}>
-                          <td>
-                            <Controller
-                              name={`executives.${index}.department_fks`}
-                              control={control}
-                              rules={{ required: "Department is required" }}
-                              render={({ field }) => (
-                                <Select
-                                  {...field}
-                                  classNamePrefix="react-select"
-                                  options={departmentOptions}
-                                  placeholder="Select Department"
-                                  isSearchable
-                                  isClearable
-                                  value={departmentOptions.find(opt => opt.value === field.value) || null}
-								    onChange={(opt) => {
-								          field.onChange(opt?.value || "");
-								          // Clear responsible people when department changes
-								          setValue(`executives.${index}.responsible_people_id_fks`, []);
-								          // Fetch executives for selected department
-								          if (opt?.value) {
-								            fetchExecutivesByDepartment(opt.value);
-								          }
-								        }}
-								      />
-								    )}
-								  />
-                            {errors.executives?.[index]?.department_fks && (
-                              <span className="red">{errors.executives[index].department_fks.message}</span>
-                            )}
-                          </td>
-                          <td>
-						  <Controller
-						    name={`executives.${index}.responsible_people_id_fks`}
-						    control={control}
-						    rules={{ required: "Please select executives" }}
-						    render={({ field }) => {
-						      const selectedDept = watch(`executives.${index}.department_fks`);
-						      const deptExecutives = executiveOptions[selectedDept] || [];
-						      
-						      return (
-						        <Select
-						          {...field}
-						          options={deptExecutives}
-						          isMulti
-						          placeholder={loadingExecutives ? "Loading..." : "Select Executives"}
-						          classNamePrefix="react-select"
-						          isDisabled={!selectedDept || loadingExecutives}
-						          onChange={(selected) => {
-						            const selectedValues = selected ? selected.map(option => option.value) : [];
-						            field.onChange(selectedValues);
-						          }}
-						          value={deptExecutives.filter(option => 
-						            Array.isArray(field.value) 
-						              ? field.value.includes(option.value)
-						              : false
-						          )}
-						        />
-						      );
-						    }}
-						  />
-                            {errors.executives?.[index]?.responsible_people_id_fks && (
-                              <span className="red">{errors.executives[index].responsible_people_id_fks.message}</span>
-                            )}
-                          </td>
-                          <td className="text-center d-flex align-center justify-content-center">
-                            <button
-                              type="button"
-                              className="btn btn-outline-danger"
-                              onClick={() => removeExecutive(index)}
-                            >
-                              <MdOutlineDeleteSweep size="26" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="4" className="text-center text-muted">
-                          No rows added yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
+				  <tbody>
+				    {executiveFields.length > 0 ? (
+				      executiveFields.map((item, index) => {
+				        const selectedDept = watch(`executives.${index}.department_fks`);
+				        const deptExecutives = executiveOptions[selectedDept] || [];
+				        const selectedExecIds = watch(`executives.${index}.responsible_people_id_fks`) || [];
+
+				        return (
+				          <tr key={item.id}>
+				            {/* ================= Department ================= */}
+				            <td>
+				              <Controller
+				                name={`executives.${index}.department_fks`}
+				                control={control}
+				                rules={{ required: "Department is required" }}
+				                render={({ field }) => (
+				                  <Select
+				                    classNamePrefix="react-select"
+				                    options={departmentOptions}   // [{value,label}]
+				                    placeholder="Select Department"
+				                    isSearchable
+				                    isClearable
+				                    value={departmentOptions.find(opt => opt.value === field.value) || null}
+				                    onChange={(opt) => {
+				                      const deptVal = opt?.value || "";
+				                      field.onChange(deptVal);
+
+				                      // ✅ Clear executives when dept changes
+				                      setValue(`executives.${index}.responsible_people_id_fks`, []);
+
+				                      // ✅ fetch executives list for that dept
+				                      if (deptVal) fetchExecutivesByDepartment(deptVal);
+				                    }}
+				                  />
+				                )}
+				              />
+
+				              {errors.executives?.[index]?.department_fks && (
+				                <span className="red">
+				                  {errors.executives[index].department_fks.message}
+				                </span>
+				              )}
+				            </td>
+
+				            {/* ================= Executives Multi ================= */}
+				            <td>
+				              <Controller
+				                name={`executives.${index}.responsible_people_id_fks`}
+				                control={control}
+				                rules={{ required: "Please select executives" }}
+				                render={({ field }) => (
+				                  <Select
+				                    classNamePrefix="react-select"
+				                    options={deptExecutives} // must be [{value,label}]
+				                    isMulti
+				                    placeholder={!selectedDept ? "Select Department first" : "Select Executives"}
+				                    isDisabled={!selectedDept}
+				                    
+				                    // ✅ react-select expects option objects as value
+				                    value={deptExecutives.filter(opt =>
+				                      Array.isArray(field.value) ? field.value.includes(opt.value) : false
+				                    )}
+
+				                    onChange={(selected) => {
+				                      const selectedValues = selected ? selected.map(opt => opt.value) : [];
+				                      field.onChange(selectedValues);
+				                    }}
+				                  />
+				                )}
+				              />
+
+				              {errors.executives?.[index]?.responsible_people_id_fks && (
+				                <span className="red">
+				                  {errors.executives[index].responsible_people_id_fks.message}
+				                </span>
+				              )}
+				            </td>
+
+				            {/* ================= Delete ================= */}
+				            <td className="text-center d-flex align-center justify-content-center">
+				              <button
+				                type="button"
+				                className="btn btn-outline-danger"
+				                onClick={() => removeExecutive(index)}
+				              >
+				                <MdOutlineDeleteSweep size="26" />
+				              </button>
+				            </td>
+				          </tr>
+				        );
+				      })
+				    ) : (
+				      <tr>
+				        <td colSpan="3" className="text-center text-muted">
+				          No rows added yet.
+				        </td>
+				      </tr>
+				    )}
+				  </tbody>
+
                 </table>
               </div>
 
@@ -950,7 +1162,7 @@ export default function ContractForm() {
                   type="button"
                   className="btn-2 btn-green"
                   onClick={() =>
-                    appendExecutive({ department_fks: "", responsible_people_id_fks: "" })
+                    appendExecutive({ department_fks: "", responsible_people_id_fks: [] })
                   }
                 >
                   <BiListPlus size="24" />
@@ -1022,10 +1234,56 @@ export default function ContractForm() {
                         <p className="error-text">{errors.contract_type_fk.message}</p>
                       )}
                     </div>
-         
+                    
+                    {/* New: Contractor Name Field */}
+                    <div className="form-field">
+                      <label>Contractor Name <span className="red">*</span></label>
+                      <Controller
+                        name="contractor_id_fk"
+                        control={control}
+                        rules={{ required: "Contractor Name is required" }}
+                        render={({ field }) => (
+                          <Select
+                            {...field}
+                            classNamePrefix="react-select"
+                            options={contractorOptions}
+                            placeholder="Select Contractor"
+                            isSearchable
+                            isClearable
+                            value={contractorOptions.find(opt => opt.value === field.value) || null}
+                            onChange={(opt) => field.onChange(opt?.value || "")}
+                          />
+                        )}
+                      />
+                      {errors.contractor_id_fk && (
+                        <p className="error-text">{errors.contractor_id_fk.message}</p>
+                      )}
+                    </div>
+                    
+                    {/* New: Contract (IFAS Code) Field */}
+                    <div className="form-field">
+                      <label>Contract (IFAS Code)</label>
+                      <input
+                        type="text"
+                        {...register("contract_ifas_code", { 
+                         
+                          maxLength: {
+                            value: 50,
+                            message: "IFAS Code cannot exceed 50 characters"
+                          }
+                        })}
+                        placeholder="Enter IFAS Code"
+                      />
+                      <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+                        {watch("contract_ifas_code")?.length || 0}/50
+                      </div>
+                      {errors.contract_ifas_code && (
+                        <p className="error-text">{errors.contract_ifas_code.message}</p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Rest of the Contract Details section remains the same */}
+             
                   <div className="form-row">
                     <div className="form-field">
                       <label>Scope of Contract</label>
@@ -1096,31 +1354,49 @@ export default function ContractForm() {
                     <p className="error-text">{errors.doc.message}</p>
                   )}
                 </div>
-                <div className="form-field rupee-field">
-                  <label>Awarded cost <span className="red">*</span> </label>
-                  <input
-                    {...register("awarded_cost", { required: "Awarded cost is required" })}
-                    type="number"
-                    placeholder="Enter Value"
-                  />
-                  {errors.awarded_cost && (
-                    <p className="error-text">{errors.awarded_cost.message}</p>
-                  )}
-                </div>
+				<div className="form-field rupee-field">
+				  <label>Awarded cost <span className="red">*</span> </label>
+				  <div className="d-flex align-items-center gap-2">
+				    <input
+				      {...register("awarded_cost", { required: "Awarded cost is required" })}
+				      type="number"
+				      placeholder="Enter Value"
+				      className="flex-grow-1"
+					  style={{ minWidth: "300px" }}
+				    />
+				    <Controller
+				      name="awarded_cost_units"
+				      control={control}
+				      render={({ field }) => (
+				        <Select
+				          {...field}
+				          classNamePrefix="react-select"
+				          options={unitOptions}
+				          placeholder="Unit"
+				          isSearchable={false}
+				          styles={{
+				            container: (base) => ({
+				              ...base,
+				              minWidth: '120px',
+				              width: '120px'
+				            })
+				          }}
+				          value={unitOptions.find(opt => opt.value === field.value) || null}
+				          onChange={(opt) => field.onChange(opt?.value || "")}
+				        />
+				      )}
+				    />
+				  </div>
+				  {errors.awarded_cost && (
+				    <p className="error-text">{errors.awarded_cost.message}</p>
+				  )}
+				</div>
+				
                 <div className="form-field">
                   <label>Target DOC </label>
                   <input {...register("target_doc")} type="date" />
                 </div>
-                <div className="form-field">
-                  <label>Actual Date of Commissioning <span className="red">*</span> </label>
-                  <input
-                    {...register("actual_date_of_commissioning", { required: "Actual Date of Commissioning is required" })}
-                    type="date"
-                  />
-                  {errors.actual_date_of_commissioning && (
-                    <p className="error-text">{errors.actual_date_of_commissioning.message}</p>
-                  )}
-                </div>
+              
                 <div className="form-field">
                   <label>Status of Work <span className="red">*</span></label>
                   <Controller

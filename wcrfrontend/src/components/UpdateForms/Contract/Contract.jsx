@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import styles from './Contract.module.css';
-import { CirclePlus } from "lucide-react";
+import { CirclePlus, ChevronLeft, ChevronRight } from "lucide-react";
 import { LuCloudDownload } from "react-icons/lu";
 import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
 import { MdEditNote } from "react-icons/md";
-
 
 export default function Contract() {
   const location = useLocation();
@@ -16,7 +15,6 @@ export default function Contract() {
   const [loadingContracts, setLoadingContracts] = useState(false);
   
   // State for filter options
-  
   const [hodOptions, setHodOptions] = useState([]);
   const [dyHodOptions, setDyHodOptions] = useState([]);
   const [contractorOptions, setContractorOptions] = useState([]);
@@ -32,6 +30,11 @@ export default function Contract() {
   });
 
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [loading, setLoading] = useState({
     hod: false,
@@ -71,10 +74,11 @@ export default function Contract() {
   };
 
   const applyFilters = () => {
-    // If no filters are set, show all contracts
+    // Reset to first page when filters change
+    setCurrentPage(1);
+    
     const allFiltersEmpty = Object.values(filters).every(value => !value) && !searchQuery;
     if (allFiltersEmpty) {
-      // We're already showing all contracts in the contracts state
       return;
     }
 
@@ -168,6 +172,7 @@ export default function Contract() {
       statusOfWork: "",
     });
     setSearchQuery("");
+    setCurrentPage(1);
   };
 
   const handleAdd = () => navigate("add-contract-form");
@@ -263,6 +268,81 @@ export default function Contract() {
 
   const filteredContracts = filterContracts();
 
+  // Calculate pagination
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredContracts.length / itemsPerPage);
+    setTotalPages(totalPages || 1);
+    
+    // If current page is out of bounds after filtering, reset to page 1
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredContracts, itemsPerPage, currentPage]);
+
+  // Get current page items
+  const getCurrentPageItems = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredContracts.slice(startIndex, endIndex);
+  };
+
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (e) => {
+    const newItemsPerPage = parseInt(e.target.value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      // Show all pages
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Show limited pages with ellipsis
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, currentPage + 2);
+      
+      if (currentPage <= 3) {
+        startPage = 1;
+        endPage = maxPagesToShow;
+      } else if (currentPage >= totalPages - 2) {
+        startPage = totalPages - maxPagesToShow + 1;
+        endPage = totalPages;
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+      
+      // Add ellipsis if needed
+      if (startPage > 1) {
+        pageNumbers.unshift('...');
+        pageNumbers.unshift(1);
+      }
+      if (endPage < totalPages) {
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    return pageNumbers;
+  };
+
+  const currentPageItems = getCurrentPageItems();
+
   return (
     <div className={styles.container}>
       {!isDesignDrawingForm && (
@@ -342,10 +422,10 @@ export default function Contract() {
             <div className="showEntriesCount">
               <label>Show </label>
               <select
-                value={10}
-                onChange={(e) => console.log("Per page changed:", e.target.value)}
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
               >
-                {[1,5, 10, 20, 50, 100].map((size) => (
+                {[5, 10, 20, 50, 100].map((size) => (
                   <option key={size} value={size}>{size}</option>
                 ))}
               </select>
@@ -371,7 +451,14 @@ export default function Contract() {
               </div>
             ) : (
               <>
-                <table className={styles.designTable}>
+                {/* Search results summary - Only shown when searching and there are results */}
+                {searchQuery && filteredContracts.length > 0 && (
+                  <div className={styles.searchSummary}>
+                    Found {filteredContracts.length} result(s) for "{searchQuery}"
+                  </div>
+                )}
+                
+                <table className={styles.projectTable}>
                   <thead>
                     <tr>
                       <th>Project</th>
@@ -386,8 +473,8 @@ export default function Contract() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredContracts.length > 0 ? (
-                      filteredContracts.map((contract, index) => (
+                    {currentPageItems.length > 0 ? (
+                      currentPageItems.map((contract, index) => (
                         <tr key={contract.contract_id || index}>
                           <td>{contract.project_name}</td>
                           <td>{contract.contract_id}</td>
@@ -420,9 +507,46 @@ export default function Contract() {
                     )}
                   </tbody>
                 </table>
-                {searchQuery && filteredContracts.length > 0 && (
-                  <div className={styles.searchResultsInfo}>
-                    Showing {filteredContracts.length} result(s) for "{searchQuery}"
+                
+                {/* Pagination - Only shown when there are results */}
+                {filteredContracts.length > 0 && (
+                  <div className={styles.tableControls}>
+                    <div className={styles.showEntriesInfo}>
+                      Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredContracts.length)} of {filteredContracts.length} entries
+                    </div>
+                    
+                    <div className={styles.pagination}>
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={currentPage === 1 ? styles.disabled : ''}
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      
+                      {getPageNumbers().map((pageNumber, index) => (
+                        <React.Fragment key={index}>
+                          {pageNumber === '...' ? (
+                            <span className={styles.ellipsis}>...</span>
+                          ) : (
+                            <button
+                              onClick={() => handlePageChange(pageNumber)}
+                              className={currentPage === pageNumber ? styles.active : ''}
+                            >
+                              {pageNumber}
+                            </button>
+                          )}
+                        </React.Fragment>
+                      ))}
+                      
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className={currentPage === totalPages ? styles.disabled : ''}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
                   </div>
                 )}
               </>

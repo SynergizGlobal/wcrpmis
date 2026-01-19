@@ -1611,9 +1611,9 @@ public class ContractRepository implements IContractRepo {
 					contract.setContract_status(null);
 					contract.setContract_status_fk("Not Awarded");
 				}
-				if(!StringUtils.isEmpty(contract.getContract_status()) && "Yes".equals(contract.getContract_status())) {
+				if(!StringUtils.isEmpty(contract.getContract_status()) && "Yes".equals(contract.getContract_status())) {}
 					contract.setContract_status("Open");
-				}
+				
 				String Contract_id_code=getDepartmentCode(contract.getContract_department(),con);
 				
 				contract_id = getContractIdByWorkId(contract.getProject_id_fk(),Contract_id_code,con);
@@ -2141,7 +2141,7 @@ public class ContractRepository implements IContractRepo {
 					c = stmt.executeBatch();
 					if(stmt != null){stmt.close();}
 					
-					String Revision_qry = "INSERT into  contract_revision (revision_number,revised_amount,revised_doc,remarks,action,contract_id_fk,revised_amount_units,revision_amounts_statuss,approval_by_bank,attachment) "
+					String Revision_qry = "INSERT into  contract_revision (revision_number,revised_amount,revised_doc,remarks,action,contract_id_fk,revised_amount_units,revision_amounts_status,approval_by_bank,attachment) "
 					 +"VALUES (?,?,?,?,?,?,?,?,?,?)";
 					stmt = con.prepareStatement(Revision_qry); 
 					
@@ -2164,12 +2164,12 @@ public class ContractRepository implements IContractRepo {
 							arraySize = contract.getRevised_docs().length;
 						}
 					}
-					if(!StringUtils.isEmpty(contract.getRevision_remarks()) && contract.getRevision_remarks().length > 0) {
-						contract.setRevision_remarks(CommonMethods.replaceEmptyByNullInSringArray(contract.getRevision_remarks()));
-						if(arraySize < contract.getRevision_remarks().length) {
-							arraySize = contract.getRevision_remarks().length;
-						}
-					}
+//					if(!StringUtils.isEmpty(contract.getRevision_remarks()) && contract.getRevision_remarks().length > 0) {
+//						contract.setRevision_remarks(CommonMethods.replaceEmptyByNullInSringArray(contract.getRevision_remarks()));
+//						if(arraySize < contract.getRevision_remarks().length) {
+//							arraySize = contract.getRevision_remarks().length;
+//						}
+//					}
 					if(!StringUtils.isEmpty(contract.getRevision_statuss()) && contract.getRevision_statuss().length > 0) {
 						contract.setRevision_statuss(CommonMethods.replaceEmptyByNullInSringArray(contract.getRevision_statuss()));
 						if(arraySize < contract.getRevision_statuss().length) {
@@ -2207,6 +2207,7 @@ public class ContractRepository implements IContractRepo {
 								stmt.setString(k++,(contract.getRevised_amount_unitss().length > 0)?contract.getRevised_amount_unitss()[i]:null);
 								stmt.setString(k++,(contract.getRevision_amounts_statuss().length > 0)?contract.getRevision_amounts_statuss()[i]:null);
 								stmt.setString(k++,(contract.getApproval_by_bank().length > 0)?contract.getApproval_by_bank()[i]:null);
+								stmt.setString(k++,null);
 								stmt.addBatch();
 							}
 						}

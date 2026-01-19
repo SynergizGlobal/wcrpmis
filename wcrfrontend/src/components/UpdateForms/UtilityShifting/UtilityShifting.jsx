@@ -1,20 +1,19 @@
-
 import React, { useState, useEffect, useRef, useContext } from "react";
 import Select from "react-select";
 import styles from './UtilityShifting.module.css';
 import { CirclePlus } from "lucide-react";
-import { LuCloudDownload, LuUpload, LuDownload, LuSearch } from "react-icons/lu";
+import { LuCloudDownload, LuUpload, LuDownload, LuSearch, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { MdEditNote } from "react-icons/md";
 import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
 import { API_BASE_URL } from "../../../config";
-import { RefreshContext } from "../../../context/RefreshContext"; // ADD THIS IMPORT
+import { RefreshContext } from "../../../context/RefreshContext";
 
 export default function UtilityShifting() {
   const location = useLocation();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const { refresh } = useContext(RefreshContext); // ADD THIS LINE
+  const { refresh } = useContext(RefreshContext);
   const [utilityShiftingList, setUtilityShiftingList] = useState([]);
   const [uploadedFilesList, setUploadedFilesList] = useState([]);
   const [filteredUploadedFiles, setFilteredUploadedFiles] = useState([]);
@@ -59,26 +58,22 @@ export default function UtilityShifting() {
     fetchUploadedFilesList();
   }, []);
 
-  // ADD THIS USEEFFECT TO LISTEN FOR REFRESH CHANGES
   useEffect(() => {
     if (refresh) {
       console.log("🔄 Refresh triggered, refetching data...");
       fetchUtilityShiftingList();
       fetchUploadedFilesList();
     }
-  }, [refresh]); // Watch for refresh context changes
+  }, [refresh]);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setPagination(prev => ({ ...prev, pageNumber: 1 }));
   }, [filters.location, filters.category, filters.utilityType, filters.status]);
 
-  // Fetch data when pagination or filters change
   useEffect(() => {
     fetchUtilityShiftingList();
   }, [pagination.pageNumber, pagination.pageDisplayLength, filters]);
 
-  // Search with debouncing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (pagination.pageNumber === 1) {
@@ -91,7 +86,6 @@ export default function UtilityShifting() {
     return () => clearTimeout(timeoutId);
   }, [searchParameter]);
 
-  // Filter uploaded files when search changes
   useEffect(() => {
     filterUploadedFiles();
   }, [uploadSearchParameter, uploadedFilesList, uploadPagination.pageNumber, uploadPagination.pageDisplayLength]);
@@ -99,7 +93,6 @@ export default function UtilityShifting() {
   const filterUploadedFiles = () => {
     let filtered = uploadedFilesList;
     
-    // Apply search filter
     if (uploadSearchParameter) {
       const searchLower = uploadSearchParameter.toLowerCase();
       filtered = filtered.filter(file => 
@@ -112,21 +105,41 @@ export default function UtilityShifting() {
       );
     }
     
-    // Update pagination total
     setUploadPagination(prev => ({
       ...prev,
       totalRecords: filtered.length
     }));
     
-    // Apply pagination
     const startIndex = (uploadPagination.pageNumber - 1) * uploadPagination.pageDisplayLength;
     const endIndex = startIndex + uploadPagination.pageDisplayLength;
     setFilteredUploadedFiles(filtered.slice(startIndex, endIndex));
   };
 
+  // Generate page numbers for pagination
+  const generatePageNumbers = (currentPage, totalPages) => {
+    const delta = 2; // Number of pages to show before and after current page
+    const range = [];
+    const rangeWithDots = [];
+    let l;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+        range.push(i);
+      }
+    }
+
+    range.forEach((i, index) => {
+      if (index > 0 && i - range[index - 1] > 1) {
+        rangeWithDots.push('...');
+      }
+      rangeWithDots.push(i);
+    });
+
+    return rangeWithDots;
+  };
+
   const fetchFilterOptions = async () => {
     try {
-      // Set all filters to loading state
       setFiltersLoading({
         location: true,
         category: true,
@@ -143,10 +156,9 @@ export default function UtilityShifting() {
 
       const requests = filterEndpoints.map(async (endpoint) => {
         try {
-          // Send empty object as request body since backend expects @RequestBody
           const response = await api.post(
             `${API_BASE_URL}/utility-shifting${endpoint.url}`, 
-            {}, // Empty request body
+            {},
             { 
               withCredentials: true,
               headers: {
@@ -155,18 +167,11 @@ export default function UtilityShifting() {
             }
           );
 
-          console.log(`✅ ${endpoint.key} filter raw response:`, {
-            endpoint: endpoint.url,
-            data: response.data,
-            dataLength: response.data?.length || 0
-          });
-
           if (response.data && Array.isArray(response.data)) {
             const options = response.data.map(item => {
               let label = '';
               let value = '';
 
-              // Handle different possible field names in the response
               switch (endpoint.key) {
                 case 'location':
                   label = item.location_name || item.name || item.location_fk || 'Unknown Location';
@@ -200,8 +205,6 @@ export default function UtilityShifting() {
               };
             }).filter(option => option !== null);
 
-            console.log(`✅ ${endpoint.key} transformed options:`, options);
-
             const optionsWithEmpty = [
               { value: "", label: `Select ${endpoint.key}` },
               ...options
@@ -226,14 +229,11 @@ export default function UtilityShifting() {
 
       const results = await Promise.all(requests);
       
-      // Update filter options state
       const newFilterOptions = { ...filterOptions };
       results.forEach(result => {
         newFilterOptions[result.key] = result.options;
       });
       setFilterOptions(newFilterOptions);
-
-      console.log("✅ Final filter options:", newFilterOptions);
 
     } catch (error) {
       console.error("❌ Error fetching filter options:", error);
@@ -251,34 +251,24 @@ export default function UtilityShifting() {
     try {
       setLoading(true);
       
-      // Calculate start index for backend (iDisplayStart)
       const startIndex = (pagination.pageNumber - 1) * pagination.pageDisplayLength;
       
-      // Prepare request body with filter parameters (as JSON)
       const requestBody = {
-        // Map filters to backend expected field names in the UtilityShifting object
         location_name: filters.location || '',
         utility_category_fk: filters.category || '', 
         utility_type_fk: filters.utilityType || '',
         shifting_status_fk: filters.status || ''
       };
 
-      // Prepare query parameters for pagination and search
       const queryParams = new URLSearchParams({
         iDisplayStart: startIndex.toString(),
         iDisplayLength: pagination.pageDisplayLength.toString(),
         sSearch: searchParameter || ''
       });
 
-      console.log("📡 Fetching utility shifting list with:", {
-        queryParams: queryParams.toString(),
-        requestBody: requestBody,
-        searchParameter: searchParameter
-      });
-
       const response = await api.post(
         `${API_BASE_URL}/utility-shifting/ajax/getUtilityShiftingList?${queryParams.toString()}`, 
-        requestBody, // Send filters in request body
+        requestBody,
         { 
           withCredentials: true,
           headers: {
@@ -286,13 +276,6 @@ export default function UtilityShifting() {
           }
         }
       );
-
-      console.log("✅ Utility shifting list response:", {
-        dataCount: response.data?.aaData?.length || 0,
-        totalRecords: response.data?.iTotalRecords || 0,
-        searchUsed: searchParameter,
-        returnedRecords: response.data?.aaData?.length || 0
-      });
 
       if (response.data) {
         setUtilityShiftingList(response.data.aaData || []);
@@ -326,8 +309,6 @@ export default function UtilityShifting() {
         }
       );
 
-      console.log("✅ Uploaded files list response:", response.data);
-
       if (response.data && Array.isArray(response.data)) {
         setUploadedFilesList(response.data);
       }
@@ -339,7 +320,6 @@ export default function UtilityShifting() {
     }
   };
 
-  // Download handler for Utility Shifting template
   const handleSampleDownload = () => {
     const fileUrl = "/files/utilityshifting/Utility_Shifting_Template.xlsx";
     const fileName = "Utility_Shifting_Template.xlsx";
@@ -352,17 +332,14 @@ export default function UtilityShifting() {
     link.remove();
   };
 
-  // Handle Upload button click
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
 
-  // Handle file selection and upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
       setUploadMessage({
         type: 'error',
@@ -371,7 +348,6 @@ export default function UtilityShifting() {
       return;
     }
 
-    // Validate file size (e.g., 10MB limit)
     if (file.size > 10 * 1024 * 1024) {
       setUploadMessage({
         type: 'error',
@@ -383,7 +359,6 @@ export default function UtilityShifting() {
     await uploadUtilityShiftingFile(file);
   };
 
-  // Upload file to backend
   const uploadUtilityShiftingFile = async (file) => {
     setUploadLoading(true);
     setUploadMessage({ type: '', text: '' });
@@ -391,8 +366,6 @@ export default function UtilityShifting() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-
-      console.log('Uploading file:', file.name, 'Size:', file.size);
 
       const response = await api.post(
         `${API_BASE_URL}/utility-shifting/upload-utility-shifting`,
@@ -406,9 +379,6 @@ export default function UtilityShifting() {
         }
       );
 
-      console.log('Upload response:', response.data);
-
-      // Handle the response
       if (response.data) {
         const responseData = response.data;
         
@@ -417,7 +387,6 @@ export default function UtilityShifting() {
             type: 'success',
             text: responseData.success
           });
-          // Refresh data after successful upload
           fetchUtilityShiftingList();
           fetchUploadedFilesList();
         } 
@@ -472,8 +441,6 @@ export default function UtilityShifting() {
       let errorMessage = 'Upload failed! Please try again.';
       
       if (error.response) {
-        console.log('Error response:', error.response.data);
-        
         const serverError = error.response.data;
         
         if (typeof serverError === 'object') {
@@ -541,7 +508,6 @@ export default function UtilityShifting() {
 
   const handleAdd = () => navigate("add-utility-shifting");
   
-  // Updated handleEdit function to navigate with utility_shifting_id
   const handleEdit = (utilityShifting) => navigate("add-utility-shifting", { 
     state: { 
       utility_shifting_id: utilityShifting.utility_shifting_id,
@@ -549,7 +515,6 @@ export default function UtilityShifting() {
     } 
   });
 
-  // Fixed clear filters function
   const handleClearFilters = () => {
     setFilters({
       location: "",
@@ -568,59 +533,52 @@ export default function UtilityShifting() {
 
   const isUtilityShiftingForm = location.pathname.endsWith("/add-utility-shifting");
 
-  // Calculate pagination values
   const totalPages = Math.ceil(pagination.totalRecords / pagination.pageDisplayLength);
   const startRecord = (pagination.pageNumber - 1) * pagination.pageDisplayLength + 1;
   const endRecord = Math.min(pagination.pageNumber * pagination.pageDisplayLength, pagination.totalRecords);
 
- 
   const uploadTotalPages = Math.ceil(uploadPagination.totalRecords / uploadPagination.pageDisplayLength);
   const uploadStartRecord = (uploadPagination.pageNumber - 1) * uploadPagination.pageDisplayLength + 1;
   const uploadEndRecord = Math.min(uploadPagination.pageNumber * uploadPagination.pageDisplayLength, uploadPagination.totalRecords);
 
   const exportUtilityShifting = () => {
-    
-	const {
-	  location,     
-	  category,   
-	  utilityType,  
-	  status       
-	} = filters;
+    const {
+      location,     
+      category,   
+      utilityType,  
+      status       
+    } = filters;
    
-	document.getElementById("exportLocation_name").value = location || "";
-	 document.getElementById("exportUtility_category_fk").value = category || "";
-	 document.getElementById("exportUtility_type_fk").value = utilityType || "";
-	 document.getElementById("exportShifting_status_fk").value = status || "";
+    document.getElementById("exportLocation_name").value = location || "";
+    document.getElementById("exportUtility_category_fk").value = category || "";
+    document.getElementById("exportUtility_type_fk").value = utilityType || "";
+    document.getElementById("exportShifting_status_fk").value = status || "";
 
- 
     document.getElementById("exportUtilityShiftingForm").submit();
   };
 
-  
   return (
     <div className={styles.container}>
-	<form
-	  id="exportUtilityShiftingForm"
-	  action={`${API_BASE_URL}/utility-shifting/export-utility-shifting`}
-	  method="POST"
-	  style={{ display: "none" }}
-	>
-	  <input type="hidden" id="exportLocation_name" name="location_name" />
-	  <input type="hidden" id="exportUtility_category_fk" name="utility_category_fk" />
-	  <input type="hidden" id="exportUtility_type_fk" name="utility_type_fk" />
-	  <input type="hidden" id="exportShifting_status_fk" name="shifting_status_fk" />
-	</form>
+      <form
+        id="exportUtilityShiftingForm"
+        action={`${API_BASE_URL}/utility-shifting/export-utility-shifting`}
+        method="POST"
+        style={{ display: "none" }}
+      >
+        <input type="hidden" id="exportLocation_name" name="location_name" />
+        <input type="hidden" id="exportUtility_category_fk" name="utility_category_fk" />
+        <input type="hidden" id="exportUtility_type_fk" name="utility_type_fk" />
+        <input type="hidden" id="exportShifting_status_fk" name="shifting_status_fk" />
+      </form>
 
       {!isUtilityShiftingForm && (
         <div className="pageHeading">
           <h2>Utility Shifting</h2>
           <div className="rightBtns">
-            {/* Download button */}
             <button className="btn-2 transparent-btn" onClick={handleSampleDownload}>
               <LuDownload size={16} />
             </button>
             
-            {/* Upload button with hidden file input */}
             <button 
               className="btn btn-primary" 
               onClick={handleUploadClick}
@@ -651,21 +609,19 @@ export default function UtilityShifting() {
             <button className="btn btn-primary" onClick={handleAdd}>
               <CirclePlus size={16} /> Add
             </button>
-			<button className="btn btn-primary" onClick={exportUtilityShifting}>
-			  <LuCloudDownload size={16} /> Export
-			</button>
+            <button className="btn btn-primary" onClick={exportUtilityShifting}>
+              <LuCloudDownload size={16} /> Export
+            </button>
           </div>
         </div>
       )}
       
-      {/* Upload Message */}
       {uploadMessage.text && (
         <div className={`alert ${uploadMessage.type === 'success' ? 'alert-success' : uploadMessage.type === 'error' ? 'alert-danger' : 'alert-info'} mt-3`}>
           <div dangerouslySetInnerHTML={{ __html: uploadMessage.text }} />
         </div>
       )}
       
-      {/* Filters */}
       {!isUtilityShiftingForm && (
         <div className="innerPage">
           <div className={styles.filterRow}>
@@ -718,7 +674,6 @@ export default function UtilityShifting() {
               </button>
             </div>
 
-            {/* Search Box - Moved to right side */}
             <div className={styles.searchContainer}>
               <div className={styles.searchBox}>
                 <LuSearch className={styles.searchIcon} size={18} />
@@ -733,7 +688,6 @@ export default function UtilityShifting() {
             </div>
           </div>
           
-          {/* Loading State */}
           {loading && (
             <div className="text-center p-3">
               <div className="spinner-border text-primary" role="status">
@@ -743,7 +697,6 @@ export default function UtilityShifting() {
             </div>
           )}
           
-          {/* Main Data Table */}
           {!loading && (
             <>
               <div className={`dataTable ${styles.tableWrapper}`}>
@@ -794,7 +747,6 @@ export default function UtilityShifting() {
                 </table>
               </div>
 
-              {/* Pagination */}
               {utilityShiftingList.length > 0 && (
                 <div className={styles.pagination}>
                   <div className={styles.paginationInfo}>
@@ -803,24 +755,41 @@ export default function UtilityShifting() {
                   </div>
                   <div className={styles.paginationControls}>
                     <button 
-                      className="btn btn-sm btn-outline-primary"
+                      className="btn btn-sm btn-outline-primary d-flex align-items-center"
                       disabled={pagination.pageNumber === 1}
                       onClick={() => handlePageChange(pagination.pageNumber - 1)}
+                      title="Previous Page"
                     >
-                      Previous
+                      <LuChevronLeft size={16} />
                     </button>
-                    <span className={styles.pageNumber}>
-                      Page {pagination.pageNumber} of {totalPages}
-                    </span>
+                    
+                    <div className="d-flex align-items-center">
+                      {generatePageNumbers(pagination.pageNumber, totalPages).map((page, index) => (
+                        page === '...' ? (
+                          <span key={`ellipsis-${index}`} className="mx-1">...</span>
+                        ) : (
+                          <button
+                            key={page}
+                            className={`btn btn-sm mx-1 ${pagination.pageNumber === page ? 'btn-primary' : 'btn-outline-primary'}`}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </button>
+                        )
+                      ))}
+                    </div>
+                    
                     <button 
-                      className="btn btn-sm btn-outline-primary"
+                      className="btn btn-sm btn-outline-primary d-flex align-items-center"
                       disabled={pagination.pageNumber === totalPages}
                       onClick={() => handlePageChange(pagination.pageNumber + 1)}
+                      title="Next Page"
                     >
-                      Next
+                      <LuChevronRight size={16} />
                     </button>
                   </div>
                   <div className={styles.pageSize}>
+                    <span className="me-2">Show:</span>
                     <select 
                       value={pagination.pageDisplayLength} 
                       onChange={handlePageSizeChange}
@@ -838,7 +807,6 @@ export default function UtilityShifting() {
               <br />
               <br />
               
-              {/* Uploaded Utility Shifting Data table */}
               <div className="pageHeading">
                 <h2>Uploaded Utility Shifting Data</h2>
                 <div className="rightBtns">
@@ -847,8 +815,8 @@ export default function UtilityShifting() {
                   </button>
                 </div>
               </div>
-			  <br />
-              {/* Uploaded Files Search Bar - Positioned after the heading */}
+              <br />
+              
               <div className={styles.uploadSearchSection}>
                 <div className={styles.uploadSearchContainer}>
                   <div className={styles.uploadSearchBox}>
@@ -909,7 +877,6 @@ export default function UtilityShifting() {
                 </table>
               </div>
 
-              {/* Uploaded Files Pagination */}
               {uploadedFilesList.length > 0 && (
                 <div className={styles.pagination}>
                   <div className={styles.paginationInfo}>
@@ -918,24 +885,41 @@ export default function UtilityShifting() {
                   </div>
                   <div className={styles.paginationControls}>
                     <button 
-                      className="btn btn-sm btn-outline-primary"
+                      className="btn btn-sm btn-outline-primary d-flex align-items-center"
                       disabled={uploadPagination.pageNumber === 1}
                       onClick={() => handleUploadPageChange(uploadPagination.pageNumber - 1)}
+                      title="Previous Page"
                     >
-                      Previous
+                      <LuChevronLeft size={16} />
                     </button>
-                    <span className={styles.pageNumber}>
-                      Page {uploadPagination.pageNumber} of {uploadTotalPages}
-                    </span>
+                    
+                    <div className="d-flex align-items-center">
+                      {generatePageNumbers(uploadPagination.pageNumber, uploadTotalPages).map((page, index) => (
+                        page === '...' ? (
+                          <span key={`ellipsis-${index}`} className="mx-1">...</span>
+                        ) : (
+                          <button
+                            key={page}
+                            className={`btn btn-sm mx-1 ${uploadPagination.pageNumber === page ? 'btn-primary' : 'btn-outline-primary'}`}
+                            onClick={() => handleUploadPageChange(page)}
+                          >
+                            {page}
+                          </button>
+                        )
+                      ))}
+                    </div>
+                    
                     <button 
-                      className="btn btn-sm btn-outline-primary"
+                      className="btn btn-sm btn-outline-primary d-flex align-items-center"
                       disabled={uploadPagination.pageNumber === uploadTotalPages}
                       onClick={() => handleUploadPageChange(uploadPagination.pageNumber + 1)}
+                      title="Next Page"
                     >
-                      Next
+                      <LuChevronRight size={16} />
                     </button>
                   </div>
                   <div className={styles.pageSize}>
+                    <span className="me-2">Show:</span>
                     <select 
                       value={uploadPagination.pageDisplayLength} 
                       onChange={handleUploadPageSizeChange}
