@@ -1611,9 +1611,9 @@ public class ContractRepository implements IContractRepo {
 					contract.setContract_status(null);
 					contract.setContract_status_fk("Not Awarded");
 				}
-				if(!StringUtils.isEmpty(contract.getContract_status()) && "Yes".equals(contract.getContract_status())) {}
+				if(!StringUtils.isEmpty(contract.getContract_status()) && "Yes".equals(contract.getContract_status())) {
 					contract.setContract_status("Open");
-				
+				}
 				String Contract_id_code=getDepartmentCode(contract.getContract_department(),con);
 				
 				contract_id = getContractIdByWorkId(contract.getProject_id_fk(),Contract_id_code,con);
