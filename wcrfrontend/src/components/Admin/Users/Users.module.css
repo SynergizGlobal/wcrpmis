@@ -1,8 +1,13 @@
-.container {
+
+.usersContainer {
   background-color: #f9f9f9;
   border-radius: 8px;
   height: 100%;
+  width: 100%;
+  position: relative;
 }
+
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -143,27 +148,283 @@
 
 
 /* ------- Pagination ------- */
+
+/* Pagination Styles */
 .paginationBar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
+  padding: 15px 0;
+  margin-top: 20px;
+  border-top: 1px solid #e0e0e0;
 }
 
 .paginationBtns {
   display: flex;
-  gap: 8px;
+  gap: 5px;
+  align-items: center;
 }
 
-.paginationBtns button {
-  padding: 6px 12px;
-  border: 1px solid #bbb;
-  background: #fff;
+.paginationBtn {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: white;
   border-radius: 4px;
   cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
 }
 
-.activePage {
-  background: #2E3A71 !important;
-  color: white !important;
+.paginationBtn:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #2E3A71;
+  color: #2E3A71;
+}
+
+.paginationBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageNumber {
+  padding: 8px 12px;
+  min-width: 40px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+}
+
+.pageNumber:hover {
+  background: #f8f9fa;
+  border-color: #2E3A71;
+}
+
+.pageNumber.activePage {
+  background: #2E3A71;
+  color: white;
+  border-color: #2E3A71;
+}
+
+.pageEllipsis {
+  padding: 8px 5px;
+  color: #666;
+}
+
+
+/* Add these to your existing Users.module.css */
+/* Filter Section */
+.filterSection {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+.filterColumn {
+  flex: 1;
+  min-width: 150px;
+}
+
+.filterColumn label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.85rem;
+  color: #333; /* Changed from white to dark color for visibility */
+  font-weight: 500;
+}
+
+.filterSelect {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd; /* Changed from white to light gray border */
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.3s;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #2E3A71; /* Dark blue border on focus */
+  box-shadow: 0 0 0 2px rgba(46, 58, 113, 0.1);
+}
+.clearFilterBtn {
+  background: #2E3A71; /* Light background initially */
+  color: #f8f9fa; /* Dark blue text */
+  padding: 8px 15px;
+  border: 1px solid #2E3A71; /* Dark blue border */
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.clearFilterBtn:hover {
+  background: #2E3A71; /* Dark blue background on hover */
+  color: white; /* White text on hover */
+  border-color: #2E3A71;
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: #fff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  background: #343a40;
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px 8px 0 0;
+}
+
+.modalHeader h6 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.closeButton {
+  background: #2E3A71;
+  border: none;
+  color: #2E3A71;
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modalBody {
+  padding: 20px;
+}
+
+.fileUploadSection {
+  margin-bottom: 20px;
+}
+
+.fileUploadLabel {
+  display: inline-block;
+  background: #2E3A71;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.fileUploadLabel:hover {
+  background: #2E3A71;
+}
+
+.fileInput {
+  display: none;
+}
+
+.fileNameDisplay {
+  margin-top: 10px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.modalActions button {
+  flex: 1;
+}
+
+/* Loader */
+.loaderOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filterRow {
+    flex-direction: column;
+  }
+  
+  .filterColumn {
+    width: 100%;
+  }
+  
+  .modalContent {
+    width: 95%;
+    margin: 10px;
+  }
+  
+  .usersTable th:nth-child(3),
+  .usersTable th:nth-child(4),
+  .usersTable th:nth-child(5),
+  .usersTable th:nth-child(6),
+  .usersTable th:nth-child(7),
+  .usersTable th:nth-child(8),
+  .usersTable th:nth-child(9),
+  .usersTable th:nth-child(10),
+  .usersTable td:nth-child(3),
+  .usersTable td:nth-child(4),
+  .usersTable td:nth-child(5),
+  .usersTable td:nth-child(6),
+  .usersTable td:nth-child(7),
+  .usersTable td:nth-child(8),
+  .usersTable td:nth-child(9),
+  .usersTable td:nth-child(10) {
+    display: none;
+  }
 }
