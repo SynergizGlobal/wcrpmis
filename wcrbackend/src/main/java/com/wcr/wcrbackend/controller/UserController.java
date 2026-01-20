@@ -1,6 +1,7 @@
 package com.wcr.wcrbackend.controller;
 
 import java.io.FileNotFoundException;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
@@ -465,51 +466,176 @@ public class UserController {
 		return ResponseEntity.ok(Map.of(attributeKey, attributeMsg));
 	}
 	
+//	@PostMapping(value = "/export-users")
+//	public ResponseEntity<?> exportUsers(HttpServletRequest request, HttpServletResponse response,HttpSession session,@RequestBody User user){
+//		//ModelAndView view = new ModelAndView(PageConstants2.usersGrid);
+//		List<User> dataList = new ArrayList<User>();
+//		String userId = null;String userName = null;
+//		String attributeKey = "";
+//		String attributeMsg = "";
+//		
+//		System.out.println("Methodd callledddddddddddd.....");
+//		try {
+//			//userId = (String) session.getAttribute("USER_ID");userName = (String) session.getAttribute("USER_NAME");
+//			//view.setViewName("redirect:/users");
+//			com.wcr.wcrbackend.entity.User uObj = (com.wcr.wcrbackend.entity.User) session.getAttribute("user");
+//			userId = uObj.getUserId();
+//			userName = uObj.getUserName();
+//			dataList = userService.getUsersExportList(user);  
+//			if(dataList != null && dataList.size() > 0){
+//	            XSSFWorkbook  workBook = new XSSFWorkbook ();
+//	            XSSFSheet sheet = workBook.createSheet(WorkbookUtil.createSafeSheetName("User"));
+//		        workBook.setSheetOrder(sheet.getSheetName(), 0);
+//		        byte[] blueRGB = new byte[]{(byte)0, (byte)176, (byte)240};
+//		        byte[] yellowRGB = new byte[]{(byte)255, (byte)255, (byte)0};
+//		        byte[] greenRGB = new byte[]{(byte)146, (byte)208, (byte)80};
+//		        byte[] redRGB = new byte[]{(byte)255, (byte)0, (byte)0};
+//		        byte[] whiteRGB = new byte[]{(byte)255, (byte)255, (byte)255};
+//		        
+//		        boolean isWrapText = true;boolean isBoldText = true;boolean isItalicText = false; int fontSize = 11;String fontName = "Calibri";
+//		        CellStyle blueStyle = cellFormating(workBook,blueRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+//		        CellStyle yellowStyle = cellFormating(workBook,yellowRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+//		        CellStyle greenStyle = cellFormating(workBook,greenRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+//		        CellStyle redStyle = cellFormating(workBook,redRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+//		        CellStyle whiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+//		        
+//		        CellStyle indexWhiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+//		        
+//		        isWrapText = true;isBoldText = false;isItalicText = false; fontSize = 9;fontName = "Calibri";
+//		        CellStyle sectionStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+//		        
+//		        
+//	            XSSFRow headingRow = sheet.createRow(0);
+//	            String headerString = "User ID^User Name^Designation^Department^Reporting to^Email-Id^Mobile Number^User Type^Role";
+//	            String[] firstHeaderStringArr = headerString.split("\\^");
+//	            for (int i = 0; i < firstHeaderStringArr.length; i++) {		        	
+//		        	Cell cell = headingRow.createCell(i);
+//			        cell.setCellStyle(yellowStyle);
+//					cell.setCellValue(firstHeaderStringArr[i]);
+//				}
+//	            short rowNo = 1;
+//	            for (User obj : dataList) {
+//	                XSSFRow row = sheet.createRow(rowNo);
+//	                row.createCell((short)0).setCellValue(obj.getUser_id());
+//	                row.createCell((short)1).setCellValue(obj.getUser_name());
+//	                row.createCell((short)2).setCellValue(obj.getDesignation());
+//	                row.createCell((short)3).setCellValue(obj.getDepartment_name());
+//	                row.createCell((short)4).setCellValue(obj.getReporting_to_designation());
+//	                
+//	                row.createCell((short)5).setCellValue(obj.getEmail_id());
+//	                row.createCell((short)6).setCellValue(obj.getMobile_number());
+//	                row.createCell((short)7).setCellValue(obj.getUser_type_fk());
+//	                row.createCell((short)8).setCellValue(obj.getUser_role_name_fk());
+//	                
+//	                rowNo++;
+//	            }
+//	            for(int columnIndex = 0; columnIndex < dataList.size(); columnIndex++) {
+//	        		sheet.setColumnWidth(columnIndex, 25 * 200);
+//				}
+//                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
+//                Date date = new Date();
+//                String fileName = "User_"+dateFormat.format(date);
+//                
+//	            try{
+//	                /*FileOutputStream fos = new FileOutputStream(fileDirectory +fileName+".xls");
+//	                workBook.write(fos);
+//	                fos.flush();*/
+//	            	
+//	               response.setContentType("application/.csv");
+//	 			   response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+//	 			   response.setContentType("application/vnd.ms-excel");
+//	 			   // add response header
+//	 			   response.addHeader("Content-Disposition", "attachment; filename=" + fileName+".xlsx");
+//	 			   
+//	 			    //copies all bytes from a file to an output stream
+//	 			   workBook.write(response.getOutputStream()); // Write workbook to response.
+//		           workBook.close();
+//	 			    //flushes output stream
+//	 			    response.getOutputStream().flush();
+//	            	
+//	 			    attributeKey = "success";
+//	 			    attributeMsg = dataExportSucess;
+//	                //attributes.addFlashAttribute("success",dataExportSucess);
+//	            	//response.setContentType("application/vnd.ms-excel");
+//	            	//response.setHeader("Content-Disposition", "attachment; filename=filename.xls");
+//	            	//XSSFWorkbook  workbook = new XSSFWorkbook ();
+//	            	// ...
+//	            	// Now populate workbook the usual way.
+//	            	// ...
+//	            	//workbook.write(response.getOutputStream()); // Write workbook to response.
+//	            	//workbook.close();
+//	            }catch(FileNotFoundException e){
+//	                //e.printStackTrace();
+//	            	 attributeKey = "error";
+//		 			 attributeMsg = dataExportInvalid;
+//	                //attributes.addFlashAttribute("error",dataExportInvalid);
+//	            }catch(IOException e){
+//	                //e.printStackTrace();
+//	            	attributeKey = "error";
+//		 			attributeMsg = dataExportError;
+//	                //attributes.addFlashAttribute("error",dataExportError);
+//	            }
+//	        }else{
+//	        	attributeKey = "error";
+//	 			attributeMsg = dataExportNoData;
+//	        	 //attributes.addFlashAttribute("error",dataExportNoData);
+//	        }
+//		}catch(Exception e){	
+//			e.printStackTrace();
+//			logger.error("exportUsers : : User Id - "+userId+" - User Name - "+userName+" - "+e.getMessage());
+//			attributeKey = "error";
+// 			attributeMsg = commonError;
+//			//attributes.addFlashAttribute("error", commonError);			
+//		}
+//		//return view;
+//		return ResponseEntity.ok(Map.of(attributeKey, attributeMsg));
+//	}
+	
 	@PostMapping(value = "/export-users")
-	public ResponseEntity<?> exportUsers(HttpServletRequest request, HttpServletResponse response,HttpSession session,@RequestBody User user){
-		//ModelAndView view = new ModelAndView(PageConstants2.usersGrid);
-		List<User> dataList = new ArrayList<User>();
-		String userId = null;String userName = null;
-		String attributeKey = "";
-		String attributeMsg = "";
-		try {
-			//userId = (String) session.getAttribute("USER_ID");userName = (String) session.getAttribute("USER_NAME");
-			//view.setViewName("redirect:/users");
-			com.wcr.wcrbackend.entity.User uObj = (com.wcr.wcrbackend.entity.User) session.getAttribute("user");
-			userId = uObj.getUserId();
-			userName = uObj.getUserName();
-			dataList = userService.getUsersExportList(user);  
-			if(dataList != null && dataList.size() > 0){
+	public void exportUsers(HttpServletRequest request, HttpServletResponse response, HttpSession session, @RequestBody User user) throws IOException{
+	    //ModelAndView view = new ModelAndView(PageConstants2.usersGrid);
+	    List<User> dataList = new ArrayList<User>();
+	    String userId = null;String userName = null;
+	    String attributeKey = "";
+	    String attributeMsg = "";
+	    try {
+	        //userId = (String) session.getAttribute("USER_ID");userName = (String) session.getAttribute("USER_NAME");
+	        //view.setViewName("redirect:/users");
+	        com.wcr.wcrbackend.entity.User uObj = (com.wcr.wcrbackend.entity.User) session.getAttribute("user");
+	        userId = uObj.getUserId();
+	        userName = uObj.getUserName();
+	        dataList = userService.getUsersExportList(user);  
+	        if(dataList != null && dataList.size() > 0){
 	            XSSFWorkbook  workBook = new XSSFWorkbook ();
 	            XSSFSheet sheet = workBook.createSheet(WorkbookUtil.createSafeSheetName("User"));
-		        workBook.setSheetOrder(sheet.getSheetName(), 0);
-		        byte[] blueRGB = new byte[]{(byte)0, (byte)176, (byte)240};
-		        byte[] yellowRGB = new byte[]{(byte)255, (byte)255, (byte)0};
-		        byte[] greenRGB = new byte[]{(byte)146, (byte)208, (byte)80};
-		        byte[] redRGB = new byte[]{(byte)255, (byte)0, (byte)0};
-		        byte[] whiteRGB = new byte[]{(byte)255, (byte)255, (byte)255};
-		        
-		        boolean isWrapText = true;boolean isBoldText = true;boolean isItalicText = false; int fontSize = 11;String fontName = "Calibri";
-		        CellStyle blueStyle = cellFormating(workBook,blueRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
-		        CellStyle yellowStyle = cellFormating(workBook,yellowRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
-		        CellStyle greenStyle = cellFormating(workBook,greenRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
-		        CellStyle redStyle = cellFormating(workBook,redRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
-		        CellStyle whiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
-		        
-		        CellStyle indexWhiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
-		        
-		        isWrapText = true;isBoldText = false;isItalicText = false; fontSize = 9;fontName = "Calibri";
-		        CellStyle sectionStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
-		        
-		        
+	            workBook.setSheetOrder(sheet.getSheetName(), 0);
+	            byte[] blueRGB = new byte[]{(byte)0, (byte)176, (byte)240};
+	            byte[] yellowRGB = new byte[]{(byte)255, (byte)255, (byte)0};
+	            byte[] greenRGB = new byte[]{(byte)146, (byte)208, (byte)80};
+	            byte[] redRGB = new byte[]{(byte)255, (byte)0, (byte)0};
+	            byte[] whiteRGB = new byte[]{(byte)255, (byte)255, (byte)255};
+	            
+	            boolean isWrapText = true;boolean isBoldText = true;boolean isItalicText = false; int fontSize = 11;String fontName = "Calibri";
+	            CellStyle blueStyle = cellFormating(workBook,blueRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+	            CellStyle yellowStyle = cellFormating(workBook,yellowRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+	            CellStyle greenStyle = cellFormating(workBook,greenRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+	            CellStyle redStyle = cellFormating(workBook,redRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+	            CellStyle whiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.CENTER,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+	            
+	            CellStyle indexWhiteStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+	            
+	            isWrapText = true;isBoldText = false;isItalicText = false; fontSize = 9;fontName = "Calibri";
+	            CellStyle sectionStyle = cellFormating(workBook,whiteRGB,HorizontalAlignment.LEFT,VerticalAlignment.CENTER,isWrapText,isBoldText,isItalicText,fontSize,fontName);
+	            
+	            
 	            XSSFRow headingRow = sheet.createRow(0);
 	            String headerString = "User ID^User Name^Designation^Department^Reporting to^Email-Id^Mobile Number^User Type^Role";
 	            String[] firstHeaderStringArr = headerString.split("\\^");
-	            for (int i = 0; i < firstHeaderStringArr.length; i++) {		        	
-		        	Cell cell = headingRow.createCell(i);
-			        cell.setCellStyle(yellowStyle);
-					cell.setCellValue(firstHeaderStringArr[i]);
-				}
+	            for (int i = 0; i < firstHeaderStringArr.length; i++) {                
+	                Cell cell = headingRow.createCell(i);
+	                cell.setCellStyle(yellowStyle);
+	                cell.setCellValue(firstHeaderStringArr[i]);
+	            }
 	            short rowNo = 1;
 	            for (User obj : dataList) {
 	                XSSFRow row = sheet.createRow(rowNo);
@@ -527,65 +653,47 @@ public class UserController {
 	                rowNo++;
 	            }
 	            for(int columnIndex = 0; columnIndex < dataList.size(); columnIndex++) {
-	        		sheet.setColumnWidth(columnIndex, 25 * 200);
-				}
-                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
-                Date date = new Date();
-                String fileName = "User_"+dateFormat.format(date);
-                
+	                sheet.setColumnWidth(columnIndex, 25 * 200);
+	            }
+	            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
+	            Date date = new Date();
+	            String fileName = "User_"+dateFormat.format(date);
+	            
 	            try{
-	                /*FileOutputStream fos = new FileOutputStream(fileDirectory +fileName+".xls");
-	                workBook.write(fos);
-	                fos.flush();*/
-	            	
-	               response.setContentType("application/.csv");
-	 			   response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-	 			   response.setContentType("application/vnd.ms-excel");
-	 			   // add response header
-	 			   response.addHeader("Content-Disposition", "attachment; filename=" + fileName+".xlsx");
-	 			   
-	 			    //copies all bytes from a file to an output stream
-	 			   workBook.write(response.getOutputStream()); // Write workbook to response.
-		           workBook.close();
-	 			    //flushes output stream
-	 			    response.getOutputStream().flush();
-	            	
-	 			    attributeKey = "success";
-	 			    attributeMsg = dataExportSucess;
-	                //attributes.addFlashAttribute("success",dataExportSucess);
-	            	//response.setContentType("application/vnd.ms-excel");
-	            	//response.setHeader("Content-Disposition", "attachment; filename=filename.xls");
-	            	//XSSFWorkbook  workbook = new XSSFWorkbook ();
-	            	// ...
-	            	// Now populate workbook the usual way.
-	            	// ...
-	            	//workbook.write(response.getOutputStream()); // Write workbook to response.
-	            	//workbook.close();
+	                response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+	                response.setContentType("application/vnd.ms-excel");
+	                // add response header
+	                response.addHeader("Content-Disposition", "attachment; filename=" + fileName+".xlsx");
+	                
+	                //copies all bytes from a file to an output stream
+	                workBook.write(response.getOutputStream()); // Write workbook to response.
+	                workBook.close();
+	                //flushes output stream
+	                response.getOutputStream().flush();
+	                
+	                // IMPORTANT: Don't return anything after writing to response
+	                return; // Just return void
+	                
 	            }catch(FileNotFoundException e){
-	                //e.printStackTrace();
-	            	 attributeKey = "error";
-		 			 attributeMsg = dataExportInvalid;
-	                //attributes.addFlashAttribute("error",dataExportInvalid);
+	                e.printStackTrace();
+	                // Set error message in session or redirect
+	                session.setAttribute("error", dataExportInvalid);
+	                response.sendRedirect(request.getContextPath() + "/users");
 	            }catch(IOException e){
-	                //e.printStackTrace();
-	            	attributeKey = "error";
-		 			attributeMsg = dataExportError;
-	                //attributes.addFlashAttribute("error",dataExportError);
+	                e.printStackTrace();
+	                session.setAttribute("error", dataExportError);
+	                response.sendRedirect(request.getContextPath() + "/users");
 	            }
 	        }else{
-	        	attributeKey = "error";
-	 			attributeMsg = dataExportNoData;
-	        	 //attributes.addFlashAttribute("error",dataExportNoData);
+	            session.setAttribute("error", dataExportNoData);
+	            response.sendRedirect(request.getContextPath() + "/users");
 	        }
-		}catch(Exception e){	
-			e.printStackTrace();
-			logger.error("exportUsers : : User Id - "+userId+" - User Name - "+userName+" - "+e.getMessage());
-			attributeKey = "error";
- 			attributeMsg = commonError;
-			//attributes.addFlashAttribute("error", commonError);			
-		}
-		//return view;
-		return ResponseEntity.ok(Map.of(attributeKey, attributeMsg));
+	    }catch(Exception e){    
+	        e.printStackTrace();
+	        logger.error("exportUsers : : User Id - "+userId+" - User Name - "+userName+" - "+e.getMessage());
+	        session.setAttribute("error", commonError);
+	        response.sendRedirect(request.getContextPath() + "/users");
+	    }
 	}
 	private CellStyle cellFormating(XSSFWorkbook workBook,byte[] rgb,HorizontalAlignment hAllign, VerticalAlignment vAllign, boolean isWrapText,boolean isBoldText,boolean isItalicText,int fontSize,String fontName) {
 		CellStyle style = workBook.createCellStyle();
