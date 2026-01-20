@@ -7,6 +7,31 @@
   gap: 50px;
 }
 
+.topHeadingInner {
+  position: relative;
+  width: 100%;
+}
+
+/* back button starts at 300px */
+.backBtn {
+  position: absolute;
+  left: 700px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.centerHeading {
+	
+  position: absolute;
+  text-align: center;
+  margin: 0;
+  left: 860px;
+  font-size: 25px;
+  font-weight: 600;
+  color: #3f51b5;
+}
+
+
 .stats {
   display: flex;
   justify-content: center;

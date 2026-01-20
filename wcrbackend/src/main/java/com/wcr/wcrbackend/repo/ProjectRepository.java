@@ -798,13 +798,14 @@ public class ProjectRepository implements IProjectRepository {
 	public List<Project> getProjectTypeDetails() throws Exception {
 	    List<Project> objsList;
 	    try {
-	        String qry = "SELECT project_type_id, project_type_name FROM project_type";
+	        String qry = "SELECT project_type_id, project_type_name FROM project_type ORDER BY project_type_name";
 	        objsList = jdbcTemplate.query(qry, new BeanPropertyRowMapper<>(Project.class));
 	    } catch (Exception e) {
 	        throw new Exception("Error fetching project type details", e);
 	    }
 	    return objsList;
 	}
+
 
 	@Override
 	public List<Project> getRailwayZones() throws Exception {

@@ -99,6 +99,57 @@ import Home from "./components/Home/Home";
 import ProjectForm from "./components/UpdateForms/Project/ProjectForm/ProjectForm";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./queryClient";
+
+
+import WorkOverviewDashboard from "./components/Works/WorkOverviewDashboard";
+import ProjectOverviewDashboard from "./components/Works/ProjectOverviewDashboard";
+import ExecutionOverviewDashboard from "./components/Works/ExecutionOverviewDashboard";
+import ContractOverviewDashboard from "./components/Works/ContractOverviewDashboard";
+import IssuesDashboard from "./components/Works/IssuesOverview";
+import MonthwiseProgress from "./components/Works/MonthwiseProgress";
+import MonthwisePlan from "./components/Works/MonthwisePlan";
+import DailyProgress from "./components/Works/DailyProgress";
+import GISMap from "./components/Works/GISMap";
+import SitePhotos from "./components/Works/SitePhotos";
+import ExecutionOverview from "./components/Works/ExecutionOverview";
+import TimelineScheduleDashboard from "./components/Works/TimelineScheduleDashboard";
+import ProgressChart from "./components/Works/ProgressChart";
+import ProgressTableDashboard from "./components/Works/ProgressTableDashboard";
+import ProjectWeightages from "./components/Works/ProjectWeightages";
+import ContractsOverview from "./components/Works/ContractsOverview";
+import LandAcquisitionDashboard  from "./components/Works/LandAcquisition";
+import IssuesOverview from "./components/Works/IssuesOverview";
+import UtilityShiftingDashboard from "./components/Works/UtilityShifting";
+import TimelineSchedule from "./components/Works/TimelineSchedule";
+import ProgressTable from "./components/Works/ProgressTable";
+
+import ContractsOverviewInProgress from "./components/Works/ContractsOverviewInProgress";
+import ContractsOverviewCompleted from "./components/Works/ContractsOverviewCompleted";
+
+import LandAcquisitionStripChart from "./components/Works/LandAcquisitionStripChart";
+import LandAcquisitionDetails from "./components/Works/LandAcquisitionDetails";
+
+import IssuesPendingDashboard from "./components/Works/IssuesPendingDashboard";
+
+import UtilityShiftingStripChart from "./components/Works/UtilityShiftingStripChart";
+import UtilityShiftingDetails from "./components/Works/UtilityShiftingDetails";
+import UtilityShiftingMap from "./components/Works/UtilityShiftingMap";
+
+
+import FortnightMeeting from "./components/Modules/FortnightMeeting";
+import DrawingStatus from "./components/Modules/DrawingStatus";
+/*import ProjectPerformance from "./components/Modules/ProjectPerformance";
+import TimelineSchedule from "./components/Modules/TimelineSchedule";
+import BGInsuranceDashboard from "./components/Modules/BGInsuranceDashboard";
+import UsageAnalysisDashboard from "./components/Modules/UsageAnalysisDashboard";
+import ContractwisePhysicalProgress from "./components/Modules/ContractwisePhysicalProgress";
+import ComponentwiseProgress from "./components/Modules/ComponentwiseProgress";
+import ProgressTable from "./components/Modules/ProgressTable";
+import ContractStatus from "./components/Modules/ContractStatus";
+import Issues from "./components/Modules/Issues";*/
+
+
+
 function App() {
   const [message, setMessage] = useState("Loading...");
   const isAuthenticated = localStorage.getItem("token");
@@ -121,6 +172,21 @@ function App() {
 						<Route path="header" element={<Header />} />
 						<Route path="about" element={<About />} />
 						<Route path="dashboard" element={<Dashboard />} />
+						
+						
+						<Route path="work-overview-dashboard" element={<WorkOverviewDashboard />} />
+						<Route path="project-overview-dashboard" element={<ProjectOverviewDashboard />} />
+						<Route path="execution-overview-dashboard" element={<ExecutionOverviewDashboard />} />
+						<Route path="contract-overview-dashboard" element={<ContractOverviewDashboard />} />
+						<Route path="progress-table-dashboard" element={<ProgressTableDashboard />} />
+						<Route path="timeline-schedule-dashboard" element={<TimelineScheduleDashboard />} />
+						<Route path="issues-overview-dashboard" element={<IssuesDashboard />} />
+						<Route path="monthwise-progress-dashboard" element={<MonthwiseProgress />} />
+						<Route path="monthwise-plan-dashboard" element={<MonthwisePlan />} />
+						<Route path="daily-progress-dashboard" element={<DailyProgress />} />
+						<Route path="gis-map-dashboard" element={<GISMap />} />
+						<Route path="site-photos-dashboard" element={<SitePhotos />} />							
+						
 
 						<Route path="updateforms" element={<UpdateForms />}>
 							<Route path="project" element={<Project />}>
@@ -176,6 +242,40 @@ function App() {
                      </Route>
 			
 						<Route path="works" element={<Works />} />
+						
+						<Route path="execution-overview/:projectId" element={<ExecutionOverview />} />
+						<Route path="timeline-schedule/:projectId" element={<TimelineSchedule />} />
+						<Route path="progress-chart/:projectId" element={<ProgressChart />} />
+						<Route path="progress-table/:projectId" element={<ProgressTable />} />
+						<Route path="project-weightages/:projectId" element={<ProjectWeightages />} />
+						<Route path="contracts-overview/:projectId" element={<ContractsOverview />} />
+						<Route path="in-progress/:projectId" element={<ContractsOverviewInProgress />} />
+						<Route path="completed/:projectId" element={<ContractsOverviewCompleted />} />
+						<Route path="land-acquisition/:projectId" element={<LandAcquisitionDashboard />} />
+						<Route path="land-strip-chart/:projectId" element={<LandAcquisitionStripChart />} />
+						<Route path="land-details/:projectId" element={<LandAcquisitionDetails />} />
+						<Route path="issues/:projectId" element={<IssuesOverview />} />
+						<Route path="issue-pending/:projectId" element={<IssuesPendingDashboard />} />
+						<Route path="utility-shifting/:projectId" element={<UtilityShiftingDashboard />} />	
+						<Route path="utility-strip-chart/:projectId" element={<UtilityShiftingStripChart />} />
+						<Route path="utility-shifting-details/:projectId" element={<UtilityShiftingDetails />} />
+						<Route path="utility-shifting-map/:projectId" element={<UtilityShiftingMap />} />
+
+						<Route path="modules/fortnight-meeting" element={<FortnightMeeting />} />
+						<Route path="modules/drawing-status" element={<DrawingStatus />} />
+
+						{/* <Route path="modules/project-performance" element={<ProjectPerformance />} /> */}
+						{/* <Route path="modules/timeline-schedule" element={<TimelineSchedule />} /> */}
+						{/* <Route path="modules/bg-insurance-dashboard" element={<BGInsuranceDashboard />} /> */}
+						{/* <Route path="modules/usage-analysis-dashboard" element={<UsageAnalysisDashboard />} /> */}
+						{/* <Route path="modules/contractwise-physical-progress" element={<ContractwisePhysicalProgress />} /> */}
+						{/* <Route path="modules/componentwise-progress" element={<ComponentwiseProgress />} /> */}
+						{/* <Route path="modules/progress-table" element={<ProgressTable />} /> */}
+						{/* <Route path="modules/contract-status" element={<ContractStatus />} /> */}
+						{/* <Route path="modules/issues" element={<Issues />} /> */}						
+						
+						
+						
 						<Route path="admin" element={<Admin />}>
 							<Route path="users" element={<Users />}>
 								<Route path="userform" element={<UserForm />} />

@@ -1,62 +1,91 @@
+// src/utils/normalizeGanttData.js
 
-
+/**
+ * Normalize input data for Gantt chart.
+ * Handles both Excel-style arrays and DB JSON array.
+ * Parses subStructure "from xx km to yy km" to numeric values.
+ */
 export function normalizeGanttInput(input) {
   if (!input) return [];
 
-  // Excel-style (first row is header, second row is data)
+  // Excel-style (fallback)
   if (Array.isArray(input) && Array.isArray(input[0])) {
-    // Expecting columns like in your HTML EXCEL_DATA
-    // ['S. No.', 'Project', 'Contract', 'Contractor', 'Structure', 'Sub-Str', 'From Chainage', 'To Chainage', 'Status']
     return input
-      .slice(1) // skip header
+      .slice(1)
       .filter((row) => row && row.length >= 9)
       .map((row) => ({
         contract: row[2],
         contractor: row[3],
-        structure: row[4],
+        structureType: row[4] || "",
         subStructure: row[5] || "",
         fromKm: Number(row[6]),
         toKm: Number(row[7]),
         status: row[8],
+        progress: 0,
+        barColor: "blue",
+        barLabel: "",
+        subFromKm: Number(row[6]),
+        subToKm: Number(row[7]),
       }))
       .filter((r) => !Number.isNaN(r.fromKm) && !Number.isNaN(r.toKm));
   }
 
-  // DB JSON array (assume keys already meaningful)
+  // DB JSON array
   if (Array.isArray(input)) {
     return input
-      .map((r, i) => ({
-        contract: r.contract ?? "",
-        contractor: r.contractor ?? "",
-        structure: r.structure ?? "",
-        subStructure: r.subStructure ?? "",
-        fromKm: Number(r.fromKm),
-        toKm: r.toKm == null ? Number(r.fromKm) : Number(r.toKm),
-        status: r.status ?? "Contract Awarded",
-      }))
+      .map((r) => {
+        let subFromKm = Number(r.fromKm);
+        let subToKm = r.toKm != null ? Number(r.toKm) : Number(r.fromKm);
+
+        // Parse subStructure "from xx km to yy km"
+        if (r.subStructure) {
+          const match = r.subStructure.match(/from\s+([\d.]+)\s*km\s+to\s+([\d.]+)\s*km/i);
+          if (match) {
+            subFromKm = parseFloat(match[1]);
+            subToKm = parseFloat(match[2]);
+          }
+        }
+
+        return {
+          contract: r.contract ?? "",
+		  contract_id: r.contract_id ?? "",
+          contractor: r.contractor ?? "",
+          structureType: r.structureType ?? "",
+          structure: r.structure ?? "",
+          subStructure: r.subStructure ?? "",
+          projectFromKm: r.projectFromKm != null ? Number(r.projectFromKm) : undefined,
+          projectToKm: r.projectToKm != null ? Number(r.projectToKm) : undefined,
+          fromKm: Number(r.fromKm),
+          toKm: r.toKm == null ? Number(r.fromKm) : Number(r.toKm),
+          subFromKm,  // numeric start for bar
+          subToKm,    // numeric end for bar
+          status: r.status ?? "Contract Awarded",
+          progress: r.progress != null ? Number(r.progress) : 0,
+          barColor: r.barColor ?? "",
+          barLabel: r.barLabel ?? "",
+        };
+      })
       .filter((r) => !Number.isNaN(r.fromKm) && !Number.isNaN(r.toKm));
   }
 
   return [];
 }
 
-export function statusToClass(status) {
-  if (!status) return "contract-awarded";
-  const t = String(status).trim();
-  const l = t.toLowerCase();
+/**
+ * Convert status and progress to CSS class for bar color.
+ */
+export function statusToClass(status, progress) {
+  const s = (status || "").toLowerCase();
+  const p = Number(progress);
 
-  if (t === "Completed" || l === "completed") return "completed";
-  if (t === "Contract Awarded" || l === "contract awarded") return "contract-awarded";
-  if (t === "Tender Invited" || l === "tender invited") return "tender-invited";
-  if (t === "Tender to be Invited" || t === "Tender To Be Invited" || l === "tender to be invited")
-    return "tender-to-be-invited";
+  if (s.includes("not awarded")) return "not-awarded";
+  if (p === 100) return "completed";                 // Green
+  if (p >= 90 && p < 100) return "almost-completed"; // Light Green
+  if (p > 0 && p < 90) return "in-progress";        // Orange
+  if (p === 0) return "not-started";                // Blue
+  if (s.includes("in progress") || s.includes("progress")) return "in-progress";
 
-  if (l.includes("completed")) return "completed";
-  if (l.includes("awarded") && !l.includes("to be")) return "contract-awarded";
-  if (l.includes("invited") && !l.includes("to be")) return "tender-invited";
-  if (l.includes("to be invited")) return "tender-to-be-invited";
-
-  return "contract-awarded";
+  return "not-awarded"; // fallback
 }
 
 /**
@@ -66,14 +95,18 @@ export function layerSegments(segments) {
   const layers = [];
   const sorted = segments
     .slice()
-    .sort((a, b) => (a.fromKm !== b.fromKm ? a.fromKm - b.fromKm : (b.toKm - b.fromKm) - (a.toKm - a.fromKm)));
+    .sort((a, b) =>
+      a.subFromKm !== b.subFromKm
+        ? a.subFromKm - b.subFromKm
+        : (b.subToKm - b.subFromKm) - (a.subToKm - a.subFromKm)
+    );
 
   sorted.forEach((seg) => {
     let idx = 0;
     while (true) {
       if (!layers[idx]) layers[idx] = [];
       const overlap = layers[idx].some(
-        (s) => !(seg.toKm <= s.fromKm || seg.fromKm >= s.toKm)
+        (s) => !(seg.subToKm <= s.subFromKm || seg.subFromKm >= s.subToKm)
       );
       if (!overlap) {
         seg.layer = idx;
@@ -83,10 +116,6 @@ export function layerSegments(segments) {
       idx += 1;
     }
   });
-
-  // reverse so longer are visually "lower"
-  const maxLayer = Math.max(...sorted.map((s) => s.layer));
-  sorted.forEach((s) => (s.layer = maxLayer - s.layer));
 
   return sorted;
 }

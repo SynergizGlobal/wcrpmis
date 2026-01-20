@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api/axiosInstance";
+import axios from "axios";
 import GanttBarChart from "../../components/Charts/GanttBarChart/GanttBarChart";
 import { useLocation, useNavigate } from "react-router-dom";
 import styles from './Works.module.css';
@@ -31,7 +31,7 @@ export default function Works() {
     const to = Number(toKm) * 1000;
 
     navigate(
-      `/work-overview-dashboard?project_id=${projectId}&contract_id=${contract_id}&from=${from}&to=${to}`
+      `/execution-overview-dashboard?project_id=${projectId}&contract_id=${contract_id}&from=${from}&to=${to}`
     );
   };
   // -------------------------------------------------------------
@@ -53,7 +53,7 @@ export default function Works() {
     const load = async () => {
       setLoading(true);
       try {
-        const { data } = await api.get(`${API_BASE_URL}/execution/progress`, {
+        const { data } = await axios.get(`${API_BASE_URL}/execution/progress`, {
           params: { project_id: projectId }, 
           withCredentials: true,
         });

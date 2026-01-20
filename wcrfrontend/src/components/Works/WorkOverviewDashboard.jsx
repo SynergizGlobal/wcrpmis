@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 export default function WorkOverviewDashboard() {
   const location = useLocation();
   const menuRef = useRef(null);
+  const [loading, setLoading] = useState(true);
 
   const searchParams = new URLSearchParams(location.search);
   const projectId = searchParams.get("project_id");
@@ -111,7 +112,7 @@ export default function WorkOverviewDashboard() {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          username: "tableau",
+          username: "SynTrack",
           client_ip: "10.48.192.7",
         }),
       });
@@ -137,6 +138,7 @@ export default function WorkOverviewDashboard() {
 
   const handleItemClick = async (path, label) => {
     setActiveItem(label);
+    setLoading(true);               // 👈 start loader
     const url = await fetchTrustedTicketUrl(path);
     setIframeSrc(url);
   };
@@ -205,43 +207,66 @@ export default function WorkOverviewDashboard() {
       </nav>
 
       <div className={styles.container}>
-        <div style={{ marginTop: "20px", height: "80vh", position: "relative" }}>
-          
-          {/* ------------ BACK BUTTON FIXED -------------- */}
-          <button
-            onMouseDown={(e) => {
-              e.preventDefault();
-              navigate(`/works?project_id=${projectId}`);
-            }}
-            style={{
-              position: "absolute",
-              top: "0px",
-              right: "10px",
-              zIndex: 9999,
-              padding: "6px 12px",
-              borderRadius: "4px",
-              border: "none",
-              background: "#007bff",
-              color: "#fff",
-              cursor: "pointer"
-            }}
-          >
-            Back
-          </button>
+	  <div style={{ marginTop: "20px", height: "80vh", position: "relative" }}>
+	    
+	    {/* BACK BUTTON */}
+	    <button
+	      onMouseDown={(e) => {
+	        e.preventDefault();
+	        navigate(`/Works?project_id=${projectId}`);
+	      }}
+	      style={{
+	        position: "absolute",
+	        top: "0px",
+	        right: "10px",
+	        zIndex: 9999,
+	        padding: "6px 12px",
+	        borderRadius: "4px",
+	        border: "none",
+	        background: "#007bff",
+	        color: "#fff",
+	        cursor: "pointer"
+	      }}
+	    >
+	      Back
+	    </button>
 
-          <iframe
-            title="Work Overview Dashboard"
-			src={`${iframeSrc}&:showAppBanner=false&:showShareOptions=false&:display_count=no&:showVizHome=false&:toolbar=no&:tabs=no`}
-			style={{
-			  marginTop: "25px",
-			  width: "100%",
-			  height: "100%",
-			  borderRadius: "10px"
-			}}
-            frameBorder="0"
-            allowFullScreen
-          />
-        </div>
+	    {/* 🔄 LOADER */}
+	    {loading && (
+	      <div
+	        style={{
+	          position: "absolute",
+	          top: "50%",
+	          left: "50%",
+	          transform: "translate(-50%, -50%)",
+	          zIndex: 999,
+	          fontSize: "16px",
+	          color: "#555"
+	        }}
+	      >
+	        Loading dashboard...
+	      </div>
+	    )}
+
+	    {/* IFRAME */}
+	    {iframeSrc && (
+	      <iframe
+	        title="Work Overview Dashboard"
+	        src={`${iframeSrc}&:showAppBanner=false&:showShareOptions=false&:display_count=no&:showVizHome=false&:toolbar=no&:tabs=no`}
+	        style={{
+	          marginTop: "25px",
+	          width: "100%",
+	          height: "100%",
+	          borderRadius: "10px",
+	          display: loading ? "none" : "block"
+	        }}
+	        frameBorder="0"
+	        allowFullScreen
+	        onLoad={() => setLoading(false)}   // 👈 hide loader
+	      />
+	    )}
+	  </div>
+
       </div>
     </>
   );

@@ -7,11 +7,29 @@
 
 .g-container {
   background: white;
-  padding: 10px;
-  border: 2px solid #333;
+  padding: 2px;
   margin: 0;
   font-size: 12px;
 }
+
+.completed {
+  background-color: green;
+}
+.almost-completed {
+  background-color: lightgreen;
+}
+.in-progress {
+  background-color: orange;
+}
+.not-started {
+  background-color: blue;
+}
+.not-awarded {
+  background-color: grey;
+}
+
+
+
 
 .g-title {
   text-align: center;
@@ -71,28 +89,28 @@
   text-align: center;
   font-weight: bold;
   position: relative;
-  border-right: 1px solid #000;
+  overflow: visible;
 }
+
 
 .g-chainage-numbers {
   display: flex;
+  justify-content: space-between;
+  width: 100%;
   position: absolute;
   top: 25px;
   left: 0;
   right: 0;
   height: 35px;
 }
-
 .g-chainage-mark {
-  width: 80px;
+  flex: 1;
   text-align: center;
   font-size: 9px;
   border-right: 1px solid #ccc;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 2px;
+  color: #000;
 }
+
 
 .g-km-mark {
   font-weight: bold;
@@ -127,21 +145,26 @@
 }
 
 .g-timeline {
-  flex: 1;
   position: relative;
-  border-right: 1px solid #000;
-  overflow: visible;
-  min-height: 45px;
+  overflow: visible !important;
+  border-left: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  min-height: 40px;
 }
+
+
 
 .g-seg {
   position: absolute;
-  height: 20px;
-  cursor: pointer;
+  height: 14px !important;
   border: 1px solid #333;
-  overflow: visible;
+  border-radius: 3px;
+  cursor: pointer;
   box-sizing: border-box;
+  overflow: visible;
+  z-index: 5;
 }
+
 
 .g-name {
   position: absolute;
@@ -157,9 +180,22 @@
   z-index: 10;
 }
 
+.g-seg.completed { background-color: #008000; color: #fff; }           /* Green: 100% */
+.g-seg.almost-completed { background-color: #90EE90; color: #000; }     /* Light Green: 90-99% */
+.g-seg.in-progress { background-color: #FFA500; color: #000; }          /* Orange: In-progress */
+.g-seg.not-started { background-color: #0000FF; color: #fff; }          /* Blue: 0% */
+.g-seg.not-awarded { background-color: #B0B0B0; color: #000; }          /* Grey: Not awarded */
+.g-seg.unknown { background-color: #808080; color: #fff; }              /* fallback */
+
+
 .g-seg:hover {
   opacity: 0.8;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.completed-light {
+  background: #81C784;
+  color: #fff;
 }
 
 .completed { background: #4CAF50; color: #fff; }
@@ -188,6 +224,9 @@
   height: 15px;
   border: 1px solid #333;
   border-radius: 2px;
+}
+.g-timeline-full {
+  width: 100% !important;
 }
 
 .g-tooltip {
