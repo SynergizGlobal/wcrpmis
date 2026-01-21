@@ -29,6 +29,11 @@ export default function Contract() {
     statusOfWork: "",
   });
 
+  const isValidValue = (v) =>
+  v !== null &&
+  v !== undefined &&
+  String(v).trim() !== "";
+
   const [searchQuery, setSearchQuery] = useState("");
 
   // Pagination state
@@ -91,10 +96,11 @@ export default function Contract() {
       setLoading(prev => ({...prev, hod: true}));
       const hodRes = await api.get(`${API_BASE_URL}/contract/ajax/getDesignationsFilterListInContract`, { withCredentials: true });
       if (hodRes.data && Array.isArray(hodRes.data)) {
-        const hodFormatted = hodRes.data.map(item => ({
-          value: item.designation,
-          label: item.designation
-        }));
+        const hodFormatted = hodRes.data
+        .map(item => item.designation)
+        .filter(isValidValue)
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+        .map(v => ({ value: v, label: v }));
         setHodOptions([{ value: "", label: "Select HOD" }, ...hodFormatted]);
       }
       setLoading(prev => ({...prev, hod: false}));
@@ -103,10 +109,11 @@ export default function Contract() {
       setLoading(prev => ({...prev, dyHod: true}));
       const dyHodRes = await api.get(`${API_BASE_URL}/contract/ajax/getDyHODDesignationsFilterListInContract`, { withCredentials: true });
       if (dyHodRes.data && Array.isArray(dyHodRes.data)) {
-        const dyHodFormatted = dyHodRes.data.map(item => ({
-          value: item.dy_hod_designation,
-          label: item.dy_hod_designation
-        }));
+        const dyHodFormatted = dyHodRes.data
+        .map(item => item.dy_hod_designation)
+        .filter(isValidValue)
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+        .map(v => ({ value: v, label: v }));
         setDyHodOptions([{ value: "", label: "Select Dy HOD" }, ...dyHodFormatted]);
       }
       setLoading(prev => ({...prev, dyHod: false}));
@@ -115,10 +122,14 @@ export default function Contract() {
       setLoading(prev => ({...prev, contractor: true}));
       const contractorRes = await api.get(`${API_BASE_URL}/contract/ajax/getContractorsFilterListInContract`, { withCredentials: true });
       if (contractorRes.data && Array.isArray(contractorRes.data)) {
-        const contractorFormatted = contractorRes.data.map(item => ({
-          value: `${item.contractor_id_fk}-${item.contractor_name}`,
-          label: `${item.contractor_id_fk}-${item.contractor_name}`
-        }));
+        const contractorFormatted = contractorRes.data
+        .map(item => {
+          if (!item.contractor_id_fk || !item.contractor_name) return null;
+          return `${item.contractor_id_fk}-${item.contractor_name}`;
+        })
+        .filter(isValidValue)
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+        .map(v => ({ value: v, label: v }));
         setContractorOptions([{ value: "", label: "Select Contractor" }, ...contractorFormatted]);
       }
       setLoading(prev => ({...prev, contractor: false}));
@@ -127,10 +138,11 @@ export default function Contract() {
       setLoading(prev => ({...prev, contractStatus: true}));
       const contractStatusRes = await api.get(`${API_BASE_URL}/contract/ajax/getContractStatusFilterListInContract`, { withCredentials: true });
       if (contractStatusRes.data && Array.isArray(contractStatusRes.data)) {
-        const contractStatusFormatted = contractStatusRes.data.map(item => ({
-          value: item.contract_status,
-          label: item.contract_status
-        }));
+        const contractStatusFormatted = contractStatusRes.data
+        .map(item => item.contract_status)
+        .filter(isValidValue)
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+        .map(v => ({ value: v, label: v }));
         setContractStatusOptions([{ value: "", label: "Select Contract Status" }, ...contractStatusFormatted]);
       }
       setLoading(prev => ({...prev, contractStatus: false}));
@@ -139,10 +151,11 @@ export default function Contract() {
       setLoading(prev => ({...prev, statusOfWork: true}));
       const statusOfWorkRes = await api.get(`${API_BASE_URL}/contract/ajax/getStatusFilterListInContract`, { withCredentials: true });
       if (statusOfWorkRes.data && Array.isArray(statusOfWorkRes.data)) {
-        const statusOfWorkFormatted = statusOfWorkRes.data.map(item => ({
-          value: item.contract_status_fk,
-          label: item.contract_status_fk
-        }));
+        const statusOfWorkFormatted = statusOfWorkRes.data
+        .map(item => item.contract_status_fk)
+        .filter(isValidValue)
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+        .map(v => ({ value: v, label: v }));
         setStatusOfWorkOptions([{ value: "", label: "Select Status of Work" }, ...statusOfWorkFormatted]);
       }
       setLoading(prev => ({...prev, statusOfWork: false}));

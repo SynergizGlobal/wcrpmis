@@ -122,7 +122,7 @@ export default function Home() {
         <>
 		<div className={styles.topHeadingInner}>
 		  <button
-		    className={styles.backBtn}
+		    className={styles.homeBackBtn}
 		    onClick={() => {
 		      setSelectedType(null);
 		      setSelectedProject(null);
@@ -131,18 +131,21 @@ export default function Home() {
 		    Back
 		  </button>
 
-		  <h2 className={styles.centerHeading}>
+		  <h2 className={styles.centerInnerHeading}>
 		    {selectedProject
 		      ? selectedProject.project_name
 		      : selectedType.name}
 		  </h2>
+		  <div>
+			&nbsp;
+		  </div>
 		</div>
 
 
 		<div className={styles.projectSection}>
 		  
 		  {/* LEFT SIDE – PROJECT GRID */}
-		  <div className={styles.projectCard}>
+		  <div className={styles.projectCards}>
 		    {console.log("Selected Type:", selectedType?.name)}
 		    {console.log("Projects array:", projects)}
 
