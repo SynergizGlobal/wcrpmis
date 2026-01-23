@@ -177,11 +177,11 @@ public class IssueRepository implements IIssueRepo {
 	public List<Issue> getDepartmentsListFilter(Issue obj) throws Exception {
 		List<Issue> objsList = null;
 		try {
-			String qry = "SELECT c.department_fk,department,department_name " + "from issue i "
+			String qry = "SELECT c.contract_department as department_fk, department,department_name " + "from issue i "
 					+ "LEFT JOIN contract c on i.contract_id_fk = c.contract_id "
-					+ "LEFT OUTER JOIN department d ON c.department_fk  = d.department "
+					+ "LEFT OUTER JOIN department d ON c.contract_department  = d.department "
 					+ "left join [user] u on c.hod_user_id_fk = u.user_id "
-					+ "where c.department_fk is not null and c.department_fk <> '' ";
+					+ "where c.contract_department is not null and c.contract_department <> '' ";
 			int arrSize = 0;
 			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getProject_id_fk())) {
 				qry = qry + " and project_id_fk = ?";
@@ -224,7 +224,7 @@ public class IssueRepository implements IIssueRepo {
 				arrSize++;
 			}
 
-			qry = qry + " GROUP BY c.department_fk,department,department_name";
+			qry = qry + " GROUP BY c.contract_department,department,department_name";
 
 			Object[] pValues = new Object[arrSize];
 
@@ -726,7 +726,7 @@ public class IssueRepository implements IIssueRepo {
 				arrSize++;
 			}
 			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getDepartment_fk())) {
-				qry = qry + " and c.department_fk = ?";
+				qry = qry + " and c.contract_department = ?";
 				arrSize++;
 			}
 
