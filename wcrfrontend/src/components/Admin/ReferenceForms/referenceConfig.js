@@ -84,7 +84,7 @@ export const referencePages = {
 	"Execution & Monitoring": [
 		{
 	      name: "StructureType",
-	      url: "/wcrpmis/structure-type",
+	      url: "/wcrpmis/structureType",
 	    },
 	  
 	  ],
@@ -162,7 +162,7 @@ export const referencePages = {
 		  },
 		  {
 	  	     name: "Execution Status",
-	  	  	 url: "/wcrpmis/execution-status",		    
+	  	  	 url: "/wcrpmis/executionStatus",		    
 	  	  },
 		  /*{
   		     name: "Module",
@@ -170,9 +170,9 @@ export const referencePages = {
   		  },*/ 
   		  {
 	  	     name: "Yes OR NO",
-	  	  	 url: "/wcrpmis/yes-or-no-status",		    
+	  	  	 url: "/wcrpmis/yesOrNoStatus",		    
 	  	  },
-
+		  
 	    ],
 		
 	"Utility Shifting": [

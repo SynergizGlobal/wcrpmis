@@ -169,6 +169,7 @@ export default function Users() {
     setSelectedUserRole("");
     setSelectedDepartment("");
     setSelectedReportingTo("");
+	setSearch("");
     localStorage.removeItem("usersFilters");
     setPage(1);
     fetchUsers();

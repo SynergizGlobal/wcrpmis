@@ -210,6 +210,8 @@ export default function LandAcquisition() {
       setTypeOfLand(null);
       setSubCategory(null);
       setLandStatus(null);
+      setSearch(""); 
+      setPage(1); 
       fetchData(1);
     };
 

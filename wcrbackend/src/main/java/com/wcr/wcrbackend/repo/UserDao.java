@@ -307,26 +307,50 @@ public class UserDao implements IUserDao {
 		}
 		return objsList;
 	}
+//	@Override
+//	public String checkPMISKeyAvailability(User obj) throws Exception {
+//		String pmis_key = "NoKey";
+//		try {
+//			String qry = "select count(*) from pmis_key where pmis_key = ? ";
+//			
+//			int count = jdbcTemplate.queryForObject( qry,new Object[] {obj.getPmis_key_fk()}, Integer.class);	
+//			
+//			if(count > 0) {
+//				pmis_key = "Available";
+//				qry = "select count(*) FROM [user] where pmis_key_fk = ? ";				
+//				count = jdbcTemplate.queryForObject( qry,new Object[] {obj.getPmis_key_fk()}, Integer.class);	
+//				if(count > 0) {
+//					pmis_key = "Taken";
+//				}
+//			}
+//		}catch(Exception e){ 
+//			throw new Exception(e);
+//		}
+//		return pmis_key;
+//	}
+	
+	
 	@Override
 	public String checkPMISKeyAvailability(User obj) throws Exception {
-		String pmis_key = "NoKey";
-		try {
-			String qry = "select count(*) from pmis_key where pmis_key = ? ";
-			
-			int count = jdbcTemplate.queryForObject( qry,new Object[] {obj.getPmis_key_fk()}, Integer.class);	
-			
-			if(count > 0) {
-				pmis_key = "Available";
-				qry = "select count(*) FROM [user] where pmis_key_fk = ? ";				
-				count = jdbcTemplate.queryForObject( qry,new Object[] {obj.getPmis_key_fk()}, Integer.class);	
-				if(count > 0) {
-					pmis_key = "Taken";
-				}
-			}
-		}catch(Exception e){ 
-			throw new Exception(e);
-		}
-		return pmis_key;
+	    String pmis_key = "Available";  // CHANGED: Default to "Available" instead of "NoKey"
+	    
+	    try {
+	       
+	        String qry = "SELECT COUNT(*) FROM [user] WHERE pmis_key_fk = ?";				
+	        int count = jdbcTemplate.queryForObject(qry, new Object[] {obj.getPmis_key_fk()}, Integer.class);	
+	        
+	        if(count > 0) {
+	            pmis_key = "Taken";  // Key is already assigned to a user
+	        }
+	        // If count == 0, pmis_key remains "Available"
+	        
+	    } catch(Exception e) { 
+	        // Optional: Log the error but don't necessarily throw
+	        // logger.error("Error checking PMIS key: " + e.getMessage());
+	        throw new Exception(e);
+	    }
+	    
+	    return pmis_key;
 	}
 	@Override
 	public List<User> getUserReportingToList(User obj) throws Exception {
@@ -444,7 +468,7 @@ public class UserDao implements IUserDao {
 	public List<Risk> getRiskList(User obj) throws Exception {
 		List<Risk> objsList = new ArrayList<Risk>();
 		try {
-			String qry = "select contract_id from contract " ;
+			String qry = "select contract_id,contract_short_name  from contract " ;
 			objsList = jdbcTemplate.query( qry, new BeanPropertyRowMapper<Risk>(Risk.class));	
 		}catch(Exception e){ 
 			throw new Exception(e);

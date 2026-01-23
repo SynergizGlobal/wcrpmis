@@ -296,9 +296,9 @@ function App() {
 		           
 						<Route path="user-type" element={<UserType />} />
 						<Route path="general-status" element={<GeneralStatus />} />
-						<Route path="execution-status" element={<ExecutionStatus />} />
-						<Route path="yes-or-no-status" element={<YesOrNoStatus />} />
-						<Route path="structure-type" element={<StructureType />} />
+						<Route path="executionStatus" element={<ExecutionStatus />} />
+						<Route path="yesOrNoStatus" element={<YesOrNoStatus />} />
+						<Route path="structureType" element={<StructureType />} />
 					    <Route path="contractFileType" element={<ContractFileType />} />
 						<Route path="contractorSpecialization" element={<ContractorSpecialization />} />
 						<Route path="contractType" element={<ContractType />} />
