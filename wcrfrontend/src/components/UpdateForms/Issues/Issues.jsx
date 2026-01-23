@@ -107,8 +107,8 @@ export default function Issues({}) {
 	    setFilterOptions(prev => ({
 	      ...prev,
 	      hod: data.map(v => ({
-	        value: v.designation,
-	        label: v.designation,
+	        value: v.hod_user_id_fk,
+	        label: v.user_name + "-" + v.designation,
 	      })),
 	    }));
 

@@ -542,7 +542,7 @@ public class IssueRepository implements IIssueRepo {
 	public List<Issue> getHODListFilterInIssue(Issue obj) throws Exception {
 		List<Issue> objsList = null;
 		try {
-			String qry = "SELECT hod_user_id_fk,u.designation " + "from issue i "
+			String qry = "SELECT hod_user_id_fk, u.user_name, u.designation " + "from issue i "
 					+ "LEFT JOIN contract c on i.contract_id_fk = c.contract_id "
 					+ "LEFT OUTER JOIN department d ON c.department_fk  = d.department "
 					+ "left join [user] u on c.hod_user_id_fk = u.user_id "
@@ -589,7 +589,7 @@ public class IssueRepository implements IIssueRepo {
 				arrSize++;
 				arrSize++;
 			}
-			qry = qry + " group by u.designation,hod_user_id_fk ORDER BY case when u.designation='ED Civil' then 1 " + 
+			qry = qry + " group by  u.user_name, u.designation,hod_user_id_fk ORDER BY case when u.designation='ED Civil' then 1 " + 
 					"   when u.designation='CPM I' then 2 " + 
 					"   when u.designation='CPM II' then 3" + 
 					"   when u.designation='CPM III' then 4 " + 
@@ -714,7 +714,7 @@ public class IssueRepository implements IIssueRepo {
 				arrSize++;
 			}
 			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getHod())) {
-				qry = qry + " and u.designation = ?";
+				qry = qry + " and u.user_id = ?";
 				arrSize++;
 			}
 			if (!StringUtils.isEmpty(obj) && !StringUtils.isEmpty(obj.getCategory_fk())) {
