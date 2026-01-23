@@ -1,3 +1,5 @@
+import FormsForm from "./components/Admin/Forms/FormsForm/FormsForm";
+import Forms from "./components/Admin/Forms/Forms";
 import OverviewDashboard from "./components/Admin/OverviewDashboard/OverviewDashboard";
 import ProjectType from "./components/Admin/ReferenceForms/ReferenceFormsList/ProjectType/ProjectType";
 import Department from "./components/Admin/ReferenceForms/ReferenceFormsList/Department/Department";
@@ -284,6 +286,9 @@ function App() {
 								<Route path="dashboardform" element={<DashboardForm />} />
 							</Route>
 							<Route path="reference-forms" element={<ReferenceForms />} />
+							<Route path="access-forms" element={<Forms />} >
+							<Route path="formsform" element={<FormsForm />} />
+						</Route>
 							<Route path="left-menu" element={<OverviewDashboard />} />
 						</Route>
 						<Route path="bank-guarantee-type" element={<BankGuaranteeType />} />

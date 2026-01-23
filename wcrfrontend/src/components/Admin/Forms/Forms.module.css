@@ -1,0 +1,178 @@
+.container {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.updateFormsContainer{
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #3f4a7f;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 6px;
+}
+
+.actions button {
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filterRow {
+  display: flex;
+  justify-content: center;   /* centers horizontally */
+  align-items: center;       /* aligns vertically */
+  gap: 20px;                 /* spacing between dropdown & button */
+  background: #fff;
+  padding: 10px;
+  margin-top: 15px;
+  border-radius: 6px;
+}
+
+.filterRow select {
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  min-width: 120px;
+}
+
+.tableWrapper {
+  margin-top: 20px;
+  background: #fff;
+  overflow-x: auto;
+}
+
+.projectTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.projectTable th {
+  background: #3f4a7f;
+  color: white;
+  padding: 10px;
+  text-align: left;
+}
+
+.projectTable td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.projectTable tr:nth-child(even) {
+  background: #f4f7ff;
+}
+
+.projectTable thead tr th:nth-last-child(1){
+  text-align: center;
+}
+
+@media(max-width: 992px) {
+  .filterRow{
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  .projectTable thead tr th{
+    min-width: 100px;
+  }
+  .filterOptions{
+    flex: 0 0 46%;
+  }
+}
+
+/* -------------------------
+  Table Top Row (Search + Entries)
+------------------------- */
+.tableTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.entriesSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.entriesSelect {
+  padding: 5px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* -------------------------
+  Search Bar
+------------------------- */
+.searchWrapper {
+  position: relative;
+}
+
+
+.searchWrapper {
+  position: relative;
+}
+
+.searchInput {
+  padding: 8px 40px 8px 15px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  outline: none;
+  width: 240px;
+}
+
+.searchIcon {
+  position: absolute;
+  right: 12px;
+  top: 7px;
+  font-size: 18px;
+  color: #2E3A71;
+}
+
+.clear-icon {
+  position: absolute;
+  right: 10px;
+  top: 7px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.actionBtns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* ------- Pagination ------- */
+.paginationBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.paginationBtns {
+  display: flex;
+  gap: 8px;
+}
+
+.paginationBtns button {
+  padding: 6px 12px;
+  border: 1px solid #bbb;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.activePage {
+  background: #2E3A71 !important;
+  color: white !important;
+}

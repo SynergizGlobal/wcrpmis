@@ -29,7 +29,7 @@ public class FormAccessRepository implements IFormAccessRepository {
 		List<Form>  objsList = null;
 		try {
 			String qry ="SELECT f1.form_id,f1.module_name_fk,f1.form_name,f1.parent_form_id_sr_fk,f1.web_form_url,f1.mobile_form_url,f1.priority,f1.soft_delete_status_fk,"
-					+ "f2.form_name as folder_name,f1.display_in_mobile, "
+					+ "f2.form_name as folder_name,f1.display_in_mobile,f1.url_type, "
 					+ "(select STRING_AGG(access_value,',') from form_access where form_id_fk = f1.form_id and access_type = ?) as user_role_access, "
 					+ "(select STRING_AGG(access_value,',') from form_access where form_id_fk = f1.form_id and access_type = ?) as user_type_access, "
 					+ "(select STRING_AGG(access_value,',') from form_access where form_id_fk = f1.form_id and access_type = ?) as user_access "
