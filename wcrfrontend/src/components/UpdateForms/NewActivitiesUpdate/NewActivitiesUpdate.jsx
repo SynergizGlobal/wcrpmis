@@ -1,319 +1,577 @@
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import styles from "./NewActivitiesUpdate.module.css";
+import { API_BASE_URL } from "../../../config";
+import api from "../../../api/axiosInstance";
 
 export default function NewActivitiesUpdate() {
-  // ---------------- SAMPLE DATA ---------------- //
-  const sampleProjects = [
-    { label: "Petlad-Bhadran", value: 1 },
-    { label: "Nadiad–Petlad (37 km)", value: 2 },
-  ];
 
-  const sampleContracts = {
-    1: [
-      { label: "All civil engineering works between Petlad-Bhadran", value: 10 },
-    ],
-    2: [
-      { label: "All civil engineering works between Nadiad–Petlad", value: 20 },
-    ],
-  };
+	// ---------- LIST STATES ----------
+	const [projectsList, setProjectsList] = useState([]);
+	const [contractsList, setContractsList] = useState([]);
+	const [structureTypeList, setStructureTypesList] = useState([]);
+	const [structureList, setStructureList] = useState([]);
+	const [componentList, setComponentList] = useState([]);
+	const [elementsList, setElementsList] = useState([]);
+	const [activitiesList, setActivityList] = useState([]);
 
-  const sampleStructureTypes = [
-    { label: "RUB", value: "RUB" },
-    { label: "Minor Bridge", value: "MB" },
-    { label: "Track Laying", value: "TL" },
-  ];
+	// ---------- SELECTED STATES ----------
+	const [selectedProject, setSelectedProject] = useState(null);
+	const [selectedContract, setSelectedContract] = useState(null);
+	const [selectedStructureType, setSelectedStructureType] = useState(null);
+	const [selectedStructure, setSelectedStructure] = useState(null);
+	const [selectedComponent, setSelectedComponent] = useState(null);
+	const [selectedElement, setSelectedElement] = useState(null);
 
-  const sampleStructures = {
-    MB: [
-      { label: "Br. No.61 (RCC Box)", value: 61 },
-      { label: "Br. No.62 (RCC Box)", value: 62 },
-      { label: "Br. No.63 (RCC Box)", value: 63 },
-    ],
-    RUB: [
-      { label: "Br. No.52B (RCC Box)", value: 52 },
-      { label: "Br. No.53A (RCC Box)", value: 53 },
-    ],
-  };
+	// ---------- FORM STATES ----------
+	const [progressDate, setProgressDate] = useState("");
+	const [remarks, setRemarks] = useState("");
 
-  const sampleComponents = {
-    61: [
-      { label: "Bottom Slab", value: "BS" },
-      { label: "Finishes", value: "FIN" },
-    ],
-    52: [{ label: "Bottom Slab", value: "BS" }],
-  };
+	//-------------Rrrors=-----------
+	const [errors, setErrors] = useState({});
+	
+	const [latestData,setLatestData] = useState([]);
+	
+	const [latesDataLoading, setLatesDataLoading] = useState(false);
+	
 
-  const sampleElements = {
-    BS: [
-      { label: "Steel Fixing", value: "STF" },
-      { label: "Concreting", value: "CON" },
-    ],
-    FIN: [{ label: "Painting", value: "PNT" }],
-  };
 
-  const sampleTable = [
-    {
-      task_code: "PT_MNB_000140",
-      activity: "Base Coat (LS)",
-      base_start: "2025-08-29",
-      base_finish: "2025-08-29",
-      exp_start: "2025-08-29",
-      exp_finish: "2025-08-29",
-      scope: 559.29,
-      pending: 0.0,
-      completed: 0,
-      actual: 0,
-    },
-    {
-      task_code: "PT_MNB_000150",
-      activity: "Final Coat (LS)",
-      base_start: "2025-08-29",
-      base_finish: "2025-08-29",
-      exp_start: "2025-08-29",
-      exp_finish: "2025-08-29",
-      scope: 559.29,
-      pending: 0.0,
-      completed: 0,
-      actual: 0,
-    },
-  ];
+	// ---------- INITIAL LOAD ----------
+	useEffect(() => {
+		api.post(`${API_BASE_URL}/newActivitiesUpdate`, {}, { withCredentials: true })
+			.then(res => {
+				setProjectsList((res.data.projectsList || []).map(p => ({ value: p.project_id, label: p.project_name })));
+				setContractsList((res.data.contractsList || []).map(c => ({ value: c.contract_id, label: c.contract_short_name })));
+			});
+	}, []);
 
-  const sampleLatestUpdates = [
-    { structure: "Br. No.15A (RCC Box)", component: "Bottom Slab" },
-    { structure: "Br. No.52B (RCC Box)", component: "Bottom Slab" },
-    { structure: "Br. No.53A (RCC Box)", component: "Bottom Slab" },
-  ];
 
-  // ---------------- STATES ---------------- //
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedContract, setSelectedContract] = useState(null);
-  const [selectedStructureType, setSelectedStructureType] = useState(null);
-  const [selectedStructure, setSelectedStructure] = useState(null);
-  const [selectedComponent, setSelectedComponent] = useState(null);
-  const [selectedElement, setSelectedElement] = useState(null);
+	useEffect(() => {
 
-  const [tableRows, setTableRows] = useState([]);
+		setLatesDataLoading(true);
+		try {
+			api.post(`${API_BASE_URL}/ajax/getLatestRowData`, {}, { withCredentials: true })
+				.then(res => {
+					setLatestData((res.data || []));
+				});
+		}
+		catch (err) {
+			console.log("Error Occuered!" + err);
+		}
+		finally {
+			setLatesDataLoading(false);
+		}
 
-  // ---------------- EDIT TABLE ---------------- //
-  const updateCell = (index, field, value) => {
-    const updated = [...tableRows];
-    updated[index][field] = value;
-    setTableRows(updated);
-  };
+	}, []);
+	
 
- useEffect(() => {
-  if (selectedComponent) {
-    setTableRows(sampleTable);
-  } else {
-    setTableRows([]); // clear when deselected
-  }
-}, [selectedComponent]);
+	const fetchLatestData = async () => {
+		try {
+			api.post(`${API_BASE_URL}/ajax/getLatestRowData`, {}, { withCredentials: true })
+				.then(res => {
+					setLatestData((res.data || []));
+				});
+		}
+		catch (err) {
+			console.log("Error Occuered!" + err);
+		}
+		finally {
+			setLatesDataLoading(false);
+		}
+	};
 
-  return (
-    <div className={styles.container}>
-        <div className="pageHeading">
-        <h2>New Activities Update</h2>
-        <div  className="rightBtns md-none">
-          {/* <button className="btn btn-primary" onClick={handleAdd}>
-            <CirclePlus size={16} /> Add
-          </button>
-          <button className="btn btn-primary">
-            <LuCloudDownload size={16} /> Export
-          </button> */}
-          <span>&nbsp;</span>
-        </div>
-      </div>
+	// ---------- STRUCTURE TYPES ----------
+	useEffect(() => {
+		if (!selectedContract) return setStructureTypesList([]);
+		api.post(`${API_BASE_URL}/ajax/getStructureTypesInActivitiesUpdate`,
+			{ contract_id_fk: selectedContract.value },
+			{ withCredentials: true }
+		).then(res => {
+			setStructureTypesList(res.data.map(s => ({ value: s.structure_type, label: s.structure_type })));
+		});
+	}, [selectedContract]);
 
-      <div className={styles.layoutWrapper}>
-        {/* ---------------- LEFT PANEL ---------------- */}
-        <div className={styles.leftSection}>
-          {/* ---------------- ROW 1 ---------------- */}
-          <div className="form-row">
-            <div className="form-field">
-                <Select
-                    placeholder="Project"
-                    value={selectedProject}
-                    options={sampleProjects}
-                    onChange={(v) => {
-                        setSelectedProject(v);
-                        setSelectedContract(null);
-                    }}
-                    />
-            </div>
-            <div className="form-field">
-                <Select
-              placeholder="Contract"
-              value={selectedContract}
-              options={sampleContracts[selectedProject?.value] || []}
-              onChange={(v) => {
-                setSelectedContract(v);
-              }}
-              isDisabled={!selectedProject}
-            />
-            </div>
-          </div>
+	// ---------- STRUCTURES ----------
+	useEffect(() => {
+		if (!selectedStructureType) return setStructureList([]);
+		api.post(`${API_BASE_URL}/ajax/getNewActivitiesUpdateStructures`,
+			{ contract_id_fk: selectedContract.value, structure_type_fk: selectedStructureType.value },
+			{ withCredentials: true }
+		).then(res => {
+			setStructureList(res.data.map(s => ({ value: s.strip_chart_structure_id_fk, label: s.strip_chart_structure_id_fk })));
+		});
+	}, [selectedStructureType]);
 
-          {/* ---------------- ROW 2 ---------------- */}
-          <div className="form-row flex-4">
-            <div className="form-field">
-              <Select
-                placeholder="Structure Type"
-                value={selectedStructureType}
-                options={sampleStructureTypes}
-                onChange={(v) => {
-                    setSelectedStructureType(v);
-                    setSelectedStructure(null);
-                }}
-                isDisabled={!selectedContract}
-                />
-            </div>
-            <div className="form-field">
-               <Select
-                placeholder="Structure"
-                value={selectedStructure}
-                options={sampleStructures[selectedStructureType?.value] || []}
-                onChange={(v) => {
-                setSelectedStructure(v);
-                }}
-                isDisabled={!selectedStructureType}
-            /> 
-            </div>
-            <div className="form-field">
-                <Select
-                placeholder="Component"
-                value={selectedComponent}
-                options={sampleComponents[selectedStructure?.value] || []}
-                onChange={(v) => {
-                    setSelectedComponent(v);
-                }}
-                isDisabled={!selectedStructure}
-                />
-            </div>
-            <div className="form-field">
-                <Select
-                    placeholder="Element"
-                    value={selectedElement}
-                    options={sampleElements[selectedComponent?.value] || []}
-                    onChange={(v) => {
-                        setSelectedElement(v);
-                    }}
-                    isDisabled={!selectedComponent}
-                    />   
-            </div>
-            <div className="form-field">
-                <label>Progress Date <span className="red">*</span></label>
-                <input name="progress_date" type="date" placeholder="Select Date" />
-              </div>
-              <div className="form-field">
-                <label>Remarks <span className="red">*</span></label>
-                <input name="remarks" type="text" placeholder="Enter Value" />
-              </div>
-              <button className="btn btn-primary">Attach Photo</button>
-              <button className="btn btn-secondary">Update</button>
-          </div>
+	// ---------- COMPONENTS ----------
+	useEffect(() => {
+		if (!selectedStructure) return setComponentList([]);
+		api.post(`${API_BASE_URL}/ajax/getNewActivitiesUpdateComponentsList`,
+			{
+				contract_id_fk: selectedContract.value,
+				strip_chart_structure_id_fk: selectedStructure.value,
+				structure_type_fk: selectedStructureType.value
+			},
+			{ withCredentials: true }
+		).then(res => {
+			setComponentList(res.data.map(c => ({ value: c.strip_chart_component, label: c.strip_chart_component })));
+		});
+	}, [selectedStructure]);
 
-          {/* ---------------- ACTION BUTTONS ---------------- */}
-          <div className="form-post-buttons">
+	// ---------- ELEMENTS ----------
+	useEffect(() => {
+		if (!selectedComponent) return setElementsList([]);
+		api.post(`${API_BASE_URL}/ajax/getNewActivitiesUpdateComponentIdsList`,
+			{
+				contract_id_fk: selectedContract.value,
+				strip_chart_structure_id_fk: selectedStructure.value,
+				strip_chart_component: selectedComponent.value,
+				structure_type_fk: selectedStructureType.value
+			},
+			{ withCredentials: true }
+		).then(res => {
+			setElementsList(res.data.map(e => ({ value: e.strip_chart_component_id, label: e.strip_chart_component_id })));
+		});
+	}, [selectedComponent]);
 
-            <button className="btn btn-primary">Update</button>
-            <button className="btn btn-secondary">Reset</button>
-            <button className="btn btn-primary">Export</button>
-            <button className="btn btn-secondary">Upload</button>
-          </div>
+	// ---------- ACTIVITIES ----------
+	useEffect(() => {
+		// Parent filters must exist
+		if (!selectedContract || !selectedStructure || !selectedStructureType) {
+			setActivityList([]);
+			return;
+		}
 
-          
-        </div>
+		// At least ONE of these must be selected
+		if (!selectedComponent && !selectedElement) {
+			setActivityList([]);
+			return;
+		}
 
-        {/* ---------------- RIGHT PANEL ---------------- */}
-        <div className={styles.rightSection}>
-          <h4>Latest Updated Structure → Component</h4>
-          <div className={styles.latestBox}>
-            {sampleLatestUpdates.map((item, i) => (
-              <p key={i}>
-                <a href="#">
-                  {item.structure} → {item.component}
-                </a>
-              </p>
-            ))}
-          </div>
-        </div>
-      </div>
-      {/* ---------------- TABLE ---------------- */}
-          {tableRows.length > 0 && (
-            <div className={`dataTable ${styles.tableWrapper}`}>
-            <table className={styles.projectTable}>
-              <thead>
-                <tr>
-                  <th>Task Code</th>
-                  <th>Activity</th>
-                  <th>Baseline Start</th>
-                  <th>Baseline Finish</th>
-                  <th>Expected Start</th>
-                  <th>Expected Finish</th>
-                  <th>Scope</th>
-                  <th>Pending</th>
-                  <th>Completed</th>
-                  <th>Actual</th>
-                </tr>
-              </thead>
+		const fetchActivities = async () => {
+			try {
+				if(!selectedComponent){
+					setActivityList([]);
+					return;
+				}
+				const res = await api.post(
+					`${API_BASE_URL}/ajax/getNewActivitiesfiltersList`,
+					{
+						contract_id_fk: selectedContract.value,
+						strip_chart_structure_id_fk: selectedStructure.value,
+						structure_type_fk: selectedStructureType.value,
+						strip_chart_component: selectedComponent?.value || null,
+						strip_chart_component_id: selectedElement?.value || null
+					},
+					{ withCredentials: true }
+				);
 
-              <tbody>
-                {tableRows.map((row, i) => (
-                  <tr key={i}>
-                    <td>{row.task_code}</td>
-                    <td>{row.activity}</td>
+				setActivityList(res.data || []);
+			} catch (err) {
+				console.error("Failed to load activities", err);
+				setActivityList([]);
+			}
+		};
 
-                    <td>
-                      <input
-                        type="date"
-                        value={row.base_start}
-                        onChange={(e) => updateCell(i, "base_start", e.target.value)}
-                      />
-                    </td>
+		fetchActivities();
 
-                    <td>
-                      <input
-                        type="date"
-                        value={row.base_finish}
-                        onChange={(e) => updateCell(i, "base_finish", e.target.value)}
-                      />
-                    </td>
+	}, [
+		selectedContract,
+		selectedStructure,
+		selectedStructureType,
+		selectedComponent,
+		selectedElement
+	]);
+	
+	
+	const fetchActivities = async () => {
+		try {
+			const res = await api.post(
+				`${API_BASE_URL}/ajax/getNewActivitiesfiltersList`,
+				{
+					contract_id_fk: selectedContract.value,
+					strip_chart_structure_id_fk: selectedStructure.value,
+					structure_type_fk: selectedStructureType.value,
+					strip_chart_component: selectedComponent?.value || null,
+					strip_chart_component_id: selectedElement?.value || null
+				},
+				{ withCredentials: true }
+			);
 
-                    <td>
-                      <input
-                        type="date"
-                        value={row.exp_start}
-                        onChange={(e) => updateCell(i, "exp_start", e.target.value)}
-                      />
-                    </td>
+			setActivityList(res.data || []);
+		} catch (err) {
+			console.error("Failed to load activities", err);
+			setActivityList([]);
+		}
+	};
 
-                    <td>
-                      <input
-                        type="date"
-                        value={row.exp_finish}
-                        onChange={(e) => updateCell(i, "exp_finish", e.target.value)}
-                      />
-                    </td>
 
-                    <td>{row.scope}</td>
-                    <td className="red">{row.pending}</td>
-                    <td>{row.completed}</td>
+	// ---------- HANDLERS ----------
+	const handleActualChange = (index, value) => {
+		const updated = [...activitiesList];
+		updated[index].actual = value;
+		setActivityList(updated);
+	};
 
-                    <td>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={row.actual}
-                        onChange={(e) => updateCell(i, "actual", e.target.value)}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-        </div>
-          )}
-    </div>
-  );
+	const formatDateForBackend = (date) => {
+		if (!date) return null;
+
+		const d = new Date(date);
+		if (isNaN(d.getTime())) return null;
+
+		const day = String(d.getDate()).padStart(2, "0");
+		const year = d.getFullYear();
+		const monthName = d.toLocaleString("en-US", { month: "long" });
+
+		return `${day}-${monthName}-${year}`;
+	};
+
+
+	const handleUpdate = async () => {
+		const newErrors = {};
+
+		if (!selectedContract) newErrors.contract_id_fk = true;
+		if (!selectedStructureType) newErrors.structure_type_fk = true;
+		if (!selectedComponent) newErrors.strip_chart_component = true;
+
+		setErrors(newErrors);
+
+		if (Object.keys(newErrors).length > 0) return;
+
+		try {
+			const activity_ids = activitiesList.map(a => a.activity_id);
+			const actualScopes = activitiesList.map(a => (a.actual ? a.actual.toString() : ""));
+			const totalScopes = activitiesList.map(a => (a.scope ? a.scope.toString() : "0"));
+			const completedScopes = activitiesList.map(a => (a.completed ? a.completed.toString() : "0"));
+
+		const res =	await api.post(`${API_BASE_URL}/update-new-activities-bulk`, {
+				contract_id_fk: selectedContract?.value,
+				structure_type_fk: selectedStructureType?.value,
+				strip_chart_structure_id_fk: selectedStructure?.value,
+				strip_chart_component: selectedComponent?.value,
+				strip_chart_component_id: selectedElement?.value,
+				progress_date: formatDateForBackend(progressDate),
+				remarks,
+
+				activity_ids: activity_ids,
+				actualScopes: actualScopes,
+				totalScopes: totalScopes,
+				completedScopes: completedScopes,
+
+				scope: totalScopes.join(",")
+
+			}, { withCredentials: true });
+			
+			if (res.data.success) {
+			  alert(res.data.success);
+			  fetchActivities();
+			  fetchLatestData();
+			} else if (res.data.error) {
+			  alert(res.data.error);
+			} else {
+			  alert("Unexpected response from server");
+			}		} catch (err) {
+			console.error(err);
+			alert("Update failed");
+		}
+	};
+
+
+	const handleExport = async () => {
+		const res = await api.post(`${API_BASE_URL}/exportActivitiesbyContract`, {
+			contract_id_fk: selectedContract?.value,
+			structure_type_fk: selectedStructureType?.value,
+			strip_chart_structure_id_fk: selectedStructure?.value,
+			progress_date: formatDateForBackend(progressDate),
+		}, { responseType: "blob", withCredentials: true });
+
+		const url = window.URL.createObjectURL(new Blob([res.data]));
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = "Activities.xlsx";
+		link.click();
+	};
+
+
+
+	const handleResetButton = () => {
+		setSelectedProject(null);
+		setSelectedContract(null);
+		setSelectedStructureType(null);
+		setSelectedStructure(null);
+		setSelectedComponent(null);
+		setSelectedElement(null);
+		setActivityList([]);
+	};
+
+	const [showModal, setShowModal] = useState(false);
+	const [selectedFile, setSelectedFile] = useState(null);
+	const [loading, setLoading] = useState(false);
+
+	//  Handle file selection
+	const handleFileChange = (e) => {
+		setSelectedFile(e.target.files[0]);
+	};
+
+	const closeModal = () => {
+		setShowModal(false);
+		setSelectedFile(null);
+	};
+
+
+
+	const handleUploadSubmit = async (e) => {
+		e.preventDefault();
+
+		if (!selectedFile) return alert("Select a file!");
+
+		const formData = new FormData();
+		formData.append("stripChartFile", selectedFile);
+
+		try {
+			setLoading(true);
+			await api.post(`${API_BASE_URL}/upload-new-activities`, formData, {
+				headers: { "Content-Type": "multipart/form-data" },
+				withCredentials: true
+			});
+			alert("Upload successful!");
+			closeModal();
+			window.location.reload();
+		} catch (err) {
+			alert("Upload failed.");
+			console.error(err);
+			window.location.reload();
+		} finally {
+			setLoading(false);
+		}
+	};
+	return (
+		<div className={styles.container}>
+		  <div className="pageHeading">
+		  <h2>New Activities Update</h2>
+		  <div  className="rightBtns md-none">
+		    <span>&nbsp;</span>
+		  </div>
+		</div>
+
+			<div className={styles.layoutWrapper}>
+				{/* LEFT PANEL */}
+				<div className={styles.leftSection}>
+
+					<div className="form-row">
+						<div className="form-field">
+							<Select placeholder="Project" value={selectedProject} options={projectsList} onChange={setSelectedProject} isClearable />
+						</div>
+						<div className="form-field">
+							<Select placeholder="Contract"
+								value={selectedContract}
+								options={contractsList}
+								onChange={(val) => {
+									setSelectedContract(val);
+									setErrors(prev => ({ ...prev, contract_id_fk: false }));
+									setSelectedStructureType(null);
+									setSelectedStructure(null);
+									setSelectedComponent(null);
+									setSelectedElement(null);
+								}}
+								isClearable />
+								<div>
+							{errors.contract_id_fk && <span className="red">Required*</span>}
+							</div>
+
+						</div>
+					</div>
+
+					<div className="form-row flex-4">
+						<div className="form-field">
+							<Select
+								placeholder="Structure Type"
+								value={selectedStructureType}
+								options={structureTypeList}
+								onChange={(val) => {
+									setSelectedStructureType(val);
+									setErrors(prev => ({ ...prev, structure_type_fk: false }));
+									setSelectedStructure(null);
+									setSelectedComponent(null);
+									setSelectedElement(null);
+								}}
+								isClearable
+								isDisabled={!selectedContract}
+							/>
+							{errors.structure_type_fk && <span className="red">Required*</span>}
+						</div>
+
+						<div className="form-field">
+
+							<Select placeholder="Structure"
+								value={selectedStructure}
+								options={structureList}
+								onChange={(val) => {
+									setSelectedStructure(val);
+									setSelectedComponent(null);
+									setSelectedElement(null);
+								}}
+								isClearable
+								isDisabled={!selectedStructureType} />
+						</div>
+						<div className="form-field">
+							<Select placeholder="Component"
+								value={selectedComponent}
+								options={componentList}
+								onChange={(val) => {
+									setSelectedComponent(val);
+									setErrors(prev => ({ ...prev, strip_chart_component: false }));
+									setSelectedElement(null);
+								}}
+								isDisabled={!selectedStructure}
+								isClearable />
+							{errors.strip_chart_component && <span className="red">Required*</span>}
+
+						</div>
+						<div className="form-field"><Select placeholder="Element" value={selectedElement} options={elementsList} onChange={setSelectedElement} isDisabled={!selectedComponent} isClearable /></div>
+
+						<div className="form-field">
+							<label>Progress Date *</label>
+							<input type="date" value={progressDate} onChange={e => setProgressDate(e.target.value)} />
+						</div>
+
+						<div className="form-field">
+							<label>Remarks</label>
+							<input type="text" value={remarks} onChange={e => setRemarks(e.target.value)} />
+						</div>
+
+						<button className="btn btn-primary" onClick={() => setShowModal(true)}>Attach Photo</button>
+						<button className="btn btn-primary" onClick={handleUpdate}>Update</button>
+					</div>
+
+					<div className="form-post-buttons">
+						<button className="btn btn-primary" onClick={handleUpdate}>Update</button>
+						<button className="btn btn-secondary" onClick={handleResetButton}>Reset</button>
+						<button className="btn btn-primary" onClick={handleExport}>Export</button>
+						<button className="btn btn-secondary" onClick={() => setShowModal(true)}>Upload</button>
+					</div>
+				</div>
+				{/* ---------------- RIGHT PANEL ---------------- */}
+				<div className={styles.rightSection}>
+				  <h4>Latest Updated Structure → Component</h4>
+				  <div className={styles.latestBox}>
+				    {latestData.map((item, i) => (
+				      <p key={i}>
+				        <a href="#">
+				          {item.structure} → {item.strip_chart_component}
+				        </a>
+				      </p>
+				    ))}
+				  </div>
+				</div>
+			</div>
+
+			{activitiesList.length > 0 && (
+				<div className={`dataTable ${styles.tableWrapper}`}>
+					<table className={styles.projectTable}>
+						<thead>
+							<tr>
+								<th>Task Code</th><th>Activity</th><th>Scope</th><th>Validation Pending</th><th>Completed</th><th>Actual</th>
+							</tr>
+						</thead>
+						<tbody>
+							{activitiesList.map((a, i) => (
+								<tr key={i}>
+									<td>{a.p6_task_code}</td>
+									<td>{a.strip_chart_activity_name}</td>
+									<td>{a.scope}</td>
+									<td>{a.validation_pending}</td>
+									<td>{a.completed}</td>
+									<td>
+										<input type="number" step="0.001" min="0"
+											value={a.actual || ""}
+											onChange={(e) => handleActualChange(i, e.target.value)}
+										/>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
+
+
+
+			{showModal && (
+				<div
+					className="modal-overlay"
+					style={{
+						position: "fixed",
+						inset: 0,
+						background: "rgba(0,0,0,0.5)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						zIndex: 9999,
+					}}
+				>
+					<div
+						className="modal-content"
+						style={{
+							background: "#fff",
+							borderRadius: "10px",
+							width: "420px",
+							maxWidth: "90%",
+							padding: "1.5rem",
+							boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
+						}}
+					>
+						<h3 className="text-center mb-2">Upload New Activities</h3>
+
+						<form onSubmit={handleUploadSubmit} encType="multipart/form-data">
+							<div className="form-group mb-3 center-align">
+								<label className="form-label fw-bold mb-2">Attachment</label>
+								<input
+									type="file"
+									id="designFile"
+									name="designFile"
+									//	  									accept=".xls, .xlsx"
+									onChange={handleFileChange}
+									required
+									className="form-control"
+								/>
+								{selectedFile && (
+									<p style={{ marginTop: "10px", color: "#475569" }}>
+										Selected: {selectedFile.name}
+									</p>
+								)}
+							</div>
+
+							<div
+								className="modal-actions"
+								style={{
+									display: "flex",
+									justifyContent: "space-evenly",
+									marginTop: "1rem",
+								}}
+							>
+								<button
+									type="submit"
+									className="btn btn-primary"
+									style={{ width: "48%" }}
+									disabled={loading}
+								>
+									{loading ? "Uploading..." : "Update"}
+								</button>
+
+								<button
+									type="button"
+									className="btn btn-white"
+									style={{ width: "48%" }}
+									onClick={closeModal}
+								>
+									Cancel
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
+
+		</div>
+	);
 }
