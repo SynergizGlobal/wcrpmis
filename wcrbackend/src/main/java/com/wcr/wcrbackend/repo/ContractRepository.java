@@ -2141,8 +2141,14 @@ public class ContractRepository implements IContractRepo {
 					c = stmt.executeBatch();
 					if(stmt != null){stmt.close();}
 					
-					String Revision_qry = "INSERT into  contract_revision (revision_number,revised_amount,revised_doc,remarks,action,contract_id_fk,revised_amount_units,revision_amounts_status,approval_by_bank,attachment) "
-					 +"VALUES (?,?,?,?,?,?,?,?,?,?)";
+//					String Revision_qry = "INSERT into  contract_revision (revision_number,revised_amount,revised_doc,remarks,action,contract_id_fk,revised_amount_units,revision_amounts_status,approval_by_bank,attachment) "
+//					 +"VALUES (?,?,?,?,?,?,?,?,?,?)";
+//					
+					String Revision_qry =
+							"INSERT into contract_revision (revision_number,revised_amount,revised_doc,action,contract_id_fk,revised_amount_units,revision_amounts_status,approval_by_bank)"
+							+ "VALUES (?,?,?,?,?,?,?,?)";
+
+
 					stmt = con.prepareStatement(Revision_qry); 
 					
 					arraySize = 0;
@@ -2201,13 +2207,12 @@ public class ContractRepository implements IContractRepo {
 								stmt.setString(k++,(contract.getRevision_numbers().length > 0)?contract.getRevision_numbers()[i]:null);
 								stmt.setString(k++,(contract.getRevised_amounts().length > 0)?contract.getRevised_amounts()[i]:null);
 								stmt.setString(k++,DateParser.parse((contract.getRevised_docs().length > 0)?contract.getRevised_docs()[i]:null));								
-								stmt.setString(k++,(contract.getRevision_remarks().length > 0)?contract.getRevision_remarks()[i]:null);
+							//	stmt.setString(k++,(contract.getRevision_remarks().length > 0)?contract.getRevision_remarks()[i]:null);
 								stmt.setString(k++,(contract.getRevision_statuss().length > 0)?contract.getRevision_statuss()[i]:null);
 								stmt.setString(k++,contract.getContract_id());
 								stmt.setString(k++,(contract.getRevised_amount_unitss().length > 0)?contract.getRevised_amount_unitss()[i]:null);
 								stmt.setString(k++,(contract.getRevision_amounts_statuss().length > 0)?contract.getRevision_amounts_statuss()[i]:null);
 								stmt.setString(k++,(contract.getApproval_by_bank().length > 0)?contract.getApproval_by_bank()[i]:null);
-								stmt.setString(k++,null);
 								stmt.addBatch();
 							}
 						}
@@ -2287,9 +2292,15 @@ public class ContractRepository implements IContractRepo {
 					String insertFileQry = "INSERT into contract_documents (name,attachment,contract_id_fk,contract_file_type_fk,created_date) "
 							 +"VALUES (?,?,?,?,CURRENT_TIMESTAMP)";
 					stmt = con.prepareStatement(insertFileQry); 
+					MultipartFile[] files = contract.getContractDocumentFiles();
+					if (files == null) {
+					    files = new MultipartFile[arraySize];
+					}
+
 					for (int i = 0; i < arraySize; i++) {
 						String docFileName = null;
-						MultipartFile multipartFile = contract.getContractDocumentFiles()[i];
+						//MultipartFile multipartFile = contract.getContractDocumentFiles()[i];
+						MultipartFile multipartFile = files[i];
 						if ((null != multipartFile && !multipartFile.isEmpty() && multipartFile.getSize() > 0)
 								|| (!StringUtils.isEmpty(contract.getContractDocumentFileNames()) && contract.getContractDocumentFileNames().length > 0 && !StringUtils.isEmpty(contract.getContractDocumentFileNames()[i]) && !StringUtils.isEmpty(contract.getContractDocumentFileNames()[i].trim()) )) {
 							String saveDirectory = CommonConstants.CONTRACT_FILE_SAVING_PATH ;

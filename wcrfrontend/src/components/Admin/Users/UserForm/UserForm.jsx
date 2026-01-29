@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../../../api/axiosInstance";
 import styles from "./UserForm.module.css";
 import { API_BASE_URL } from "../../../../config";
@@ -14,9 +14,9 @@ import { FiEye, FiTrash2 } from 'react-icons/fi';
 export default function UserForm() {
     
     const navigate = useNavigate();
-    const { state } = useLocation(); 
-    const isEdit = Boolean(state?.user);
-    const [action] = useState(isEdit ? "edit" : "add");
+    const { id: userId } = useParams();
+    const { state } = useLocation();
+    const isEdit = Boolean(state?.user) || Boolean(userId);
 
     // State for dropdown options
     const [dropdownOptions, setDropdownOptions] = useState({
@@ -31,10 +31,12 @@ export default function UserForm() {
         utilityList: [],
         rrList: [],
         structuresList: [],
-       
     });
 
     const [loading, setLoading] = useState(false);
+    const [dropdownLoading, setDropdownLoading] = useState(false);
+    const [userDataLoaded, setUserDataLoaded] = useState(false);
+    const [userData, setUserData] = useState(null);
     const [dynamicReportingTo, setDynamicReportingTo] = useState([]);
     
     // PMIS Key states
@@ -108,6 +110,87 @@ export default function UserForm() {
 
   const [selectAllContracts, setSelectAllContracts] = useState(false);
 
+  // ===================== MEMOIZED SELECT OPTIONS =====================
+  const departmentOptions = useMemo(() => {
+    return (dropdownOptions.departments || []).map(dept => ({
+      value: dept.department,
+      label: dept.department_name
+    }));
+  }, [dropdownOptions.departments]);
+
+  const userTypeOptions = useMemo(() => {
+    return (dropdownOptions.types || []).map(type => ({
+      value: type.user_type_fk,
+      label: type.user_type_fk
+    }));
+  }, [dropdownOptions.types]);
+
+  const reportingToOptions = useMemo(() => {
+    return (dropdownOptions.reportingToList || []).map(rep => ({
+      label: `${rep.designation} - ${rep.user_name}`,
+      value: rep.user_id
+    }));
+  }, [dropdownOptions.reportingToList]);
+
+  const userRoleOptions = useMemo(() => {
+    return (dropdownOptions.roles || []).map(role => ({
+      value: role.user_role_name,
+      label: role.user_role_name,
+      name: role.user_role_code
+    }));
+  }, [dropdownOptions.roles]);
+
+  const moduleOptions = useMemo(() => {
+    return dropdownOptions.moduleList || [];
+  }, [dropdownOptions.moduleList]);
+
+  // ===================== API FUNCTIONS - USER DATA FETCHING =====================
+
+  // Fetch user data by ID
+  const fetchUserData = async (userId) => {
+    try {
+      setLoading(true);
+     
+      const requestBody = {
+        user_id: userId,
+      };
+
+      const response = await api.post(
+        `${API_BASE_URL}/users/ajax/form/get-user/getUser`,
+        requestBody
+      );
+
+      if (response.data?.usrObj) {
+        const userData = response.data.usrObj;
+        console.log("Fetched user data:", userData);
+        setUserData(userData);
+        return userData;
+      } else {
+        console.error("No user data found in response");
+        alert("User data not found");
+        navigate("/admin/users");
+      }
+    } catch (err) {
+      console.error("❌ Error fetching user data:", err);
+      
+      if (err.response) {
+        console.error("Response error:", err.response.data);
+        
+        if (err.response.status === 404) {
+          alert("User not found");
+        } else if (err.response.status === 500) {
+          alert("Server error while fetching user data");
+        }
+      } else {
+        alert("Network error while fetching user data");
+      }
+      
+      navigate("/admin/users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ===================== IMAGE HANDLING FUNCTIONS =====================
   
   // Validate image file
@@ -157,7 +240,7 @@ export default function UserForm() {
     }
   };
 
-  // Handle image view (preview in modal or new tab)
+  // Handle image view
   const handleViewImage = () => {
     if (imagePreview) {
       window.open(imagePreview, '_blank');
@@ -205,7 +288,7 @@ export default function UserForm() {
 
   // ===================== PMIS KEY FUNCTIONS =====================
   
-  // Generate random PMIS key (exactly like JSP)
+  // Generate random PMIS key
   const generatePMISKey = useCallback(() => {
     const randomLetters = (length) => {
       const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -225,7 +308,6 @@ export default function UserForm() {
       return result;
     };
 
-    // Format: AA33HT34MG71 (2 letters + 2 digits repeated)
     return (
       randomLetters(2) + 
       randomDigits(2) + 
@@ -245,7 +327,6 @@ export default function UserForm() {
         pmis_key_fk: pmisKey
       });
 
-      // Handle response
       if (response.data?.keyAvailability === 'Taken') {
         setPmisKeyError("Sorry... Already taken");
         setPmisKeyFlag(false);
@@ -258,8 +339,6 @@ export default function UserForm() {
       
     } catch (err) {
       console.error("Error checking PMIS key:", err);
-      
-      // On any error, assume Available (don't block user)
       setPmisKeyError("Available (check failed)");
       setPmisKeyFlag(true);
       return true;
@@ -269,19 +348,17 @@ export default function UserForm() {
     }
   };
 
-  // Handle PMIS key blur (like JSP's blur event)
+  // Handle PMIS key blur
   const handlePmisKeyBlur = async () => {
     const pmisKey = getValues("pmis_key_fk");
-    const existingUserKey = isEdit && state?.user ? state.user.pmis_key_fk : "";
+    const existingUserKey = isEdit ? getValues("pmis_key_fk") : "";
     
     if (pmisKey && pmisKey.trim() !== "" && pmisKey !== existingUserKey) {
       await checkPMISKeyAvailability(pmisKey);
     } else if (pmisKey === existingUserKey) {
-      // Same key for existing user = OK
       setPmisKeyFlag(true);
       setPmisKeyError("");
     } else if (!pmisKey || pmisKey.trim() === "") {
-      // Empty key
       setPmisKeyError("PMIS key is required");
       setPmisKeyFlag(false);
     }
@@ -289,16 +366,14 @@ export default function UserForm() {
 
   // ===================== END PMIS KEY FUNCTIONS =====================
 
-  // ===================== API FUNCTIONS =====================
+  // ===================== OTHER API FUNCTIONS =====================
 
-  // Fetch contracts list using your API endpoint
+  // Fetch contracts list
   const fetchContractsList = async () => {
     try {
-      // Prepare the request body (like the User obj in your API)
       const requestBody = {
-        // Add any user properties if needed
-        user_id: isEdit && state?.user ? state.user.user_id : "",
-        department_fk: getValues("department_fk")?.value || ""
+        user_id: getValues("user_id") || "",
+        department_fk: getValues("department_fk")?.value || getValues("department_fk") || ""
       };
       
       const response = await api.post(
@@ -307,13 +382,11 @@ export default function UserForm() {
       );
 
       if (response.data?.contractsList) {
-        // Update dropdown options
         setDropdownOptions(prev => ({
           ...prev,
           contractsList: response.data.contractsList
         }));
 
-        // Convert to Select options
         const options = response.data.contractsList.map(contract => ({
           value: contract.contract_id,
           label: contract.contract_short_name
@@ -333,10 +406,9 @@ export default function UserForm() {
   // Fetch Land Acquisition list
   const fetchLandList = async () => {
     try {
-      // Prepare the request body
       const requestBody = {
-        user_id: isEdit && state?.user ? state.user.user_id : "",
-        department_fk: getValues("department_fk")?.value || ""
+        user_id: getValues("user_id") || "",
+        department_fk: getValues("department_fk")?.value || getValues("department_fk") || ""
       };
       
       const response = await api.post(
@@ -345,13 +417,11 @@ export default function UserForm() {
       );
 
       if (response.data?.landList) {
-        // Update dropdown options
         setDropdownOptions(prev => ({
           ...prev,
           landList: response.data.landList
         }));
 
-        // Convert to Select options
         const options = response.data.landList.map(land => ({
           value: land.project_id_fk,
           label: land.project_name
@@ -371,10 +441,9 @@ export default function UserForm() {
   // Fetch Utility Shifting list
   const fetchUtilityList = async () => {
     try {
-      // Prepare the request body
       const requestBody = {
-        user_id: isEdit && state?.user ? state.user.user_id : "",
-        department_fk: getValues("department_fk")?.value || ""
+        user_id: getValues("user_id") || "",
+        department_fk: getValues("department_fk")?.value || getValues("department_fk") || ""
       };
       
       const response = await api.post(
@@ -383,13 +452,11 @@ export default function UserForm() {
       );
 
       if (response.data?.utilityList) {
-        // Update dropdown options
         setDropdownOptions(prev => ({
           ...prev,
           utilityList: response.data.utilityList
         }));
 
-        // Convert to Select options
         const options = response.data.utilityList.map(utility => ({
           value: utility.project_id_fk,
           label: utility.project_name
@@ -409,10 +476,9 @@ export default function UserForm() {
   // Fetch R&R list
   const fetchRRList = async () => {
     try {
-      // Prepare the request body
       const requestBody = {
-        user_id: isEdit && state?.user ? state.user.user_id : "",
-        department_fk: getValues("department_fk")?.value || ""
+        user_id: getValues("user_id") || "",
+        department_fk: getValues("department_fk")?.value || getValues("department_fk") || ""
       };
       
       const response = await api.post(
@@ -421,13 +487,11 @@ export default function UserForm() {
       );
 
       if (response.data?.rrList) {
-        // Update dropdown options
         setDropdownOptions(prev => ({
           ...prev,
           rrList: response.data.rrList
         }));
 
-        // Convert to Select options
         const options = response.data.rrList.map(rr => ({
           value: rr.project_id_fk,
           label: rr.project_name
@@ -447,13 +511,11 @@ export default function UserForm() {
   // Fetch all dropdown data
   const fetchDropdownData = async () => {
     try {
-      setLoading(true);
+      setDropdownLoading(true);
       
-      // First, get the main form data
       const response = await api.post(`${API_BASE_URL}/users/ajax/form/add-user-form`, {});
       
       if (response.data) {
-        // Initialize dropdown options with basic data
         const updatedOptions = {
           roles: response.data.roles || [],
           types: response.data.types || [],
@@ -461,43 +523,45 @@ export default function UserForm() {
           reportingToList: response.data.reportingToList || [],
           pmisKeys: response.data.pmisKeys || [],
           moduleList: response.data.moduleList || [],
-          contractsList: [], // Will be populated via separate API
-          landList: [], // Will be populated via separate API
-          utilityList: [], // Will be populated via separate API
-          rrList: [], // Will be populated via separate API
+          contractsList: [],
+          landList: [],
+          utilityList: [],
+          rrList: [],
           structuresList: response.data.structuresList || [],
-        
         };
         
         setDropdownOptions(updatedOptions);
 
-        // Fetch all module lists in parallel for better performance
+        // Fetch all module lists in parallel
         await Promise.all([
           fetchContractsList(),
           fetchLandList(),
           fetchUtilityList(),
           fetchRRList(),
-     
         ]);
 
-        // Set default module checkboxes (all checked for add, conditional for edit)
-        if (!isEdit) {
-          const allModules = (response.data.moduleList || []).map(module => module.module_name);
+        // For add mode, enable all modules by default
+        if (!isEdit && response.data.moduleList) {
+          const allModules = response.data.moduleList.map(module => module.module_name);
           setEnabledModules(allModules);
           
-          // Initialize permissions_check for add mode
           const permissionsCheck = allModules.map(module => ({
             value: `${module}_Active`,
             moduleName: module
           }));
           setValue("permissions_check", permissionsCheck);
         }
+
+        // Mark dropdowns as loaded
+        return true;
       }
+      return false;
     } catch (err) {
       console.error("❌ Error fetching dropdown data:", err);
       alert("Error loading form data");
+      return false;
     } finally {
-      setLoading(false);
+      setDropdownLoading(false);
     }
   };
 
@@ -526,7 +590,7 @@ export default function UserForm() {
     }
   };
 
-  // Get structures by contract ID (for Execution & Monitoring)
+  // Get structures by contract ID
   const getStructuresByContractId = async (contractId, rowIndex) => {
     try {
       const response = await api.post(`${API_BASE_URL}/users/ajax/getStructuresByContractId`, {
@@ -539,10 +603,8 @@ export default function UserForm() {
           label: structure.structure
         }));
 
-        // Update the specific row with available structures and clear selected structures
         const currentRows = [...getValues("executionMonitoringRows")];
         currentRows[rowIndex].availableStructures = structureOptions;
-        currentRows[rowIndex].structures = []; // Clear selected structures when contract changes
         setValue("executionMonitoringRows", currentRows);
       }
     } catch (err) {
@@ -550,121 +612,53 @@ export default function UserForm() {
     }
   };
 
-  // Handle contract change - clear structures
+  // Handle contract change
   const handleContractChange = async (selected, rowIndex) => {
-    // Update the contract value
     const currentRows = [...getValues("executionMonitoringRows")];
     currentRows[rowIndex].contract_id = selected;
-    currentRows[rowIndex].structures = []; // Clear structures when contract changes
+    currentRows[rowIndex].structures = [];
     setValue("executionMonitoringRows", currentRows);
     
-    // Fetch new structures if a contract is selected
     if (selected && selected.value) {
       await getStructuresByContractId(selected.value, rowIndex);
     } else {
-      // If no contract selected, clear available structures
       currentRows[rowIndex].availableStructures = [];
       setValue("executionMonitoringRows", currentRows);
     }
   };
 
-  // ===================== END API FUNCTIONS =====================
+  // ===================== FORM POPULATION LOGIC =====================
 
-  // Fetch dropdown data on component mount
-  useEffect(() => {
-    fetchDropdownData();
+  const populateFormData = useCallback(async (userData) => {
+    console.log("Populating form with user data:", userData);
     
-    // If editing, populate form with existing user data
-    if (isEdit && state?.user) {
-      populateFormData(state.user);
-    } else {
-      // For add mode: Generate PMIS key on load automatically
-      const generatedKey = generatePMISKey();
-      setValue("pmis_key_fk", generatedKey, { shouldValidate: true });
-      
-      // Auto-check the generated key
-      const timer = setTimeout(() => {
-        checkPMISKeyAvailability(generatedKey);
-      }, 1000); // 1 second delay
-      
-      if (structureRows.length === 0) {
-        appendStructureRow({
-          contract_id: null,
-          structures: [],
-          availableStructures: []
-        });
-      }
-      
-      return () => clearTimeout(timer);
-    }
-  }, [generatePMISKey, isEdit, state]);
-
-  // Fetch dynamic reporting to when department or user type changes
-  useEffect(() => {
-    if (watchDepartment && watchUserType) {
-      fetchReportingToPersonsList();
-    }
-  }, [watchDepartment, watchUserType]);
-
-  // Watch PMIS key changes for real-time validation
-  useEffect(() => {
-    if (watchPmisKey) {
-      // Clear error when user starts typing
-      setPmisKeyError("");
-    }
-  }, [watchPmisKey]);
-
-  // Refresh contracts when needed
-  useEffect(() => {
-    // If editing and user data changes, refresh contracts
-    if (isEdit && state?.user) {
-      const timer = setTimeout(() => {
-        fetchContractsList();
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isEdit, state?.user]);
-  
-  useEffect(() => {
-    const contractValues = getValues("contract_id") || [];
-    const contractOptionCount = contractOptions.filter(opt => opt.value !== "").length;
-    
-    if (contractOptionCount > 0) {
-      setSelectAllContracts(contractValues.length === contractOptionCount);
-    }
-  }, [watch("contract_id"), contractOptions]);
-  
-  const populateFormData = async (userData) => {
     // Basic user info
     Object.entries(userData).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
-        // Handle Select fields
+        // Handle Select fields with current dropdown options
         if (key === 'department_fk') {
-          const dept = dropdownOptions.departments.find(d => d.department === value);
-          setValue(key, dept ? { value: dept.department, label: dept.department_name } : null);
+          const dept = departmentOptions.find(d => d.value === value) || 
+                      departmentOptions.find(d => d.label === value);
+          setValue(key, dept || null);
         } 
         else if (key === 'user_type_fk') {
-          const type = dropdownOptions.types.find(t => t.user_type_fk === value);
-          setValue(key, type ? { value: type.user_type_fk, label: type.user_type_fk } : null);
+          const type = userTypeOptions.find(t => t.value === value) || 
+                       userTypeOptions.find(t => t.label === value);
+          setValue(key, type || null);
         }
         else if (key === 'reporting_to_id_srfk') {
-          const reportingTo = dropdownOptions.reportingToList.find(r => r.user_id === value);
-          setValue(key, reportingTo ? { 
-            value: reportingTo.user_id, 
-            label: reportingTo.designation ? `${reportingTo.designation} - ${reportingTo.user_name}` : reportingTo.user_name 
-          } : null);
+          const reportingTo = dynamicReportingTo.find(r => r.value === value) || 
+                             reportingToOptions.find(r => r.value === value);
+          setValue(key, reportingTo || null);
         }
         else if (key === 'user_role_name_fk') {
-          const role = dropdownOptions.roles.find(r => r.user_role_name === value);
-          setValue(key, role ? { value: role.user_role_name, label: role.user_role_name } : null);
+          const role = userRoleOptions.find(r => r.value === value) || 
+                       userRoleOptions.find(r => r.label === value);
+          setValue(key, role || null);
         }
         else if (key === 'pmis_key_fk') {
           setValue(key, value);
-          // For edit mode, set flag to true (like JSP)
-          if (isEdit) {
-            setPmisKeyFlag(true);
-          }
+          setPmisKeyFlag(true);
         }
         else if (['user_id', 'user_name', 'designation', 'email_id', 'mobile_number', 
                   'personal_contact_number', 'landline', 'extension'].includes(key)) {
@@ -680,40 +674,35 @@ export default function UserForm() {
 
     // Load existing user image if available
     if (userData.user_image && userData.user_image.trim() !== "") {
-      // Assuming user_image contains the image URL or path
       const fullImageUrl = `${API_BASE_URL}/${userData.user_image}`;
       setExistingImageUrl(fullImageUrl);
     }
 
-    // Wait for all module lists to load before setting module permissions
+    // Wait for module lists to load
     await Promise.all([
       fetchContractsList(),
       fetchLandList(),
       fetchUtilityList(),
       fetchRRList()
-    
     ]);
 
     // Set module checkboxes based on user permissions
-    if (dropdownOptions.moduleList) {
+    if (moduleOptions.length > 0) {
       let userEnabledModules = [];
       
       if (userData.user_permissions) {
-        userEnabledModules = dropdownOptions.moduleList
+        userEnabledModules = moduleOptions
           .filter(module => {
             const userPermission = userData.user_permissions.find(p => p.module_name === module.module_name);
             return userPermission?.soft_delete_status === 'Active';
           })
           .map(module => module.module_name);
-      } else if (!isEdit) {
-        // For add mode, enable all modules by default
-        userEnabledModules = dropdownOptions.moduleList.map(module => module.module_name);
       }
       
       setEnabledModules(userEnabledModules);
 
-      // Set permissions_check values - ALL modules must be included (like JSP)
-      const permissionsCheck = dropdownOptions.moduleList.map(module => {
+      // Set permissions_check values
+      const permissionsCheck = moduleOptions.map(module => {
         const isEnabled = userEnabledModules.includes(module.module_name);
         return {
           value: `${module.module_name}_${isEnabled ? 'Active' : 'Inactive'}`,
@@ -721,10 +710,10 @@ export default function UserForm() {
         };
       });
       
-      console.log("Setting permissions_check in populateFormData:", permissionsCheck);
+      console.log("Setting permissions_check:", permissionsCheck);
       setValue("permissions_check", permissionsCheck);
 
-      // Set specific module permissions if available
+      // Set specific module permissions
       if (userData.contractExecutivesList && userEnabledModules.includes('Contracts')) {
         const contractValues = userData.contractExecutivesList.map(ce => ce.contract_id_fk);
         const selectedContracts = contractOptions.filter(opt => contractValues.includes(opt.value));
@@ -749,22 +738,26 @@ export default function UserForm() {
         setValue("rr_work", selectedRR);
       }
 
-     
       // Set structure permissions for Execution & Monitoring
       if (userData.executivesList && userEnabledModules.includes('Execution & Monitoring')) {
-        const executiveRows = userData.executivesList.map((executive, index) => ({
+        const executiveRows = userData.executivesList.map((executive) => ({
           contract_id: contractOptions.find(opt => opt.value === executive.contract_id_fk) || null,
           structures: (executive.structureExecutivesList || []).map(se => ({
             value: se.structure_id_fk,
             label: se.structure_name || se.structure_id_fk
           })),
-          availableStructures: [] // Will be populated when contract is selected
+          availableStructures: []
         }));
         
-        // Set all rows at once
         setValue("executionMonitoringRows", executiveRows);
+        
+        // Fetch available structures for each row
+        executiveRows.forEach(async (row, index) => {
+          if (row.contract_id?.value) {
+            await getStructuresByContractId(row.contract_id.value, index);
+          }
+        });
       } else if (userEnabledModules.includes('Execution & Monitoring')) {
-        // If module is enabled but no executive data, check if we need to add a row
         const currentRows = getValues("executionMonitoringRows") || [];
         if (currentRows.length === 0) {
           appendStructureRow({
@@ -775,9 +768,90 @@ export default function UserForm() {
         }
       }
     }
-  };
 
-  // Toggle module checkbox (JSP's valueChanged function)
+    setUserDataLoaded(true);
+  }, [departmentOptions, userTypeOptions, reportingToOptions, userRoleOptions, moduleOptions, contractOptions, landOptions, utilityOptions, rrOptions]);
+
+  // ===================== USE EFFECTS =====================
+
+  // Initial load: fetch dropdowns and user data
+  useEffect(() => {
+    const initializeForm = async () => {
+      // First, fetch all dropdown data
+      const dropdownsLoaded = await fetchDropdownData();
+      
+      if (isEdit) {
+        if (state?.user) {
+          // Use state data if available
+          setUserData(state.user);
+        } else if (userId) {
+          // Fetch user data from API
+          const fetchedUserData = await fetchUserData(userId);
+          if (fetchedUserData && dropdownsLoaded) {
+            setUserData(fetchedUserData);
+          }
+        }
+      } else {
+        // For add mode: Generate PMIS key
+        const generatedKey = generatePMISKey();
+        setValue("pmis_key_fk", generatedKey, { shouldValidate: true });
+        
+        // Auto-check the generated key
+        setTimeout(() => {
+          checkPMISKeyAvailability(generatedKey);
+        }, 1000);
+        
+        // Add initial structure row
+        if (structureRows.length === 0) {
+          appendStructureRow({
+            contract_id: null,
+            structures: [],
+            availableStructures: []
+          });
+        }
+      }
+    };
+
+    initializeForm();
+  }, [isEdit, userId, state]);
+
+  // Populate form when both dropdowns and user data are ready
+  useEffect(() => {
+    if (userData && !userDataLoaded && !dropdownLoading) {
+      // Small delay to ensure React has processed dropdowns
+      setTimeout(() => {
+        populateFormData(userData);
+      }, 100);
+    }
+  }, [userData, userDataLoaded, dropdownLoading, populateFormData]);
+
+  // Fetch dynamic reporting to when department or user type changes
+  useEffect(() => {
+    if (watchDepartment && watchUserType) {
+      fetchReportingToPersonsList();
+    }
+  }, [watchDepartment, watchUserType]);
+
+  // Watch PMIS key changes
+  useEffect(() => {
+    if (watchPmisKey) {
+      setPmisKeyError("");
+    }
+  }, [watchPmisKey]);
+
+  // Select All Contracts logic
+  useEffect(() => {
+    const contractValues = getValues("contract_id") || [];
+    const contractOptionCount = contractOptions.filter(opt => opt.value !== "").length;
+    
+    if (contractOptionCount > 0) {
+      setSelectAllContracts(contractValues.length === contractOptionCount);
+    }
+  }, [watch("contract_id"), contractOptions]);
+
+  // ===================== MODULE HANDLING =====================
+
+  // Toggle module checkbox
   const toggleModule = (moduleName) => {
     const isEnabled = enabledModules.includes(moduleName);
 
@@ -836,7 +910,7 @@ export default function UserForm() {
     }
   };
 
-  // Update permission value (like JSP's valueChanged function)
+  // Update permission value
   const updatePermissionCheckValue = (moduleName, isActive) => {
     const currentPermissions = getValues("permissions_check") || [];
     const newPermission = {
@@ -855,12 +929,12 @@ export default function UserForm() {
     });
   };
 
-  // Handle delete row - ensure at least one row remains
+  // Handle delete row
   const handleRemoveRow = (index) => {
     if (structureRows.length > 1) {
       removeStructureRow(index);
     } else {
-      // If only one row, just clear its values but keep the row
+      // If only one row, just clear its values
       const currentRows = [...getValues("executionMonitoringRows")];
       currentRows[index] = {
         contract_id: null,
@@ -870,6 +944,8 @@ export default function UserForm() {
       setValue("executionMonitoringRows", currentRows);
     }
   };
+
+  // ===================== FORM VALIDATION & SUBMISSION =====================
 
   // Custom validation for image
   const validateForm = async () => {
@@ -890,12 +966,12 @@ export default function UserForm() {
     return isFormValid;
   };
 
-  // Get all permissions to send (like JSP does)
+  // Get all permissions to send
   const getAllPermissionsToSend = () => {
-    const allModules = dropdownOptions.moduleList || [];
+    const allModules = moduleOptions || [];
     const currentPermissions = getValues("permissions_check") || [];
     
-    // Create a map of current permissions for quick lookup
+    // Create a map of current permissions
     const permissionMap = {};
     currentPermissions.forEach(p => {
       if (p && p.value) {
@@ -904,7 +980,7 @@ export default function UserForm() {
       }
     });
     
-    // Return permissions for ALL modules (like JSP)
+    // Return permissions for ALL modules
     const permissionsToSend = allModules.map(module => {
       if (permissionMap[module.module_name]) {
         return permissionMap[module.module_name];
@@ -917,7 +993,7 @@ export default function UserForm() {
     return permissionsToSend;
   };
 
-  // Form submission (like JSP's addUser/updateUser functions)
+  // Form submission
   const onSubmit = async (data) => {
     try {
       // Validate form including image
@@ -928,23 +1004,22 @@ export default function UserForm() {
         return;
       }
 
-      // Check PMIS key flag (like JSP's flag check)
+      // Check PMIS key flag
       if (!pmisKeyFlag && !isEdit) {
         alert("Please fix PMIS key issues before submitting.");
         return;
       }
 
-      // Show loading (like JSP's page-loader)
+      // Show loading
       setLoading(true);
 
       // Get all permissions to send
       const permissionsToSend = getAllPermissionsToSend();
       console.log("Permissions to send:", permissionsToSend);
 
-      // Prepare data like JSP does
+      // Prepare data
       const formData = new FormData();
       
-      // Debug: Log what we're sending
       console.log('Submitting form data:', data);
       
       // Add basic user info
@@ -989,17 +1064,10 @@ export default function UserForm() {
         }
       });
 
-      // CRITICAL: Add permissions_check like JSP does
-      // JSP sends multiple fields with same name 'permissions_check'
+      // Add permissions_check
       permissionsToSend.forEach(permission => {
         formData.append('permissions_check', permission);
       });
-
-      // Debug: Log FormData contents
-      console.log('FormData contents:');
-      for (let [key, value] of formData.entries()) {
-        console.log(key, '=', value);
-      }
 
       // Send to appropriate endpoint
       const endpoint = isEdit 
@@ -1044,13 +1112,15 @@ export default function UserForm() {
     }
   };
 
-  if (loading) {
+  // ===================== RENDER LOGIC =====================
+
+  if (loading || dropdownLoading) {
     return (
       <div className={styles.container}>
         <div className="card">
           <div className="formHeading">
             <h2 className="center-align ps-relative">
-              Loading form data...
+              {isEdit ? "Loading user data..." : "Loading form data..."}
             </h2>
           </div>
         </div>
@@ -1058,34 +1128,12 @@ export default function UserForm() {
     );
   }
 
-  // Convert backend arrays to Select options
-  const departmentOptions = (dropdownOptions.departments || []).map(dept => ({
-    value: dept.department,
-    label: dept.department_name
-  }));
-
-  const userTypeOptions = (dropdownOptions.types || []).map(type => ({
-    value: type.user_type_fk,
-    label: type.user_type_fk
-  }));
-
-  const reportingToOptions = (dropdownOptions.reportingToList || []).map(rep => ({
-    label: `${rep.designation} - ${rep.user_name}`,
-    value: rep.user_id
-  }));
-
-  const userRoleOptions = (dropdownOptions.roles || []).map(role => ({
-    value: role.user_role_name,
-    label: role.user_role_name,
-    name: role.user_role_code
-  }));
-
   return (
     <div className={styles.container}>
       <div className="card">
         <div className="formHeading">
           <h2 className="center-align ps-relative">
-            {isEdit ? `Update User (${getValues("user_id") || ""})` : "Add User"}
+            {isEdit ? `Update User (${getValues("user_id") || userId || ""})` : "Add User"}
           </h2>
         </div>
         <div className="innerPage">
@@ -1117,10 +1165,10 @@ export default function UserForm() {
                     <Select
                       {...field}
                       classNamePrefix="react-select"
-                      placeholder="Select Department"
+                      placeholder={dropdownLoading ? "Loading..." : "Select Department"}
                       isSearchable
                       options={departmentOptions}
-                      isLoading={loading}
+                      isLoading={dropdownLoading}
                     />
                   )}
                 />
@@ -1137,10 +1185,10 @@ export default function UserForm() {
                     <Select
                       {...field}
                       classNamePrefix="react-select"
-                      placeholder="Select User Type"
+                      placeholder={dropdownLoading ? "Loading..." : "Select User Type"}
                       isSearchable
                       options={userTypeOptions}
-                      isLoading={loading}
+                      isLoading={dropdownLoading}
                     />
                   )}
                 />
@@ -1159,8 +1207,8 @@ export default function UserForm() {
                       classNamePrefix="react-select"
                       placeholder="Select Reporting To"
                       isSearchable
-                      options={reportingToOptions}
-                      isLoading={loading}
+                      options={dynamicReportingTo.length > 0 ? dynamicReportingTo : reportingToOptions}
+                      isLoading={dropdownLoading}
                     />
                   )}
                 />
@@ -1177,13 +1225,13 @@ export default function UserForm() {
                     <Select
                       {...field}
                       classNamePrefix="react-select"
-                      placeholder="Select User Role"
+                      placeholder={dropdownLoading ? "Loading..." : "Select User Role"}
                       isSearchable
                       options={userRoleOptions}
-                      isLoading={loading}
+                      isLoading={dropdownLoading}
                       onChange={(selected) => {
                         field.onChange(selected);
-                        // Set user_role_code like JSP's setUserRoleCode()
+                        // Set user_role_code
                         if (selected?.name) {
                           setValue("user_role_code", selected.name);
                         }
@@ -1244,7 +1292,7 @@ export default function UserForm() {
                 )}
               </div>
 
-              {/* User Image Field with Preview and Validation */}
+              {/* User Image Field */}
               <div className="form-field">
                 <div className={styles.imageUploadContainer}>
                   <label className={styles.imageUploadLabel}>
@@ -1304,7 +1352,6 @@ export default function UserForm() {
                       {...register("fileName", {
                         validate: {
                           required: (value) => {
-                            // Only validate as required for new users
                             if (!isEdit && !value?.[0] && !existingImageUrl) {
                               return "User image is required";
                             }
@@ -1366,9 +1413,7 @@ export default function UserForm() {
 
             {/* ============================ MODULE CHECKBOXES ============================ */}
             <div className={styles.moduleCheckboxRow}>
-            
-              {(dropdownOptions.moduleList || []).map((module) => {
-                
+              {moduleOptions.map((module) => {
                 const moduleKey = module.module_name.replace(/&/g, '').replace(/ /g, '_');
                 return (
                   <label key={module.module_name} className={styles.moduleCheckbox}>
@@ -1378,7 +1423,7 @@ export default function UserForm() {
                       onChange={() => toggleModule(module.module_name)}
                       id={moduleKey}
                       className={`${moduleKey}-ch`}
-                      defaultChecked={!isEdit} // All checked for add mode (like JSP)
+                      defaultChecked={!isEdit}
                     />
                     {module.module_name}
                   </label>
@@ -1389,7 +1434,6 @@ export default function UserForm() {
             {/* ============================ MODULE PERMISSION SECTIONS ============================ */}
             <div className={styles.tablesContainer}>
               {/* Contracts Permission */}
-            
               {enabledModules.includes('Contracts') && (
                 <div className={styles.permissionCard}>
                   <h3>Contract Permission</h3>
@@ -1425,11 +1469,9 @@ export default function UserForm() {
                                 setSelectAllContracts(isChecked);
                                 
                                 if (isChecked) {
-                                  // Select all options except the placeholder/empty one
                                   const allContracts = contractOptions.filter(option => option.value !== "");
                                   field.onChange(allContracts);
                                 } else {
-                                  // Deselect all
                                   field.onChange([]);
                                 }
                               }}
@@ -1514,7 +1556,7 @@ export default function UserForm() {
                 </div>
               )}
 
-              {/* Execution & Monitoring - Structure Permission Table (Updated Design) */}
+              {/* Execution & Monitoring - Structure Permission Table */}
               {(enabledModules.includes('Execution & Monitoring') || 
                 enabledModules.some(m => m.includes('Execution'))) && (
                 <div className="form-row">
@@ -1566,7 +1608,7 @@ export default function UserForm() {
                                       placeholder="Select multiple structures"
                                       options={row.availableStructures || []}
                                       value={field.value || []}
-                                      isDisabled={!row.contract_id} // Disable if no contract selected
+                                      isDisabled={!row.contract_id}
                                     />
                                   )}
                                 />

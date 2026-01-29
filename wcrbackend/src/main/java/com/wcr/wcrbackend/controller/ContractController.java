@@ -10,6 +10,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -47,10 +48,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -511,21 +516,109 @@ public class ContractController {
         }
     }
     
+//
+//	@RequestMapping(value = "/add-contract", method = {RequestMethod.GET,RequestMethod.POST})
+//	@ResponseBody	
+//	public Map<String, Object> addContract1(@RequestBody Contract contract, HttpSession session){
+//
+//		Map<String, Object> res = new HashMap<>();
+//		
+//		
+//		System.out.println("Getting inside the controlle");
+//		System.out.println("Contract:::" + contract);
+//		System.out.println("Revision No: " + Arrays.toString(contract.getRevisionno()));
+//	
+//		try{
+//			String user_Id = (String) session.getAttribute("userId");
+//			String userName = (String) session.getAttribute("userName");
+//			String userDesignation = (String) session.getAttribute("designation");
+//			
+//			contract.setCreated_by_user_id_fk(user_Id);
+//			contract.setUser_id(user_Id);
+//			contract.setUser_name(userName);
+//			contract.setDesignation(userDesignation);
+//			
+//		//	System.out.println("HOD ID FK = " + contract.getHod_user_id_fk());
+//			//System.out.println("Documentsss = "  + contract.getAttachment());
+//
+//			
+//			User uObj = (User) session.getAttribute("user");
+//			contract.setUser_type_fk(uObj.getUserTypeFk());
+//			contract.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+//			contract.setDoc(DateParser.parse(contract.getDoc()));
+//			contract.setCa_date(DateParser.parse(contract.getCa_date()));
+//			contract.setDate_of_start(DateParser.parse(contract.getDate_of_start()));			
+//			contract.setLoa_date(DateParser.parse(contract.getLoa_date()));
+//			contract.setActual_completion_date(DateParser.parse(contract.getActual_completion_date()));		
+//			contract.setContract_closure_date(DateParser.parse(contract.getContract_closure_date()));
+//			contract.setCompletion_certificate_release(DateParser.parse(contract.getCompletion_certificate_release()));		
+//			contract.setFinal_takeover(DateParser.parse(contract.getFinal_takeover()));
+//			contract.setFinal_bill_release(DateParser.parse(contract.getFinal_bill_release()));
+//			contract.setDefect_liability_period(DateParser.parse(contract.getDefect_liability_period()));
+//			contract.setRetention_money_release(DateParser.parse(contract.getRetention_money_release()));
+//			contract.setPbg_release(DateParser.parse(contract.getPbg_release()));
+//			contract.setBg_date(DateParser.parse(contract.getBg_date()));
+//			contract.setRelease_date(DateParser.parse(contract.getRelease_date()));
+//			contract.setPlanned_date_of_award(DateParser.parse(contract.getPlanned_date_of_award()));
+//			contract.setPlanned_date_of_completion(DateParser.parse(contract.getPlanned_date_of_completion()));
+//			
+//			//contract.setContract_status("Open");
+//			//contract.setContract_status_fk("Not Started");
+//		
+//			String contractid =  contractService.addContract(contract);			
+//			if(!StringUtils.isEmpty(contractid)) {
+////				attributes.addFlashAttribute("success", "Contract "+contractid+" Added Succesfully.");
+//				res.put("success", "Contract "+contractid+" Added Succesfully."); 
+//
+//			} else {
+////				attributes.addFlashAttribute("error","Adding Contract is failed. Try again.");
+//				res.put("error","Adding Contract is failed. Try again.");
+//
+//			}
+//		 }catch (Exception e) {
+////			attributes.addFlashAttribute("error","Adding Contract is failed. Try again.");
+//				res.put("error","Adding Contract is failed. Try again.");
+//
+//			logger.error("Project : " + e.getMessage());
+//		}
+//		return res;
+//	}
+//	
+	
+    
+    @PostMapping(
+    	    value = "/add-contract", 
+    	    consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+    	    produces = MediaType.APPLICATION_JSON_VALUE
+    	)
+    @ResponseBody	
+    public Map<String, Object> addContract1(
+    	    @RequestPart("payload") String contractJson,
+    	    @RequestPart(value = "contractDocumentFiles[]", required = false) MultipartFile[] contractDocumentFiles, HttpSession session){
 
-	@RequestMapping(value = "/add-contract", method = {RequestMethod.GET,RequestMethod.POST})
-	@ResponseBody	
-	public Map<String, Object> addContract1(@ModelAttribute  Contract contract, HttpSession session){
-//		ModelAndView model = new ModelAndView();
 		Map<String, Object> res = new HashMap<>();
 		
-		System.out.println("Getting inside the controlle");
-		System.out.println("Getting inside the controlle");
-		System.out.println("Getting inside the controlle");
-		System.out.println("Getting inside the controlle");
-		System.out.println("Getting inside the controlle");
-		System.out.println("Getting inside the controlle");
-
-		try{
+		try {
+	        System.out.println("Getting inside the controller");
+	        System.out.println("contractDocumentFiles:::" + contractDocumentFiles);
+		      
+	        // Convert JSON to Contract object
+	        ObjectMapper objectMapper = new ObjectMapper();
+	        Contract contract = objectMapper.readValue(contractJson, Contract.class);
+	        
+	        System.out.println("Contract:::" + contract);
+	      
+	        
+	        // Set the files to the contract object
+	        if (contractDocumentFiles != null && contractDocumentFiles.length > 0) {
+	            contract.setContractDocumentFiles(contractDocumentFiles);
+	        }
+		
+	        System.out.println("Contract Doc Files:::" + contract.getContractDocumentFiles());
+	        System.out.println("Contract Doc Names:::" + contract.getContractDocumentNames());
+	        System.out.println("Contract Nmaes:::" + contract.getContractDocumentFileNames());
+		      
+	
 			String user_Id = (String) session.getAttribute("userId");
 			String userName = (String) session.getAttribute("userName");
 			String userDesignation = (String) session.getAttribute("designation");
@@ -536,13 +629,12 @@ public class ContractController {
 			contract.setDesignation(userDesignation);
 			
 		//	System.out.println("HOD ID FK = " + contract.getHod_user_id_fk());
-			System.out.println("Documentsss = "  + contract.getAttachment());
+			//System.out.println("Documentsss = "  + contract.getAttachment());
 
 			
 			User uObj = (User) session.getAttribute("user");
 			contract.setUser_type_fk(uObj.getUserTypeFk());
 			contract.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
-			
 			contract.setDoc(DateParser.parse(contract.getDoc()));
 			contract.setCa_date(DateParser.parse(contract.getCa_date()));
 			contract.setDate_of_start(DateParser.parse(contract.getDate_of_start()));			
@@ -582,8 +674,77 @@ public class ContractController {
 		return res;
 	}
 	
-	
-	
+
+    
+//    
+//    @PostMapping(
+//    	    value = "/add-contract",
+//    	    consumes = "application/json",
+//    	    produces = "application/json"
+//    	)
+//    	@ResponseBody
+//    	public Map<String, Object> addContract1(
+//    	        @RequestBody Contract contract,
+//    	        HttpSession session) {
+//
+//    	    Map<String, Object> res = new HashMap<>();
+//
+//    	    System.out.println("Inside add-contract JSON controller");
+//    	    System.out.println("Contract ::: " + contract);
+//
+//    	    try {
+//    	        String user_Id = (String) session.getAttribute("userId");
+//    	        String userName = (String) session.getAttribute("userName");
+//    	        String userDesignation = (String) session.getAttribute("designation");
+//
+//    	        contract.setCreated_by_user_id_fk(user_Id);
+//    	        contract.setUser_id(user_Id);
+//    	        contract.setUser_name(userName);
+//    	        contract.setDesignation(userDesignation);
+//
+//    	        User uObj = (User) session.getAttribute("user");
+//    	        contract.setUser_type_fk(uObj.getUserTypeFk());
+//    	        contract.setUser_role_code(
+//    	                userService.getRoleCode(uObj.getUserRoleNameFk())
+//    	        );
+//
+//    	        // ---- DATE PARSING (UNCHANGED) ----
+//    	        contract.setDoc(DateParser.parse(contract.getDoc()));
+//    	        contract.setCa_date(DateParser.parse(contract.getCa_date()));
+//    	        contract.setDate_of_start(DateParser.parse(contract.getDate_of_start()));
+//    	        contract.setLoa_date(DateParser.parse(contract.getLoa_date()));
+//    	        contract.setActual_completion_date(DateParser.parse(contract.getActual_completion_date()));
+//    	        contract.setContract_closure_date(DateParser.parse(contract.getContract_closure_date()));
+//    	        contract.setCompletion_certificate_release(DateParser.parse(contract.getCompletion_certificate_release()));
+//    	        contract.setFinal_takeover(DateParser.parse(contract.getFinal_takeover()));
+//    	        contract.setFinal_bill_release(DateParser.parse(contract.getFinal_bill_release()));
+//    	        contract.setDefect_liability_period(DateParser.parse(contract.getDefect_liability_period()));
+//    	        contract.setRetention_money_release(DateParser.parse(contract.getRetention_money_release()));
+//    	        contract.setPbg_release(DateParser.parse(contract.getPbg_release()));
+//    	        contract.setBg_date(DateParser.parse(contract.getBg_date()));
+//    	        contract.setRelease_date(DateParser.parse(contract.getRelease_date()));
+//    	        contract.setPlanned_date_of_award(DateParser.parse(contract.getPlanned_date_of_award()));
+//    	        contract.setPlanned_date_of_completion(DateParser.parse(contract.getPlanned_date_of_completion()));
+//
+//    	        String contractid = contractService.addContract(contract);
+//
+//    	        if (!StringUtils.isEmpty(contractid)) {
+//    	            res.put("success", true);
+//    	            res.put("message", "Contract " + contractid + " Added Successfully");
+//    	        } else {
+//    	            res.put("success", false);
+//    	            res.put("message", "Adding Contract failed. Try again.");
+//    	        }
+//
+//    	    } catch (Exception e) {
+//    	        logger.error("Add Contract Error", e);
+//    	        res.put("success", false);
+//    	        res.put("message", "Adding Contract failed due to server error.");
+//    	    }
+//
+//    	    return res;
+//    	}
+
 
 	@RequestMapping(value = "/saveedit-contract", method = {RequestMethod.GET,RequestMethod.POST})
 	public ModelAndView saveeditContract(@ModelAttribute  Contract contract,RedirectAttributes attributes,HttpSession session){

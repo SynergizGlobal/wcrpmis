@@ -198,24 +198,14 @@ export default function Users() {
   );
 
   const handleAdd = () => navigate("userform");
-  
   const handleEdit = (user) => {
-    // Since controller is @RequestMapping("/users"), edit endpoint might be /users/get-user
-    // Create a form submission like in JSP
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `${API_BASE_URL}/users/get-user`;
-    
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'user_id';
-    input.value = user.user_id;
-    
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
+    navigate("userform", { 
+      state: { 
+        user: user,      
+        mode: "edit" 
+      } 
+    });
   };
-
   const isUserForm = location.pathname.endsWith("/userform");
 
   const handleExport = async () => {

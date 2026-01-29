@@ -198,7 +198,7 @@ export default function ContractForm() {
     appendRevisionRequired({
       revision_numbers: nextRevisionNumber,
       revised_amounts: "",
-      revision_unit: "Rs",
+      revision_unit: "",
       revision_amounts_statuss: "",
       revised_docs: "",
       revision_statuss: "",
@@ -385,7 +385,7 @@ export default function ContractForm() {
     }
   }, [isEdit, row, setValue]);
 
-  const onSubmit = async (data, saveForEdit = false) => {
+    const onSubmit = async (data, saveForEdit = false) => {
     if (saveForEdit) setSavingForEdit(true);
     else setLoading(true);
 
@@ -424,320 +424,253 @@ export default function ContractForm() {
     };
 
     try {
-      const formData = new FormData();
+		
+		const formData = new FormData();
+		
+		const payload = {
+			
+			
+		  /* ===============================
+		     BASIC FIELDS
+		     =============================== */
+		  project_id_fk: data?.project_id_fk,
+		  hod_user_id_fk: data?.hod_user_id_fk,
+		  dy_hod_user_id_fk: data?.dy_hod_user_id_fk,
 
-      /* ===============================
-         BASIC FIELDS (append only if present)
-         =============================== */
-      appendIf(formData, "project_id_fk", data?.project_id_fk);
-      appendIf(formData, "hod_user_id_fk", data?.hod_user_id_fk);
-      appendIf(formData, "dy_hod_user_id_fk", data?.dy_hod_user_id_fk);
+		  contract_type_fk: data?.contract_type_fk,
+		  contractor_id_fk: data?.contractor_id_fk,
+		  contract_status_fk: data?.contract_status_fk,
 
-      appendIf(formData, "contract_type_fk", data?.contract_type_fk);
-      appendIf(formData, "contractor_id_fk", data?.contractor_id_fk);
-      appendIf(formData, "contract_status_fk", data?.contract_status_fk);
+		  contract_ifas_code: data?.contract_ifas_code,
+		  contract_status: data?.contract_status,
+		  contract_department: data?.contract_department,
 
-      appendIf(formData, "contract_ifas_code", data?.contract_ifas_code);
+		  contract_short_name: data?.contract_short_name,
+		  contract_name: data?.contract_name,
 
-      appendIf(formData, "contract_status", data?.contract_status);
-      appendIf(formData, "contract_department", data?.contract_department);
+		  bank_funded: data?.bank_funded || "No",
+		  bank_name: data?.bank_name,
+		  type_of_review: data?.type_of_review,
 
-      appendIf(formData, "contract_short_name", data?.contract_short_name);
-      appendIf(formData, "contract_name", data?.contract_name);
+		  scope_of_contract: data?.scope_of_contract,
+		  loa_letter_number: data?.loa_letter_number,
+		  loa_date: data?.loa_date,
+		  ca_no: data?.ca_no,
+		  ca_date: data?.ca_date,
 
-      appendIf(formData, "bank_funded", data?.bank_funded || "No");
-      appendIf(formData, "bank_name", data?.bank_name);
-      appendIf(formData, "type_of_review", data?.type_of_review);
+		  date_of_start: data?.date_of_start,
+		  doc: data?.doc,
 
-      appendIf(formData, "scope_of_contract", data?.scope_of_contract);
-      appendIf(formData, "loa_letter_number", data?.loa_letter_number);
-      appendIf(formData, "loa_date", data?.loa_date);
-      appendIf(formData, "ca_no", data?.ca_no);
-      appendIf(formData, "ca_date", data?.ca_date);
+		  awarded_cost: data?.awarded_cost,
+		  awarded_cost_units: data?.awarded_cost_units,
 
-      appendIf(formData, "date_of_start", data?.date_of_start);
-      appendIf(formData, "doc", data?.doc);
+		  estimated_cost: data?.estimated_cost,
+		  estimated_cost_units: data?.estimated_cost_units,
 
-      appendIf(formData, "awarded_cost", data?.awarded_cost);
-      appendIf(formData, "awarded_cost_units", data?.awarded_cost_units);
+		  planned_date_of_award: data?.planned_date_of_award,
+		  planned_date_of_completion: data?.planned_date_of_completion,
 
-      appendIf(formData, "estimated_cost", data?.estimated_cost);
-      appendIf(formData, "estimated_cost_units", data?.estimated_cost_units);
+		  tender_opening_date: data?.tender_opening_date,
+		  technical_eval_submission: data?.technical_eval_submission,
+		  financial_eval_submission: data?.financial_eval_submission,
 
-      appendIf(formData, "planned_date_of_award", data?.planned_date_of_award);
-      appendIf(formData, "planned_date_of_completion", data?.planned_date_of_completion);
+		  remarks: data?.remarks,
 
-      appendIf(formData, "tender_opening_date", data?.tender_opening_date);
-      appendIf(formData, "technical_eval_submission", data?.technical_eval_submission);
-      appendIf(formData, "financial_eval_submission", data?.financial_eval_submission);
+		  status: "Active",
+		  is_contract_closure_initiated: "No",
 
-      appendIf(formData, "remarks", data?.remarks);
+		  /* ===============================
+		     EXECUTIVES
+		     =============================== */
+		  department_fks: [],
+		  responsible_people_id_fks: [],
+		  filecounts: [],
 
-      // fixed values
-      appendIf(formData, "status", "Active");
-      appendIf(formData, "is_contract_closure_initiated", "No");
+		  /* ===============================
+		     TENDER BID REVISIONS
+		     =============================== */
+		  revisionno: [],
+		  revision_estimated_cost: [],
+		  revision_planned_date_of_award: [],
+		  revision_planned_date_of_completion: [],
+		  notice_inviting_tender: [],
+		  tender_bid_opening_date: [],
+		  technical_eval_approval: [],
+		  financial_eval_approval: [],
+		  tender_bid_remarks: [],
 
-      /* ===============================
-         EXECUTIVES → BACKEND FORMAT
-         department_fks[], responsible_people_id_fks[], filecounts[]
-         =============================== */
+		  /* ===============================
+		     BANK GUARANTEE
+		     =============================== */
+		  bg_type_fks: [],
+		  issuing_banks: [],
+		  bg_numbers: [],
+		  bg_values: [],
+		  bg_valid_uptos: [],
+		  bg_dates: [],
+		  release_dates: [],
+		  bg_value_unitss: [],
 
-      const department_fks = [];
-      const responsible_people_id_fks = [];
-      const filecounts = [];
+		  /* ===============================
+		     INSURANCE
+		     =============================== */
+		  insurance_type_fks: [],
+		  issuing_agencys: [],
+		  agency_addresss: [],
+		  insurance_numbers: [],
+		  insurance_values: [],
+		  insurence_valid_uptos: [],
+		  insuranceStatus: [],
+		  insurance_value_unitss: [],
 
-      (data.executives || []).forEach((row) => {
-        const dept = row.department_fks || "";
-        const execArr = Array.isArray(row.responsible_people_id_fks)
-          ? row.responsible_people_id_fks.filter(Boolean)
-          : [];
+		  /* ===============================
+		     MILESTONES
+		     =============================== */
+		  milestone_ids: [],
+		  milestone_names: [],
+		  milestone_dates: [],
+		  actual_dates: [],
+		  revisions: [],
+		  mile_remarks: [],
 
-        if (dept && execArr.length > 0) {
-          department_fks.push(dept);
-          filecounts.push(String(execArr.length));
-          execArr.forEach((execId) => responsible_people_id_fks.push(execId));
-        }
-      });
+		  /* ===============================
+		     CONTRACT REVISION
+		     =============================== */
+		  revision_numbers: [],
+		  revised_amounts: [],
+		  revised_docs: [],
+		  revision_statuss: [],
+		  revised_amount_unitss: [],
+		  revision_amounts_statuss: [],
+		  approval_by_bank: [],
 
-      appendArrayIf(formData, "department_fks", department_fks);
-      appendArrayIf(formData, "responsible_people_id_fks", responsible_people_id_fks);
-      appendArrayIf(formData, "filecounts", filecounts);
+		  /* ===============================
+		     CONTRACTOR KEY PERSONNEL
+		     =============================== */
+		  contractKeyPersonnelNames: [],
+		  contractKeyPersonnelMobileNos: [],
+		  contractKeyPersonnelEmailIds: [],
+		  contractKeyPersonnelDesignations: [],
+		  
+		  /* ===============================
+		  	    Documents
+		  	 =============================== */	  
+		       contractDocumentNames: [],
+		       contractDocumentFileNames: [],
+		       contract_file_types: []
+		};
 
-      /* ===============================
-         TENDER BID REVISIONS → BACKEND ARRAY FORMAT
-         revisionno[], revision_estimated_cost[], etc
-         =============================== */
+		(data.executives || []).forEach(row => {
+		  if (row.department_fks && row.responsible_people_id_fks?.length) {
+		    payload.department_fks.push(row.department_fks);
+		    payload.filecounts.push(String(row.responsible_people_id_fks.length));
+		    payload.responsible_people_id_fks.push(...row.responsible_people_id_fks);
+		  }
+		});
+		
+		(data.tenderBidRevisions || []).forEach((r) => {
+		  if (!hasAnyRevisionField(r)) return;
 
-      const revisions = (data.tenderBidRevisions || [])
-        .map((r, idx) => ({
-          revisionno: r?.revisionno || generateRevisionNumber(idx),
-          revision_estimated_cost: r?.revision_estimated_cost || "",
-          revision_planned_date_of_award: r?.revision_planned_date_of_award || "",
-          revision_planned_date_of_completion: r?.revision_planned_date_of_completion || "",
-          notice_inviting_tender: r?.notice_inviting_tender || "",
-          tender_bid_opening_date: r?.tender_bid_opening_date || "",
-          technical_eval_approval: r?.technical_eval_approval || "",
-          financial_eval_approval: r?.financial_eval_approval || "",
-          tender_bid_remarks: r?.tender_bid_remarks || ""
-        }))
-        .filter(hasAnyRevisionField);
+		  payload.revisionno.push(r.revisionno);
+		  payload.revision_estimated_cost.push(r.revision_estimated_cost);
+		  payload.revision_planned_date_of_award.push(r.revision_planned_date_of_award);
+		  payload.revision_planned_date_of_completion.push(r.revision_planned_date_of_completion);
+		  payload.notice_inviting_tender.push(r.notice_inviting_tender);
+		  payload.tender_bid_opening_date.push(r.tender_bid_opening_date);
+		  payload.technical_eval_approval.push(r.technical_eval_approval);
+		  payload.financial_eval_approval.push(r.financial_eval_approval);
+		  payload.tender_bid_remarks.push(r.tender_bid_remarks);
+		});
+		
+		(data.bgDetailsList || []).forEach((bg) => {
+		  if (!bg.bg_type_fks) return;
 
-      // ✅ append only if at least one revision row is filled
-	  if (revisions.length > 0) {
-	    revisions.forEach((r) => formData.append("revisionno[]", r.revisionno));
-	    revisions.forEach((r) => formData.append("revision_estimated_cost[]", r.revision_estimated_cost));
-	    revisions.forEach((r) => formData.append("revision_planned_date_of_award[]", r.revision_planned_date_of_award));
-	    revisions.forEach((r) => formData.append("revision_planned_date_of_completion[]", r.revision_planned_date_of_completion));
-	    revisions.forEach((r) => formData.append("notice_inviting_tender[]", r.notice_inviting_tender));
-	    revisions.forEach((r) => formData.append("tender_bid_opening_date[]", r.tender_bid_opening_date));
-	    revisions.forEach((r) => formData.append("technical_eval_approval[]", r.technical_eval_approval));
-	    revisions.forEach((r) => formData.append("financial_eval_approval[]", r.financial_eval_approval));
-	    revisions.forEach((r) => formData.append("tender_bid_remarks[]", r.tender_bid_remarks));
-	  }
+		  payload.bg_type_fks.push(bg.bg_type_fks);
+		  payload.issuing_banks.push(bg.issuing_banks);
+		  payload.bg_numbers.push(bg.bg_numbers);
+		  payload.bg_values.push(bg.bg_values);
+		  payload.bg_valid_uptos.push(bg.bg_valid_uptos);
+		  payload.bg_dates.push(bg.bg_dates);
+		  payload.release_dates.push(bg.release_dates);
+		  payload.bg_value_unitss.push(bg.bg_unit);
+		});
 
 	
+		(data.insuranceRequired || []).forEach((ins) => {
+		  if (!ins.insurance_type_fks) return;
 
-		/* ===============================
-		   BANK GUARANTEE - FLAT ARRAY FORMAT
-		   =============================== */
-		console.log("🏦 Bank Guarantee data being sent:", data?.bgDetailsList);
-
-		const bankGuarantees = (data?.bgDetailsList || [])
-		  .filter((x) => x?.bg_type_fks && x?.bg_type_fks.trim() !== "");
-
-		console.log("🏦 Filtered Bank Guarantees:", bankGuarantees);
-
-		if (bankGuarantees.length > 0) {
-		  bankGuarantees.forEach((x) => {
-		    console.log(`🏦 Adding bank guarantee:`, x);
-		    
-		    // FLAT ARRAY FORMAT - matches backend getters
-		    appendIf(formData, "bg_type_fks[]", x.bg_type_fks);
-		    appendIf(formData, "issuing_banks[]", x.issuing_banks);
-		    appendIf(formData, "bg_numbers[]", x.bg_numbers);
-		    appendIf(formData, "bg_values[]", x.bg_values);
-		    appendIf(formData, "bg_valid_uptos[]", x.bg_valid_uptos); // NOTE: bg_valid_uptos (not valid_upto)
-		    appendIf(formData, "bg_dates[]", x.bg_dates);
-		    appendIf(formData, "release_dates[]", x.release_dates);
-		    appendIf(formData, "bg_value_unitss[]", x.bg_unit); // NOTE: bg_value_unitss (plural with extra 's')
-		  });
-		  
-		  console.log(`🏦 Total bank guarantees to save: ${bankGuarantees.length}`);
-		} else {
-		  console.log("🏦 No bank guarantees to save");
-		}
+		  payload.insurance_type_fks.push(ins.insurance_type_fks);
+		  payload.issuing_agencys.push(ins.issuing_agencys);
+		  payload.agency_addresss.push(ins.agency_addresss);
+		  payload.insurance_numbers.push(ins.insurance_numbers);
+		  payload.insurance_values.push(ins.insurance_values);
+		  payload.insurence_valid_uptos.push(ins.insurence_valid_uptos);
+		  payload.insuranceStatus.push(ins.insuranceStatus ? "Yes" : "No");
+		  payload.insurance_value_unitss.push(ins.insurance_unit);
+		});
 		
-		/* ===============================
-		   INSURANCE - FLAT ARRAY FORMAT
-		   =============================== */
-		console.log("🏥 Insurance data being sent:", data?.insuranceRequired);
+		(data.milestoneRequired || []).forEach((mile) => {
+		    if (!mile.milestone_ids) return;
 
-		const insuranceEntries = (data?.insuranceRequired || [])
-		  .filter((x) => x?.insurance_type_fks && x?.insurance_type_fks.trim() !== "");
-
-		console.log("🏥 Filtered Insurance entries:", insuranceEntries);
-
-		if (insuranceEntries.length > 0) {
-		  insuranceEntries.forEach((x) => {
-		    console.log(`🏥 Adding insurance entry:`, x);
-		    
-		    // FLAT ARRAY FORMAT - matches backend getters
-		    // Note: field names must match backend getter names exactly
-		    appendIf(formData, "insurance_type_fks[]", x.insurance_type_fks);
-		    appendIf(formData, "issuing_agencys[]", x.issuing_agencys);
-		    appendIf(formData, "agency_addresss[]", x.agency_addresss);
-		    appendIf(formData, "insurance_numbers[]", x.insurance_numbers);
-		    appendIf(formData, "insurance_values[]", x.insurance_values);
-		    appendIf(formData, "insurence_valid_uptos[]", x.insurence_valid_uptos); // Note spelling: "insurence" not "insurance"
-		    appendIf(formData, "insuranceStatus[]", x.insuranceStatus ? "Yes" : "No"); // Convert boolean to "Yes"/"No"
-		    appendIf(formData, "insurance_value_unitss[]", x.insurance_unit);
-		    
-		    // Optional fields that might be in your form but not in SQL
-		    // appendIf(formData, "insurence_remarks[]", x.insurence_remarks);
-		    // appendIf(formData, "insurance_revisions[]", x.insurance_revisions);
+		    payload.milestone_ids.push(mile.milestone_ids);
+		    payload.milestone_names.push(mile.milestone_names);
+		    payload.milestone_dates.push(mile.milestone_dates);
+		    payload.actual_dates.push(mile.actual_dates);
+		    payload.revisions.push(mile.revisions);
+		    payload.mile_remarks.push(mile.mile_remarks);
 		  });
-		  
-		  console.log(`🏥 Total insurance entries to save: ${insuranceEntries.length}`);
-		} else {
-		  console.log("🏥 No insurance entries to save");
-		}
+
 		
+		  (data.revisionRequired || []).forEach((rev) => {
+		      if (!rev.revision_numbers) return;
+
+		      payload.revision_numbers.push(rev.revision_numbers);
+		      payload.revised_amounts.push(rev.revised_amounts);
+		      payload.revised_docs.push(rev.revised_docs);
+		      payload.revision_statuss.push(rev.revision_statuss ? "Yes" : "No");
+		      payload.revised_amount_unitss.push(rev.revision_unit);
+		      payload.revision_amounts_statuss.push(rev.revision_amounts_statuss ? "Yes" : "No");
+		      payload.approval_by_bank.push(rev.approvalbybankstatus ? "Yes" : "No");
+		    });
 		
-		/* ===============================
-		   MILESTONES - FLAT ARRAY FORMAT
-		   =============================== */
-		console.log("📅 Milestone data being sent:", data?.milestoneRequired);
+			(data.contractorsKeyRequried || []).forEach((person) => {
+			    if (!person.contractKeyPersonnelNames) return;
 
-		const milestoneEntries = (data?.milestoneRequired || [])
-		  .filter((x) => x?.milestone_names && x?.milestone_names.trim() !== "");
+			    payload.contractKeyPersonnelNames.push(person.contractKeyPersonnelNames);
+			    payload.contractKeyPersonnelDesignations.push(person.contractKeyPersonnelDesignations);
+			    payload.contractKeyPersonnelMobileNos.push(person.contractKeyPersonnelMobileNos);
+			    payload.contractKeyPersonnelEmailIds.push(person.contractKeyPersonnelEmailIds);
+			  });
+			  
+			  if (data.documentsTable && data.documentsTable.length > 0) {
+			    data.documentsTable.forEach((doc, index) => {
+			      if (doc.contract_file_types && doc.contractDocumentNames) {
+			        payload.contractDocumentNames.push(doc.contractDocumentNames);
+			        payload.contract_file_types.push(doc.contract_file_types);
+			        
+			        // Handle file - React Hook Form stores files in an array
+			        const fileInput = doc.contractDocumentFiles;
+			        
+			        if (fileInput && fileInput.length > 0 && fileInput[0] instanceof File) {
+			          const file = fileInput[0];
+			          payload.contractDocumentFileNames.push(file.name);
+			          // Add file to formData
+			          formData.append("contractDocumentFiles[]", file);
+			        } else if (fileInput && fileInput instanceof File) {
+			          // Fallback: if it's directly a File object (not in array)
+			          payload.contractDocumentFileNames.push(fileInput.name);
+			          formData.append("contractDocumentFiles[]", fileInput);
+			        } else {
+			          payload.contractDocumentFileNames.push("");
+			        }
+			      }
+			    });
+			  }
+				 formData.append("payload", new Blob([JSON.stringify(payload)], {
+				     type: "application/json"
+				   }));
 
-		console.log("📅 Filtered Milestone entries:", milestoneEntries);
-
-		if (milestoneEntries.length > 0) {
-		  milestoneEntries.forEach((x) => {
-		    console.log(`📅 Adding milestone entry:`, x);
-		    
-		    appendIf(formData, "milestone_ids[]", x.milestone_ids);
-		    appendIf(formData, "milestone_names[]", x.milestone_names);
-		    appendIf(formData, "milestone_dates[]", x.milestone_dates);
-		    appendIf(formData, "actual_dates[]", x.actual_dates);
-		    appendIf(formData, "revisions[]", x.revisions);
-		    appendIf(formData, "mile_remarks[]", x.mile_remarks);
-		  });
-		  
-		  console.log(`📅 Total milestone entries to save: ${milestoneEntries.length}`);
-		} else {
-		  console.log("📅 No milestone entries to save");
-		}
-
-		/* ===============================
-		   CONTRACT REVISION - FLAT ARRAY FORMAT
-		   =============================== */
-		console.log("📝 Contract Revision data being sent:", data?.revisionRequired);
-
-		// Get all revision entries
-		const allRevisionEntries = data?.revisionRequired || [];
-
-		console.log("📝 Total Revision entries:", allRevisionEntries.length);
-
-		if (allRevisionEntries.length > 0) {
-		  allRevisionEntries.forEach((x, i) => {
-		    console.log(`📝 Processing revision entry ${i}:`, x);
-		    
-		    // Convert checkbox values to "Yes"/"No" strings
-		    const revisionStatus = x.revision_statuss ? "Yes" : "No";
-		    const revisionAmountsStatus = x.revision_amounts_statuss ? "Yes" : "No";
-		    const approvalByBank = x.approvalbybankstatus ? "Yes" : "No";
-		    
-		    // CRITICAL: Always append ALL fields, even if empty, to initialize arrays in backend
-		    // Use formData.append (not appendIf) to ensure arrays are created
-		    
-		    // Required fields for array initialization
-		    formData.append("revision_numbers[]", x.revision_numbers || "");
-		    formData.append("revised_amounts[]", x.revised_amounts || "");
-		    formData.append("revised_docs[]", x.revised_docs || "");
-		    formData.append("revision_remarks[]", ""); // EMPTY STRING - but MUST be sent
-		    formData.append("revision_statuss[]", revisionStatus);
-		    formData.append("revised_amount_unitss[]", x.revision_unit || "");
-		    formData.append("revision_amounts_statuss[]", revisionAmountsStatus);
-		    formData.append("approval_by_bank[]", approvalByBank);
-		  });
-		  
-		  console.log(`📝 Processed ${allRevisionEntries.length} revision entries`);
-		  
-		  // Debug: Show what was sent
-		  console.log("🔍 Revision fields sent to backend:");
-		  for (let pair of formData.entries()) {
-		    if (pair[0].includes('revision') || pair[0].includes('revised') || pair[0].includes('approval')) {
-		      console.log(`  ${pair[0]} = ${pair[1]}`);
-		    }
-		  }
-		} else {
-		  console.log("📝 No revision entries to process");
-		}
-		
-		
-		/* ===============================
-		   CONTRACTOR'S KEY PERSONNEL - FLAT ARRAY FORMAT
-		   =============================== */
-		console.log("👷 Contractor's Key Personnel data being sent:", data?.contractorsKeyRequried);
-
-		const keyPersonnelEntries = (data?.contractorsKeyRequried || [])
-		  .filter((x) => x?.contractKeyPersonnelNames && x?.contractKeyPersonnelNames.trim() !== "");
-
-		console.log("👷 Filtered Key Personnel entries:", keyPersonnelEntries);
-
-		if (keyPersonnelEntries.length > 0) {
-		  keyPersonnelEntries.forEach((x) => {
-		    console.log(`👷 Adding key personnel entry:`, x);
-		    
-		    // FLAT ARRAY FORMAT - matches backend getters
-		    appendIf(formData, "contractKeyPersonnelNames[]", x.contractKeyPersonnelNames);
-		    appendIf(formData, "contractKeyPersonnelMobileNos[]", x.contractKeyPersonnelMobileNos);
-		    appendIf(formData, "contractKeyPersonnelEmailIds[]", x.contractKeyPersonnelEmailIds);
-		    appendIf(formData, "contractKeyPersonnelDesignations[]", x.contractKeyPersonnelDesignations);
-		  });
-		  
-		  console.log(`👷 Total key personnel entries to save: ${keyPersonnelEntries.length}`);
-		} else {
-		  console.log("👷 No key personnel entries to save");
-		}
-		
-		/* ===============================
-		   DOCUMENTS - Alternative approach
-		   =============================== */
-		console.log("📄 Documents data being sent:", data?.documentsTable);
-
-		const documentEntries = data?.documentsTable || [];
-
-		if (documentEntries.length > 0) {
-		  documentEntries.forEach((doc, index) => {
-		    // Always send metadata arrays to maintain indices
-		    formData.append("contractDocumentNames[]", doc.contractDocumentNames || "");
-		    formData.append("contractDocumentFileNames[]", 
-		      doc.contractDocumentFiles?.[0]?.name || doc.contractDocumentNames || "");
-		    formData.append("contract_file_types[]", doc.contract_file_types || "");
-		    
-		    // Send file if exists, otherwise empty blob
-		    if (doc.contractDocumentFiles && doc.contractDocumentFiles.length > 0) {
-		      const file = doc.contractDocumentFiles[0];
-		      if (file instanceof File) {
-		        formData.append("contractDocumentFiles", file);
-		      } else {
-		        // Fallback: empty blob
-		        formData.append("contractDocumentFiles", new Blob([]), "");
-		      }
-		    } else {
-		      // Empty blob to maintain array position
-		      formData.append("contractDocumentFiles", new Blob([]), "");
-		    }
-		  });
-		  
-		  console.log(`📄 Processed ${documentEntries.length} document entries`);
-		} else {
-		  console.log("📄 No document entries");
-		}
-
+	   
       /* ===============================
          SUBMIT
          =============================== */
@@ -745,10 +678,12 @@ export default function ContractForm() {
         ? `${API_BASE_URL}/contract/update-contract`
         : `${API_BASE_URL}/contract/add-contract`;
 
-      const response = await api.post(url, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true
-      });
+		const response = await api.post(url, formData, {
+		    headers: { 
+		      "Content-Type": "multipart/form-data" 
+		    },
+		    withCredentials: true
+		  });
 
       if (response?.data) {
         if (saveForEdit) alert("Contract saved successfully! You can continue editing.");
@@ -762,7 +697,6 @@ export default function ContractForm() {
       else setLoading(false);
     }
   };
-
 
 
 
@@ -1742,7 +1676,7 @@ export default function ContractForm() {
                       type="button"
                       className="btn-2 btn-green"
                       onClick={() =>
-                        appendBgDetailsList({ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_unit: "Rs", bg_dates: "", bg_valid_uptos: "", release_dates: "" })
+                        appendBgDetailsList({ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_unit: "", bg_dates: "", bg_valid_uptos: "", release_dates: "" })
                       }
                     >
                       <BiListPlus size="24" />
@@ -2033,7 +1967,7 @@ export default function ContractForm() {
                           <label>
                             <input
                               type="radio"
-                              value="yes"
+                              value="yes"m
                               {...register("revision_requried")}
                             />
                             Yes
