@@ -3,6 +3,7 @@ package com.wcr.wcrbackend.reference.controller;
 
 
 import java.util.Map;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
@@ -29,6 +30,7 @@ import com.wcr.wcrbackend.reference.model.Safety;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
+@ResponseBody
 public class UtilityExecutionAgencyController {
 
 	@InitBinder
@@ -55,14 +57,16 @@ public class UtilityExecutionAgencyController {
 //	}
 	
 	   @GetMapping(
-		        value = "/utility-execution-agency",
+		        value = "/utility-execution-agencyy",
 		        produces = MediaType.APPLICATION_JSON_VALUE
 		    )
 		    public ResponseEntity<?> getUtilityExecutionAgency(HttpSession session) {
 
+		   
+		   System.out.println("Mehtod called.......");
+		   
 		        try {
-		            Safety obj = new Safety(); // always non-null
-
+		            Safety obj = new Safety(); 
 		            Safety utilityExecutionAgencyList =
 		                    service.getUtilityExecutionAgencysList(obj);
 

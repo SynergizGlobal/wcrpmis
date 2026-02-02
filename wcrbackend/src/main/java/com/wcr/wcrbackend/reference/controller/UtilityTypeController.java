@@ -61,7 +61,7 @@ public class UtilityTypeController {
 //	
 	
 	@GetMapping(
-		    value = "/utility-types",
+		    value = "/utility-typess",
 		    produces = MediaType.APPLICATION_JSON_VALUE
 		)
 		public ResponseEntity<Map<String, Object>> getUtilityTypes() {

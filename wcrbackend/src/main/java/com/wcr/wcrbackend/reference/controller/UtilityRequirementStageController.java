@@ -91,7 +91,7 @@ public class UtilityRequirementStageController {
 
 	
 	@GetMapping(
-		    value = "/utility-requirement-stage",
+		    value = "/utility-requirement-stagee",
 		    produces = MediaType.APPLICATION_JSON_VALUE
 		)
 		public ResponseEntity<?> getUtilityRequirementStage(

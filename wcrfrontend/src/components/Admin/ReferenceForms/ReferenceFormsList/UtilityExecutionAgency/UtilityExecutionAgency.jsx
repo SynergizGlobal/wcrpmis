@@ -4,7 +4,7 @@ import styles from "./UtilityExecutionAgency.module.css";
 import { API_BASE_URL } from "../../../../../config";
 
 const API_ENDPOINTS = {
-  GET: "/utility-execution-agency",
+  GET: "/utility-execution-agencyy",
   ADD: "/add-utility-execution-agency",
   UPDATE: "/update-utility-execution-agency",
   DELETE: "/delete-utility-execution-agency"

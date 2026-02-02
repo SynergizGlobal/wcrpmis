@@ -44,7 +44,7 @@ public class UtilityResponsibleExecutivesController {
 	
 
 	@GetMapping(
-		value = "/utility-shifting-executives",
+		value = "/utility-shifting-executivess",
 		produces = MediaType.APPLICATION_JSON_VALUE
 	)
 	public ResponseEntity<Map<String, Object>> getUtilityShiftingExecutives(

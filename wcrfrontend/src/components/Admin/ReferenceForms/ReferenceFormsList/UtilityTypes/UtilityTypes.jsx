@@ -5,7 +5,7 @@ import styles from "./UtilityTypes.module.css";
 import { API_BASE_URL } from "../../../../../config";
 
 const API_ENDPOINTS = {
-  GET: "/utility-types",
+  GET: "/utility-typess",
   ADD: "/add-utility-type",
   UPDATE: "/update-utility-type",
   DELETE: "/delete-utility-type"

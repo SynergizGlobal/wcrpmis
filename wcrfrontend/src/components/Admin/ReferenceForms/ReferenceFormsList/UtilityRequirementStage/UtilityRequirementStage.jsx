@@ -7,7 +7,7 @@ import styles from "./UtilityRequirementStage.module.css";
 import { API_BASE_URL } from "../../../../../config";
 
 const API_ENDPOINTS = {
-  GET: "/utility-requirement-stage",
+  GET: "/utility-requirement-stagee",
   ADD: "/add-utility-requirement-stage",
   UPDATE: "/update-utility-requirement-stage",
   DELETE: "/delete-utility-requirement-stage"

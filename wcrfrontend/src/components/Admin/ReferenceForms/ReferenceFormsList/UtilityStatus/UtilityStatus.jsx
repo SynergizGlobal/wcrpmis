@@ -5,7 +5,7 @@ import styles from "./UtilityStatus.module.css";
 import { API_BASE_URL } from "../../../../../config";
 
 const API_ENDPOINTS = {
-  GET: "/utility-status",
+  GET: "/utility-statuss",
   ADD: "/add-utility-status",
   UPDATE: "/update-utility-status",
   DELETE: "/delete-utility-status"

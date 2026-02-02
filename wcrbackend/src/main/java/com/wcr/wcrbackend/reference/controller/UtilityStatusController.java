@@ -58,7 +58,7 @@ public class UtilityStatusController {
 //	}
 	
 	@GetMapping(
-		    value = "/utility-status",
+		    value = "/utility-statuss",
 		    produces = MediaType.APPLICATION_JSON_VALUE
 		)
 		public ResponseEntity<Map<String, Object>> getUtilityStatus() {

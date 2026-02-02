@@ -22,7 +22,7 @@ export default function UtilityShiftingExecutives() {
 		setLoading(true);
 		try {
 			const res = await fetch(
-				`${API_BASE_URL}/utility-shifting-executives`,
+				`${API_BASE_URL}/utility-shifting-executivess`,
 				{
 					method: "GET",
 					headers: { "Content-Type": "application/json" },
