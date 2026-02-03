@@ -16,9 +16,9 @@ export default function ContractForm() {
   const [activeTab, setActiveTab] = useState("managers");
   const navigate = useNavigate();
   const { state } = useLocation(); 
-  const row = state?.data || null;
-  const isEdit = !!row;
-
+  const contractId = state?.contractId || null;
+  const isEdit = state?.isEdit || false;
+  
   // State for dropdown options
   const [projectOptions, setProjectOptions] = useState([]);
   const [hodOptions, setHodOptions] = useState([]);
@@ -37,6 +37,9 @@ export default function ContractForm() {
   const [savingForEdit, setSavingForEdit] = useState(false);
   const [formLoading, setFormLoading] = useState(true);
   const [loadingExecutives, setLoadingExecutives] = useState(false);
+  const [contractDetails, setContractDetails] = useState(null);
+  const [departmentExecutivesMap, setDepartmentExecutivesMap] = useState({});
+  
   const {
     register,
     control,
@@ -44,6 +47,7 @@ export default function ContractForm() {
     setValue,
     getValues,
     watch,
+    reset,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -65,7 +69,6 @@ export default function ContractForm() {
       milestone_requried: "",
       revision_requried: "",
       contractors_key_requried: "",
-      estimated_cost_units: "", 
 
       executives: [{ department_fks: "", responsible_people_id_fks: [] }],
       tenderBidRevisions: [{ revisionno: "R1", revision_estimated_cost: "", revision_planned_date_of_award: "", revision_planned_date_of_completion: "", notice_inviting_tender: "", tender_bid_opening_date: "", technical_eval_approval: "", financial_eval_approval: "", tender_bid_remarks: "" }],
@@ -159,7 +162,6 @@ export default function ContractForm() {
 
   // Handle removing tender bid revision (prevent deletion of R1)
   const handleRemoveTenderBidRevision = (index) => {
-    // Check if this is the first revision (R1)
     const revisionNumber = getValues(`tenderBidRevisions.${index}.revisionno`);
     if (revisionNumber === "R1") {
       alert("Cannot delete the first revision (R1).");
@@ -183,7 +185,6 @@ export default function ContractForm() {
 
   // Handle removing milestone (prevent deletion of K-1)
   const handleRemoveMilestone = (index) => {
-    // Check if this is the first milestone (K-1)
     const milestoneId = getValues(`milestoneRequired.${index}.milestone_ids`);
     if (milestoneId === "K-1") {
       alert("Cannot delete the first milestone (K-1).");
@@ -208,7 +209,6 @@ export default function ContractForm() {
 
   // Handle removing revision required (prevent deletion of R1)
   const handleRemoveRevisionRequired = (index) => {
-    // Check if this is the first revision (R1)
     const revisionNumber = getValues(`revisionRequired.${index}.revision_numbers`);
     if (revisionNumber === "R1") {
       alert("Cannot delete the first revision (R1).");
@@ -217,17 +217,367 @@ export default function ContractForm() {
     removeRevisionRequired(index);
   };
 
+  // ===== ✅ UPDATED HELPER FUNCTIONS TO MATCH JSP FIELD NAMES =====
+
+  const buildExecutivesArray = (departmentList) => {
+    console.log("Building executives array from departmentList:", departmentList);
+    if (!departmentList || !Array.isArray(departmentList) || departmentList.length === 0) {
+      return [{ department_fks: "", responsible_people_id_fks: [] }];
+    }
+    
+    return departmentList.map(dept => {
+      // Get selected executives from executivesList (matching JSP logic)
+      const selectedExecutives = dept.executivesList || [];
+      const selectedUserIds = selectedExecutives.map(exec => 
+        exec.executive_user_id_fk || exec.hod_user_id_fk
+      ).filter(id => id && id !== "");
+      
+      console.log(`Dept ${dept.department_fk}: selectedUserIds =`, selectedUserIds);
+      
+      return {
+        department_fks: dept.department_fk || dept.department_id_fk || "",
+        responsible_people_id_fks: selectedUserIds
+      };
+    });
+  };
+
+  const buildTenderBidRevisionsArray = (revisions) => {
+    console.log("Building tender bid revisions from:", revisions);
+    if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
+      return [{ 
+        revisionno: "R1", 
+        revision_estimated_cost: "", 
+        revision_planned_date_of_award: "", 
+        revision_planned_date_of_completion: "", 
+        notice_inviting_tender: "", 
+        tender_bid_opening_date: "", 
+        technical_eval_approval: "", 
+        financial_eval_approval: "", 
+        tender_bid_remarks: "" 
+      }];
+    }
+    
+    return revisions.map((rev, index) => {
+      // Match JSP field names exactly (camelCase from API)
+      const revisionData = {
+        revisionno: rev.revisionnumber || rev.revision_number || `R${index + 1}`,
+        revision_estimated_cost: rev.revisionestimatedcost || rev.revision_estimated_cost || "",
+        revision_planned_date_of_award: formatDateForInput(rev.revisionplanneddateofaward || rev.revision_planned_date_of_award),
+        revision_planned_date_of_completion: formatDateForInput(rev.revisionplanneddateofcompletion || rev.revision_planned_date_of_completion),
+        notice_inviting_tender: rev.noticeinvitingtender || rev.notice_inviting_tender || "",
+        tender_bid_opening_date: formatDateForInput(rev.tenderbidopeningdate || rev.tender_bid_opening_date),
+        technical_eval_approval: formatDateForInput(rev.technicalevalapproval || rev.technical_eval_approval),
+        financial_eval_approval: formatDateForInput(rev.financialevalapproval || rev.financial_eval_approval),
+        tender_bid_remarks: rev.tenderbidremarks || rev.tender_bid_remarks || ""
+      };
+      
+      console.log(`Revision ${index}:`, revisionData);
+      return revisionData;
+    });
+  };
+
+  const buildBgDetailsArray = (bgList) => {
+    console.log("Building BG details from:", bgList);
+    if (!bgList || !Array.isArray(bgList) || bgList.length === 0) {
+      return [{ 
+        bg_type_fks: "", 
+        issuing_banks: "", 
+        bg_numbers: "", 
+        bg_values: "", 
+        bg_unit: "", 
+        bg_dates: "", 
+        bg_valid_uptos: "", 
+        release_dates: "" 
+      }];
+    }
+    return bgList.map(bg => ({
+      bg_type_fks: bg.bg_type_fk || bg.bgtypefk || "",
+      issuing_banks: bg.issuing_bank || bg.issuingbank || "",
+      bg_numbers: bg.bg_number || bg.bgnumber || "",
+      bg_values: bg.bg_value || bg.bgvalue || "",
+      bg_unit: bg.bg_unit || bg.bgunit || "",
+      bg_dates: formatDateForInput(bg.bg_date || bg.bgdate),
+      bg_valid_uptos: formatDateForInput(bg.bg_valid_upto || bg.bgvalidupto),
+      release_dates: formatDateForInput(bg.release_date || bg.releasedate)
+    }));
+  };
+
+  const buildInsuranceArray = (insuranceList) => {
+    console.log("Building insurance details from:", insuranceList);
+    if (!insuranceList || !Array.isArray(insuranceList) || insuranceList.length === 0) {
+      return [{ 
+        insurance_type_fks: "", 
+        issuing_agencys: "", 
+        agency_addresss: "", 
+        insurance_numbers: "", 
+        insurance_values: "", 
+        insurance_unit: "", 
+        insurence_valid_uptos: "", 
+        insuranceStatus: "" 
+      }];
+    }
+    return insuranceList.map(ins => ({
+      insurance_type_fks: ins.insurance_type_fk || ins.insurancetypefk || "",
+      issuing_agencys: ins.issuing_agency || ins.issuingagency || "",
+      agency_addresss: ins.agency_address || ins.agencyaddress || "",
+      insurance_numbers: ins.insurance_number || ins.insurancenumber || "",
+      insurance_values: ins.insurance_value || ins.insurancevalue || "",
+      insurance_unit: ins.insurance_unit || ins.insuranceunit || "",
+      insurence_valid_uptos: formatDateForInput(ins.insurence_valid_upto || ins.insurencevalidupto),
+      insuranceStatus: ins.insurance_status === "Yes" || ins.insurancestatus === "Yes"
+    }));
+  };
+
+  const buildMilestonesArray = (milestones) => {
+    console.log("Building milestones from:", milestones);
+    if (!milestones || !Array.isArray(milestones) || milestones.length === 0) {
+      return [{ 
+        milestone_ids: "K-1", 
+        milestone_names: "", 
+        milestone_dates: "", 
+        actual_dates: "", 
+        revisions: "", 
+        mile_remarks: "" 
+      }];
+    }
+    return milestones.map((mile, index) => ({
+      milestone_ids: mile.milestone_id || mile.milestoneid || `K-${index + 1}`,
+      milestone_names: mile.milestone_name || mile.milestonename || "",
+      milestone_dates: formatDateForInput(mile.milestone_date || mile.milestonedate),
+      actual_dates: formatDateForInput(mile.actual_date || mile.actualdate),
+      revisions: mile.revision || "",
+      mile_remarks: mile.remarks || mile.mileremarks || ""
+    }));
+  };
+
+  const buildRevisionArray = (revisions) => {
+    console.log("Building revision required from:", revisions);
+    if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
+      return [{ 
+        revision_numbers: "R1", 
+        revised_amounts: "", 
+        revision_unit: "", 
+        revision_amounts_statuss: "", 
+        revised_docs: "", 
+        revision_statuss: "", 
+        approvalbybankstatus: "" 
+      }];
+    }
+    return revisions.map((rev, index) => ({
+      revision_numbers: rev.revision_number || rev.revisionnumber || `R${index + 1}`,
+      revised_amounts: rev.revised_amount || rev.revisedamount || "",
+      revision_unit: rev.revised_amount_unit || rev.revisedamountunit || "",
+      revised_docs: formatDateForInput(rev.revised_doc || rev.reviseddoc),
+      revision_statuss: rev.revision_status === "Yes" || rev.revisionstatus === "Yes",
+      revision_amounts_statuss: rev.revision_amounts_status === "Yes" || rev.revisionamountsstatus === "Yes",
+      approvalbybankstatus: rev.approval_by_bank === "Yes" || rev.approvalbybank === "Yes"
+    }));
+  };
+
+  const buildKeyPersonnelArray = (personnel) => {
+    console.log("Building key personnel from:", personnel);
+    if (!personnel || !Array.isArray(personnel) || personnel.length === 0) {
+      return [{ 
+        contractKeyPersonnelNames: "", 
+        contractKeyPersonnelDesignations: "", 
+        contractKeyPersonnelMobileNos: "", 
+        contractKeyPersonnelEmailIds: "" 
+      }];
+    }
+    return personnel.map(person => ({
+      contractKeyPersonnelNames: person.name || person.contractkeypersonnelname || "",
+      contractKeyPersonnelDesignations: person.designation || person.contractkeypersonneldesignation || "",
+      contractKeyPersonnelMobileNos: person.mobile_no || person.contractkeypersonnelmobileno || "",
+      contractKeyPersonnelEmailIds: person.email_id || person.contractkeypersonnelemailid || ""
+    }));
+  };
+
+  const buildDocumentsArray = (documents) => {
+    console.log("Building documents from:", documents);
+    if (!documents || !Array.isArray(documents) || documents.length === 0) {
+      return [{ 
+        contract_file_types: "", 
+        contractDocumentNames: "", 
+        contractDocumentFiles: "" 
+      }];
+    }
+    
+    return documents.map(doc => ({
+      contractDocumentNames: doc.name || doc.contractdocumentname || "",
+      // JSP uses contract_file_type_fk for selection, but stores as contract_file_type
+      contract_file_types: doc.contract_file_type_fk || doc.contract_file_type || doc.file_type || doc.contractfiletype || "",
+      contractDocumentFiles: "" // Files can't be pre-populated for security reasons
+      // Note: Existing files are shown as download links
+    }));
+  };
+
+  // ===== ✅ OPTIMIZED DATE FORMATTER =====
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return "";
+    
+    try {
+      let date;
+      if (typeof dateString === 'string') {
+        // If it's already in YYYY-MM-DD format
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return dateString;
+        }
+        // Parse DD-MM-YYYY format (from JSP)
+        if (dateString.match(/^\d{2}-\d{2}-\d{4}$/)) {
+          const [day, month, year] = dateString.split('-');
+          date = new Date(`${year}-${month}-${day}`);
+        } else {
+          date = new Date(dateString);
+        }
+      } else if (dateString instanceof Date) {
+        date = dateString;
+      } else {
+        return "";
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return "";
+      }
+      
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "";
+    }
+  };
+
+  // ===== ✅ UPDATED FORM POPULATION FUNCTION =====
+  const populateFormWithContractData = (contractData) => {
+    console.log("🔍 Populating form with contract data:", contractData);
+    console.log("🔍 Department List structure:", contractData.departmentList);
+    console.log("🔍 Contract Revisions:", contractData.contract_revisions);
+    console.log("🔍 Contract Documents:", contractData.contractDocuments);
+    console.time('Form Population');
+    
+    try {
+      // First, build department executives map for dropdown options
+      const deptExecMap = {};
+      if (contractData.departmentList && Array.isArray(contractData.departmentList)) {
+        contractData.departmentList.forEach(dept => {
+          if (dept.department_fk && dept.responsiblePersonsList) {
+            deptExecMap[dept.department_fk] = dept.responsiblePersonsList.map(person => ({
+              value: person.hod_user_id_fk,
+              label: `${person.designation || ''} - ${person.user_name || ''}`.trim()
+            }));
+          }
+        });
+        setDepartmentExecutivesMap(deptExecMap);
+        console.log("✅ Department executives map built:", deptExecMap);
+      }
+      
+      // ✅ Build complete form object
+      const formValues = {
+        // Basic fields - match JSP field names
+        project_id_fk: contractData.project_id_fk || contractData.projectidfk || "",
+        contract_status: contractData.contract_status || contractData.contractstatus || "",
+        hod_user_id_fk: contractData.hod_user_id_fk || contractData.hoduseridfk || "",
+        dy_hod_user_id_fk: contractData.dy_hod_user_id_fk || contractData.dyhoduseridfk || "",
+        contract_department: contractData.department_fk || contractData.departmentfk || contractData.contract_department || "",
+        contract_short_name: contractData.contract_short_name || contractData.contractshortname || "",
+        bank_funded: contractData.bank_funded || contractData.bankfunded || "",
+        bank_name: contractData.bank_name || contractData.bankname || "",
+        type_of_review: contractData.type_of_review || contractData.typeofreview || "",
+        contract_name: contractData.contract_name || contractData.contractname || "",
+        contract_type_fk: contractData.contract_type_fk || contractData.contracttypefk || "",
+        contractor_id_fk: contractData.contractor_id_fk || contractData.contractoridfk || "",
+        contract_ifas_code: contractData.contract_ifas_code || contractData.contractifascode || "",
+        scope_of_contract: contractData.scope_of_contract || contractData.scopeofcontract || "",
+        loa_letter_number: contractData.loa_letter_number || contractData.loaletternumber || "",
+        loa_date: contractData.loa_date ? formatDateForInput(contractData.loa_date) : "",
+        ca_no: contractData.ca_no || contractData.cano || "",
+        ca_date: contractData.ca_date ? formatDateForInput(contractData.ca_date) : "",
+        date_of_start: contractData.date_of_start ? formatDateForInput(contractData.date_of_start) : "",
+        doc: contractData.doc ? formatDateForInput(contractData.doc) : "",
+        target_doc: contractData.target_doc ? formatDateForInput(contractData.target_doc) : "",
+        awarded_cost: contractData.awarded_cost || contractData.awardedcost || "",
+        awarded_cost_units: contractData.awarded_cost_units || contractData.awardedcostunits || "",
+        estimated_cost: contractData.estimated_cost || contractData.estimatedcost || "",
+        estimated_cost_units: contractData.estimated_cost_units || contractData.estimatedcostunits || "",
+        planned_date_of_award: contractData.planned_date_of_award ? formatDateForInput(contractData.planned_date_of_award) : "",
+        planned_date_of_completion: contractData.planned_date_of_completion ? formatDateForInput(contractData.planned_date_of_completion) : "",
+        contract_notice_inviting_tender: contractData.contract_notice_inviting_tender ? formatDateForInput(contractData.contract_notice_inviting_tender) : "",
+        tender_opening_date: contractData.tender_opening_date ? formatDateForInput(contractData.tender_opening_date) : "",
+        technical_eval_submission: contractData.technical_eval_submission ? formatDateForInput(contractData.technical_eval_submission) : "",
+        financial_eval_submission: contractData.financial_eval_submission ? formatDateForInput(contractData.financial_eval_submission) : "",
+        remarks: contractData.remarks || "",
+        contract_status_fk: contractData.contract_status_fk || contractData.contractstatusfk || "",
+        bg_required: (contractData.bg_required || contractData.bgrequired || "no").toLowerCase(),
+        insurance_required: (contractData.insurance_required || contractData.insurancerequired || "no").toLowerCase(),
+        milestone_requried: (contractData.milestone_requried || contractData.milestonerequried || "no").toLowerCase(),
+        revision_requried: (contractData.revision_requried || contractData.revisionrequried || "no").toLowerCase(),
+        contractors_key_requried: (contractData.contractors_key_requried || contractData.contractorskeyrequried || "no").toLowerCase(),
+        
+        // ✅ Use helper functions to build array fields
+        executives: buildExecutivesArray(contractData.departmentList || []),
+        tenderBidRevisions: buildTenderBidRevisionsArray(contractData.contract_revisions || []),
+        bgDetailsList: buildBgDetailsArray(contractData.bankGauranree || contractData.bankGaurantee || []),
+        insuranceRequired: buildInsuranceArray(contractData.insurence || contractData.insurance || []),
+        milestoneRequired: buildMilestonesArray(contractData.milestones || []),
+        revisionRequired: buildRevisionArray(contractData.contract_revision || []),
+        contractorsKeyRequried: buildKeyPersonnelArray(contractData.contractKeyPersonnels || []),
+        documentsTable: buildDocumentsArray(contractData.contractDocuments || [])
+      };
+      
+      // ✅ ONE operation instead of 100+ setValue calls
+      reset(formValues);
+      
+      console.timeEnd('Form Population');
+      console.log("✅ Form populated successfully");
+      console.log("✅ Executives array:", formValues.executives);
+      console.log("✅ Tender Bid Revisions:", formValues.tenderBidRevisions);
+      console.log("✅ Documents:", formValues.documentsTable);
+    } catch (error) {
+      console.error("❌ Error populating form:", error);
+    }
+  };
+
   // Fetch dropdown data on component mount
   useEffect(() => {
-    const fetchDropdownData = async () => {
+    const fetchData = async () => {
       try {
         setFormLoading(true);
-        const response = await api.post(`${API_BASE_URL}/contract/add-contract-form`, {});
-
-        if (response.data.success) {
-          // Transform and set dropdown options
+        let response;
+        
+        if (isEdit && contractId) {
+          // Create FormData for edit mode
+          const formData = new FormData();
+          formData.append('contract_id', contractId);
           
-          // Projects: project_id and project_name
+          response = await api.post(`${API_BASE_URL}/contract/get-contractt`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            },
+            withCredentials: true
+          });
+        
+          // Store contract details
+          if (response.data.success && response.data.contractDeatils) {
+            setContractDetails(response.data.contractDeatils);
+            console.log("✅ Contract details loaded:", response.data.contractDeatils);
+            console.log("✅ Department List from API:", response.data.contractDeatils.departmentList);
+            console.log("✅ Contract Revisions from API:", response.data.contractDeatils.contract_revisions);
+            console.log("✅ Documents from API:", response.data.contractDeatils.contractDocuments);
+            
+            // Populate the form immediately with the data
+            populateFormWithContractData(response.data.contractDeatils);
+          }
+        } else {
+          // For ADD mode: Use /add-contract-form endpoint
+          response = await api.post(`${API_BASE_URL}/contract/add-contract-form`, {}, {
+            withCredentials: true
+          });
+        }
+        
+        if (response.data.success || response.data.contractDeatils) {
+          console.log("API Response keys:", Object.keys(response.data));
+          
+          // Transform and set dropdown options
           const projects = response.data.projectsList || [];
           const projectOpts = projects.map(project => ({
             value: project.project_id,
@@ -268,14 +618,13 @@ export default function ContractForm() {
           setContractTypeOptions(contractTypeOpts);
 
           // Contractors
-          const contractors = response.data.contractors || [];
+          const contractors = response.data.contractors ||  response.data.contractor || [];
           const contractorOpts = contractors.map(contractor => ({
             value: contractor.contractor_id_fk,
             label: contractor.contractor_name
           }));
           setContractorOptions(contractorOpts);
 
-  
           // Bank Guarantee Type
           const bgTypes = response.data.bankGuaranteeType || [];
           const bgTypeOpts = bgTypes.map(type => ({
@@ -295,9 +644,9 @@ export default function ContractForm() {
           // Contract Status
           const contractStatuses = response.data.contract_Statustype || [];
           const contractStatusOpts = contractStatuses.map(status => ({
-			 value:  status.contract_status_fk,
-			  label: status.contract_status_fk 
-			}));
+            value:  status.contract_status_fk,
+            label: status.contract_status_fk 
+          }));
           setContractStatusOptions(contractStatusOpts);
 
           // Bank Names
@@ -308,55 +657,56 @@ export default function ContractForm() {
           }));
           setBankNameOptions(bankNameOpts);
 
-          // Unit Options - Added this section
+          // Unit Options
           const units = response.data.unitsList || [];
-          let unitOpts = units.map(unit => ({
-              value: unit.id || unit.value,
-              label: unit.unit || unit.label
-            }));
-          
-      
+          const unitOpts = units.map(unit => ({
+            value: unit.id || unit.value,
+            label: unit.unit || unit.label
+          }));
           setUnitOptions(unitOpts);
-		  
-		  const fileTypes = response.data.contractFileTypeList || [];
-		  const fileTypeOpts = fileTypes.map(fileType => ({
-		    value: fileType.contract_file_type, // Use the type as value
-		    label: fileType.contract_file_type  // Use the type as
-		  }));
-		  setFileTypeOptions(fileTypeOpts);
-
-          console.log("Dropdown data loaded successfully");
+          
+          const fileTypes = response.data.contractFileTypeList || [];
+          const fileTypeOpts = fileTypes.map(fileType => ({
+            value: fileType.contract_file_type,
+            label: fileType.contract_file_type
+          }));
+          setFileTypeOptions(fileTypeOpts);
+          
+          console.log("Data loaded successfully", isEdit ? "(Edit Mode)" : "(Add Mode)");
         } else {
-          console.error("Failed to load dropdown data:", response.data.message);
+          console.error("Failed to load data:", response.data.message);
         }
       } catch (error) {
-        console.error("Error fetching dropdown data:", error);
+        console.error("Error fetching data:", error);
+        alert("Failed to load form data. Please try again.");
       } finally {
         setFormLoading(false);
       }
     };
 
-    fetchDropdownData();
-  }, []);
+    fetchData();
+  }, [isEdit, contractId]);
+
   const fetchExecutivesByDepartment = async (departmentId) => {
     try {
       setLoadingExecutives(true);
       
       const response = await api.post(`${API_BASE_URL}/contract/ajax/getExecutivesListForContractForm`, {
-        department_fk: departmentId // Send department ID to filter
+        department_fk: departmentId
       });
       
       if (response.data && Array.isArray(response.data)) {
         const executiveOpts = response.data.map(person => ({
-          value: person.hod_user_id_fk ,
+          value: person.hod_user_id_fk,
           label: `${person.designation || ''} - ${person.user_name || ''}`.trim()
         }));
         
-        // Store executives for this department
         setExecutiveOptions(prev => ({
           ...prev,
           [departmentId]: executiveOpts
         }));
+        
+        console.log(`✅ Fetched executives for dept ${departmentId}:`, executiveOpts);
       }
     } catch (error) {
       console.error("Error fetching executives:", error);
@@ -364,28 +714,8 @@ export default function ContractForm() {
       setLoadingExecutives(false);
     }
   };
-  // Load edit data if in edit mode
-  useEffect(() => {
-    if (isEdit && row) {
-      // Set form values from row data
-      Object.keys(row).forEach(key => {
-        if (row[key] !== undefined && row[key] !== null) {
-          setValue(key, row[key]);
-        }
-      });
 
-      // Handle array fields if present in row data
-      if (row.executives && Array.isArray(row.executives)) {
-        row.executives.forEach((executive, index) => {
-          setValue(`executives.${index}`, executive);
-        });
-      }
-
-      // Similarly handle other array fields as needed
-    }
-  }, [isEdit, row, setValue]);
-
-    const onSubmit = async (data, saveForEdit = false) => {
+  const onSubmit = async (data, saveForEdit = false) => {
     if (saveForEdit) setSavingForEdit(true);
     else setLoading(true);
 
@@ -393,7 +723,6 @@ export default function ContractForm() {
        HELPERS
        =============================== */
 
-    // ✅ append only when value is present (not null/undefined/empty)
     const appendIf = (fd, key, value) => {
       if (value === undefined || value === null) return;
       const v = String(value).trim();
@@ -401,7 +730,6 @@ export default function ContractForm() {
       fd.append(key, v);
     };
 
-    // ✅ append array only when array items are present
     const appendArrayIf = (fd, key, arr) => {
       if (!Array.isArray(arr)) return;
       arr
@@ -409,7 +737,6 @@ export default function ContractForm() {
         .forEach((v) => fd.append(key, String(v).trim()));
     };
 
-    // ✅ check revision row has at least one filled value
     const hasAnyRevisionField = (r) => {
       return (
         (r?.revision_estimated_cost && String(r.revision_estimated_cost).trim() !== "") ||
@@ -424,253 +751,268 @@ export default function ContractForm() {
     };
 
     try {
-		
-		const formData = new FormData();
-		
-		const payload = {
-			
-			
-		  /* ===============================
-		     BASIC FIELDS
-		     =============================== */
-		  project_id_fk: data?.project_id_fk,
-		  hod_user_id_fk: data?.hod_user_id_fk,
-		  dy_hod_user_id_fk: data?.dy_hod_user_id_fk,
+      const formData = new FormData();
+      
+      const payload = {
+        /* ===============================
+           BASIC FIELDS
+           =============================== */
+        project_id_fk: data?.project_id_fk,
+        hod_user_id_fk: data?.hod_user_id_fk,
+        dy_hod_user_id_fk: data?.dy_hod_user_id_fk,
 
-		  contract_type_fk: data?.contract_type_fk,
-		  contractor_id_fk: data?.contractor_id_fk,
-		  contract_status_fk: data?.contract_status_fk,
+        contract_type_fk: data?.contract_type_fk,
+        contractor_id_fk: data?.contractor_id_fk,
+        contract_status_fk: data?.contract_status_fk,
 
-		  contract_ifas_code: data?.contract_ifas_code,
-		  contract_status: data?.contract_status,
-		  contract_department: data?.contract_department,
+        contract_ifas_code: data?.contract_ifas_code,
+        contract_status: data?.contract_status,
+        contract_department: data?.contract_department,
 
-		  contract_short_name: data?.contract_short_name,
-		  contract_name: data?.contract_name,
+        contract_short_name: data?.contract_short_name,
+        contract_name: data?.contract_name,
 
-		  bank_funded: data?.bank_funded || "No",
-		  bank_name: data?.bank_name,
-		  type_of_review: data?.type_of_review,
+        bank_funded: data?.bank_funded || "No",
+        bank_name: data?.bank_name,
+        type_of_review: data?.type_of_review,
 
-		  scope_of_contract: data?.scope_of_contract,
-		  loa_letter_number: data?.loa_letter_number,
-		  loa_date: data?.loa_date,
-		  ca_no: data?.ca_no,
-		  ca_date: data?.ca_date,
+        scope_of_contract: data?.scope_of_contract,
+        loa_letter_number: data?.loa_letter_number,
+        loa_date: data?.loa_date,
+        ca_no: data?.ca_no,
+        ca_date: data?.ca_date,
 
-		  date_of_start: data?.date_of_start,
-		  doc: data?.doc,
+        date_of_start: data?.date_of_start,
+        doc: data?.doc,
 
-		  awarded_cost: data?.awarded_cost,
-		  awarded_cost_units: data?.awarded_cost_units,
+        awarded_cost: data?.awarded_cost,
+        awarded_cost_units: data?.awarded_cost_units,
 
-		  estimated_cost: data?.estimated_cost,
-		  estimated_cost_units: data?.estimated_cost_units,
+        estimated_cost: data?.estimated_cost,
+        estimated_cost_units: data?.estimated_cost_units,
 
-		  planned_date_of_award: data?.planned_date_of_award,
-		  planned_date_of_completion: data?.planned_date_of_completion,
+        planned_date_of_award: data?.planned_date_of_award,
+        planned_date_of_completion: data?.planned_date_of_completion,
 
-		  tender_opening_date: data?.tender_opening_date,
-		  technical_eval_submission: data?.technical_eval_submission,
-		  financial_eval_submission: data?.financial_eval_submission,
+        tender_opening_date: data?.tender_opening_date,
+        technical_eval_submission: data?.technical_eval_submission,
+        financial_eval_submission: data?.financial_eval_submission,
 
-		  remarks: data?.remarks,
+        remarks: data?.remarks,
 
-		  status: "Active",
-		  is_contract_closure_initiated: "No",
+        status: "Active",
+        is_contract_closure_initiated: "No",
 
-		  /* ===============================
-		     EXECUTIVES
-		     =============================== */
-		  department_fks: [],
-		  responsible_people_id_fks: [],
-		  filecounts: [],
+        /* ===============================
+           EXECUTIVES
+           =============================== */
+        department_fks: [],
+        responsible_people_id_fks: [],
+        filecounts: [],
 
-		  /* ===============================
-		     TENDER BID REVISIONS
-		     =============================== */
-		  revisionno: [],
-		  revision_estimated_cost: [],
-		  revision_planned_date_of_award: [],
-		  revision_planned_date_of_completion: [],
-		  notice_inviting_tender: [],
-		  tender_bid_opening_date: [],
-		  technical_eval_approval: [],
-		  financial_eval_approval: [],
-		  tender_bid_remarks: [],
+        /* ===============================
+           TENDER BID REVISIONS
+           =============================== */
+        revisionno: [],
+        revision_estimated_cost: [],
+        revision_planned_date_of_award: [],
+        revision_planned_date_of_completion: [],
+        notice_inviting_tender: [],
+        tender_bid_opening_date: [],
+        technical_eval_approval: [],
+        financial_eval_approval: [],
+        tender_bid_remarks: [],
 
-		  /* ===============================
-		     BANK GUARANTEE
-		     =============================== */
-		  bg_type_fks: [],
-		  issuing_banks: [],
-		  bg_numbers: [],
-		  bg_values: [],
-		  bg_valid_uptos: [],
-		  bg_dates: [],
-		  release_dates: [],
-		  bg_value_unitss: [],
+        /* ===============================
+           BANK GUARANTEE
+           =============================== */
+        bg_type_fks: [],
+        issuing_banks: [],
+        bg_numbers: [],
+        bg_values: [],
+        bg_valid_uptos: [],
+        bg_dates: [],
+        release_dates: [],
+        bg_value_unitss: [],
 
-		  /* ===============================
-		     INSURANCE
-		     =============================== */
-		  insurance_type_fks: [],
-		  issuing_agencys: [],
-		  agency_addresss: [],
-		  insurance_numbers: [],
-		  insurance_values: [],
-		  insurence_valid_uptos: [],
-		  insuranceStatus: [],
-		  insurance_value_unitss: [],
+        /* ===============================
+           INSURANCE
+           =============================== */
+        insurance_type_fks: [],
+        issuing_agencys: [],
+        agency_addresss: [],
+        insurance_numbers: [],
+        insurance_values: [],
+        insurence_valid_uptos: [],
+        insuranceStatus: [],
+        insurance_value_unitss: [],
 
-		  /* ===============================
-		     MILESTONES
-		     =============================== */
-		  milestone_ids: [],
-		  milestone_names: [],
-		  milestone_dates: [],
-		  actual_dates: [],
-		  revisions: [],
-		  mile_remarks: [],
+        /* ===============================
+           MILESTONES
+           =============================== */
+        milestone_ids: [],
+        milestone_names: [],
+        milestone_dates: [],
+        actual_dates: [],
+        revisions: [],
+        mile_remarks: [],
 
-		  /* ===============================
-		     CONTRACT REVISION
-		     =============================== */
-		  revision_numbers: [],
-		  revised_amounts: [],
-		  revised_docs: [],
-		  revision_statuss: [],
-		  revised_amount_unitss: [],
-		  revision_amounts_statuss: [],
-		  approval_by_bank: [],
+        /* ===============================
+           CONTRACT REVISION
+           =============================== */
+        revision_numbers: [],
+        revised_amounts: [],
+        revised_docs: [],
+        revision_statuss: [],
+        revised_amount_unitss: [],
+        revision_amounts_statuss: [],
+        approval_by_bank: [],
 
-		  /* ===============================
-		     CONTRACTOR KEY PERSONNEL
-		     =============================== */
-		  contractKeyPersonnelNames: [],
-		  contractKeyPersonnelMobileNos: [],
-		  contractKeyPersonnelEmailIds: [],
-		  contractKeyPersonnelDesignations: [],
-		  
-		  /* ===============================
-		  	    Documents
-		  	 =============================== */	  
-		       contractDocumentNames: [],
-		       contractDocumentFileNames: [],
-		       contract_file_types: []
-		};
+        /* ===============================
+           CONTRACTOR KEY PERSONNEL
+           =============================== */
+        contractKeyPersonnelNames: [],
+        contractKeyPersonnelDesignations: [],
+        contractKeyPersonnelMobileNos: [],
+        contractKeyPersonnelEmailIds: [],
+        
+        /* ===============================
+          Documents (Matching JSP structure)
+         =============================== */  
+        contractDocumentNames: [],
+        contractDocumentFileNames: [],
+        contract_file_types: [],
+        contract_file_ids: []
+      };
 
-		(data.executives || []).forEach(row => {
-		  if (row.department_fks && row.responsible_people_id_fks?.length) {
-		    payload.department_fks.push(row.department_fks);
-		    payload.filecounts.push(String(row.responsible_people_id_fks.length));
-		    payload.responsible_people_id_fks.push(...row.responsible_people_id_fks);
-		  }
-		});
-		
-		(data.tenderBidRevisions || []).forEach((r) => {
-		  if (!hasAnyRevisionField(r)) return;
+      // Add contract_id for update (if in edit mode)
+      if (isEdit && contractId) {
+        payload.contract_id = contractId;
+      }
 
-		  payload.revisionno.push(r.revisionno);
-		  payload.revision_estimated_cost.push(r.revision_estimated_cost);
-		  payload.revision_planned_date_of_award.push(r.revision_planned_date_of_award);
-		  payload.revision_planned_date_of_completion.push(r.revision_planned_date_of_completion);
-		  payload.notice_inviting_tender.push(r.notice_inviting_tender);
-		  payload.tender_bid_opening_date.push(r.tender_bid_opening_date);
-		  payload.technical_eval_approval.push(r.technical_eval_approval);
-		  payload.financial_eval_approval.push(r.financial_eval_approval);
-		  payload.tender_bid_remarks.push(r.tender_bid_remarks);
-		});
-		
-		(data.bgDetailsList || []).forEach((bg) => {
-		  if (!bg.bg_type_fks) return;
+      (data.executives || []).forEach(row => {
+        if (row.department_fks && row.responsible_people_id_fks?.length) {
+          payload.department_fks.push(row.department_fks);
+          payload.filecounts.push(String(row.responsible_people_id_fks.length));
+          payload.responsible_people_id_fks.push(...row.responsible_people_id_fks);
+        }
+      });
+      
+      (data.tenderBidRevisions || []).forEach((r) => {
+        if (!hasAnyRevisionField(r)) return;
 
-		  payload.bg_type_fks.push(bg.bg_type_fks);
-		  payload.issuing_banks.push(bg.issuing_banks);
-		  payload.bg_numbers.push(bg.bg_numbers);
-		  payload.bg_values.push(bg.bg_values);
-		  payload.bg_valid_uptos.push(bg.bg_valid_uptos);
-		  payload.bg_dates.push(bg.bg_dates);
-		  payload.release_dates.push(bg.release_dates);
-		  payload.bg_value_unitss.push(bg.bg_unit);
-		});
+        payload.revisionno.push(r.revisionno);
+        payload.revision_estimated_cost.push(r.revision_estimated_cost);
+        payload.revision_planned_date_of_award.push(r.revision_planned_date_of_award);
+        payload.revision_planned_date_of_completion.push(r.revision_planned_date_of_completion);
+        payload.notice_inviting_tender.push(r.notice_inviting_tender);
+        payload.tender_bid_opening_date.push(r.tender_bid_opening_date);
+        payload.technical_eval_approval.push(r.technical_eval_approval);
+        payload.financial_eval_approval.push(r.financial_eval_approval);
+        payload.tender_bid_remarks.push(r.tender_bid_remarks);
+      });
+      
+      (data.bgDetailsList || []).forEach((bg) => {
+        if (!bg.bg_type_fks) return;
 
-	
-		(data.insuranceRequired || []).forEach((ins) => {
-		  if (!ins.insurance_type_fks) return;
+        payload.bg_type_fks.push(bg.bg_type_fks);
+        payload.issuing_banks.push(bg.issuing_banks);
+        payload.bg_numbers.push(bg.bg_numbers);
+        payload.bg_values.push(bg.bg_values);
+        payload.bg_valid_uptos.push(bg.bg_valid_uptos);
+        payload.bg_dates.push(bg.bg_dates);
+        payload.release_dates.push(bg.release_dates);
+        payload.bg_value_unitss.push(bg.bg_unit);
+      });
 
-		  payload.insurance_type_fks.push(ins.insurance_type_fks);
-		  payload.issuing_agencys.push(ins.issuing_agencys);
-		  payload.agency_addresss.push(ins.agency_addresss);
-		  payload.insurance_numbers.push(ins.insurance_numbers);
-		  payload.insurance_values.push(ins.insurance_values);
-		  payload.insurence_valid_uptos.push(ins.insurence_valid_uptos);
-		  payload.insuranceStatus.push(ins.insuranceStatus ? "Yes" : "No");
-		  payload.insurance_value_unitss.push(ins.insurance_unit);
-		});
-		
-		(data.milestoneRequired || []).forEach((mile) => {
-		    if (!mile.milestone_ids) return;
+      (data.insuranceRequired || []).forEach((ins) => {
+        if (!ins.insurance_type_fks) return;
 
-		    payload.milestone_ids.push(mile.milestone_ids);
-		    payload.milestone_names.push(mile.milestone_names);
-		    payload.milestone_dates.push(mile.milestone_dates);
-		    payload.actual_dates.push(mile.actual_dates);
-		    payload.revisions.push(mile.revisions);
-		    payload.mile_remarks.push(mile.mile_remarks);
-		  });
+        payload.insurance_type_fks.push(ins.insurance_type_fks);
+        payload.issuing_agencys.push(ins.issuing_agencys);
+        payload.agency_addresss.push(ins.agency_addresss);
+        payload.insurance_numbers.push(ins.insurance_numbers);
+        payload.insurance_values.push(ins.insurance_values);
+        payload.insurence_valid_uptos.push(ins.insurence_valid_uptos);
+        payload.insuranceStatus.push(ins.insuranceStatus ? "Yes" : "No");
+        payload.insurance_value_unitss.push(ins.insurance_unit);
+      });
+      
+      (data.milestoneRequired || []).forEach((mile) => {
+        if (!mile.milestone_ids) return;
 
-		
-		  (data.revisionRequired || []).forEach((rev) => {
-		      if (!rev.revision_numbers) return;
+        payload.milestone_ids.push(mile.milestone_ids);
+        payload.milestone_names.push(mile.milestone_names);
+        payload.milestone_dates.push(mile.milestone_dates);
+        payload.actual_dates.push(mile.actual_dates);
+        payload.revisions.push(mile.revisions);
+        payload.mile_remarks.push(mile.mile_remarks);
+      });
 
-		      payload.revision_numbers.push(rev.revision_numbers);
-		      payload.revised_amounts.push(rev.revised_amounts);
-		      payload.revised_docs.push(rev.revised_docs);
-		      payload.revision_statuss.push(rev.revision_statuss ? "Yes" : "No");
-		      payload.revised_amount_unitss.push(rev.revision_unit);
-		      payload.revision_amounts_statuss.push(rev.revision_amounts_statuss ? "Yes" : "No");
-		      payload.approval_by_bank.push(rev.approvalbybankstatus ? "Yes" : "No");
-		    });
-		
-			(data.contractorsKeyRequried || []).forEach((person) => {
-			    if (!person.contractKeyPersonnelNames) return;
+      (data.revisionRequired || []).forEach((rev) => {
+        if (!rev.revision_numbers) return;
 
-			    payload.contractKeyPersonnelNames.push(person.contractKeyPersonnelNames);
-			    payload.contractKeyPersonnelDesignations.push(person.contractKeyPersonnelDesignations);
-			    payload.contractKeyPersonnelMobileNos.push(person.contractKeyPersonnelMobileNos);
-			    payload.contractKeyPersonnelEmailIds.push(person.contractKeyPersonnelEmailIds);
-			  });
-			  
-			  if (data.documentsTable && data.documentsTable.length > 0) {
-			    data.documentsTable.forEach((doc, index) => {
-			      if (doc.contract_file_types && doc.contractDocumentNames) {
-			        payload.contractDocumentNames.push(doc.contractDocumentNames);
-			        payload.contract_file_types.push(doc.contract_file_types);
-			        
-			        // Handle file - React Hook Form stores files in an array
-			        const fileInput = doc.contractDocumentFiles;
-			        
-			        if (fileInput && fileInput.length > 0 && fileInput[0] instanceof File) {
-			          const file = fileInput[0];
-			          payload.contractDocumentFileNames.push(file.name);
-			          // Add file to formData
-			          formData.append("contractDocumentFiles[]", file);
-			        } else if (fileInput && fileInput instanceof File) {
-			          // Fallback: if it's directly a File object (not in array)
-			          payload.contractDocumentFileNames.push(fileInput.name);
-			          formData.append("contractDocumentFiles[]", fileInput);
-			        } else {
-			          payload.contractDocumentFileNames.push("");
-			        }
-			      }
-			    });
-			  }
-				 formData.append("payload", new Blob([JSON.stringify(payload)], {
-				     type: "application/json"
-				   }));
+        payload.revision_numbers.push(rev.revision_numbers);
+        payload.revised_amounts.push(rev.revised_amounts);
+        payload.revised_docs.push(rev.revised_docs);
+        payload.revision_statuss.push(rev.revision_statuss ? "Yes" : "No");
+        payload.revised_amount_unitss.push(rev.revision_unit);
+        payload.revision_amounts_statuss.push(rev.revision_amounts_statuss ? "Yes" : "No");
+        payload.approval_by_bank.push(rev.approvalbybankstatus ? "Yes" : "No");
+      });
+      
+      (data.contractorsKeyRequried || []).forEach((person) => {
+        if (!person.contractKeyPersonnelNames) return;
 
-	   
+        payload.contractKeyPersonnelNames.push(person.contractKeyPersonnelNames);
+        payload.contractKeyPersonnelDesignations.push(person.contractKeyPersonnelDesignations);
+        payload.contractKeyPersonnelMobileNos.push(person.contractKeyPersonnelMobileNos);
+        payload.contractKeyPersonnelEmailIds.push(person.contractKeyPersonnelEmailIds);
+      });
+      
+      // Handle documents - matching JSP structure
+      if (data.documentsTable && data.documentsTable.length > 0) {
+        data.documentsTable.forEach((doc, index) => {
+          if (doc.contract_file_types && doc.contractDocumentNames) {
+            payload.contractDocumentNames.push(doc.contractDocumentNames);
+            payload.contract_file_types.push(doc.contract_file_types);
+            
+            // Check if this is an existing document
+            const existingFileId = contractDetails?.contractDocuments?.[index]?.contract_file_id;
+            const existingFileName = contractDetails?.contractDocuments?.[index]?.attachment;
+            
+            if (existingFileId) {
+              payload.contract_file_ids.push(existingFileId);
+            } else {
+              payload.contract_file_ids.push("");
+            }
+            
+            const fileInput = doc.contractDocumentFiles;
+            
+            if (fileInput && fileInput.length > 0 && fileInput[0] instanceof File) {
+              // New file uploaded
+              const file = fileInput[0];
+              payload.contractDocumentFileNames.push(file.name);
+              formData.append("contractDocumentFiles[]", file);
+            } else if (fileInput && fileInput instanceof File) {
+              // Single file uploaded
+              payload.contractDocumentFileNames.push(fileInput.name);
+              formData.append("contractDocumentFiles[]", fileInput);
+            } else if (existingFileName) {
+              // Keep existing file name if no new file uploaded
+              payload.contractDocumentFileNames.push(existingFileName);
+            } else {
+              // No file
+              payload.contractDocumentFileNames.push("");
+            }
+          }
+        });
+      }
+      
+      formData.append("payload", new Blob([JSON.stringify(payload)], {
+        type: "application/json"
+      }));
+
       /* ===============================
          SUBMIT
          =============================== */
@@ -678,31 +1020,37 @@ export default function ContractForm() {
         ? `${API_BASE_URL}/contract/update-contract`
         : `${API_BASE_URL}/contract/add-contract`;
 
-		const response = await api.post(url, formData, {
-		    headers: { 
-		      "Content-Type": "multipart/form-data" 
-		    },
-		    withCredentials: true
-		  });
+      const response = await api.post(url, formData, {
+        headers: { 
+          "Content-Type": "multipart/form-data" 
+        },
+        withCredentials: true
+      });
 
-      if (response?.data) {
-        if (saveForEdit) alert("Contract saved successfully! You can continue editing.");
-        else alert(isEdit ? "Contract updated successfully!" : "Contract added successfully!");
+      if (response?.data?.success) {
+        if (saveForEdit) {
+          alert("Contract saved successfully! You can continue editing.");
+        } else {
+          alert(isEdit ? "Contract updated successfully!" : "Contract added successfully!");
+          if (!saveForEdit) {
+            navigate(-1);
+          }
+        }
+      } else {
+        throw new Error(response?.data?.message || "Failed to save contract");
       }
     } catch (error) {
-      console.error(error);
-      alert(error?.response?.data?.message || error.message || "Failed");
+      console.error("Submit error:", error);
+      alert(error?.response?.data?.message || error.message || "Failed to save contract. Please try again.");
     } finally {
       if (saveForEdit) setSavingForEdit(false);
       else setLoading(false);
     }
   };
 
-
-
   const handleCancel = () => {
     if (window.confirm("Are you sure you want to cancel? Any unsaved changes will be lost.")) {
-      navigate(-1); // Go back to previous page
+      navigate(-1);
     }
   };
 
@@ -718,15 +1066,18 @@ export default function ContractForm() {
     documents: useRef(null)
   };
 
+  // Updated tabs array to conditionally show tabs based on edit mode
   const tabs = [
     { id: "managers", label: "Contract Managers" },
     { id: "executives", label: "Executives" },
     { id: "details", label: "Contract Details" },
     { id: "closure", label: "Contract Closure" },
-    { id: "bank", label: "Bank Guarantee" },
-    { id: "insurance", label: "Insurance" },
-    { id: "milestone", label: "Milestone" },
-    { id: "personnel", label: "Contractor's Key Personnel" },
+    ...(isEdit ? [
+      { id: "bank", label: "Bank Guarantee" },
+      { id: "insurance", label: "Insurance" },
+      { id: "milestone", label: "Milestone" },
+      { id: "personnel", label: "Contractor's Key Personnel" },
+    ] : []),
     { id: "documents", label: "Documents" },
   ];
 
@@ -736,7 +1087,6 @@ export default function ContractForm() {
   };
 
   useEffect(() => {
-    // Don't set up scroll listener while form is loading
     if (formLoading) return;
 
     const handleScroll = () => {
@@ -758,20 +1108,26 @@ export default function ContractForm() {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [formLoading]); // Re-run when formLoading changes
+  }, [formLoading]);
 
+  // Debug effect to check form data
   useEffect(() => {
-    console.log("📋 Current Form Mode:", isEdit ? "EDIT" : "ADD");
-    if (isEdit) console.log("🗂️ Editing Existing Record:", row);
-  }, [isEdit, row]);
+    if (isEdit && !formLoading) {
+      console.log("Debug - Executives form data:", watch("executives"));
+      console.log("Debug - Tender Bid Revisions:", watch("tenderBidRevisions"));
+      console.log("Debug - Documents:", watch("documentsTable"));
+      console.log("Debug - Department executives map:", departmentExecutivesMap);
+    }
+  }, [isEdit, formLoading, watch, departmentExecutivesMap]);
 
   if (formLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: "400px" }}>
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+          <span className="visually-hidden">
+            {isEdit ? "Loading contract data..." : "Loading form..."}
+          </span>
         </div>
-        <span className="ms-2">Loading form data...</span>
       </div>
     );
   }
@@ -783,6 +1139,7 @@ export default function ContractForm() {
           <div className="formHeading">
             <h2 className="center-align ps-relative">
               {isEdit ? "Update Contract" : "Add Contract"}
+              {isEdit && contractId && ` (ID: ${contractId})`}
             </h2>
           </div>
           <div className="innerPage">
@@ -826,30 +1183,35 @@ export default function ContractForm() {
                     <p className="red">Project is required</p>
                   )}
                 </div>
-                <div className="form-field">
-                  <label>Contract Awarded</label>
-                  <div className="d-flex gap-20" style={{ padding: "10px" }}>
-                    <label>
-                      <input
-                        type="radio"
-                        value="yes"
-                        {...register("contract_status", { required: "Please select Contract Awarded status" })}
-                      />
-                      Yes
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="no"
-                        {...register("contract_status")}
-                      />
-                      No
-                    </label>
+                
+                {/* Contract Awarded field - Only shown in ADD mode, not in EDIT mode */}
+                {!isEdit && (
+                  <div className="form-field">
+                    <label>Contract Awarded</label>
+                    <div className="d-flex gap-20" style={{ padding: "10px" }}>
+                      <label>
+                        <input
+                          type="radio"
+                          value="yes"
+                          {...register("contract_status", { required: "Please select Contract Awarded status" })}
+                        />
+                        Yes
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          value="no"
+                          {...register("contract_status")}
+                        />
+                        No
+                      </label>
+                    </div>
+                    {errors.contract_status && (
+                      <p className="red">{errors.contract_status.message}</p>
+                    )}
                   </div>
-                  {errors.contract_status && (
-                    <p className="red">{errors.contract_status.message}</p>
-                  )}
-                </div>
+                )}
+                
                 <div className="form-field">
                   <label>HOD <span className="red">*</span></label>
                   <Controller
@@ -992,8 +1354,21 @@ export default function ContractForm() {
 				    {executiveFields.length > 0 ? (
 				      executiveFields.map((item, index) => {
 				        const selectedDept = watch(`executives.${index}.department_fks`);
-				        const deptExecutives = executiveOptions[selectedDept] || [];
 				        const selectedExecIds = watch(`executives.${index}.responsible_people_id_fks`) || [];
+				        
+				        // Get executives for this department - check multiple sources
+				        let deptExecutives = [];
+				        
+				        // First, check departmentExecutivesMap (from API response)
+				        if (departmentExecutivesMap[selectedDept]) {
+				          deptExecutives = departmentExecutivesMap[selectedDept];
+				        }
+				        // Then check executiveOptions (from manual fetch)
+				        else if (executiveOptions[selectedDept]) {
+				          deptExecutives = executiveOptions[selectedDept];
+				        }
+				        
+				        console.log(`Row ${index}: Dept=${selectedDept}, SelectedIds=${selectedExecIds}, Executives=${deptExecutives.length}`);
 
 				        return (
 				          <tr key={item.id}>
@@ -1006,7 +1381,7 @@ export default function ContractForm() {
 				                render={({ field }) => (
 				                  <Select
 				                    classNamePrefix="react-select"
-				                    options={departmentOptions}   // [{value,label}]
+				                    options={departmentOptions}
 				                    placeholder="Select Department"
 				                    isSearchable
 				                    isClearable
@@ -1014,11 +1389,7 @@ export default function ContractForm() {
 				                    onChange={(opt) => {
 				                      const deptVal = opt?.value || "";
 				                      field.onChange(deptVal);
-
-				                      // ✅ Clear executives when dept changes
 				                      setValue(`executives.${index}.responsible_people_id_fks`, []);
-
-				                      // ✅ fetch executives list for that dept
 				                      if (deptVal) fetchExecutivesByDepartment(deptVal);
 				                    }}
 				                  />
@@ -1041,12 +1412,13 @@ export default function ContractForm() {
 				                render={({ field }) => (
 				                  <Select
 				                    classNamePrefix="react-select"
-				                    options={deptExecutives} // must be [{value,label}]
+				                    options={deptExecutives}
 				                    isMulti
-				                    placeholder={!selectedDept ? "Select Department first" : "Select Executives"}
-				                    isDisabled={!selectedDept}
+				                    placeholder={!selectedDept ? "Select Department first" : 
+				                               deptExecutives.length === 0 ? "Loading executives..." : "Select Executives"}
+				                    isDisabled={!selectedDept || deptExecutives.length === 0}
 				                    
-				                    // ✅ react-select expects option objects as value
+				                    // Set selected values - matching JSP logic
 				                    value={deptExecutives.filter(opt =>
 				                      Array.isArray(field.value) ? field.value.includes(opt.value) : false
 				                    )}
@@ -1087,7 +1459,6 @@ export default function ContractForm() {
 				      </tr>
 				    )}
 				  </tbody>
-
                 </table>
               </div>
 
@@ -1142,15 +1513,16 @@ export default function ContractForm() {
                 </div>
               </div>
 
-              {contractStatus === "yes" && (
+              {/* OPTION 3: Always show in edit mode, conditionally in add mode */}
+              {(isEdit || contractStatus === "yes") && (
                 <>
                   <div className="form-row">
                     <div className="form-field">
-                      <label>Contract Type <span className="red">*</span></label>
+                      <label>Contract Type {isEdit && <span className="red">*</span>}</label>
                       <Controller
                         name="contract_type_fk"
                         control={control}
-                        rules={{ required: "Contract Type is required" }}
+                        rules={isEdit ? { required: "Contract Type is required" } : {}}
                         render={({ field }) => (
                           <Select
                             {...field}
@@ -1169,13 +1541,13 @@ export default function ContractForm() {
                       )}
                     </div>
                     
-                    {/* New: Contractor Name Field */}
+                    {/* Contractor Name Field */}
                     <div className="form-field">
-                      <label>Contractor Name <span className="red">*</span></label>
+                      <label>Contractor Name {isEdit && <span className="red">*</span>}</label>
                       <Controller
                         name="contractor_id_fk"
                         control={control}
-                        rules={{ required: "Contractor Name is required" }}
+                        rules={isEdit ? { required: "Contractor Name is required" } : {}}
                         render={({ field }) => (
                           <Select
                             {...field}
@@ -1194,13 +1566,12 @@ export default function ContractForm() {
                       )}
                     </div>
                     
-                    {/* New: Contract (IFAS Code) Field */}
+                    {/* Contract (IFAS Code) Field */}
                     <div className="form-field">
                       <label>Contract (IFAS Code)</label>
                       <input
                         type="text"
                         {...register("contract_ifas_code", { 
-                         
                           maxLength: {
                             value: 50,
                             message: "IFAS Code cannot exceed 50 characters"
@@ -1217,7 +1588,6 @@ export default function ContractForm() {
                     </div>
                   </div>
 
-             
                   <div className="form-row">
                     <div className="form-field">
                       <label>Scope of Contract</label>
@@ -1235,9 +1605,9 @@ export default function ContractForm() {
 
                   <div className="form-row">
                     <div className="form-field">
-                      <label>LOA Letter No <span className="red">*</span> </label>
+                      <label>LOA Letter No {isEdit && <span className="red">*</span>} </label>
                       <input
-                        {...register("loa_letter_number", { required: "LOA Letter No is required" })}
+                        {...register("loa_letter_number", isEdit ? { required: "LOA Letter No is required" } : {})}
                         type="text"
                         placeholder="Enter LOA Letter No"
                       />
@@ -1246,9 +1616,9 @@ export default function ContractForm() {
                       )}
                     </div>
                     <div className="form-field">
-                      <label>LOA Date <span className="red">*</span> </label>
+                      <label>LOA Date {isEdit && <span className="red">*</span>} </label>
                       <input
-                        {...register("loa_date", { required: "LOA Date is required" })}
+                        {...register("loa_date", isEdit ? { required: "LOA Date is required" } : {})}
                         type="date"
                       />
                       {errors.loa_date && (
@@ -1415,6 +1785,7 @@ export default function ContractForm() {
               </div>
             </div>
 
+            {/* Tender Bid Revisions Section */}
             <div ref={sectionRefs.closure} className={styles.formSection}>
               <h6 className="d-flex justify-content-center mt-1 mb-2">Tender Bid Revisions</h6>
               <div className="table-responsive dataTable ">
@@ -1526,841 +1897,886 @@ export default function ContractForm() {
               </div>
             </div>
 
-            <div ref={sectionRefs.bank} className={styles.formSection}>
-              <h6 className="d-flex justify-content-center mt-1 mb-2">Bank Guarantee Details</h6>
+            {/* Bank Guarantee Section (Edit mode only) */}
+            {isEdit && (
+              <div ref={sectionRefs.bank} className={styles.formSection}>
+                <h6 className="d-flex justify-content-center mt-1 mb-2">Bank Guarantee Details</h6>
 
-              <div className="d-flex gap-30 align-center justify-content-center">
-                <label>Bank Guarantee Required ?</label>
-                <div className="d-flex gap-20" style={{ padding: "10px" }}>
-                  <label>
-                    <input
-                      type="radio"
-                      value="yes"
-                      {...register("bg_required")}
-                    />
-                    Yes
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="no"
-                      defaultChecked
-                      {...register("bg_required")}
-                    />
-                    No
-                  </label>
+                <div className="d-flex gap-30 align-center justify-content-center">
+                  <label>Bank Guarantee Required ?</label>
+                  <div className="d-flex gap-20" style={{ padding: "10px" }}>
+                    <label>
+                      <input
+                        type="radio"
+                        value="yes"
+                        {...register("bg_required")}
+                      />
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="no"
+                        defaultChecked
+                        {...register("bg_required")}
+                      />
+                      No
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <br />
-              {bgDetails === "yes" && (
-                <>
-                  <div className="table-responsive dataTable ">
-                    <table className="table table-bordered align-middle">
-                      <thead className="table-light">
-                        <tr>
-                          <th style={{ width: "20%" }}>BG Type <span className="red">*</span> </th>
-                          <th style={{ width: "15%" }}>Issuing Bank </th>
-                          <th style={{ width: "15%" }}>BG / FDR Number </th>
-                          <th style={{ width: "15%" }}>Amount </th>
-                          <th style={{ width: "10%" }}>BG / FDR Date</th>
-                          <th style={{ width: "10%" }}>Expiry Date <span className="red">*</span></th>
-                          <th style={{ width: "10%" }}>Release Date</th>
-                          <th style={{ width: "7%" }}>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {bgDetailsListFields.length > 0 ? (
-                          bgDetailsListFields.map((item, index) => (
-                            <tr key={item.id}>
-                              <td>
-                                <Controller
-                                  name={`bgDetailsList.${index}.bg_type_fks`}
-                                  rules={{ required: "BG Type is required" }}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Select
-                                      {...field}
-                                      classNamePrefix="react-select"
-                                      options={bgTypeOptions}
-                                      placeholder="Select BG Type"
-                                      isSearchable
-                                      value={bgTypeOptions.find(opt => opt.value === field.value) || null}
-                                      onChange={(opt) => field.onChange(opt?.value || "")}
-                                    />
-                                  )}
-                                />
-                                {errors.bgDetailsList?.[index]?.bg_type_fks && (
-                                  <span className="red">
-                                    {errors.bgDetailsList[index].bg_type_fks.message}
-                                  </span>
-                                )}
-                              </td>
-                              <td>
-                                <input {...register(`bgDetailsList.${index}.issuing_banks`)} type="text" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <input {...register(`bgDetailsList.${index}.bg_numbers`)} type="text" placeholder="Enter value" />
-                              </td>
-                              <td className="rupee-field">
-                                <div className="d-flex align-items-center gap-2">
-                                  <input 
-                                    {...register(`bgDetailsList.${index}.bg_values`)} 
-                                    type="number" 
-                                    placeholder="Enter amount" 
-                                    className="flex-grow-1"
-                                    style={{ minWidth: "120px" }}
-                                  />
+                <br />
+                {bgDetails === "yes" && (
+                  <>
+                    <div className="table-responsive dataTable ">
+                      <table className="table table-bordered align-middle">
+                        <thead className="table-light">
+                          <tr>
+                            <th style={{ width: "20%" }}>BG Type <span className="red">*</span> </th>
+                            <th style={{ width: "15%" }}>Issuing Bank </th>
+                            <th style={{ width: "15%" }}>BG / FDR Number </th>
+                            <th style={{ width: "15%" }}>Amount </th>
+                            <th style={{ width: "10%" }}>BG / FDR Date</th>
+                            <th style={{ width: "10%" }}>Expiry Date <span className="red">*</span></th>
+                            <th style={{ width: "10%" }}>Release Date</th>
+                            <th style={{ width: "7%" }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bgDetailsListFields.length > 0 ? (
+                            bgDetailsListFields.map((item, index) => (
+                              <tr key={item.id}>
+                                <td>
                                   <Controller
-                                    name={`bgDetailsList.${index}.bg_unit`}
+                                    name={`bgDetailsList.${index}.bg_type_fks`}
+                                    rules={{ required: "BG Type is required" }}
                                     control={control}
                                     render={({ field }) => (
                                       <Select
                                         {...field}
                                         classNamePrefix="react-select"
-                                        options={unitOptions}
-                                        placeholder="Unit"
-                                        isSearchable={false}
-                                        styles={{
-                                          container: (base) => ({
-                                            ...base,
-                                            minWidth: '80px',
-                                            width: '80px'
-                                          }),
-                                          control: (base) => ({
-                                            ...base,
-                                            minHeight: '38px',
-                                            fontSize: '14px'
-                                          })
-                                        }}
-                                        value={unitOptions.find(opt => opt.value === field.value) || null}
+                                        options={bgTypeOptions}
+                                        placeholder="Select BG Type"
+                                        isSearchable
+                                        value={bgTypeOptions.find(opt => opt.value === field.value) || null}
                                         onChange={(opt) => field.onChange(opt?.value || "")}
                                       />
                                     )}
                                   />
-                                </div>
-                              </td>
-                              <td>
-                                <input {...register(`bgDetailsList.${index}.bg_dates`)} type="date" />
-                              </td>
-                              <td>
-                                <input {...register(`bgDetailsList.${index}.bg_valid_uptos`)} type="date" />
-                              </td>
-                              <td>
-                                <input {...register(`bgDetailsList.${index}.release_dates`)} type="date" />
-                              </td>
-                              <td className="text-center d-flex align-center justify-content-center">
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-danger"
-                                  onClick={() => removeBgDetailsList(index)}
-                                >
-                                  <MdOutlineDeleteSweep size="26" />
-                                </button>
+                                  {errors.bgDetailsList?.[index]?.bg_type_fks && (
+                                    <span className="red">
+                                      {errors.bgDetailsList[index].bg_type_fks.message}
+                                    </span>
+                                  )}
+                                </td>
+                                <td>
+                                  <input {...register(`bgDetailsList.${index}.issuing_banks`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`bgDetailsList.${index}.bg_numbers`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td className="rupee-field">
+                                  <div className="d-flex align-items-center gap-2">
+                                    <input 
+                                      {...register(`bgDetailsList.${index}.bg_values`)} 
+                                      type="number" 
+                                      placeholder="Enter amount" 
+                                      className="flex-grow-1"
+                                      style={{ minWidth: "120px" }}
+                                    />
+                                    <Controller
+                                      name={`bgDetailsList.${index}.bg_unit`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <Select
+                                          {...field}
+                                          classNamePrefix="react-select"
+                                          options={unitOptions}
+                                          placeholder="Unit"
+                                          isSearchable={false}
+                                          styles={{
+                                            container: (base) => ({
+                                              ...base,
+                                              minWidth: '80px',
+                                              width: '80px'
+                                            }),
+                                            control: (base) => ({
+                                              ...base,
+                                              minHeight: '38px',
+                                              fontSize: '14px'
+                                            })
+                                          }}
+                                          value={unitOptions.find(opt => opt.value === field.value) || null}
+                                          onChange={(opt) => field.onChange(opt?.value || "")}
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                </td>
+                                <td>
+                                  <input {...register(`bgDetailsList.${index}.bg_dates`)} type="date" />
+                                </td>
+                                <td>
+                                  <input {...register(`bgDetailsList.${index}.bg_valid_uptos`)} type="date" />
+                                </td>
+                                <td>
+                                  <input {...register(`bgDetailsList.${index}.release_dates`)} type="date" />
+                                </td>
+                                <td className="text-center d-flex align-center justify-content-center">
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-danger"
+                                    onClick={() => removeBgDetailsList(index)}
+                                  >
+                                    <MdOutlineDeleteSweep size="26" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="8" className="text-center text-muted">
+                                No rows added yet.
                               </td>
                             </tr>
-                          ))
-                        ) : (
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="d-flex align-center justify-content-center mt-1">
+                      <button
+                        type="button"
+                        className="btn-2 btn-green"
+                        onClick={() =>
+                          appendBgDetailsList({ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_unit: "", bg_dates: "", bg_valid_uptos: "", release_dates: "" })
+                        }
+                      >
+                        <BiListPlus size="24" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Insurance Section (Edit mode only) */}
+            {isEdit && (
+              <div ref={sectionRefs.insurance} className={styles.formSection}>
+                <h6 className="d-flex justify-content-center mt-1 mb-2">Insurance Details</h6>
+
+                <div className="d-flex gap-30 align-center justify-content-center">
+                  <label>Insurance Required ?</label>
+                  <div className="d-flex gap-20" style={{ padding: "10px" }}>
+                    <label>
+                      <input
+                        type="radio"
+                        value="yes"
+                        {...register("insurance_required")}
+                      />
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="no"
+                        defaultChecked
+                        {...register("insurance_required")}
+                      />
+                      No
+                    </label>
+                  </div>
+                </div>
+
+                <br />
+                {insuranceRequiredbutton === "yes" && (
+                  <>
+                    <div className="table-responsive dataTable ">
+                      <table className="table table-bordered align-middle">
+                        <thead className="table-light">
                           <tr>
-                            <td colSpan="8" className="text-center text-muted">
-                              No rows added yet.
+                            <th style={{ width: "20%" }}>Insurance Type <span className="red">*</span> </th>
+                            <th style={{ width: "15%" }}>Issuing Agency </th>
+                            <th style={{ width: "15%" }}>Agency Address </th>
+                            <th style={{ width: "15%" }}>Insurance Number </th>
+                            <th style={{ width: "10%" }}>Insurance Value </th>
+                            <th style={{ width: "10%" }}>Valid Upto <span className="red">*</span></th>
+                            <th style={{ width: "10%" }}>Release</th>
+                            <th style={{ width: "7%" }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {insuranceRequiredFields.length > 0 ? (
+                            insuranceRequiredFields.map((item, index) => (
+                              <tr key={item.id}>
+                                <td>
+                                  <Controller
+                                    name={`insuranceRequired.${index}.insurance_type_fks`}
+                                    rules={{ required: "Insurance Type is required" }}
+                                    control={control}
+                                    render={({ field }) => (
+                                      <Select
+                                        {...field}
+                                        classNamePrefix="react-select"
+                                        options={insuranceTypeOptions}
+                                        placeholder="Select Insurance Type"
+                                        isSearchable
+                                        value={insuranceTypeOptions.find(opt => opt.value === field.value) || null}
+                                        onChange={(opt) => field.onChange(opt?.value || "")}
+                                      />
+                                    )}
+                                  />
+                                  {errors.insuranceRequired?.[index]?.insurance_type_fks && (
+                                    <span className="red">
+                                      {errors.insuranceRequired[index].insurance_type_fks.message}
+                                    </span>
+                                  )}
+                                </td>
+                                <td>
+                                  <input {...register(`insuranceRequired.${index}.issuing_agencys`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`insuranceRequired.${index}.agency_addresss`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`insuranceRequired.${index}.insurance_numbers`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td className="rupee-field">
+                                  <div className="d-flex align-items-center gap-2">
+                                    <input 
+                                      {...register(`insuranceRequired.${index}.insurance_values`)} 
+                                      type="number" 
+                                      placeholder="Enter amount" 
+                                      className="flex-grow-1"
+                                      style={{ minWidth: "120px" }}
+                                    />
+                                    <Controller
+                                      name={`insuranceRequired.${index}.insurance_unit`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <Select
+                                          {...field}
+                                          classNamePrefix="react-select"
+                                          options={unitOptions}
+                                          placeholder="Unit"
+                                          isSearchable={false}
+                                          styles={{
+                                            container: (base) => ({
+                                              ...base,
+                                              minWidth: '80px',
+                                              width: '80px'
+                                            }),
+                                            control: (base) => ({
+                                              ...base,
+                                              minHeight: '38px',
+                                              fontSize: '14px'
+                                            })
+                                          }}
+                                          value={unitOptions.find(opt => opt.value === field.value) || null}
+                                          onChange={(opt) => field.onChange(opt?.value || "")}
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                </td>
+                                <td>
+                                  <input {...register(`insuranceRequired.${index}.insurence_valid_uptos`)} type="date" />
+                                </td>
+                                <td>
+                                  <input {...register(`insuranceRequired.${index}.insuranceStatus`)} type="checkbox" />
+                                </td>
+                                <td className="text-center d-flex align-center justify-content-center">
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-danger"
+                                    onClick={() => removeInsuranceRequired(index)}
+                                  >
+                                    <MdOutlineDeleteSweep size="26" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="8" className="text-center text-muted">
+                                No rows added yet.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="d-flex align-center justify-content-center mt-1">
+                      <button
+                        type="button"
+                        className="btn-2 btn-green"
+                        onClick={() =>
+                          appendInsuranceRequired({ insurance_type_fks: "", issuing_agencys: "", agency_addresss: "", insurance_numbers: "", insurance_values: "", insurance_unit: "Rs", insurence_valid_uptos: "", insuranceStatus: "" })
+                        }
+                      >
+                        <BiListPlus size="24" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Milestone Section (Edit mode only) */}
+            {isEdit && (
+              <div ref={sectionRefs.milestone} className={styles.formSection}> 
+                <h6 className="d-flex justify-content-center mt-1 mb-2">Milestone Details</h6> 
+
+                {/* milestone */}
+                <div className="d-flex gap-30 align-center justify-content-center">
+                  <label>Milestone Required ?</label>
+                  <div className="d-flex gap-20" style={{padding: "10px"}}>
+                    <label>
+                      <input
+                        type="radio"
+                        value="yes"
+                        {...register("milestone_requried")}
+                      />
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="no"
+                        defaultChecked
+                        {...register("milestone_requried")}
+                      />
+                      No
+                    </label>
+                  </div>
+                </div>
+
+                <br />
+                {milestoneRequiredButton === "yes" && (
+                  <>
+                    <div className="table-responsive dataTable ">
+                      <table className="table table-bordered align-middle">
+                        <thead className="table-light">
+                          <tr>
+                            <th style={{ width: "15%" }}>Milestone ID  <span className="red">*</span> </th>
+                            <th style={{ width: "15%" }}>Milestone Name </th>
+                            <th style={{ width: "15%" }}>Milestone Date </th>
+                            <th style={{ width: "15%" }}>Actual Date </th>
+                            <th style={{ width: "15%" }}>Revision</th>
+                            <th style={{ width: "15%" }}>Remarks  <span className="red">*</span></th>
+                            <th style={{ width: "15%" }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {milestoneRequiredFields.length > 0 ? (
+                            milestoneRequiredFields.map((item, index) => (
+                              <tr key={item.id}>
+                                <td>
+                                  <input 
+                                    {...register(`milestoneRequired.${index}.milestone_ids`)} 
+                                    type="text" 
+                                    placeholder="Enter value" 
+                                    value={generateMilestoneId(index)}
+                                    readOnly
+                                    className="readonly-input"
+                                    style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                                  />
+                                </td>
+                                <td>
+                                  <input {...register(`milestoneRequired.${index}.milestone_names`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`milestoneRequired.${index}.milestone_dates`)} type="date" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`milestoneRequired.${index}.actual_dates`)} type="date" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`milestoneRequired.${index}.revisions`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`milestoneRequired.${index}.mile_remarks`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td className="text-center d-flex align-center justify-content-center">
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-danger"
+                                    onClick={() => handleRemoveMilestone(index)}
+                                    disabled={index === 0} // Disable delete for first row (K-1)
+                                    title={index === 0 ? "Cannot delete first milestone" : "Delete row"}
+                                  >
+                                    <MdOutlineDeleteSweep
+                                      size="26"
+                                    />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="4" className="text-center text-muted">
+                                No rows added yet.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="d-flex align-center justify-content-center mt-1">
+                      <button
+                        type="button"
+                        className="btn-2 btn-green"
+                        onClick={handleAppendMilestone}
+                      >
+                        <BiListPlus
+                          size="24"
+                        />
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* revision */}
+                <div className="d-flex gap-30 align-center justify-content-center">
+                  <label>Revision Required ?</label>
+                  <div className="d-flex gap-20" style={{padding: "10px"}}>
+                    <label>
+                      <input
+                        type="radio"
+                        value="yes"
+                        {...register("revision_requried")}
+                      />
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="no"
+                        defaultChecked
+                        {...register("revision_requried")}
+                      />
+                      No
+                    </label>
+                  </div>
+                </div>
+
+                <br />
+                {revisionRequiredButton === "yes" && (
+                  <>
+                    <div className="table-responsive dataTable ">
+                      <table className="table table-bordered align-middle">
+                        <thead className="table-light">
+                          <tr>
+                            <th style={{ width: "15%" }}>Revision Number <span className="red">*</span> </th>
+                            <th style={{ width: "15%" }}>Revised Contract Value </th>
+                            <th style={{ width: "15%" }}>Current </th>
+                            <th style={{ width: "15%" }}>Revised DOC </th>
+                            <th style={{ width: "15%" }}>Current</th>
+                            <th style={{ width: "15%" }}>Approval by Bank </th>
+                            <th style={{ width: "15%" }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {revisionRequiredFields.length > 0 ? (
+                            revisionRequiredFields.map((item, index) => (
+                              <tr key={item.id}>
+                                <td>
+                                  <input 
+                                    {...register(`revisionRequired.${index}.revision_numbers`)} 
+                                    type="text" 
+                                    placeholder="Enter value" 
+                                    value={generateRevisionRequiredNumber(index)}
+                                    readOnly
+                                    className="readonly-input"
+                                    style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                                  />
+                                  {errors.revisionRequired?.[index]?.revision_numbers && (
+                                    <span className="red">
+                                      {errors.revisionRequired[index].revision_numbers.message}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="rupee-field">
+                                  <div className="d-flex align-items-center gap-2">
+                                    <input 
+                                      {...register(`revisionRequired.${index}.revised_amounts`)} 
+                                      type="number" 
+                                      placeholder="Enter value" 
+                                      className="flex-grow-1"
+                                      style={{ minWidth: "120px" }}
+                                    />
+                                    <Controller
+                                      name={`revisionRequired.${index}.revision_unit`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <Select
+                                          {...field}
+                                          classNamePrefix="react-select"
+                                          options={unitOptions}
+                                          placeholder="Unit"
+                                          isSearchable={false}
+                                          styles={{
+                                            container: (base) => ({
+                                              ...base,
+                                              minWidth: '80px',
+                                              width: '80px'
+                                            }),
+                                            control: (base) => ({
+                                              ...base,
+                                              minHeight: '38px',
+                                              fontSize: '14px'
+                                            })
+                                          }}
+                                          value={unitOptions.find(opt => opt.value === field.value) || null}
+                                          onChange={(opt) => field.onChange(opt?.value || "")}
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                </td>
+                                <td>
+                                  <input {...register(`revisionRequired.${index}.revision_amounts_statuss`)} type="checkbox" />
+                                </td>
+                                <td>
+                                  <input {...register(`revisionRequired.${index}.revised_docs`)} type="date" placeholder="Enter value" />
+                                </td>
+                                
+                                <td>
+                                  <input {...register(`revisionRequired.${index}.revision_statuss`)} type="checkbox"/>
+                                </td>
+                                <td>
+                                  <input {...register(`revisionRequired.${index}.approvalbybankstatus`)} type="checkbox" />
+                                </td>
+                                <td className="text-center d-flex align-center justify-content-center">
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-danger"
+                                    onClick={() => handleRemoveRevisionRequired(index)}
+                                    disabled={index === 0} // Disable delete for first row (R1)
+                                    title={index === 0 ? "Cannot delete first revision" : "Delete row"}
+                                  >
+                                    <MdOutlineDeleteSweep
+                                      size="26"
+                                    />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="4" className="text-center text-muted">
+                                No rows added yet.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="d-flex align-center justify-content-center mt-1">
+                      <button
+                        type="button"
+                        className="btn-2 btn-green"
+                        onClick={handleAppendRevisionRequired}
+                      >
+                        <BiListPlus
+                          size="24"
+                        />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Contractor's Key Personnel Section (Edit mode only) */}
+            {isEdit && (
+              <div ref={sectionRefs.personnel} className={styles.formSection}>
+                <h6 className="d-flex justify-content-center mt-1 mb-2">Contractor's Key Personnel</h6> 
+                
+                <div className="d-flex gap-30 align-center justify-content-center">
+                  <label>Contractor's Key Required ?</label>
+                  <div className="d-flex gap-20" style={{padding: "10px"}}>
+                    <label>
+                      <input
+                        type="radio"
+                        value="yes"
+                        {...register("contractors_key_requried")}
+                      />
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="no"
+                        defaultChecked
+                        {...register("contractors_key_requried")}
+                      />
+                      No
+                    </label>
+                  </div>
+                </div>
+
+                <br />
+                {contractorsKeyRequriedButton === "yes" && (
+                  <>
+                    <div className="table-responsive dataTable ">
+                      <table className="table table-bordered align-middle">
+                        <thead className="table-light">
+                          <tr>
+                            <th style={{ width: "15%" }}>Name </th>
+                            <th style={{ width: "15%" }}>Designation </th>
+                            <th style={{ width: "15%" }}>Mobile No</th>
+                            <th style={{ width: "15%" }}>Email ID </th>
+                            <th style={{ width: "15%" }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {contractorsKeyRequriedFields.length > 0 ? (
+                            contractorsKeyRequriedFields.map((item, index) => (
+                              <tr key={item.id}>
+                                
+                                <td>
+                                  <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelNames`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelDesignations`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelMobileNos`)} type="text" placeholder="Enter value" />
+                                </td>
+                                <td>
+                                  <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelEmailIds`)} type="email" placeholder="Enter email" />
+                                </td>
+                                <td className="text-center d-flex align-center justify-content-center">
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-danger"
+                                    onClick={() => removeContractorsKeyRequried(index)}
+                                  >
+                                    <MdOutlineDeleteSweep
+                                      size="26"
+                                    />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="4" className="text-center text-muted">
+                                No rows added yet.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="d-flex align-center justify-content-center mt-1">
+                      <button
+                        type="button"
+                        className="btn-2 btn-green"
+                        onClick={() =>
+                          appendContractorsKeyRequried({ contractKeyPersonnelNames: "", contractKeyPersonnelDesignations: "", contractKeyPersonnelMobileNos: "", contractKeyPersonnelEmailIds: "" })
+                        }
+                      >
+                        <BiListPlus
+                          size="24"
+                        />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Documents section - Always shown */}
+            <div ref={sectionRefs.documents} className={styles.formSection}>
+              <h6 className="d-flex justify-content-center mt-1 mb-2">Documents</h6> 
+
+              <div className="table-responsive dataTable ">
+                <table className="table table-bordered align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th style={{ width: "15%" }}>File Type </th>
+                      <th style={{ width: "15%" }}>Name </th>
+                      <th style={{ width: "15%" }}>Attachment</th>
+                      <th style={{ width: "7%" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {documentsTableFields.length > 0 ? (
+                      documentsTableFields.map((item, index) => {
+                        // Check if this is an existing document (matching JSP logic)
+                        const existingDoc = contractDetails?.contractDocuments?.[index];
+                        const existingFileName = existingDoc?.attachment;
+                        const fileId = existingDoc?.contract_file_id;
+                        
+                        return (
+                          <tr key={item.id}>
+                            <td>
+                              <Controller
+                                name={`documentsTable.${index}.contract_file_types`}
+                                control={control}
+                                render={({ field }) => (
+                                  <Select
+                                    {...field}
+                                    options={fileTypeOptions} 
+                                    classNamePrefix="react-select"
+                                    placeholder="Select File Type"
+                                    isSearchable
+                                    isClearable
+                                    value={fileTypeOptions.find(opt => opt.value === field.value) || null}
+                                    onChange={(opt) => field.onChange(opt?.value || "")}
+                                  />
+                                )}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                {...register(`documentsTable.${index}.contractDocumentNames`)}
+                                className="form-control"
+                                placeholder="File Name"
+                              />
+                            </td>
+                            <td>
+                              {/* Show existing file download link if available (matching JSP) */}
+                              {existingFileName && (
+                                <div className="mb-2">
+                                  <div className="d-flex align-items-center">
+                                    <a 
+                                      href={`${API_BASE_URL}/contract-files/${existingFileName}`} 
+                                      className="btn btn-sm btn-outline-primary me-2"
+                                      download
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <i className="fa fa-download me-1"></i>
+                                      Download
+                                    </a>
+                                    <span className="text-muted small">{existingFileName}</span>
+                                  </div>
+                                  <input 
+                                    type="hidden" 
+                                    name={`existingFileName_${index}`} 
+                                    value={existingFileName} 
+                                  />
+                                  {fileId && (
+                                    <input 
+                                      type="hidden" 
+                                      name={`fileId_${index}`} 
+                                      value={fileId} 
+                                    />
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* File upload for new/replacement files */}
+                              <div className={styles["file-upload-wrapper"]}>
+                                <label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
+                                  <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
+                                  {existingFileName ? "Replace File" : "Upload File"}
+                                </label>
+                                <input
+                                  id={`file-${index}`}
+                                  type="file"
+                                  {...register(`documentsTable.${index}.contractDocumentFiles`)}
+                                  className={styles["file-upload-input"]}
+                                />
+                                {watch(`documentsTable.${index}.contractDocumentFiles`)?.[0]?.name && (
+                                  <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569" }}>
+                                    Selected: {watch(`documentsTable.${index}.contractDocumentFiles`)[0].name}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="text-center d-flex align-center justify-content-center">
+                              <button
+                                type="button"
+                                className="btn btn-outline-danger"
+                                onClick={() => removeDocumentsTable(index)}
+                              >
+                                <MdOutlineDeleteSweep
+                                  size="26"
+                                />
+                              </button>
                             </td>
                           </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="text-center text-muted">
+                          No rows added yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-                  <div className="d-flex align-center justify-content-center mt-1">
-                    <button
-                      type="button"
-                      className="btn-2 btn-green"
-                      onClick={() =>
-                        appendBgDetailsList({ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_unit: "", bg_dates: "", bg_valid_uptos: "", release_dates: "" })
-                      }
-                    >
-                      <BiListPlus size="24" />
-                    </button>
-                  </div>
-                </>
-              )}
+              <div className="d-flex align-center justify-content-center mt-1">
+                <button
+                  type="button"
+                  className="btn-2 btn-green"
+                  onClick={() =>
+                    appendDocumentsTable({ contract_file_types: "", contractDocumentNames: "", contractDocumentFiles: "" })
+                  }
+                >
+                  <BiListPlus
+                    size="24"
+                  />
+                </button>
+              </div>
             </div>
-
-            <div ref={sectionRefs.insurance} className={styles.formSection}>
-              <h6 className="d-flex justify-content-center mt-1 mb-2">Insurance Details</h6>
-
-              <div className="d-flex gap-30 align-center justify-content-center">
-                <label>Insurance Required ?</label>
-                <div className="d-flex gap-20" style={{ padding: "10px" }}>
-                  <label>
-                    <input
-                      type="radio"
-                      value="yes"
-                      {...register("insurance_required")}
-                    />
-                    Yes
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="no"
-                      defaultChecked
-                      {...register("insurance_required")}
-                    />
-                    No
-                  </label>
-                </div>
-              </div>
-
-              <br />
-              {insuranceRequiredbutton === "yes" && (
-                <>
-                  <div className="table-responsive dataTable ">
-                    <table className="table table-bordered align-middle">
-                      <thead className="table-light">
-                        <tr>
-                          <th style={{ width: "20%" }}>Insurance Type <span className="red">*</span> </th>
-                          <th style={{ width: "15%" }}>Issuing Agency </th>
-                          <th style={{ width: "15%" }}>Agency Address </th>
-                          <th style={{ width: "15%" }}>Insurance Number </th>
-                          <th style={{ width: "10%" }}>Insurance Value </th>
-                          <th style={{ width: "10%" }}>Valid Upto <span className="red">*</span></th>
-                          <th style={{ width: "10%" }}>Release</th>
-                          <th style={{ width: "7%" }}>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {insuranceRequiredFields.length > 0 ? (
-                          insuranceRequiredFields.map((item, index) => (
-                            <tr key={item.id}>
-                              <td>
-                                <Controller
-                                  name={`insuranceRequired.${index}.insurance_type_fks`}
-                                  rules={{ required: "Insurance Type is required" }}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Select
-                                      {...field}
-                                      classNamePrefix="react-select"
-                                      options={insuranceTypeOptions}
-                                      placeholder="Select Insurance Type"
-                                      isSearchable
-                                      value={insuranceTypeOptions.find(opt => opt.value === field.value) || null}
-                                      onChange={(opt) => field.onChange(opt?.value || "")}
-                                    />
-                                  )}
-                                />
-                                {errors.insuranceRequired?.[index]?.insurance_type_fks && (
-                                  <span className="red">
-                                    {errors.insuranceRequired[index].insurance_type_fks.message}
-                                  </span>
-                                )}
-                              </td>
-                              <td>
-                                <input {...register(`insuranceRequired.${index}.issuing_agencys`)} type="text" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <input {...register(`insuranceRequired.${index}.agency_addresss`)} type="text" placeholder="Enter value" />
-                              </td>
-                              <td>
-                                <input {...register(`insuranceRequired.${index}.insurance_numbers`)} type="text" placeholder="Enter value" />
-                              </td>
-                              <td className="rupee-field">
-                                <div className="d-flex align-items-center gap-2">
-                                  <input 
-                                    {...register(`insuranceRequired.${index}.insurance_values`)} 
-                                    type="number" 
-                                    placeholder="Enter amount" 
-                                    className="flex-grow-1"
-                                    style={{ minWidth: "120px" }}
-                                  />
-                                  <Controller
-                                    name={`insuranceRequired.${index}.insurance_unit`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Select
-                                        {...field}
-                                        classNamePrefix="react-select"
-                                        options={unitOptions}
-                                        placeholder="Unit"
-                                        isSearchable={false}
-                                        styles={{
-                                          container: (base) => ({
-                                            ...base,
-                                            minWidth: '80px',
-                                            width: '80px'
-                                          }),
-                                          control: (base) => ({
-                                            ...base,
-                                            minHeight: '38px',
-                                            fontSize: '14px'
-                                          })
-                                        }}
-                                        value={unitOptions.find(opt => opt.value === field.value) || null}
-                                        onChange={(opt) => field.onChange(opt?.value || "")}
-                                      />
-                                    )}
-                                  />
-                                </div>
-                              </td>
-                              <td>
-                                <input {...register(`insuranceRequired.${index}.insurence_valid_uptos`)} type="date" />
-                              </td>
-                              <td>
-                                <input {...register(`insuranceRequired.${index}.insuranceStatus`)} type="checkbox" />
-                              </td>
-                              <td className="text-center d-flex align-center justify-content-center">
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-danger"
-                                  onClick={() => removeInsuranceRequired(index)}
-                                >
-                                  <MdOutlineDeleteSweep size="26" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="8" className="text-center text-muted">
-                              No rows added yet.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="d-flex align-center justify-content-center mt-1">
-                    <button
-                      type="button"
-                      className="btn-2 btn-green"
-                      onClick={() =>
-                        appendInsuranceRequired({ insurance_type_fks: "", issuing_agencys: "", agency_addresss: "", insurance_numbers: "", insurance_values: "", insurance_unit: "Rs", insurence_valid_uptos: "", insuranceStatus: "" })
-                      }
-                    >
-                      <BiListPlus size="24" />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>            <div ref={sectionRefs.milestone} className={styles.formSection}> 
-                  <h6 className="d-flex justify-content-center mt-1 mb-2">Milestone Details</h6> 
-
-                  {/* milestone */}
-
-                  <div className="d-flex gap-30 align-center justify-content-center">
-                      <label>Milestone Required ?</label>
-                        <div className="d-flex gap-20" style={{padding: "10px"}}>
-                          <label>
-                            <input
-                              type="radio"
-                              value="yes"
-                              {...register("milestone_requried")}
-                            />
-                            Yes
-                          </label>
-
-                          <label>
-                            <input
-                              type="radio"
-                              value="no"
-                              defaultChecked
-                              {...register("milestone_requried")}
-                            />
-                            No
-                          </label>
-                        </div>
-                      </div>
-
-                      <br />
-                      {milestoneRequiredButton === "yes" && (
-                        <>
-                          <div className="table-responsive dataTable ">
-                            <table className="table table-bordered align-middle">
-                              <thead className="table-light">
-                                <tr>
-                                  <th style={{ width: "15%" }}>Milestone ID  <span className="red">*</span> </th>
-                                  <th style={{ width: "15%" }}>Milestone Name </th>
-                                  <th style={{ width: "15%" }}>Milestone Date </th>
-                                  <th style={{ width: "15%" }}>Actual Date </th>
-                                  <th style={{ width: "15%" }}>Revision</th>
-                                  <th style={{ width: "15%" }}>Remarks  <span className="red">*</span></th>
-                                  <th style={{ width: "15%" }}>Action</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {milestoneRequiredFields.length > 0 ? (
-                                  milestoneRequiredFields.map((item, index) => (
-                                    <tr key={item.id}>
-                                      <td>
-                                        <input 
-                                          {...register(`milestoneRequired.${index}.milestone_ids`)} 
-                                          type="text" 
-                                          placeholder="Enter value" 
-                                          value={generateMilestoneId(index)}
-                                          readOnly
-                                          className="readonly-input"
-                                          style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
-                                        />
-                                      </td>
-                                      <td>
-                                        <input {...register(`milestoneRequired.${index}.milestone_names`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`milestoneRequired.${index}.milestone_dates`)} type="date" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`milestoneRequired.${index}.actual_dates`)} type="date" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`milestoneRequired.${index}.revisions`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`milestoneRequired.${index}.mile_remarks`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td className="text-center d-flex align-center justify-content-center">
-                                        <button
-                                          type="button"
-                                          className="btn btn-outline-danger"
-                                          onClick={() => handleRemoveMilestone(index)}
-                                          disabled={index === 0} // Disable delete for first row (K-1)
-                                          title={index === 0 ? "Cannot delete first milestone" : "Delete row"}
-                                        >
-                                          <MdOutlineDeleteSweep
-                                            size="26"
-                                          />
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan="4" className="text-center text-muted">
-                                      No rows added yet.
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          <div className="d-flex align-center justify-content-center mt-1">
-                            <button
-                              type="button"
-                              className="btn-2 btn-green"
-                              onClick={handleAppendMilestone}
-                            >
-                              <BiListPlus
-                                size="24"
-                              />
-                            </button>
-                          </div>
-                        </>
-                      )}
-
-                      {/* revision */}
-
-                      <div className="d-flex gap-30 align-center justify-content-center">
-                      <label>Revision Required ?</label>
-                        <div className="d-flex gap-20" style={{padding: "10px"}}>
-                          <label>
-                            <input
-                              type="radio"
-                              value="yes"m
-                              {...register("revision_requried")}
-                            />
-                            Yes
-                          </label>
-
-                          <label>
-                            <input
-                              type="radio"
-                              value="no"
-                              defaultChecked
-                              {...register("revision_requried")}
-                            />
-                            No
-                          </label>
-                        </div>
-                      </div>
-
-                      <br />
-                      {revisionRequiredButton === "yes" && (
-                        <>
-                          <div className="table-responsive dataTable ">
-                            <table className="table table-bordered align-middle">
-                              <thead className="table-light">
-                                <tr>
-                                  <th style={{ width: "15%" }}>Revision Number <span className="red">*</span> </th>
-                                  <th style={{ width: "15%" }}>Revised Contract Value </th>
-                                  <th style={{ width: "15%" }}>Current </th>
-                                  <th style={{ width: "15%" }}>Revised DOC </th>
-                                  <th style={{ width: "15%" }}>Current</th>
-                                  <th style={{ width: "15%" }}>Approval by Bank </th>
-                                  <th style={{ width: "15%" }}>Action</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {revisionRequiredFields.length > 0 ? (
-                                  revisionRequiredFields.map((item, index) => (
-                                    <tr key={item.id}>
-                                      <td>
-                                        <input 
-                                          {...register(`revisionRequired.${index}.revision_numbers`)} 
-                                          type="text" 
-                                          placeholder="Enter value" 
-                                          value={generateRevisionRequiredNumber(index)}
-                                          readOnly
-                                          className="readonly-input"
-                                          style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
-                                        />
-                                        {errors.revisionRequired?.[index]?.revision_numbers && (
-                                          <span className="red">
-                                            {errors.revisionRequired[index].revision_numbers.message}
-                                          </span>
-                                        )}
-                                      </td>
-                                      <td className="rupee-field">
-                                        <div className="d-flex align-items-center gap-2">
-                                          <input 
-                                            {...register(`revisionRequired.${index}.revised_amounts`)} 
-                                            type="number" 
-                                            placeholder="Enter value" 
-                                            className="flex-grow-1"
-                                            style={{ minWidth: "120px" }}
-                                          />
-                                          <Controller
-                                            name={`revisionRequired.${index}.revision_unit`}
-                                            control={control}
-                                            render={({ field }) => (
-                                              <Select
-                                                {...field}
-                                                classNamePrefix="react-select"
-                                                options={unitOptions}
-                                                placeholder="Unit"
-                                                isSearchable={false}
-                                                styles={{
-                                                  container: (base) => ({
-                                                    ...base,
-                                                    minWidth: '80px',
-                                                    width: '80px'
-                                                  }),
-                                                  control: (base) => ({
-                                                    ...base,
-                                                    minHeight: '38px',
-                                                    fontSize: '14px'
-                                                  })
-                                                }}
-                                                value={unitOptions.find(opt => opt.value === field.value) || null}
-                                                onChange={(opt) => field.onChange(opt?.value || "")}
-                                              />
-                                            )}
-                                          />
-                                        </div>
-                                      </td>
-                                      <td>
-                                        <input {...register(`revisionRequired.${index}.revision_amounts_statuss`)} type="checkbox" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`revisionRequired.${index}.revised_docs`)} type="date" placeholder="Enter value" />
-                                      </td>
-                                      
-                                      <td>
-                                        <input {...register(`revisionRequired.${index}.revision_statuss`)} type="checkbox"/>
-                                      </td>
-                                      <td>
-                                        <input {...register(`revisionRequired.${index}.approvalbybankstatus`)} type="checkbox" />
-                                      </td>
-                                      <td className="text-center d-flex align-center justify-content-center">
-                                        <button
-                                          type="button"
-                                          className="btn btn-outline-danger"
-                                          onClick={() => handleRemoveRevisionRequired(index)}
-                                          disabled={index === 0} // Disable delete for first row (R1)
-                                          title={index === 0 ? "Cannot delete first revision" : "Delete row"}
-                                        >
-                                          <MdOutlineDeleteSweep
-                                            size="26"
-                                          />
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan="4" className="text-center text-muted">
-                                      No rows added yet.
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          <div className="d-flex align-center justify-content-center mt-1">
-                            <button
-                              type="button"
-                              className="btn-2 btn-green"
-                              onClick={handleAppendRevisionRequired}
-                            >
-                              <BiListPlus
-                                size="24"
-                              />
-                            </button>
-                          </div>
-                        </>
-                      )}
-                  
-                </div>
-                <div ref={sectionRefs.personnel} className={styles.formSection}>
-                   
-                  <h6 className="d-flex justify-content-center mt-1 mb-2">Contractor's Key Personnel</h6> 
-                  
-                  <div className="d-flex gap-30 align-center justify-content-center">
-                      <label>Contractor's Key Required ?</label>
-                        <div className="d-flex gap-20" style={{padding: "10px"}}>
-                          <label>
-                            <input
-                              type="radio"
-                              value="yes"
-                              {...register("contractors_key_requried")}
-                            />
-                            Yes
-                          </label>
-
-                          <label>
-                            <input
-                              type="radio"
-                              value="no"
-                              defaultChecked
-                              {...register("contractors_key_requried")}
-                            />
-                            No
-                          </label>
-                        </div>
-                      </div>
-
-                      <br />
-                      {contractorsKeyRequriedButton === "yes" && (
-                        <>
-                          <div className="table-responsive dataTable ">
-                            <table className="table table-bordered align-middle">
-                              <thead className="table-light">
-                                <tr>
-                                  <th style={{ width: "15%" }}>Name </th>
-                                  <th style={{ width: "15%" }}>Designation </th>
-                                  <th style={{ width: "15%" }}>Mobile No</th>
-                                  <th style={{ width: "15%" }}>Email ID </th>
-                                  <th style={{ width: "15%" }}>Action</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {contractorsKeyRequriedFields.length > 0 ? (
-                                  contractorsKeyRequriedFields.map((item, index) => (
-                                    <tr key={item.id}>
-                                      
-                                      <td>
-                                        <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelNames`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelDesignations`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelMobileNos`)} type="text" placeholder="Enter value" />
-                                      </td>
-                                      <td>
-                                        <input {...register(`contractorsKeyRequried.${index}.contractKeyPersonnelEmailIds`)} type="email" placeholder="Enter email" />
-                                      </td>
-                                      <td className="text-center d-flex align-center justify-content-center">
-                                        <button
-                                          type="button"
-                                          className="btn btn-outline-danger"
-                                          onClick={() => removeContractorsKeyRequried(index)}
-                                        >
-                                          <MdOutlineDeleteSweep
-                                            size="26"
-                                          />
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan="4" className="text-center text-muted">
-                                      No rows added yet.
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          <div className="d-flex align-center justify-content-center mt-1">
-                            <button
-                              type="button"
-                              className="btn-2 btn-green"
-                              onClick={() =>
-                                appendContractorsKeyRequried({ contractKeyPersonnelNames: "", contractKeyPersonnelDesignations: "", contractKeyPersonnelMobileNos: "", contractKeyPersonnelEmailIds: "" })
-                              }
-                            >
-                              <BiListPlus
-                                size="24"
-                              />
-                            </button>
-                          </div>
-                        </>
-                      )}
-
-                </div>
-                <div ref={sectionRefs.documents} className={styles.formSection}>
-                   
-                  <h6 className="d-flex justify-content-center mt-1 mb-2">Documents</h6> 
-
-                  <div className="table-responsive dataTable ">
-                            <table className="table table-bordered align-middle">
-                              <thead className="table-light">
-                                <tr>
-                                  <th style={{ width: "15%" }}>File Type </th>
-                                  <th style={{ width: "15%" }}>Name </th>
-                                  <th style={{ width: "15%" }}>Attachment</th>
-                                  <th style={{ width: "7%" }}>Action</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {documentsTableFields.length > 0 ? (
-                                  documentsTableFields.map((item, index) => (
-                                    <tr key={item.id}>
-                                      <td>
-                                        <Controller
-                                          name={`documentsTable.${index}.contract_file_types`}
-                                          control={control}
-                                          render={({ field }) => (
-                                            <Select
-                                              {...field}
-											  options={fileTypeOptions} 
-                                              classNamePrefix="react-select"
-                                              placeholder="Select File Type"
-                                              isSearchable
-                                              isClearable
-											  value={fileTypeOptions.find(opt => opt.value === field.value) || null}
-											  onChange={(opt) => field.onChange(opt?.value || "")}
-                                            />
-                                          )}
-                                        />
-
-                                      </td>
-                                      <td>
-                                        <input
-                                          type="text"
-                                          {...register(`documentsTable.${index}.contractDocumentNames`)}
-                                          className="form-control"
-                                          placeholder="File Name"
-                                        />
-                                      </td>
-                                      <td>
-                                        <div className={styles["file-upload-wrapper"]}>
-                                          <label htmlFor={`file-${index}`} className={styles["file-upload-label-icon"]}>
-                                            <RiAttachment2 size={20} style={{ marginRight: "6px" }} />
-                                            Upload File
-                                          </label>
-                                          <input
-                                            id={`file-${index}`}
-                                            type="file"
-                                            {...register(`documentsTable.${index}.contractDocumentFiles`)}
-                                            className={styles["file-upload-input"]}
-                                          />
-                                          {watch(`documentsTable.${index}.contractDocumentFiles`)?.[0]?.name && (
-                                            <p style={{ marginTop: "6px", fontSize: "0.9rem", color: "#475569" }}>
-                                              Selected: {watch(`documentsTable.${index}.contractDocumentFiles`)[0].name}
-                                            </p>
-                                          )}
-
-                                        </div>
-
-                                      </td>
-                                      <td className="text-center d-flex align-center justify-content-center">
-                                        <button
-                                          type="button"
-                                          className="btn btn-outline-danger"
-                                          onClick={() => removeDocumentsTable(index)}
-                                        >
-                                          <MdOutlineDeleteSweep
-                                            size="26"
-                                          />
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan="4" className="text-center text-muted">
-                                      No rows added yet.
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          <div className="d-flex align-center justify-content-center mt-1">
-                            <button
-                              type="button"
-                              className="btn-2 btn-green"
-                              onClick={() =>
-                                appendDocumentsTable({ contract_file_types: "", contractDocumentNames: "", contractDocumentFiles: "" })
-                              }
-                            >
-                              <BiListPlus
-                                size="24"
-                              />
-                            </button>
-                          </div>
-
-                </div>
 
             {/* Action Buttons */}
             <div className="d-flex justify-content-center gap-20 mt-4 mb-4">
-          
-			        <button
-			                 type="submit"
-			                 className="btn btn-primary"
-			                 disabled={loading || savingForEdit}
-			               >
-			                 {loading ? (
-			                   <>
-			                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-			                     {isEdit ? "Updating..." : "Adding..."}
-			                   </>
-			                 ) : (
-			                   isEdit ? "Update " : "Add "
-			                 )}
-			               </button>
               <button
-                type="button"
-                className={`bttttnnn ${styles.saveEditButton}`}
-                onClick={handleSubmit((data) => onSubmit(data, true))}
+                type="submit"
+                className="btn btn-primary"
                 disabled={loading || savingForEdit}
               >
-                {savingForEdit ? (
+                {loading ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Saving...
+                    {isEdit ? "Updating..." : "Adding..."}
                   </>
                 ) : (
-                  "SAVE & EDIT"
+                  isEdit ? "Update " : "Add "
                 )}
               </button>
-         
-			       <button
-			              type="button"
-			                className="btn btn-secondary"
-			                onClick={handleCancel}
-			                disabled={loading || savingForEdit}
-			              >
-			                Cancel
-							
-			             </button>
+              
+              {/* Only show SAVE & EDIT button in ADD mode, not in EDIT mode */}
+              {!isEdit && (
+                <button
+                  type="button"
+                  className={`bttttnnn ${styles.saveEditButton}`}
+                  onClick={handleSubmit((data) => onSubmit(data, true))}
+                  disabled={loading || savingForEdit}
+                >
+                  {savingForEdit ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    "SAVE & EDIT"
+                  )}
+                </button>
+              )}
+              
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleCancel}
+                disabled={loading || savingForEdit}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

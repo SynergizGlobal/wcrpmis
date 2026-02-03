@@ -189,8 +189,14 @@ export default function Contract() {
   };
 
   const handleAdd = () => navigate("add-contract-form");
-  const handleEdit = (contract) => navigate("get-contract", { state: { contract } });
-
+  const handleEdit = (contract) => {
+    navigate("add-contract-form", { 
+      state: { 
+        contractId: contract.contract_id,
+        isEdit: true 
+      } 
+    });
+  };
   const isDesignDrawingForm = location.pathname.endsWith("/add-contract-form");
 
   // Get options for each filter
