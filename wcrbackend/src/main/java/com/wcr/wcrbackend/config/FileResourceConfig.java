@@ -24,7 +24,16 @@ public class FileResourceConfig implements WebMvcConfigurer {
                 .addResourceLocations(
                     "file:" + CommonConstants2.P6_FILE_SAVING_PATH + "/"
                 );
+                
+                registry.addResourceHandler("/TEMPLATE_FILES/**")
+                .addResourceLocations(
+                        "file:/" + CommonConstants.TEMPLATE_FILEPATH + "/"
+                );
 
+                 registry.addResourceHandler("/TEMPLATES_OLD/**")
+                .addResourceLocations(
+                		"file:" + CommonConstants.TEMPLATE_OLD_FILEPATH + "/"
+                  );
     }
 
 }

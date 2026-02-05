@@ -1,3 +1,4 @@
+import TemplateUpload from "./components/Admin/TemplateUpload/TemplateUpload";
 import ReportsAccess from "./components/Admin/ReportsAccess/ReportsAccess";
 import ReportsAccessForm from "./components/Admin/ReportsAccess/ReportsAccessForm/ReportsAccessForm";
 import FormsForm from "./components/Admin/Forms/FormsForm/FormsForm";
@@ -291,6 +292,7 @@ function App() {
 							<Route path="access-forms" element={<Forms />} >
 							<Route path="formsform" element={<FormsForm />} />
 						</Route>
+						<Route path="template-upload" element={<TemplateUpload />} />
 						<Route path="access-reports" element={<ReportsAccess />}>
 						       <Route path="get-access-reports" element={<ReportsAccessForm />} />
 						   </Route>
