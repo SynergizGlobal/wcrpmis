@@ -1,3 +1,5 @@
+import ReportsAccess from "./components/Admin/ReportsAccess/ReportsAccess";
+import ReportsAccessForm from "./components/Admin/ReportsAccess/ReportsAccessForm/ReportsAccessForm";
 import FormsForm from "./components/Admin/Forms/FormsForm/FormsForm";
 import Forms from "./components/Admin/Forms/Forms";
 import OverviewDashboard from "./components/Admin/OverviewDashboard/OverviewDashboard";
@@ -289,6 +291,9 @@ function App() {
 							<Route path="access-forms" element={<Forms />} >
 							<Route path="formsform" element={<FormsForm />} />
 						</Route>
+						<Route path="access-reports" element={<ReportsAccess />}>
+						       <Route path="get-access-reports" element={<ReportsAccessForm />} />
+						   </Route>
 							<Route path="left-menu" element={<OverviewDashboard />} />
 						</Route>
 						<Route path="bank-guarantee-type" element={<BankGuaranteeType />} />

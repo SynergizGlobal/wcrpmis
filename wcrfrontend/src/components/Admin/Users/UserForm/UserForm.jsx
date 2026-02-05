@@ -83,8 +83,12 @@ export default function UserForm() {
           us_work: [], // for Utility Shifting module
           rr_work: [], // for R&R module
       
-          // Structure permissions (Execution & Monitoring)
-          executionMonitoringRows: []
+          // Structure permissions (Execution & Monitoring) - ALWAYS start with ONE empty row
+          executionMonitoringRows: [{
+            contract_id: null,
+            structures: [],
+            availableStructures: []
+          }]
         },
         mode: "onChange"
       });
@@ -95,6 +99,7 @@ export default function UserForm() {
   const watchPmisKey = watch("pmis_key_fk");
   const watchFileName = watch("fileName");
 
+  // UseFieldArray for dynamic rows
   const { fields: structureRows, append: appendStructureRow, remove: removeStructureRow } = useFieldArray({
     control,
     name: "executionMonitoringRows",
@@ -590,9 +595,17 @@ export default function UserForm() {
     }
   };
 
-  // Get structures by contract ID
+  // Get structures by contract ID for a specific row
   const getStructuresByContractId = async (contractId, rowIndex) => {
     try {
+      if (!contractId) {
+        // Clear structures for this row
+        const currentRows = [...getValues("executionMonitoringRows")];
+        currentRows[rowIndex].availableStructures = [];
+        setValue("executionMonitoringRows", currentRows);
+        return;
+      }
+
       const response = await api.post(`${API_BASE_URL}/users/ajax/getStructuresByContractId`, {
         contract_id_fk: contractId
       });
@@ -606,17 +619,24 @@ export default function UserForm() {
         const currentRows = [...getValues("executionMonitoringRows")];
         currentRows[rowIndex].availableStructures = structureOptions;
         setValue("executionMonitoringRows", currentRows);
+      } else {
+        const currentRows = [...getValues("executionMonitoringRows")];
+        currentRows[rowIndex].availableStructures = [];
+        setValue("executionMonitoringRows", currentRows);
       }
     } catch (err) {
       console.error("Error fetching structures:", err);
+      const currentRows = [...getValues("executionMonitoringRows")];
+      currentRows[rowIndex].availableStructures = [];
+      setValue("executionMonitoringRows", currentRows);
     }
   };
 
-  // Handle contract change
+  // Handle contract change for a specific row
   const handleContractChange = async (selected, rowIndex) => {
     const currentRows = [...getValues("executionMonitoringRows")];
     currentRows[rowIndex].contract_id = selected;
-    currentRows[rowIndex].structures = [];
+    currentRows[rowIndex].structures = []; // Clear structures when contract changes
     setValue("executionMonitoringRows", currentRows);
     
     if (selected && selected.value) {
@@ -740,31 +760,35 @@ export default function UserForm() {
 
       // Set structure permissions for Execution & Monitoring
       if (userData.executivesList && userEnabledModules.includes('Execution & Monitoring')) {
-        const executiveRows = userData.executivesList.map((executive) => ({
-          contract_id: contractOptions.find(opt => opt.value === executive.contract_id_fk) || null,
-          structures: (executive.structureExecutivesList || []).map(se => ({
-            value: se.structure_id_fk,
-            label: se.structure_name || se.structure_id_fk
-          })),
-          availableStructures: []
-        }));
-        
-        setValue("executionMonitoringRows", executiveRows);
-        
-        // Fetch available structures for each row
-        executiveRows.forEach(async (row, index) => {
-          if (row.contract_id?.value) {
-            await getStructuresByContractId(row.contract_id.value, index);
-          }
-        });
-      } else if (userEnabledModules.includes('Execution & Monitoring')) {
-        const currentRows = getValues("executionMonitoringRows") || [];
-        if (currentRows.length === 0) {
-          appendStructureRow({
-            contract_id: null,
-            structures: [],
+        if (userData.executivesList.length > 0) {
+          // If user has existing structure permissions, use them
+          const executiveRows = userData.executivesList.map((executive, index) => ({
+            contract_id: contractOptions.find(opt => opt.value === executive.contract_id_fk) || null,
+            structures: (executive.structureExecutivesList || []).map(se => ({
+              value: se.structure_id_fk,
+              label: se.structure_name || se.structure_id_fk
+            })),
             availableStructures: []
+          }));
+          
+          setValue("executionMonitoringRows", executiveRows);
+          
+          // Fetch available structures for each row
+          executiveRows.forEach(async (row, index) => {
+            if (row.contract_id?.value) {
+              await getStructuresByContractId(row.contract_id.value, index);
+            }
           });
+        } else {
+          // If no existing data but module is enabled, ensure at least one empty row
+          const currentRows = getValues("executionMonitoringRows") || [];
+          if (currentRows.length === 0) {
+            setValue("executionMonitoringRows", [{
+              contract_id: null,
+              structures: [],
+              availableStructures: []
+            }]);
+          }
         }
       }
     }
@@ -800,15 +824,6 @@ export default function UserForm() {
         setTimeout(() => {
           checkPMISKeyAvailability(generatedKey);
         }, 1000);
-        
-        // Add initial structure row
-        if (structureRows.length === 0) {
-          appendStructureRow({
-            contract_id: null,
-            structures: [],
-            availableStructures: []
-          });
-        }
       }
     };
 
@@ -878,7 +893,12 @@ export default function UserForm() {
       } else if (moduleName === 'Risk') {
         setValue("risk_work", []);
       } else if (moduleName === 'Execution & Monitoring') {
-        setValue("executionMonitoringRows", []);
+        // Clear all rows and reset to ONE empty row
+        setValue("executionMonitoringRows", [{
+          contract_id: null,
+          structures: [],
+          availableStructures: []
+        }]);
       }
 
       // Update permissions_check value
@@ -896,15 +916,15 @@ export default function UserForm() {
       // Update permissions_check value
       updatePermissionCheckValue(moduleName, true);
 
-      // Add initial row for Execution & Monitoring if no rows exist
+      // For Execution & Monitoring: Ensure at least ONE row exists
       if (moduleName === "Execution & Monitoring") {
         const currentRows = getValues("executionMonitoringRows") || [];
         if (currentRows.length === 0) {
-          appendStructureRow({
+          setValue("executionMonitoringRows", [{
             contract_id: null,
             structures: [],
             availableStructures: []
-          });
+          }]);
         }
       }
     }
@@ -929,12 +949,21 @@ export default function UserForm() {
     });
   };
 
-  // Handle delete row
+  // Handle add new row - adds additional row when clicked
+  const handleAddRow = () => {
+    appendStructureRow({
+      contract_id: null,
+      structures: [],
+      availableStructures: []
+    });
+  };
+
+  // Handle delete row - enabled for ALL rows including first row
   const handleRemoveRow = (index) => {
     if (structureRows.length > 1) {
       removeStructureRow(index);
     } else {
-      // If only one row, just clear its values
+      // If it's the last row, clear it instead of removing
       const currentRows = [...getValues("executionMonitoringRows")];
       currentRows[index] = {
         contract_id: null,
@@ -1556,7 +1585,7 @@ export default function UserForm() {
                 </div>
               )}
 
-              {/* Execution & Monitoring - Structure Permission Table */}
+              {/* Execution & Monitoring - Multiple Row Structure Permission */}
               {(enabledModules.includes('Execution & Monitoring') || 
                 enabledModules.some(m => m.includes('Execution'))) && (
                 <div className="form-row">
@@ -1619,7 +1648,7 @@ export default function UserForm() {
                                   type="button"
                                   className="btn btn-outline-danger"
                                   onClick={() => handleRemoveRow(index)}
-                                  disabled={structureRows.length === 1}
+                                  // DELETE BUTTON IS NOW ENABLED FOR ALL ROWS INCLUDING FIRST ROW
                                 >
                                   <MdOutlineDeleteSweep size="26" />
                                 </button>
@@ -1634,13 +1663,9 @@ export default function UserForm() {
                     <button
                       type="button"
                       className="btn-2 btn-green"
-                      onClick={() => appendStructureRow({ 
-                        contract_id: null, 
-                        structures: [], 
-                        availableStructures: [] 
-                      })}
+                      onClick={handleAddRow}
                     >
-                      <BiListPlus size="24" />
+                      <BiListPlus size="24" /> Add Row
                     </button>
                   </div>
                 </div>
