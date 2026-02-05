@@ -332,7 +332,6 @@ export default function UpdateStructure() {
                   <table className={styles.projectTable}>
                     <thead>
                       <tr>
-                        <th>Structure ID</th>
                         <th>Project</th>
                         <th>Structure Type</th>
                         <th>Structure</th>
@@ -345,7 +344,6 @@ export default function UpdateStructure() {
                       {structureFormGrid.length > 0 ? (
                         structureFormGrid.map((sf, index) => (
                           <tr key={sf.structure_id ?? sf.structureId ?? index}>
-                            <td>{sf.structure_id ?? sf.structureId}</td>
                             <td>{sf.project_id_fk ?? sf.projectIdFk}</td>
                             <td>{sf.structure_type_fk ?? sf.structureTypeFk}</td>
                             <td>{sf.structure_name ?? sf.structure}</td>
