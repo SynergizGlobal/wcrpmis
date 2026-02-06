@@ -23,7 +23,7 @@ export default function DMS() {
         <NavLink to="folders" className={({ isActive }) => isActive ? styles.active : ""}>
           Folders
         </NavLink>
-        <NavLink to="filter" className={({ isActive }) => isActive ? styles.active : ""}>
+        <NavLink to="filterform" className={({ isActive }) => isActive ? styles.active : ""}>
           Filter Form
         </NavLink>
       </div>

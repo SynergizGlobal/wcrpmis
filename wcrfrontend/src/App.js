@@ -1,3 +1,4 @@
+import FilterForm from "./components/UpdateForms/Dms/FilterForm/FilterForm";
 import DmsTable from "./components/UpdateForms/Dms/DmsTable/DmsTable";
 import DmsDocuments from "./components/UpdateForms/Dms/DMSDocuments/DmsDocuments";
 import Correspondence from "./components/UpdateForms/Dms/Correspondence/Correspondence";
@@ -237,16 +238,15 @@ function App() {
 							<Route path="issues" element={<Issues />}>
 								<Route path="issuesform" element={<IssuesForm />} />
 							</Route>
-							<Route path="dms" element={<Dms />} >
+							<Route path="dms" element={<Dms />}>
   								<Route index element={<Navigate to="correspondence" replace />} />
 								<Route path="correspondence" element={<Correspondence />} />
 								<Route path="documents" element={<DmsDocuments />} />
-								{/* <Route path="folders" element={<Folders />} />
-								<Route path="filter" element={<Filter />} /> */}
+								{/* <Route path="folders" element={<Folders />} /> */}
+									<Route path="filterform" element={<FilterForm />} />
 							</Route>
 						<Route path="referenceforms" element={<ReferenceForms />} />
-                     
-					 <Route path="correspondence" element={<Correspondence />} />
+						<Route path="dmstable" element={<DmsTable />} />
 					 </Route>
 			
 						<Route path="works" element={<Works />} />
@@ -374,4 +374,3 @@ function App() {
 	</PageTitleProvider>;
 }
 export default App;
-            <Route path="dmstable" element={<DmsTable />} />
