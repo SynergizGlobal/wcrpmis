@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../../../api/axiosInstance";
 import styles from "./UpdateStructureForm.module.css";
 import { API_BASE_URL } from "../../../../config";
+import DateInput from "../../../DateInput";
 
 import { MdOutlineDeleteSweep } from "react-icons/md";
 import { BiListPlus } from "react-icons/bi";
@@ -973,9 +974,9 @@ export default function UpdateStructureForm() {
             <div className="form-row">
               <div className="form-field">
                 <label>Original Target Date</label>
-                <input
-                  {...register("target_date")}
-                  type="date"
+                <DateInput
+                  register={register}
+                  name="target_date"
                   placeholder="Enter Value"
                   disabled={isSubmitting}
                 />
@@ -1080,9 +1081,9 @@ export default function UpdateStructureForm() {
 
               <div className="form-field">
                 <label>Construction Start Date</label>
-                <input
-                  {...register("construction_start_date")}
-                  type="date"
+                <DateInput
+                  register={register}
+                  name="construction_start_date"
                   placeholder="Enter Value"
                   disabled={isSubmitting}
                 />
@@ -1090,13 +1091,15 @@ export default function UpdateStructureForm() {
 
               <div className="form-field">
                 <label>Target Completion Date</label>
-                <input
-                  {...register("revised_completion")}
-                  type="date"
+                <DateInput
+                  register={register}
+                  name="revised_completion"
                   placeholder="Enter Value"
                   disabled={isSubmitting}
                 />
               </div>
+              <div className="form-field">&nbsp;</div>
+              <div className="form-field">&nbsp;</div>
             </div>
 
             {/* Structure Details */}
