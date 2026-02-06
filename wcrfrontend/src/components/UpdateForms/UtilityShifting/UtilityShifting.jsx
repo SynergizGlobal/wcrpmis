@@ -321,7 +321,7 @@ export default function UtilityShifting() {
   };
 
   const handleSampleDownload = () => {
-    const fileUrl = "/files/utilityshifting/Utility_Shifting_Template.xlsx";
+    const fileUrl = "/files/Template-upload/Utility_Shifting_Template.xlsx";
     const fileName = "Utility_Shifting_Template.xlsx";
 
     const link = document.createElement("a");

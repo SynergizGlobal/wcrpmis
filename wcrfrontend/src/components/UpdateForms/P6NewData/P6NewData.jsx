@@ -434,7 +434,7 @@ export default function P6NewData() {
 
 
 	const handleBaselineDownload = () => {
-		const fileUrl = "/files/p6-new-data/P6BaselineFile.xlsx"; 
+		const fileUrl = "/files/Template-upload/P6BaselineFile.xlsx"; 
 		const fileName = "P6BaselineFile.xlsx";
 
 		const link = document.createElement("a");
@@ -446,7 +446,7 @@ export default function P6NewData() {
 	};
 
 	const handleRevisedBaselineDownload = () => {
-		const fileUrl = "/files/p6-new-data/P6RevisedFile.xlsx"; 
+		const fileUrl = "/files/Template-upload/P6RevisedFile.xlsx"; 
 		const fileName = "P6RevisedFile.xlsx";
 
 		const link = document.createElement("a");
@@ -458,7 +458,7 @@ export default function P6NewData() {
 	}
 
 	const handleUpdateDownload = () => {
-		const fileUrl = "/files/p6-new-data/P6UpdateFile.xlsx";
+		const fileUrl = "/files/Template-upload/P6UpdateFile.xlsx";
 		const fileName = "P6UpdateFile.xlsx";
 
 		const link = document.createElement("a");

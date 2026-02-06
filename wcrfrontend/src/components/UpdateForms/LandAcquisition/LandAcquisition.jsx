@@ -223,7 +223,7 @@ export default function LandAcquisition() {
   // another storgae file Download code
 
   const handleSampleDownload = () => {
-    const fileUrl = "/files/landacquisition/Land_Acquisition_Template.xlsx"; // or any URL
+    const fileUrl = "/files/Template-upload/Land_Acquisition_Template.xlsx"; // or any URL
     const fileName = "Land_Acquisition_Template.xlsx";
 
     const link = document.createElement("a");

@@ -42,7 +42,7 @@ export default function DesignDrawing() {
 
 
 	const handleSampleDownload = () => {
-		const fileUrl = "/files/designDrawing/Designs_Drawings.xlsx";
+		const fileUrl = "/files/Template-upload/Designs_Drawings.xlsx";
 		const fileName = "Designs_Drawings.xlsx";
 
 		const link = document.createElement("a");
