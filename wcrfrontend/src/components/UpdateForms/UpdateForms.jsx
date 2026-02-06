@@ -90,30 +90,35 @@ export default function UpdateForms() {
 const handleNavigation = async(formName, webFormUrl, hasSubMenu = false) => {
     const lower = formName.toLowerCase();
 
-  // ✅ Special handling for DMS
+  // Special handling for DMS
+  // if (lower.includes("dms")) {
+  //   try {
+  //     // Call backend DMS API
+  //     const res = await api.get(`${API_BASE_URL}/dms/dms`, {
+  //       withCredentials: true,
+  //     });
+
+  //     // Expect backend to return the redirect link as plain text or JSON
+  //     const redirectUrl =
+  //       typeof res.data === "string"
+  //         ? res.data
+  //         : res.data?.redirectUrl || res.data?.url;
+
+  //     if (redirectUrl) {
+  //       // Open in new tab
+  //       window.open(redirectUrl, "_blank", "noopener,noreferrer");
+  //     } else {
+  //       alert("⚠️ DMS link not found in response");
+  //     }
+  //   } catch (err) {
+  //     console.error("❌ Error opening DMS:", err);
+  //     alert("Failed to open DMS. Please try again.");
+  //   }
+  //   return;
+  // }
+
   if (lower.includes("dms")) {
-    try {
-      // Call backend DMS API
-      const res = await api.get(`${API_BASE_URL}/dms/dms`, {
-        withCredentials: true,
-      });
-
-      // Expect backend to return the redirect link as plain text or JSON
-      const redirectUrl =
-        typeof res.data === "string"
-          ? res.data
-          : res.data?.redirectUrl || res.data?.url;
-
-      if (redirectUrl) {
-        // Open in new tab
-        window.open(redirectUrl, "_blank", "noopener,noreferrer");
-      } else {
-        alert("⚠️ DMS link not found in response");
-      }
-    } catch (err) {
-      console.error("❌ Error opening DMS:", err);
-      alert("Failed to open DMS. Please try again.");
-    }
+    navigate("/updateforms/dms");
     return;
   }
 

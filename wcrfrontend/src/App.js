@@ -1,3 +1,7 @@
+import DmsTable from "./components/UpdateForms/Dms/DmsTable/DmsTable";
+import DmsDocuments from "./components/UpdateForms/Dms/DMSDocuments/DmsDocuments";
+import Correspondence from "./components/UpdateForms/Dms/Correspondence/Correspondence";
+import Dms from "./components/UpdateForms/Dms/Dms";
 import TemplateUpload from "./components/Admin/TemplateUpload/TemplateUpload";
 import ReportsAccess from "./components/Admin/ReportsAccess/ReportsAccess";
 import ReportsAccessForm from "./components/Admin/ReportsAccess/ReportsAccessForm/ReportsAccessForm";
@@ -104,8 +108,6 @@ import Home from "./components/Home/Home";
 import ProjectForm from "./components/UpdateForms/Project/ProjectForm/ProjectForm";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./queryClient";
-
-
 import WorkOverviewDashboard from "./components/Works/WorkOverviewDashboard";
 import ProjectOverviewDashboard from "./components/Works/ProjectOverviewDashboard";
 import ExecutionOverviewDashboard from "./components/Works/ExecutionOverviewDashboard";
@@ -122,25 +124,19 @@ import ProgressChart from "./components/Works/ProgressChart";
 import ProgressTableDashboard from "./components/Works/ProgressTableDashboard";
 import ProjectWeightages from "./components/Works/ProjectWeightages";
 import ContractsOverview from "./components/Works/ContractsOverview";
-import LandAcquisitionDashboard  from "./components/Works/LandAcquisition";
+import LandAcquisitionDashboard from "./components/Works/LandAcquisition";
 import IssuesOverview from "./components/Works/IssuesOverview";
 import UtilityShiftingDashboard from "./components/Works/UtilityShifting";
 import TimelineSchedule from "./components/Works/TimelineSchedule";
 import ProgressTable from "./components/Works/ProgressTable";
-
 import ContractsOverviewInProgress from "./components/Works/ContractsOverviewInProgress";
 import ContractsOverviewCompleted from "./components/Works/ContractsOverviewCompleted";
-
 import LandAcquisitionStripChart from "./components/Works/LandAcquisitionStripChart";
 import LandAcquisitionDetails from "./components/Works/LandAcquisitionDetails";
-
 import IssuesPendingDashboard from "./components/Works/IssuesPendingDashboard";
-
 import UtilityShiftingStripChart from "./components/Works/UtilityShiftingStripChart";
 import UtilityShiftingDetails from "./components/Works/UtilityShiftingDetails";
 import UtilityShiftingMap from "./components/Works/UtilityShiftingMap";
-
-
 import FortnightMeeting from "./components/Modules/FortnightMeeting";
 import DrawingStatus from "./components/Modules/DrawingStatus";
 /*import ProjectPerformance from "./components/Modules/ProjectPerformance";
@@ -152,8 +148,6 @@ import ComponentwiseProgress from "./components/Modules/ComponentwiseProgress";
 import ProgressTable from "./components/Modules/ProgressTable";
 import ContractStatus from "./components/Modules/ContractStatus";
 import Issues from "./components/Modules/Issues";*/
-
-
 
 function App() {
   const [message, setMessage] = useState("Loading...");
@@ -243,8 +237,17 @@ function App() {
 							<Route path="issues" element={<Issues />}>
 								<Route path="issuesform" element={<IssuesForm />} />
 							</Route>
+							<Route path="dms" element={<Dms />} >
+  								<Route index element={<Navigate to="correspondence" replace />} />
+								<Route path="correspondence" element={<Correspondence />} />
+								<Route path="documents" element={<DmsDocuments />} />
+								{/* <Route path="folders" element={<Folders />} />
+								<Route path="filter" element={<Filter />} /> */}
+							</Route>
 						<Route path="referenceforms" element={<ReferenceForms />} />
-                     </Route>
+                     
+					 <Route path="correspondence" element={<Correspondence />} />
+					 </Route>
 			
 						<Route path="works" element={<Works />} />
 						
@@ -289,7 +292,7 @@ function App() {
 								<Route path="dashboardform" element={<DashboardForm />} />
 							</Route>
 							<Route path="reference-forms" element={<ReferenceForms />} />
-							<Route path="access-forms" element={<Forms />} >
+							<Route path="access-forms" element={<Forms />}>
 							<Route path="formsform" element={<FormsForm />} />
 						</Route>
 						<Route path="template-upload" element={<TemplateUpload />} />
@@ -371,3 +374,4 @@ function App() {
 	</PageTitleProvider>;
 }
 export default App;
+            <Route path="dmstable" element={<DmsTable />} />

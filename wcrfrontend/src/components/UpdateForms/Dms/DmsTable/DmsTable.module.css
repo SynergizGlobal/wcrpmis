@@ -1,0 +1,147 @@
+.container {
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+/* =========================
+   CONTROLS (SHOW + SEARCH)
+========================= */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.controls select {
+  padding: 4px 6px;
+  margin: 0 5px;
+}
+
+.search {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 200px;
+}
+
+/* =========================
+   TABLE
+========================= */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 13px;
+}
+
+.table thead th {
+  background: #1f4e79;
+  color: #fff;
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #d0d0d0;
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 8px;
+  border: 1px solid #dcdcdc;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.table tbody tr:nth-child(even) {
+  background: #f5f9ff;
+}
+
+.table tbody tr:hover {
+  background: #e8f1ff;
+}
+
+/* =========================
+   LINKS
+========================= */
+.table a {
+  color: #1f4e79;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+/* =========================
+   FOOTER (PAGINATION)
+========================= */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  font-size: 13px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination button {
+  padding: 4px 10px;
+  border: 1px solid #cfd6e0;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #0b4f8a;
+}
+
+.pagination button:hover {
+  background: #0b4f8a;
+  color: #fff;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.activePage {
+  background: #0b4f8a;
+  color: #fff;
+  border-color: #0b4f8a;
+}
+
+.pagination span {
+  padding: 0 4px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 1024px) {
+  .table {
+    font-size: 12px;
+  }
+
+  .search {
+    width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .topNav {
+    flex-wrap: wrap;
+  }
+
+  .table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
