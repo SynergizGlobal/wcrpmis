@@ -19,6 +19,22 @@
   gap: 12px;
   padding: 14px 0;
 }
+.searchInput {
+  padding: 8px 32px 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  width: 220px;
+}
+
+.searchIcon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  pointer-events: none;
+  color: #3f4f85;
+}
 
 .clearBtn {
   background: #3f4f85;
@@ -82,3 +98,4 @@
   padding: 10px 16px;
   font-size: 13px;
 }
+	

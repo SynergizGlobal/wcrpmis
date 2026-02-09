@@ -49,6 +49,9 @@ export default function Contract() {
     statusOfWork: false
   });
 
+  // Export state
+  const [exporting, setExporting] = useState(false);
+
   useEffect(() => {
     fetchFilterOptions();
     fetchContracts();
@@ -189,6 +192,7 @@ export default function Contract() {
   };
 
   const handleAdd = () => navigate("add-contract-form");
+  
   const handleEdit = (contract) => {
     navigate("add-contract-form", { 
       state: { 
@@ -197,6 +201,112 @@ export default function Contract() {
       } 
     });
   };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      // Create form data with current filters
+      const formData = new FormData();
+      
+      // Add filter values to form data
+      if (filters.hod) {
+        formData.append("designation", filters.hod);
+      }
+      if (filters.dyHod) {
+        formData.append("dy_hod_designation", filters.dyHod);
+      }
+      if (filters.contractor) {
+        // Extract contractor ID from the format "id-name"
+        const contractorId = filters.contractor.split('-')[0];
+        formData.append("contractor_id_fk", contractorId);
+      }
+      if (filters.contractStatus) {
+        formData.append("contract_status", filters.contractStatus);
+      }
+      if (filters.statusOfWork) {
+        formData.append("contract_status_fk", filters.statusOfWork);
+      }
+      if (searchQuery) {
+        formData.append("searchStr", searchQuery);
+      }
+
+      // Make POST request to export endpoint
+      const response = await api.post(`${API_BASE_URL}/contract/export-contract`, formData, {
+        withCredentials: true,
+        responseType: 'blob', // Important for file download
+      });
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename with timestamp (matching controller format)
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      link.setAttribute('download', `Contract_${timestamp}.xlsx`);
+      
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      // Clean up URL object
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error("Error exporting contracts:", error);
+      alert("Failed to export contracts. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Alternative approach using form submission (closer to JSP approach)
+  const handleExportViaForm = () => {
+    // Create a temporary form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `${API_BASE_URL}/contract/export-contract`;
+    form.target = '_blank'; // Open in new tab
+    form.style.display = 'none';
+
+    // Add CSRF token if needed (assuming you have it in cookies/localStorage)
+    const csrfToken = document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1];
+    if (csrfToken) {
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = '_csrf';
+      csrfInput.value = csrfToken;
+      form.appendChild(csrfInput);
+    }
+
+    // Add filter parameters
+    const addHiddenInput = (name, value) => {
+      if (value) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      }
+    };
+
+    addHiddenInput("designation", filters.hod);
+    addHiddenInput("dy_hod_designation", filters.dyHod);
+    
+    if (filters.contractor) {
+      const contractorId = filters.contractor.split('-')[0];
+      addHiddenInput("contractor_id_fk", contractorId);
+    }
+    
+    addHiddenInput("contract_status", filters.contractStatus);
+    addHiddenInput("contract_status_fk", filters.statusOfWork);
+    addHiddenInput("searchStr", searchQuery);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  };
+
   const isDesignDrawingForm = location.pathname.endsWith("/add-contract-form");
 
   // Get options for each filter
@@ -371,8 +481,13 @@ export default function Contract() {
             <button className="btn btn-primary" onClick={handleAdd}>
               <CirclePlus size={16} /> Add
             </button>
-            <button className="btn btn-primary">
-              <LuCloudDownload size={16} /> Export
+            <button 
+              className="btn btn-primary" 
+              onClick={handleExport} // Using the fetch approach
+              disabled={exporting}
+            >
+              <LuCloudDownload size={16} /> 
+              {exporting ? "Exporting..." : "Export"}
             </button>
           </div>
         </div>
