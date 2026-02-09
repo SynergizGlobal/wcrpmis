@@ -25,6 +25,7 @@ import com.wcr.wcrbackend.DTO.UtilityShifting;
 import com.wcr.wcrbackend.common.CommonConstants;
 import com.wcr.wcrbackend.common.CommonMethods;
 import com.wcr.wcrbackend.common.DBConnectionHandler;
+import com.wcr.wcrbackend.config.EncryptDecrypt;
 
 @Repository
 public class UserDao implements IUserDao {
@@ -511,6 +512,7 @@ public class UserDao implements IUserDao {
 	@Override
 	public String addUser(User obj) throws Exception {
 		String userId = null;
+		setDefaultEncryptedPassword(obj);
 		//TransactionDefinition def = new DefaultTransactionDefinition();
 		//TransactionStatus status = transactionManager.getTransaction(def);
 		try {
@@ -518,9 +520,9 @@ public class UserDao implements IUserDao {
 			obj.setUser_id(user_id);
 			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());			 
 			String qry = "INSERT INTO [user]"
-					+ "(user_id,user_name,password,designation,email_id,mobile_number,personal_contact_number,landline,extension,department_fk,reporting_to_id_srfk,user_type_fk,pmis_key_fk,user_role_name_fk,remarks,user_image) "
+					+ "(user_id,user_name,password,designation,email_id,mobile_number,personal_contact_number,landline,extension,department_fk,reporting_to_id_srfk,user_type_fk,pmis_key_fk,user_role_name_fk,remarks,user_image,is_password_encrypted) "
 					+ "VALUES "
-					+ "(:user_id,:user_name,:password,:designation,:email_id,:mobile_number,:personal_contact_number,:landline,:extension,:department_fk,:reporting_to_id_srfk,:user_type_fk,:pmis_key_fk,:user_role_name_fk,:remarks,:user_image)";		 
+					+ "(:user_id,:user_name,:password,:designation,:email_id,:mobile_number,:personal_contact_number,:landline,:extension,:department_fk,:reporting_to_id_srfk,:user_type_fk,:pmis_key_fk,:user_role_name_fk,:remarks,:user_image,:is_password_encrypted)";		 
 			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
 			int count = namedParamJdbcTemplate.update(qry, paramSource);			
 			if(count > 0) {
@@ -760,6 +762,13 @@ public class UserDao implements IUserDao {
 			throw new Exception(e);
 		}		
 		return cnt;
+	}
+	private void setDefaultEncryptedPassword(User user) throws Exception {
+	 
+	    String plainPassword = "1234";
+	    String encryptedPassword = EncryptDecrypt.encrypt(plainPassword);
+	    user.setPassword(encryptedPassword);
+	    user.setIs_password_encrypted("true");
 	}
 	@Override
 	public User getUser(User obj) throws Exception {

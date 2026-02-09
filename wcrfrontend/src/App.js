@@ -1,5 +1,3 @@
-
-import UtilityReport from "./components/Reports/UtilityReport/UtilityReport";
 import FilterForm from "./components/UpdateForms/Dms/FilterForm/FilterForm";
 import DmsTable from "./components/UpdateForms/Dms/DmsTable/DmsTable";
 import DmsDocuments from "./components/UpdateForms/Dms/DMSDocuments/DmsDocuments";
@@ -298,9 +296,8 @@ function App() {
 							<Route path="formsform" element={<FormsForm />} />
 						</Route>
 						<Route path="template-upload" element={<TemplateUpload />} />
-						<Route path="access-reports" element={<ReportsAccess />}>
-						       <Route path="get-access-reports" element={<ReportsAccessForm />} />
-						   </Route>
+						<Route path="access-reports" element={<ReportsAccess />} />
+						<Route path="get-report" element={<ReportsAccessForm />} />
 							<Route path="left-menu" element={<OverviewDashboard />} />
 						</Route>
 						<Route path="bank-guarantee-type" element={<BankGuaranteeType />} />
@@ -359,8 +356,7 @@ function App() {
 						<Route path="department" element={<Department />} />
 						<Route path="projectType" element={<ProjectType />} />
 	          <Route path="railway" element={<Railway />} />
-							<Route path="documentType" element={<DocumentType />} />
-						<Route path="utility-report" element={<UtilityReport />} />
+						<Route path="documentType" element={<DocumentType />} />
 
 
 					</Route>
@@ -377,3 +373,5 @@ function App() {
 	</PageTitleProvider>;
 }
 export default App;
+
+

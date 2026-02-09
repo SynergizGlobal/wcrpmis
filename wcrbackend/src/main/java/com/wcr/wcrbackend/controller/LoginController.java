@@ -29,6 +29,7 @@ public class LoginController {
 
 			User user = loginService.authenticate(loginRequest.getUserId(), loginRequest.getPassword());
 	     
+			System.out.println("LOGINN:"+ loginRequest.getUserId());
 
 			session.setAttribute("user", user);
 			session.setAttribute("userId", user.getUserId());
