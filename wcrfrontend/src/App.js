@@ -1,4 +1,4 @@
-
+import PendingIssuesReport from "./components/Reports/PendingIssuesReport/PendingIssuesReport";
 import UtilityReport from "./components/Reports/UtilityReport/UtilityReport";
 import FilterForm from "./components/UpdateForms/Dms/FilterForm/FilterForm";
 import DmsTable from "./components/UpdateForms/Dms/DmsTable/DmsTable";
@@ -352,7 +352,11 @@ function App() {
 
 
 						<Route path="modules" element={<Modules />} />
+						
 						<Route path="reports" element={<Reports />} />
+						<Route path="issues" element={<Issues />} />
+						<Route path="pendingissuesreport" element={<PendingIssuesReport />} />
+												
 						<Route path="documents" element={<Documents />} />
 						<Route path="quicklinks" element={<QuickLinks />} />
 						<Route path="department" element={<Department />} />
