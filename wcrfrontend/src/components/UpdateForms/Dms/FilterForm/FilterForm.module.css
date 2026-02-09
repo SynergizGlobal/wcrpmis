@@ -2,4 +2,390 @@
   padding: 20px;
   background-color: #f9f9f9;
   border-radius: 8px;
+  min-height: 100vh;
+  position: relative;
+}
+
+.mainLayout {
+  display: flex;
+  gap: 20px;
+}
+
+.leftColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rightColumn {
+  flex: 1;
+}
+
+.sectionContainer {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  color: white;
+  background-color: #4a90e2;
+  padding: 12px 16px;
+  border-radius: 4px;
+}
+
+.addSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.addButton {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  min-width: 120px;
+}
+
+.addButton:hover {
+  background-color: #357ae8;
+}
+
+.searchBox {
+  flex: 1;
+  max-width: 200px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+/* Table Styles */
+.tableSection {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+.tableHeader {
+  text-align: left;
+  padding: 12px 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  background-color: #4a90e2;
+  border: none;
+}
+
+.tableRow {
+  border-bottom: 1px solid #e9ecef;
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.tableCell {
+  padding: 12px 8px;
+  font-size: 14px;
+  color: #333;
+  vertical-align: middle;
+}
+
+.actionCell {
+  padding: 8px;
+  vertical-align: middle;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.actionButton {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 70px;
+}
+
+.actionButton {
+  background-color: #28a745;
+  color: white;
+}
+
+.actionButton:hover {
+  background-color: #218838;
+}
+
+.deleteButton {
+  background-color: #dc3545;
+}
+
+.deleteButton:hover {
+  background-color: #c82333;
+}
+
+.tablePaginationInfo {
+  font-size: 12px;
+  color: #6c757d;
+  text-align: right;
+  font-style: italic;
+  padding-top: 10px;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Folder List Styles */
+.dataSection {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.dataTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+  color: white;
+  background-color: #4a90e2;
+  padding: 10px 12px;
+  border-radius: 4px;
+}
+
+.dataList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+}
+
+.dataItem {
+  padding: 6px 0;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+}
+
+.dataItem:last-child {
+  border-bottom: none;
+}
+
+.folderLevel0 {
+  font-weight: 600;
+  color: #212529;
+}
+
+.folderLevel1 {
+  margin-left: 20px;
+  color: #495057;
+}
+
+.folderLevel2 {
+  margin-left: 40px;
+  color: #6c757d;
+}
+
+.paginationInfo {
+  font-size: 12px;
+  color: #6c757d;
+  text-align: right;
+  font-style: italic;
+  padding-top: 10px;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Add these to FilterForm.module.css */
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: white;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+  background-color: #4a90e2;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  color: white;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: white;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalClose:hover {
+  color: #f0f0f0;
+}
+
+.modalBody {
+  padding: 20px;
+}
+
+.modalBody p {
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.warningText {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.modalForm {
+  margin-top: 15px;
+}
+
+.formGroup {
+  margin-bottom: 15px;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.fileInput {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+}
+
+.modalButtonSecondary,
+.modalButtonPrimary,
+.modalButtonDanger {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  min-width: 80px;
+}
+
+.modalButtonSecondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.modalButtonSecondary:hover {
+  background-color: #5a6268;
+}
+
+.modalButtonPrimary {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.modalButtonPrimary:hover {
+  background-color: #357ae8;
+}
+
+.modalButtonDanger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.modalButtonDanger:hover {
+  background-color: #c82333;
+}
+
+.textInput,
+.selectInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.textInput:focus,
+.selectInput:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.selectInput {
+  cursor: pointer;
 }
