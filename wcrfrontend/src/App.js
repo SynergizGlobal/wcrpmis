@@ -1,3 +1,4 @@
+import Folders from "./components/UpdateForms/Dms/Folders/Folders";
 import PendingIssuesReport from "./components/Reports/PendingIssuesReport/PendingIssuesReport";
 import UtilityReport from "./components/Reports/UtilityReport/UtilityReport";
 import FilterForm from "./components/UpdateForms/Dms/FilterForm/FilterForm";
@@ -244,8 +245,8 @@ function App() {
   								<Route index element={<Navigate to="correspondence" replace />} />
 								<Route path="correspondence" element={<Correspondence />} />
 								<Route path="documents" element={<DmsDocuments />} />
-								{/* <Route path="folders" element={<Folders />} /> */}
-									<Route path="filterform" element={<FilterForm />} />
+								<Route path="folders" element={<Folders />} />
+								<Route path="filterform" element={<FilterForm />} />
 							</Route>
 						<Route path="referenceforms" element={<ReferenceForms />} />
 						<Route path="dmstable" element={<DmsTable />} />

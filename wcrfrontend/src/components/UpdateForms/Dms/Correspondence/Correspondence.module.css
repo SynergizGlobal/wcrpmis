@@ -3,3 +3,70 @@
   background-color: #f9f9f9;
   border-radius: 8px;
 }
+.actionBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #eaf2fb;
+  width: 80%;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 6px;
+}
+
+.header {
+  background: var(--primary-color);
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h3{
+  color: #fff;
+}
+
+.header span{
+  font-size: 30px;
+}
+
+.body {
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.body input,
+.body select,
+.body textarea {
+  width: 100%;
+  padding: 6px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px;
+}
+
+.send { background: #2c6; }
+.draft { background: #f90; }
+.cancel { background: #999; }
+
+

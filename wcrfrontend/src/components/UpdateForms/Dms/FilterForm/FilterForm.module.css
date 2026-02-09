@@ -35,7 +35,7 @@
   font-weight: 600;
   margin: 0 0 20px 0;
   color: white;
-  background-color: #4a90e2;
+  background-color: var(--primary-fade-color);
   padding: 12px 16px;
   border-radius: 4px;
 }
@@ -49,7 +49,7 @@
 }
 
 .addButton {
-  background-color: #4a90e2;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -61,7 +61,7 @@
 }
 
 .addButton:hover {
-  background-color: #357ae8;
+  background-color: var(--primary-fade-color);
 }
 
 .searchBox {
@@ -102,7 +102,7 @@
   font-size: 16px;
   font-weight: 600;
   color: white;
-  background-color: #4a90e2;
+  background-color: var(--primary-fade-color);
   border: none;
 }
 
@@ -180,7 +180,7 @@
   font-weight: 600;
   margin: 0 0 15px 0;
   color: white;
-  background-color: #4a90e2;
+  background-color: var(--primary-fade-color);
   padding: 10px 12px;
   border-radius: 4px;
 }
