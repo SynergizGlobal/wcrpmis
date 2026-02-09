@@ -1,3 +1,5 @@
+
+import UtilityReport from "./components/Reports/UtilityReport/UtilityReport";
 import FilterForm from "./components/UpdateForms/Dms/FilterForm/FilterForm";
 import DmsTable from "./components/UpdateForms/Dms/DmsTable/DmsTable";
 import DmsDocuments from "./components/UpdateForms/Dms/DMSDocuments/DmsDocuments";
@@ -357,7 +359,8 @@ function App() {
 						<Route path="department" element={<Department />} />
 						<Route path="projectType" element={<ProjectType />} />
 	          <Route path="railway" element={<Railway />} />
-						<Route path="documentType" element={<DocumentType />} />
+							<Route path="documentType" element={<DocumentType />} />
+						<Route path="utility-report" element={<UtilityReport />} />
 
 
 					</Route>

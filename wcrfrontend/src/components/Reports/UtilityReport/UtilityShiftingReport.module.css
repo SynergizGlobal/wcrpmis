@@ -1,0 +1,84 @@
+.pageWrapper {
+  background-color: #fff1e6;
+  min-height: 100vh;
+  padding: 30px 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.reportCard {
+  width: 100%;
+  max-width: 2100px;
+  background: white;
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.reportHeader {
+  background-color: #A6CAEC;
+  text-align: center;
+  padding: 14px;
+  font-size: 26px;
+  font-weight: 500;
+  color: #000;
+}
+
+.reportBody {
+  padding: 40px 60px 50px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 140px;
+  row-gap: 30px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup label {
+  font-size: 14px;
+  color: #9a9a9a;
+  margin-bottom: 4px;
+}
+
+.formGroup input {
+  border: none;
+  border-bottom: 1px solid #9a9a9a;
+  padding: 6px 2px;
+  font-size: 14px;
+  outline: none;
+  background: transparent;
+}
+
+.actionButtons {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+}
+
+.generateBtn,
+.resetBtn {
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.generateBtn {
+  background-color: #3f4a7f;
+  color: white;
+  border: none;
+  padding: 10px 26px;
+}
+
+.resetBtn {
+  background-color: #ffffff;
+  color: #000;
+  border: 1px solid #ddd;
+  padding: 10px 34px;
+}
