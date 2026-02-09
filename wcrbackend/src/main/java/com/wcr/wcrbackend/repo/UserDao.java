@@ -514,7 +514,7 @@ public class UserDao implements IUserDao {
 		String userId = null;
 		setDefaultEncryptedPassword(obj);
 		//TransactionDefinition def = new DefaultTransactionDefinition();
-		//TransactionStatus status = transactionManager.getTransaction(def);
+		//TransactionStatus status = transactionManager.getTransaction(def);...
 		try {
 			String user_id = getMaxUserId(obj.getUser_role_code());
 			obj.setUser_id(user_id);

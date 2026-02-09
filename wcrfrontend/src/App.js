@@ -1,3 +1,5 @@
+
+import UtilityReport from "./components/Reports/UtilityReport/UtilityReport";
 import FilterForm from "./components/UpdateForms/Dms/FilterForm/FilterForm";
 import DmsTable from "./components/UpdateForms/Dms/DmsTable/DmsTable";
 import DmsDocuments from "./components/UpdateForms/Dms/DMSDocuments/DmsDocuments";
@@ -355,12 +357,12 @@ function App() {
 						<Route path="quicklinks" element={<QuickLinks />} />
 						<Route path="department" element={<Department />} />
 						<Route path="projectType" element={<ProjectType />} />
-	          <Route path="railway" element={<Railway />} />
-						<Route path="documentType" element={<DocumentType />} />
+	            <Route path="railway" element={<Railway />} />
+							<Route path="documentType" element={<DocumentType />} />
+						<Route path="utility-report" element={<UtilityReport />} />
 
 
 					</Route>
-
 					<Route path="*" element={<div style={{
             textAlign: "center",
             marginTop: "20%"
