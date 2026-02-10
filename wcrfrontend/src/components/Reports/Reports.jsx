@@ -173,7 +173,7 @@ export default function Reports() {
             
             <div className={styles.card}>
               <div className={styles.cardHeader}>
-                <Link to="utility-shifting">Utility Shifting</Link>
+                <Link to="/utility-report">Utility Shifting</Link>
               </div>
             </div>
           </div>
