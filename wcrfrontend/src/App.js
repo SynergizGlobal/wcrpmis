@@ -1,3 +1,4 @@
+import ContractReport from "./components/Reports/ContractReport/ContractReport";
 import Folders from "./components/UpdateForms/Dms/Folders/Folders";
 import PendingIssuesReport from "./components/Reports/PendingIssuesReport/PendingIssuesReport";
 import UtilityReport from "./components/Reports/UtilityReport/UtilityReport";
@@ -355,6 +356,7 @@ function App() {
 						<Route path="modules" element={<Modules />} />
 						
 						<Route path="reports" element={<Reports />} />
+            <Route path="/reports/contracts/:reportNo" element={<ContractReport />} />
 						<Route path="issues" element={<Issues />} />
 						<Route path="pendingissuesreport" element={<PendingIssuesReport />} />
 												
@@ -362,8 +364,8 @@ function App() {
 						<Route path="quicklinks" element={<QuickLinks />} />
 						<Route path="department" element={<Department />} />
 						<Route path="projectType" element={<ProjectType />} />
-	            <Route path="railway" element={<Railway />} />
-							<Route path="documentType" element={<DocumentType />} />
+	          <Route path="railway" element={<Railway />} />
+						<Route path="documentType" element={<DocumentType />} />
 						<Route path="utility-report" element={<UtilityReport />} />
 
 

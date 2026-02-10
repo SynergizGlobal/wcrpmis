@@ -520,9 +520,9 @@ public class UserDao implements IUserDao {
 			obj.setUser_id(user_id);
 			NamedParameterJdbcTemplate namedParamJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate.getDataSource());			 
 			String qry = "INSERT INTO [user]"
-					+ "(user_id,user_name,password,designation,email_id,mobile_number,personal_contact_number,landline,extension,department_fk,reporting_to_id_srfk,user_type_fk,pmis_key_fk,user_role_name_fk,remarks,user_image,is_password_encrypted) "
+					+ "(user_id,user_name,password,designation,email_id,mobile_number,personal_contact_number,landline,extension,department_fk,reporting_to_id_srfk,user_type_fk,pmis_key_fk,user_role_name_fk,remarks,user_image,is_password_encrypted,is_test_env_enabled) "
 					+ "VALUES "
-					+ "(:user_id,:user_name,:password,:designation,:email_id,:mobile_number,:personal_contact_number,:landline,:extension,:department_fk,:reporting_to_id_srfk,:user_type_fk,:pmis_key_fk,:user_role_name_fk,:remarks,:user_image,:is_password_encrypted)";		 
+					+ "(:user_id,:user_name,:password,:designation,:email_id,:mobile_number,:personal_contact_number,:landline,:extension,:department_fk,:reporting_to_id_srfk,:user_type_fk,:pmis_key_fk,:user_role_name_fk,:remarks,:user_image,:is_password_encrypted,:is_test_env_enabled)";		 
 			BeanPropertySqlParameterSource paramSource = new BeanPropertySqlParameterSource(obj);		 
 			int count = namedParamJdbcTemplate.update(qry, paramSource);			
 			if(count > 0) {
@@ -769,6 +769,7 @@ public class UserDao implements IUserDao {
 	    String encryptedPassword = EncryptDecrypt.encrypt(plainPassword);
 	    user.setPassword(encryptedPassword);
 	    user.setIs_password_encrypted("true");
+	    user.setIs_test_env_enabled("true");
 	}
 	@Override
 	public User getUser(User obj) throws Exception {

@@ -26,25 +26,7 @@
   flex: 1 1 calc(33% - 30px);
  
 }
-/*.menuItem a {
-  background-color: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 15px;
-  text-align: center;
-  color: #000;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: box-shadow 0.3s ease;
-  display: block;
-      transition: all 0.3s ease;
-}
-.menuItem a:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  background-color: var(--primary-fade-color);
-    color: white;
-    transform: translateY(-3px);
-}*/
+
 .card{
   width: 100%;
   flex: 1 0 30%;
@@ -82,17 +64,19 @@
 }
 
 
+
 .subDropdown {
-  background: #caeefb;
-  border-radius: 5px;
-  /* padding: 5px; */
-  text-align: left;
   position: absolute;
-  width: 100%;
-  z-index: 1;
+  top: 100%; 
+  left: 0;
+  z-index: 1000;
+  background: #caeefb;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  margin-top: 4px; 
 }
-
-
 .menuItem div{
   display: flex;
   align-items: center;
