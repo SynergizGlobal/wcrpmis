@@ -1,0 +1,115 @@
+package com.wcr.dms.service;
+
+import java.util.List;
+
+import java.util.Map;
+
+import com.wcr.dms.dto.CorrespondenceDraftGridDTO;
+import com.wcr.dms.dto.CorrespondenceGridDTO;
+import com.wcr.dms.dto.CorrespondenceLetterProjection;
+import com.wcr.dms.dto.CorrespondenceLetterViewDto;
+import com.wcr.dms.dto.CorrespondenceUploadLetter;
+import com.wcr.dms.dto.DraftDataTableRequest;
+import com.wcr.dms.dto.DraftDataTableResponse;
+import com.wcr.dms.entity.CorrespondenceLetter;
+import com.wcr.dms.entity.SendCorrespondenceLetter;
+import com.wcr.wcrbackend.entity.User;
+
+//import com.synergizglobal.dms.dto.CorrespondenceDraftGridDTO;
+//import com.synergizglobal.dms.dto.CorrespondenceGridDTO;
+//import com.synergizglobal.dms.dto.CorrespondenceLetterProjection;
+//import com.synergizglobal.dms.dto.CorrespondenceLetterViewDto;
+//import com.synergizglobal.dms.dto.CorrespondenceUploadLetter;
+//import com.synergizglobal.dms.dto.DraftDataTableRequest;
+//import com.synergizglobal.dms.dto.DraftDataTableResponse;
+//import com.synergizglobal.dms.entity.dms.CorrespondenceLetter;
+//import com.synergizglobal.dms.entity.dms.SendCorrespondenceLetter;
+//import com.synergizglobal.dms.entity.pmis.User;
+
+public interface ICorrespondenceService {
+
+
+    CorrespondenceLetter saveLetter(CorrespondenceUploadLetter dto, String baseUrl, String loggedUserId, String loggedUserName, String userRole) throws Exception;
+
+    List<CorrespondenceLetterProjection> getLettersByAction(String action);
+
+    public List<String> findReferenceLetters(String query);
+
+    public CorrespondenceLetterViewDto getCorrespondenceWithFiles(Long id);
+
+    List<CorrespondenceLetter> getFiltered(CorrespondenceLetter letter);
+
+    public CorrespondenceLetterViewDto getCorrespondenceWithFilesByLetterNumber(String letterNumber);
+
+    List<Map<String, Object>> fetchDynamic(List<String> fields, boolean distinct);
+
+    List<CorrespondenceLetter> search(CorrespondenceLetter letter);
+
+    List<CorrespondenceGridDTO> getFilteredCorrespondence(Map<Integer, List<String>> columnFilters, int start,
+                                                          int length, User user);
+    DraftDataTableResponse<CorrespondenceDraftGridDTO> getDrafts(DraftDataTableRequest request, String userId);
+    long countFilteredCorrespondence(Map<Integer, List<String>> columnFilters, User user);
+
+    long countAllCorrespondence(User user);
+
+    List<String> findAllCategory();
+
+    List<String> findGroupedCategory(String userId);
+
+    List<String> findAllLetterNumbers();
+
+    List<String> findGroupedLetterNumbers(String userId);
+
+    List<String> findAllFrom();
+
+    List<String> findGroupedFrom(String userId);
+
+    List<String> findAllSubject();
+
+    List<String> findGroupedSubject(String userId);
+
+    List<String> findAllRequiredResponse();
+
+    List<String> findGroupedRequiredResponse(String userId);
+
+    List<String> findAllDueDates();
+
+    List<String> findGroupedDueDates(String userId);
+
+    List<String> findAllProjectNames();
+
+    List<String> findGroupedProjectNames(String userId);
+
+    List<String> findAllContractNames();
+
+    List<String> findGroupedContractNames(String userId);
+
+    List<String> findAllStatus();
+
+    List<String> findGroupedStatus(String userId);
+
+    List<String> findAllDepartment();
+
+    List<String> findGroupedDepartment(String userId);
+
+    List<String> findAllAttachment();
+
+    List<String> findGroupedAttachment(String userId);
+
+    List<String> findAllTypesOfMail();
+
+    List<String> findGroupedTypesOfMail(String userId);
+
+    List<String> findAllToSend();
+
+    List<String> findGroupedToSend(String userId);
+    
+    public List<CorrespondenceGridDTO> getFilteredCorrespondenceNative(
+	        Map<Integer, List<String>> columnFilters, int start, int length, User user);
+
+	long getFilteredCorrespondenceNativeCount(Map<Integer, List<String>> columnFilters, User user);
+
+	CorrespondenceLetter getCorrespondeneceById(Long correspondenceId);
+
+	List<SendCorrespondenceLetter> getSendCorrespondeneceById(Long correspondenceId);
+}

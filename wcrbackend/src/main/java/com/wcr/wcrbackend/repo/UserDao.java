@@ -1,15 +1,18 @@
 package com.wcr.wcrbackend.repo;
 
 import java.sql.Connection;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -21,17 +24,93 @@ import com.wcr.wcrbackend.DTO.RandRMain;
 import com.wcr.wcrbackend.DTO.Risk;
 import com.wcr.wcrbackend.DTO.Structure;
 import com.wcr.wcrbackend.DTO.User;
+//import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.DTO.UtilityShifting;
 import com.wcr.wcrbackend.common.CommonConstants;
 import com.wcr.wcrbackend.common.CommonMethods;
 import com.wcr.wcrbackend.common.DBConnectionHandler;
 import com.wcr.wcrbackend.config.EncryptDecrypt;
 
+
 @Repository
 public class UserDao implements IUserDao {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+	
+	 private final RowMapper<User> rowMapper =
+	            new BeanPropertyRowMapper<>(User.class);
+	 
+	 private com.wcr.wcrbackend.entity.User toEntity(User dto) {
+	        com.wcr.wcrbackend.entity.User e =
+	                new com.wcr.wcrbackend.entity.User();
+
+	        e.setUserId(dto.getUser_id());
+	        e.setUserName(dto.getUser_name());
+	        e.setEmailId(dto.getEmail_id());
+	        e.setPassword(dto.getPassword());
+	        e.setDepartmentFk(dto.getDepartment_fk());
+	        e.setReportingToIdSrfk(dto.getReporting_to_id_srfk());
+	        e.setUserRoleNameFk(dto.getUser_role_name_fk());
+	       
+	        return e;
+	    }
+	 
+	   public Optional<com.wcr.wcrbackend.entity.User> findById(String userId) {
+	        String sql = """
+	                SELECT *
+	                FROM [user]
+	                WHERE user_id = ?
+	                """;
+
+	        List<User> dtoList = jdbcTemplate.query(sql, rowMapper, userId);
+
+	        return dtoList.stream()
+	                .findFirst()
+	                .map(this::toEntity);
+	    }
+	 
+	   public List<com.wcr.wcrbackend.entity.User> findByUserNameContainingIgnoreCase(String userName) {
+	        String sql = """
+	                SELECT *
+	                FROM [user]
+	                WHERE LOWER(user_name) LIKE LOWER(?)
+	                """;
+
+	        return jdbcTemplate.query(sql, rowMapper, "%" + userName + "%")
+	                .stream()
+	                .map(this::toEntity)
+	                .toList();
+	    }
+
+	    public Optional<com.wcr.wcrbackend.entity.User> findByEmailId(String emailId) {
+	        String sql = """
+	                SELECT *
+	                FROM [user]
+	                WHERE email_id = ?
+	                """;
+
+	        return jdbcTemplate.query(sql, rowMapper, emailId)
+	                .stream()
+	                .findFirst()
+	                .map(this::toEntity);
+	    }
+
+	    public Optional<com.wcr.wcrbackend.entity.User> findByUserName(String userName) {
+	        String sql = """
+	                SELECT *
+	                FROM [user]
+	                WHERE user_name = ?
+	                """;
+
+	        return jdbcTemplate.query(sql, rowMapper, userName)
+	                .stream()
+	                .findFirst()
+	                .map(this::toEntity);
+	    }
+	    
+	    
+	 
 	@Override
 	public String getRoleCode(String userRoleNameFk) {
 		String sql = "SELECT user_role_code FROM user_role WHERE user_role_name = ?";

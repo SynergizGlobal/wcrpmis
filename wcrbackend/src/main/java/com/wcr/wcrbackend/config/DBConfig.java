@@ -1,5 +1,6 @@
 package com.wcr.wcrbackend.config;
 import java.util.HashMap;
+
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -10,10 +11,12 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -40,6 +43,7 @@ public class DBConfig {
     @Value("${wcrpmis.datasource.driver-class-name}")
     private String driverClassName;
 
+    @Primary
     @Bean(name= "wcrpmisDataSource")
     public DataSource dataSource() {
         return DataSourceBuilder.create()
@@ -51,17 +55,19 @@ public class DBConfig {
     }
 
     @Bean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+    public JdbcTemplate jdbcTemplate(
+            @Qualifier("wcrpmisDataSource") DataSource dataSource) {
         return new JdbcTemplate(dataSource);
     }
-    
+
+    @Primary
     @Bean(name = "wcrpmisEntityManagerFactory")
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
             EntityManagerFactoryBuilder builder,
             @Qualifier("wcrpmisDataSource") DataSource dataSource) {
  
         Map<String, Object> properties = new HashMap<>();
-        properties.put("hibernate.hbm2ddl.auto", "none"); // 💡 Disable schema update
+        properties.put("hibernate.hbm2ddl.auto", "none"); 
  
         return builder
                 .dataSource(dataSource)
@@ -71,9 +77,20 @@ public class DBConfig {
                 .build();
     }
  
+    @Primary
     @Bean(name = "wcrpmisTransactionManager")
     public PlatformTransactionManager transactionManager(
             @Qualifier("wcrpmisEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }
+    
+    @Bean
+    public EntityManagerFactoryBuilder entityManagerFactoryBuilder() {
+        return new EntityManagerFactoryBuilder(
+                new HibernateJpaVendorAdapter(),
+                new HashMap<>(),
+                null
+        );
+    }
+
 }

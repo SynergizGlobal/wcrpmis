@@ -2,6 +2,7 @@ package com.wcr.wcrbackend.repo;
 
 
 import java.io.File;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -48,6 +49,63 @@ public class ProjectRepository implements IProjectRepository {
 	JdbcTemplate jdbcTemplate;
 	
 
+    private final BeanPropertyRowMapper<Project> rowMapper =
+            new BeanPropertyRowMapper<>(Project.class);
+
+
+    // =========================================================
+    // 1️⃣ Get ALL projects
+    // (equivalent to JPA findAll())
+    // =========================================================
+    public List<Project> findAll() {
+
+        String sql = """
+                SELECT *
+                FROM project
+                """;
+
+        return jdbcTemplate.query(sql, rowMapper);
+    }
+
+
+    // =========================================================
+    // 2️⃣ findByUserId (converted from JPA @Query)
+    // =========================================================
+    public List<String> findByUserId(String userId) {
+
+        String sql = """
+            SELECT DISTINCT p.project_name
+            FROM dbo.[project] p
+            JOIN work w ON w.project_id_fk = p.project_id
+            JOIN [contract] c ON c.work_id_fk = w.work_id
+            JOIN contractor co ON co.contractor_id = c.contractor_id_fk
+            JOIN [user] u ON co.contractor_name = u.[user_name]
+            WHERE u.user_id = ?
+            """;
+
+        return jdbcTemplate.queryForList(sql, String.class, userId);
+    }
+
+
+    // =========================================================
+    // 3️⃣ getProjectsForOtherUsersByUserId (converted from JPA)
+    // =========================================================
+    public List<String> getProjectsForOtherUsersByUserId(String userId) {
+
+        String sql = """
+            SELECT DISTINCT p.project_name
+            FROM project p
+            JOIN work w ON p.project_id = w.project_id_fk
+            JOIN contract c ON c.work_id_fk = w.work_id
+            JOIN contract_executive scrp ON scrp.contract_id_fk = c.contract_id
+            WHERE scrp.executive_user_id_fk = ?
+            """;
+
+        return jdbcTemplate.queryForList(sql, String.class, userId);
+    }
+
+	
+	
 	@Override
 	public List<Project> getProjectList(Project project) throws Exception {
 	    List<Project> objsList = null;
