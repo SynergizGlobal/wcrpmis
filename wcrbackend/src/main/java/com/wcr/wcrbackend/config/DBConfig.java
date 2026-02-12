@@ -25,7 +25,7 @@ import jakarta.persistence.EntityManagerFactory;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-    basePackages = "com.wcr.wcrbackend",
+    basePackages = "com.wcr.wcrbackend.repo",
     entityManagerFactoryRef = "wcrpmisEntityManagerFactory",
     transactionManagerRef = "wcrpmisTransactionManager"
 )
@@ -71,7 +71,7 @@ public class DBConfig {
  
         return builder
                 .dataSource(dataSource)
-                .packages("com.wcr.wcrbackend")
+                .packages("com.wcr.wcrbackend.entity")
                 .persistenceUnit("wcrpmisPU")
                 .properties(properties) // ✅ Apply properties here
                 .build();

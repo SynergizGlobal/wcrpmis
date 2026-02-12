@@ -1,0 +1,180 @@
+package com.wcr.wcrbackend.dms.entity;
+
+import java.time.LocalDate;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.wcr.wcrbackend.dms.dto.CorrespondenceDraftGridDTO;
+import com.wcr.wcrbackend.dms.dto.CorrespondenceGridDTO;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@jakarta.persistence.SqlResultSetMapping(
+	    name = "CorrespondenceGridDTOMapping",
+	    classes = @jakarta.persistence.ConstructorResult(
+	        targetClass = CorrespondenceDraftGridDTO.class,
+	        columns = {
+	        	@jakarta.persistence.ColumnResult(name = "correspondenceId", type = Long.class),
+	        	@jakarta.persistence.ColumnResult(name = "category", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "letterNumber", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "from", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "to", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "subject", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "requiredResponse", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "dueDate", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "projectName", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "contractName", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "currentStatus", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "department", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "attachment", type = Integer.class),
+	        	@jakarta.persistence.ColumnResult(name = "type", type = String.class)
+	        }
+	    )
+	)
+@jakarta.persistence.SqlResultSetMapping(
+	    name = "CorrespondenceNativeDTOMapping",
+	    classes = @jakarta.persistence.ConstructorResult(
+	        targetClass = CorrespondenceGridDTO.class,
+	        columns = {
+	        	@jakarta.persistence.ColumnResult(name = "correspondenceId", type = Long.class),
+	        	@jakarta.persistence.ColumnResult(name = "category", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "letterNumber", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "from", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "to", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "subject", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "requiredResponse", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "dueDate", type = LocalDate.class),
+	        	@jakarta.persistence.ColumnResult(name = "projectName", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "contractName", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "currentStatus", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "department", type = String.class),
+	        	@jakarta.persistence.ColumnResult(name = "attachment", type = Integer.class),
+	        	@jakarta.persistence.ColumnResult(name = "type", type = String.class)
+	        }
+	    )
+	)
+@Entity
+@Data
+@Table(name = "correspondence_letter")
+@NoArgsConstructor
+@AllArgsConstructor
+public class CorrespondenceLetter {
+
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "correspondence_id")
+    private Long correspondenceId;
+
+    @Column(name = "category", length = 100)
+    private String category;
+
+    @Column(name = "letter_number",unique = true, length = 200, nullable = false)
+    private String letterNumber;
+
+    @Column(name = "letter_date")
+    private LocalDate letterDate;
+
+    @Column(name = "recipient", length = 200)
+    private String to;
+
+
+    @Column(name = "subject", length = 500)
+    private String subject;
+
+
+    @Column(name = "cc_recipient", length = 200)
+    private String ccRecipient;
+
+
+    @Column(name = "key_information")
+    private String keyInformation;
+
+    @Column(name = "required_response")
+    private String requiredResponse;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+
+    @Column(name = "file_count")
+    private Integer fileCount;
+
+    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
+    @Column(name = "action")
+    private String action;
+    
+    @ManyToOne
+	@JoinColumn(name = "department_id")
+    private Department department;
+    
+    @ManyToOne
+	@JoinColumn(name = "status_id")
+	private Status currentStatus;
+    
+    @Column(name = "department")
+    private String departmentOld;
+
+
+    @Column(name = "current_status")
+    private String currentStatusOld;
+
+    @Column(name="project_name")
+    private String projectName;
+
+    @Column(name="contract_name")
+    private String contractName;
+
+    @Column(name="mail_direction")
+    private String mailDirection;
+
+    @Column(name="user_name")
+    private String userName;
+
+    @Column(name="user_id")
+    private String  userId;
+
+    @Column(name="to_user_id")
+    private String toUserId;
+
+    @Column(name = "to_user_name", length = 200)
+    private String toUserName;
+
+    @OneToMany(mappedBy = "correspondenceLetter", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+     @ToString.Exclude
+    private List<CorrespondenceReference> correspondenceReferences;
+    @JsonIgnore
+    @OneToMany(mappedBy = "correspondenceLetter", cascade = CascadeType.ALL, orphanRemoval = true)
+     @ToString.Exclude
+    private List<CorrespondenceFile> files = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "correspondenceLetter", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+     @ToString.Exclude
+    private List<SendCorrespondenceLetter> sendCorLetters;
+}

@@ -1,0 +1,514 @@
+//package com.wcr.dms.repository;
+//
+//import java.util.List;
+//
+//import java.util.Optional;
+//
+//import org.springframework.data.jpa.repository.EntityGraph;
+//import org.springframework.data.jpa.repository.JpaRepository;
+//import org.springframework.data.jpa.repository.Query;
+//import org.springframework.data.repository.query.Param;
+//
+//import com.wcr.dms.dto.DocumentFolderGridDTO;
+//import com.wcr.dms.entity.Document;
+//
+//public interface DocumentRepository extends JpaRepository<Document, Long> {
+//
+//	Optional<Document> findByFileNumber(String fileNumber);
+//
+//	Optional<Document> findByFileNameAndFileNumber(String fileName, String fileNumber);
+//	
+//	@EntityGraph(attributePaths = "documentFiles")
+//	Optional<Document> findByFileName(String fileName);
+//	
+//	
+//	@Query(value="""
+//			select
+//distinct d.file_name
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//    List<String> findGroupedFileNames(@Param("userId") String userId);
+//	
+//	@Query(value="""
+//			select
+//distinct files.file_type
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedFileTypes(@Param("userId") String userId);
+//	
+//	@Query(value="""
+//			select
+//distinct d.file_number
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedFileNumbers(@Param("userId") String userId);
+//	
+//	@Query(value="""
+//			select
+//distinct d.revision_no
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedRevisionNos(@Param("userId") String userId);
+//	
+//	@Query(value="""
+//			select
+//distinct st.name
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join statuses st on st.id = d.status_id
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedStatus(@Param("userId") String userId);
+//	
+//	@Query(value="""
+//			select
+//distinct f.name
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join folders f on f.id = d.folder_id
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedFolders(@Param("userId") String userId);
+//	
+//	@Query(value="""
+//			select
+//distinct sub.name
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join sub_folders sub on sub.id = d.sub_folder_id
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedSubFolders(@Param("userId") String userId);
+//
+//	@Query(value="""
+//			select
+//distinct DATE_FORMAT(d.created_at, '%Y-%m-%d')
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedUploadedDate(@Param("userId") String userId);
+//	
+//	@Query(value="""
+//			select
+//distinct DATE_FORMAT(d.revision_date, '%Y-%m-%d')
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedRevisionDate(@Param("userId") String userId);
+//
+//	@Query(value="""
+//			select
+//distinct dpt.name
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join departments dpt on dpt.id = d.department_id
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedDepartment(@Param("userId") String userId);
+//	
+//	@Query(value ="""
+//			   select
+//	count(distinct d.id)
+//	from documents d
+//	left join document_file files on files.document_id = d.id 
+//	left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//	where
+//	 d.not_required is null
+//			    """, nativeQuery = true)
+//	long countAllFiles();
+//
+//	@Query(value ="""
+//		   select
+//count(distinct d.id)
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join departments dpt on dpt.id = d.department_id
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId)) 
+//and files.file_type is not null
+//and d.not_required is null
+//		    """, nativeQuery = true)
+//	long countAllFiles(@Param("userId") String userId);
+//	
+//	@Query(value="""
+//			select
+//distinct d.created_by_user
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedCreatedBy(@Param("userId") String userId);
+//
+//	@Query(value="""
+//			select
+//distinct d.project_name
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedProjectNames(@Param("userId") String userId);
+//
+//	@Query(value="""
+//			select
+//distinct d.contract_name
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id and s.status = 'Send'
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and files.file_type is not null
+//and d.not_required is null
+//			""", nativeQuery = true)
+//	List<String> findGroupedContractNames(@Param("userId") String userId);
+//	
+//	@Query(value = "select \r\n"
+//			+ "f.file_path\r\n"
+//			+ "from document_file f\r\n"
+//			+ "join documents d on f.document_id = d.id\r\n"
+//			+ "where d.file_name = :fileName\r\n"
+//			+ "and d.file_number = :fileNumber\r\n"
+//			+ "and d.revision_no = :revisionNo", nativeQuery = true)
+//	String getFilePath(@Param("fileName")String fileName, @Param("fileNumber")String fileNumber,@Param("revisionNo") String revisionNo);
+//
+//	@Query(
+//			value ="""
+//			select
+//distinct d.file_name as fileName,
+//files.file_path as filePath,
+//files.file_type as fileType,
+//d.revision_no as revisionNo
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//left join send_documents s on s.document_id = d.id
+//join sub_folders sub on d.sub_folder_id = sub.id
+//left join documents_revision dr
+//	        ON dr.file_name = d.file_name AND dr.file_number = d.file_number
+//where
+//(d.created_by = :userId or (s.to_user_id = :userId AND s.status = 'Send') or (dr.created_by = :userId))
+//and d.not_required is null
+//and sub.id = :subfolderId
+//and d.project_name in (:projects)
+//and d.contract_name in (:contracts)
+//
+//			"""
+//			, nativeQuery = true)
+//	List<DocumentFolderGridDTO> getFilesForFolderGrid(@Param("subfolderId") String subfolderId,@Param("userId") String userId,@Param("projects") List<String> projects, @Param("contracts") List<String> contracts);
+//
+//	@Query(
+//			value ="""
+//select 
+//distinct d.file_name as fileName,
+//f.file_path as filePath,
+//f.file_type as fileType,
+//d.revision_no as revisionNo
+//from documents d
+//left join send_documents s on s.document_id = d.id
+//left join documents_revision dd on d.file_name = dd.file_name and d.file_number = dd.file_number
+//join document_file f on f.document_id = d.id
+//join sub_folders sub on sub.id = d.sub_folder_id
+//where d.not_required = 1
+//and (d.created_by = :userId or s.to_user_id = :userId or dd.created_by = :userId or d.not_required_by = :userId)
+//and sub.id = :subfolderId
+//and d.project_name in (:projects)
+//and d.contract_name in (:contracts)
+//union
+//select 
+//distinct d.file_name as fileName,
+//f.file_path as filePath,
+//f.file_type as fileType,
+//dd.revision_no as revisionNo
+//from documents_revision dd
+//left join documents_revision d on d.file_name = dd.file_name and d.file_number = dd.file_number
+//join document_file f on f.document_revision_id = dd.id
+//join sub_folders sub on sub.id = d.sub_folder_id
+//and (d.created_by = :userId)
+//and sub.id = :subfolderId
+//and dd.project_name in (:projects)
+//and dd.contract_name in (:contracts)
+//union
+//select 
+//distinct d.file_name as fileName,
+//f.file_path as filePath,
+//f.file_type as fileType,
+//d.revision_no as revisionNo
+//from documents_revision d
+//join documents dd on dd.file_name = d.file_name and dd.file_number = d.file_number
+//join document_file f on f.document_revision_id = d.id
+//join sub_folders sub on sub.id = d.sub_folder_id
+//left join send_documents send on send.document_id = dd.id
+//where ((send.to_user_id = :userId and send.status = 'Send') or dd.created_by = :userId)
+//and sub.id = :subfolderId
+//and dd.project_name in (:projects)
+//and dd.contract_name in (:contracts)
+//			"""
+//			, nativeQuery = true)
+//	List<DocumentFolderGridDTO> getArvhivedFilesForFolderGrid(@Param("subfolderId") String subfolderId,@Param("userId") String userId, @Param("projects") List<String> projects,@Param("contracts")  List<String> contracts);
+//	
+//	@Query(
+//			value ="""
+//			select 
+//distinct 
+//f.file_type as fileType
+//from documents d
+//left join document_file f on f.document_id = d.id
+//where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllFileTypes();
+//	@Query(
+//			value ="""
+//			select 
+//distinct 
+//d.file_number
+//from documents d
+//where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllFileNumbers();
+//
+//	@Query(
+//			value ="""
+//			select 
+//distinct 
+//d.file_name
+//from documents d
+//where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllFileNames();
+//	@Query(
+//			value ="""
+//				select 
+//distinct 
+//d.revision_no
+//from documents d
+//where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllRevisionNos();
+//	@Query(
+//			value ="""
+//			select 
+//distinct 
+//st.name
+//from documents d
+//join statuses st on st.id = d.status_id
+//where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllStatus();
+//	
+//	@Query(
+//			value ="""
+//select 
+//	distinct 
+//	d.project_name
+//	from documents d
+//	where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllProjectNamesByDocument();
+//	@Query(
+//			value ="""
+//select 
+//	distinct 
+//	d.contract_name
+//	from documents d
+//	where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllContractNamesByDocument();
+//	@Query(
+//			value ="""
+//    select 
+//	distinct 
+//	f.name
+//	from documents d
+//    join folders f on f.id = d.folder_id
+//	where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllFoldersByDocument();
+//	@Query(
+//			value ="""
+//    select 
+//	distinct 
+//	f.name
+//	from documents d
+//    join sub_folders f on f.id = d.sub_folder_id
+//	where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllSubFoldersByDocument();
+//    
+//	@Query(
+//			value ="""
+//   select 
+//	distinct 
+//	d.created_by_user
+//	from documents d
+//	where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllCreatedByDocument();
+//	@Query(
+//			value ="""
+//   select 
+//	distinct 
+//	d.revision_date
+//	from documents d
+//	where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllRevisionDateByDocument();
+//	@Query(
+//			value ="""
+//    select 
+//	distinct 
+//	dpt.name
+//	from documents d
+//    join departments dpt on dpt.id = d.department_id
+//	where d.not_required is null
+//			"""
+//			, nativeQuery = true)
+//	List<String> findAllDepartmentByDocument();
+//
+//	@Query(
+//			value ="""
+//			select
+//distinct d.file_name as fileName,
+//files.file_path as filePath,
+//files.file_type as fileType,
+//d.revision_no as revisionNo
+//from documents d
+//left join document_file files on files.document_id = d.id 
+//join sub_folders sub on d.sub_folder_id = sub.id
+//where
+//d.not_required is null
+//and sub.id = :subfolderId
+//and d.project_name in (:projects)
+//and d.contract_name in (:contracts)
+//			"""
+//			, nativeQuery = true)
+//	List<DocumentFolderGridDTO> getFilesForFolderGrid(@Param("subfolderId") String subfolderId,@Param("projects") List<String> projects, @Param("contracts") List<String> contracts);
+//
+//	@Query(
+//			value ="""
+//			select 
+//distinct d.file_name as fileName,
+//f.file_path as filePath,
+//f.file_type as fileType,
+//d.revision_no as revisionNo
+//from documents d
+//left join send_documents s on s.document_id = d.id
+//join document_file f on f.document_id = d.id
+//join sub_folders sub on sub.id = d.sub_folder_id
+//where d.not_required = 1
+//and sub.id = :subfolderId
+//and d.project_name in (:projects)
+//and d.contract_name in (:contracts)
+//union
+//select 
+//distinct d.file_name as fileName,
+//f.file_path as filePath,
+//f.file_type as fileType,
+//d.revision_no as revisionNo
+//from documents_revision d
+//join document_file f on f.document_revision_id = d.id
+//join sub_folders sub on sub.id = d.sub_folder_id
+//and sub.id = :subfolderId
+//and d.project_name in (:projects)
+//and d.contract_name in (:contracts)
+//			"""
+//			, nativeQuery = true)
+//	List<DocumentFolderGridDTO> getArvhivedFilesForFolderGrid(@Param("subfolderId") String subfolderId,@Param("projects") List<String> projects,@Param("contracts")  List<String> contracts);
+//}
+
+

@@ -20,7 +20,7 @@ import jakarta.persistence.EntityManagerFactory;
 
 @Configuration
 @EnableJpaRepositories(
-        basePackages = "com.wcr.dms.repository",   
+        basePackages = "com.wcr.wcrbackend.dms.repository",   
         entityManagerFactoryRef = "dmsEntityManagerFactory",
         transactionManagerRef = "dmsTransactionManager"
 )
@@ -58,7 +58,7 @@ public class DmsDBConfig {
       
         return builder
                 .dataSource(dmsDataSource())
-                .packages("com.wcr.dms.entity")   
+                .packages("com.wcr.wcrbackend.dms.entity")   
                 .persistenceUnit("dmsPU")
                 .properties(props)
                 .build();

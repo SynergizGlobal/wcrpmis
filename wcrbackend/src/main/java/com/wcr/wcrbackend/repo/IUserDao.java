@@ -2,12 +2,14 @@ package com.wcr.wcrbackend.repo;
 
 import java.util.List;
 
+
 import com.wcr.wcrbackend.DTO.Contract;
 import com.wcr.wcrbackend.DTO.LandAcquisition;
 import com.wcr.wcrbackend.DTO.RandRMain;
 import com.wcr.wcrbackend.DTO.Risk;
 import com.wcr.wcrbackend.DTO.Structure;
 import com.wcr.wcrbackend.DTO.User;
+//import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.DTO.UtilityShifting;
 
 public interface IUserDao {

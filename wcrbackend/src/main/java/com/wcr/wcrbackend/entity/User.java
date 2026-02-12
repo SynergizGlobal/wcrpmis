@@ -77,4 +77,6 @@ public class User {
 	@Column(name = "is_test_env_enabled", length = 5)
 	private String isTestEnvEnabled;
 
+	
+	
 }
