@@ -1,5 +1,186 @@
 .container {
-  padding: 20px;
-  background-color: #f9f9f9;
+  background-color: #fff;
   border-radius: 8px;
 }
+.actionBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #eaf2fb;
+  width: 80%;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 6px;
+}
+
+.header {
+  background: var(--primary-color);
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h3{
+  color: #fff;
+}
+
+.header span{
+  font-size: 30px;
+}
+.tabs{
+  width: 100%;
+  display: flex;
+  align-items: center;
+
+}
+.tabs button{
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+.tabs button.active{
+  border-bottom: 2px solid var(--primary-color);
+  font-weight: bold;
+  border-right: 1px solid #ccc;
+  background-color: #fff;
+}
+
+.body {
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.body input,
+.body select,
+.body textarea {
+  width: 100%;
+  padding: 6px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px;
+}
+.folderSection {
+  background: #f6f8fc;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 16px 0;
+}
+
+.folderTree {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #d0d7e2;
+  padding: 8px;
+  background: #fff;
+  border-radius: 6px;
+}
+
+.folderNode {
+  margin-left: 12px;
+}
+
+.folderItem {
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.folderItem:hover {
+  background: #eef2ff;
+}
+
+.activeFolder {
+  background: #3f51b5;
+  color: #fff;
+}
+
+.folderChildren {
+  margin-left: 14px;
+}
+
+.newFolder {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.newFolder input {
+  flex: 1;
+}
+
+.pathPreview {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #333;
+  background: #eef1f8;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+.search {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+.folderRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arrow {
+  cursor: pointer;
+  font-size: 12px;
+  width: 16px;
+  text-align: center;
+  color: #555;
+}
+
+.folderItem {
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.folderItem:hover {
+  background: #eef2ff;
+}
+
+.activeFolder {
+  background: #3f51b5;
+  color: #fff;
+}
+
+.folderChildren {
+  margin-left: 18px;
+  border-left: 1px dashed #d0d7e2;
+  padding-left: 8px;
+}
+

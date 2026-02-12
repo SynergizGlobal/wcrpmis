@@ -20,12 +20,13 @@ export default function Correspondence() {
       {!showDrafts && (
         <DmsTable
           columns={[
-            "Category","Letter No","From","To","Subject",
+            "Reference Number","Category","Letter No","From","To","Subject",
             "Required Response","Due Date","Project",
             "Contract","Status","Department","Attachment","Type"
           ]}
           mockData={[
             {
+              "Reference Number": "WCR/Over Bridge Con/001",
               Category: "Technical",
               "Letter No": "LTR-001",
               From: "MRVC",

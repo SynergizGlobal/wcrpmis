@@ -43,13 +43,16 @@
   text-align: center;
   border: 1px solid #d0d0d0;
   white-space: nowrap;
+  word-wrap: break-word;
+  white-space: break-spaces;
 }
 
 .table tbody td {
   padding: 8px;
   border: 1px solid #dcdcdc;
   text-align: center;
-  white-space: nowrap;
+  word-wrap: break-word;
+  white-space: break-spaces;
 }
 
 .table tbody tr:nth-child(even) {
