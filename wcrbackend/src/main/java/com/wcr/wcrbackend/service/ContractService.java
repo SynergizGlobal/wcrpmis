@@ -1,5 +1,6 @@
 package com.wcr.wcrbackend.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,13 +10,19 @@ import com.wcr.wcrbackend.DTO.BankGuarantee;
 import com.wcr.wcrbackend.DTO.Contract;
 import com.wcr.wcrbackend.DTO.Insurence;
 import com.wcr.wcrbackend.DTO.User;
+import com.wcr.wcrbackend.dms.common.CommonUtil;
+import com.wcr.wcrbackend.dms.dto.ContractDTO;
 import com.wcr.wcrbackend.repo.IContractRepo;
+import com.wcr.wcrbackend.repo.UserDao;
 
 @Service
 public class ContractService implements IContractService {
 
 	@Autowired
 	private IContractRepo contractRepo;
+	
+	@Autowired
+	private UserDao userRepository;
 	
 	@Override
 	public List<Contract> getDepartmentList() throws Exception{
@@ -173,4 +180,69 @@ public class ContractService implements IContractService {
 	public List<Contract> contractMilestoneList(Contract contract) throws Exception {
 		return contractRepo.contractMilestoneList(contract);
 	}
+
+//	@Override
+//	public List<ContractDTO> getContracts(String userId, String userRole) {
+//		com.wcr.wcrbackend.entity.User user = userRepository.findById(userId).get();
+//		if(CommonUtil.isITAdminOrSuperUser(user)) {
+//    		//IT Admin
+//    		return this.getAllContracts();
+//    	} else if(userRole.equals("Contractor")) {
+//    		return this.getContractsByUserId(userId);
+//    	} else {
+//    		return this.getContractsForOtherUsersByUserId(userId);
+//    	}
+//	
+//	}
+	@Override
+	public List<ContractDTO> getContracts(String userId, String userRole) {
+
+	    com.wcr.wcrbackend.entity.User user =
+	            userRepository.findById(userId).orElseThrow();
+
+	    if (CommonUtil.isITAdminOrSuperUser(user)) {
+	        return contractRepo.findAllContracts();
+
+	    } else if ("Contractor".equals(userRole)) {
+	        return contractRepo.findContractsByUserId(userId);
+
+	    } else {
+	        return contractRepo.findContractsForOtherUsers(userId);
+	    }
+	}
+
+//	
+//	   private List<ContractDTO> getAllContracts() {
+//		List<ContractDTO> projectDTOs = new ArrayList<>();
+//		for (Contract contract : contractRepo.findAllContracts()) {
+//			projectDTOs.add(ContractDTO.builder()
+//					.id(contract.getContract_id())
+//					.name(contract.getContract_short_name())		
+//					.build());
+//		}
+//		return projectDTOs;
+//	}
+//		
+//        private List<ContractDTO> getContractsByUserId(String userId) {
+//		List<ContractDTO> projectDTOs = new ArrayList<>();
+//		for (String contract : contractRepo.findContractsByUserId(userId)) {
+//			projectDTOs.add(ContractDTO.builder()
+//					.id(contract)
+//					.name(contract)		
+//					.build());
+//		}
+//		return projectDTOs;
+//	}
+//	
+//	
+//	private List<ContractDTO> getContractsForOtherUsersByUserId(String userId) {
+//		List<ContractDTO> projectDTOs = new ArrayList<>();
+//		for (String contract : contractRepo.findContractsForOtherUsers(userId)) {
+//			projectDTOs.add(ContractDTO.builder()
+//					.id(contract)
+//					.name(contract)		
+//					.build());
+//		}
+//		return projectDTOs;
+//	}
 }

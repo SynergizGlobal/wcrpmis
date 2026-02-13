@@ -5,6 +5,7 @@ import java.util.List;
 import com.wcr.wcrbackend.DTO.Project;
 import com.wcr.wcrbackend.DTO.Training;
 import com.wcr.wcrbackend.DTO.Year;
+import com.wcr.wcrbackend.dms.dto.ProjectDTO;
 
 public interface IProjectService {
 
@@ -36,5 +37,7 @@ public interface IProjectService {
 
 	public String[] uploadProjectChainagesData(List<Project> projectChainagesList, Project project) throws Exception;
 	public boolean saveProjectChainagesDataUploadFile(Project obj) throws Exception;
+	
+	public List<ProjectDTO> getProjects(String userId, String userRoleNameFk);
 
 }

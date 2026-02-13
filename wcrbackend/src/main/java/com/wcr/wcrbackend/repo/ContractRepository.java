@@ -1,6 +1,7 @@
 package com.wcr.wcrbackend.repo;
 
 import java.sql.Connection;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,6 +16,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -32,6 +34,7 @@ import com.wcr.wcrbackend.common.CommonMethods;
 import com.wcr.wcrbackend.common.DBConnectionHandler;
 import com.wcr.wcrbackend.common.DateParser;
 import com.wcr.wcrbackend.common.FileUploads;
+import com.wcr.wcrbackend.dms.dto.ContractDTO;
 
 @Repository
 public class ContractRepository implements IContractRepo {
@@ -47,6 +50,52 @@ public class ContractRepository implements IContractRepo {
 	
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+	
+	
+	 private final RowMapper<ContractDTO> contractMapper = (rs, rowNum) ->
+     ContractDTO.builder()
+             .id(rs.getString("contract_short_name"))
+             .name(rs.getString("contract_short_name"))
+             .build();
+
+     public List<ContractDTO> findAllContracts() {
+
+         String sql = """
+                 SELECT contract_short_name
+                 FROM contract
+                 ORDER BY contract_short_name
+                 """;
+
+         return jdbcTemplate.query(sql, contractMapper);
+     }
+     
+     public List<ContractDTO> findContractsByUserId(String userId) {
+
+         String sql = """
+                 SELECT DISTINCT c.contract_short_name
+                 FROM dbo.project p
+                 JOIN contract c ON c.project_id_fk = p.project_id
+                 JOIN contractor co ON co.contractor_id = c.contractor_id_fk
+                 JOIN [user] u ON co.contractor_name = u.user_name
+                 WHERE u.user_id = ?
+                 """;
+
+         return jdbcTemplate.query(sql, contractMapper, userId);
+     }
+     
+     
+     public List<ContractDTO> findContractsForOtherUsers(String userId) {
+
+         String sql = """
+                 SELECT DISTINCT c.contract_short_name
+                 FROM project p
+                 JOIN contract c ON c.project_id_fk = p.project_id
+                 JOIN contract_executive scrp ON scrp.contract_id_fk = c.contract_id
+                 WHERE scrp.executive_user_id_fk = ?
+                 """;
+
+         return jdbcTemplate.query(sql, contractMapper, userId);
+     }
 	
 	@Override
 	public List<Contract> getDepartmentList() throws Exception {
@@ -3035,5 +3084,7 @@ public class ContractRepository implements IContractRepo {
 			}
 			return objsList;
 		}
+
+		
 
 }

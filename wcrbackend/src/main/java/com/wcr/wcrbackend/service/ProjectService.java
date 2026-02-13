@@ -1,5 +1,6 @@
 package com.wcr.wcrbackend.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,13 +9,21 @@ import org.springframework.stereotype.Service;
 import com.wcr.wcrbackend.DTO.Project;
 import com.wcr.wcrbackend.DTO.Training;
 import com.wcr.wcrbackend.DTO.Year;
+import com.wcr.wcrbackend.dms.common.CommonUtil;
+import com.wcr.wcrbackend.dms.dto.ProjectDTO;
+import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.repo.IProjectRepository;
+import com.wcr.wcrbackend.repo.UserDao;
 
 @Service
 public class ProjectService implements IProjectService {
 
 	@Autowired
 	private IProjectRepository projectRepository;
+	
+	@Autowired
+	private UserDao userRepository;
+	
 	@Override
 	public List<Project> getProjectList(Project project)throws Exception{
 	return projectRepository.getProjectList(project);}
@@ -96,5 +105,54 @@ public class ProjectService implements IProjectService {
 	@Override
 	public boolean saveProjectChainagesDataUploadFile(Project obj) throws Exception {
 		return projectRepository.saveProjectChainagesDataUploadFile(obj);
+	}
+
+
+	@Override
+	public List<ProjectDTO> getProjects(String userId, String userRoleNameFk) {
+		
+		User user = userRepository.findById(userId).get();
+    	if(CommonUtil.isITAdminOrSuperUser(user)) {
+    		
+    		return this.getAllProjects();
+    	} else if(userRoleNameFk.equals("Contractor")) {
+    		return this.getProjectsByUserId(userId);
+    	} else {
+    		return this.getProjectsForOtherUsersByUserId(userId);
+    	}
+	}
+
+	
+          private List<ProjectDTO> getAllProjects() {
+		
+		List<ProjectDTO> projectDTOs = new ArrayList<>();
+		for (Project project : projectRepository.findAll()) {
+			projectDTOs.add(ProjectDTO.builder()
+					.id(project.getProject_id())
+					.name(project.getProject_name())		
+					.build());
+		}
+		return projectDTOs;
+	}
+	
+	private List<ProjectDTO> getProjectsByUserId(String userId) {
+		List<ProjectDTO> projectDTOs = new ArrayList<>();
+		for (String projectName : projectRepository.findByUserId(userId)) {
+			projectDTOs.add(ProjectDTO.builder()
+					.id(projectName)
+					.name(projectName)		
+					.build());
+		}
+		return projectDTOs;
+	}
+	private List<ProjectDTO> getProjectsForOtherUsersByUserId(String userId) {
+		List<ProjectDTO> projectDTOs = new ArrayList<>();
+		for (String projectName : projectRepository.getProjectsForOtherUsersByUserId(userId)) {
+			projectDTOs.add(ProjectDTO.builder()
+					.id(projectName)
+					.name(projectName)		
+					.build());
+		}
+		return projectDTOs;
 	}
 }

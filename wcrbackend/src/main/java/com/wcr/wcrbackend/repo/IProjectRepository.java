@@ -37,4 +37,10 @@ public interface IProjectRepository {
 	public String[] uploadProjectChainagesData(List<Project> projectChainagesList, Project project) throws Exception;
 	public boolean saveProjectChainagesDataUploadFile(Project obj) throws Exception;
 
+	 List<Project>findAll();
+
+	 public List<String>  findByUserId(String userId);
+
+	    public List<String> getProjectsForOtherUsersByUserId(String userId);
+
 }

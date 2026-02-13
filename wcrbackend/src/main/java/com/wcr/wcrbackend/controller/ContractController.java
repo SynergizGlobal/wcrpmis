@@ -11,6 +11,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +64,7 @@ import com.wcr.wcrbackend.DTO.BankGuarantee;
 import com.wcr.wcrbackend.DTO.Contract;
 import com.wcr.wcrbackend.DTO.Insurence;
 import com.wcr.wcrbackend.common.DateParser;
+import com.wcr.wcrbackend.dms.dto.ContractDTO;
 import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.service.HomeService;
 import com.wcr.wcrbackend.service.IContractService;
@@ -976,6 +978,16 @@ public class ContractController {
 		}
 		return dataList;
 	}
+	
+	 @GetMapping("/get-contract-name")
+	    public ResponseEntity<List<ContractDTO>> getAllContracts(HttpSession session) {
+	    	User user = (User) session.getAttribute("user");
+	    	List<ContractDTO> dtos = contractService.getContracts(user.getUserId(), user.getUserRoleNameFk());
+	    //	dtos.sort(Comparator.comparing(ContractDTO::getName));
+	    	return ResponseEntity.ok(dtos);
+	    }
+	
+	
 	
 //	@RequestMapping(value = "/export-contract", method = {RequestMethod.GET,RequestMethod.POST})
 //	public void exportContract(HttpServletRequest request, HttpServletResponse response,HttpSession session,@ModelAttribute Contract contract,RedirectAttributes attributes){

@@ -2,6 +2,7 @@ package com.wcr.wcrbackend.controller;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import com.wcr.wcrbackend.DTO.Project;
 import com.wcr.wcrbackend.DTO.Year;
+import com.wcr.wcrbackend.dms.dto.ProjectDTO;
+import com.wcr.wcrbackend.entity.User;
 import com.wcr.wcrbackend.service.IProjectService;
 
 @RestController
@@ -145,5 +148,13 @@ public class ProjectsController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                  .body("Error deleting project: " + e.getMessage());
         }
+    }
+    
+    @GetMapping("/get-project-name")
+    public ResponseEntity<List<ProjectDTO>> getAllProjects(HttpSession session) {
+    	User user = (User) session.getAttribute("user");
+    	List<ProjectDTO> dtos =  projectService.getProjects(user.getUserId(), user.getUserRoleNameFk());
+    	dtos.sort(Comparator.comparing(ProjectDTO::getName));
+    	return ResponseEntity.ok(dtos);
     }
 }

@@ -7,10 +7,9 @@ import 'react-datepicker/dist/react-datepicker.css';
 import Select from 'react-select';
 
 const ContractReport = () => {
-  const { reportNo } = useParams(); // Get report_no from URL
+  const { reportNo } = useParams();
   const navigate = useNavigate();
   
-  // State for form data
   const [formData, setFormData] = useState({
     project_id_fk: '',
     hod_designations: [],
@@ -22,7 +21,6 @@ const ContractReport = () => {
     todate: null
   });
   
-  // State for dropdown options
   const [dropdowns, setDropdowns] = useState({
     projects: [],
     hodOptions: [],
@@ -32,17 +30,14 @@ const ContractReport = () => {
     contractOptions: []
   });
   
-  // UI State
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [reportTitle, setReportTitle] = useState('');
   
-  // Initialize based on report type
   useEffect(() => {
     const initializeReport = async () => {
       setLoading(true);
       
-      // Set report title based on reportNo
       const titles = {
         1: "List of Contracts",
         2: "Contract Detail Report",
@@ -56,17 +51,14 @@ const ContractReport = () => {
       };
       setReportTitle(titles[reportNo] || "Contract Reports");
       
-      // Load saved filters from localStorage
       const savedFilters = localStorage.getItem(`contractReportFilters${reportNo}`);
       if (savedFilters) {
         const filters = JSON.parse(savedFilters);
         setFormData(prev => ({ ...prev, ...filters }));
       }
       
-      // Load initial data
       await loadProjects();
       
-      // Load dependent dropdowns if there are saved values
       if (formData.project_id_fk) {
         await loadDependentDropdowns();
       }
@@ -77,7 +69,6 @@ const ContractReport = () => {
     initializeReport();
   }, [reportNo]);
   
-  // Load projects from API
   const loadProjects = async () => {
     try {
       const response = await api.get('/projects');
@@ -93,7 +84,6 @@ const ContractReport = () => {
     }
   };
   
-  // Load all dependent dropdowns
   const loadDependentDropdowns = async () => {
     await Promise.all([
       loadHODs(),
@@ -104,7 +94,6 @@ const ContractReport = () => {
     ]);
   };
   
-  // Load HODs
   const loadHODs = async () => {
     try {
       const response = await api.post('/ajax/getHODListInContractReport', {
@@ -125,7 +114,6 @@ const ContractReport = () => {
     }
   };
   
-  // Load contractors
   const loadContractors = async () => {
     try {
       const response = await api.post('/ajax/getContractorsListInContractReport', {
@@ -146,7 +134,6 @@ const ContractReport = () => {
     }
   };
   
-  // Load status options
   const loadStatusOptions = async () => {
     try {
       const response = await api.post('/ajax/getStatsuListInContractReport', {
@@ -167,10 +154,8 @@ const ContractReport = () => {
     }
   };
   
-  // Load contract status options
   const loadContractStatusOptions = async () => {
     try {
-      // If status is selected, use getStatusofWorkItems
       if (formData.status) {
         const response = await api.post('/ajax/getStatusofWorkItems', {
           status: formData.status
@@ -181,7 +166,6 @@ const ContractReport = () => {
           label: status.contract_status_fk
         }));
         
-        // Remove "Closed" option for specific reports
         const reportsToHideClosed = [3, 4, 5, 6];
         let filteredOptions = options;
         if (reportsToHideClosed.includes(parseInt(reportNo))) {
@@ -190,7 +174,6 @@ const ContractReport = () => {
         
         setDropdowns(prev => ({ ...prev, contractStatusOptions: filteredOptions }));
       } else {
-        // Otherwise use getContractStatusListInContractReport
         const response = await api.post('/ajax/getContractStatusListInContractReport', {
           hod_designations: formData.hod_designations,
           contractor_id_fk: formData.contractor_id_fk,
@@ -210,7 +193,6 @@ const ContractReport = () => {
     }
   };
   
-  // Load contracts
   const loadContracts = async () => {
     try {
       const response = await api.post('/ajax/getContractListInContractReport', {
@@ -231,34 +213,25 @@ const ContractReport = () => {
     }
   };
   
-  // Handle form field changes
   const handleInputChange = useCallback(async (name, value) => {
-    // Update form data
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
-      
-      // Save to localStorage
       localStorage.setItem(`contractReportFilters${reportNo}`, JSON.stringify(updated));
-      
       return updated;
     });
     
-    // Clear error for this field
     setErrors(prev => ({ ...prev, [name]: '' }));
     
-    // Reload dependent dropdowns
     setLoading(true);
     await loadDependentDropdowns();
     setLoading(false);
   }, [reportNo]);
   
-  // Handle multi-select changes
   const handleMultiSelectChange = (name, selectedOptions) => {
     const values = selectedOptions ? selectedOptions.map(opt => opt.value) : [];
     handleInputChange(name, values);
   };
   
-  // Clear all filters
   const clearFilters = () => {
     setFormData({
       project_id_fk: '',
@@ -274,7 +247,6 @@ const ContractReport = () => {
     localStorage.removeItem(`contractReportFilters${reportNo}`);
     setErrors({});
     
-    // Reset dropdowns
     setDropdowns({
       projects: dropdowns.projects,
       hodOptions: [],
@@ -285,9 +257,7 @@ const ContractReport = () => {
     });
   };
   
-  // Generate report
   const generateReport = async () => {
-    // Validate required fields
     const newErrors = {};
     
     if (reportNo === '2' && !formData.contract_id) {
@@ -302,7 +272,6 @@ const ContractReport = () => {
     setLoading(true);
     
     try {
-      // Map report numbers to endpoints
       const endpoints = {
         1: '/generate-contract-report',
         2: '/generate-contract-detail-report',
@@ -317,7 +286,6 @@ const ContractReport = () => {
       
       const endpoint = endpoints[reportNo];
       
-      // Prepare form data for submission
       const submitData = {
         ...formData,
         date: formData.date ? formatDate(formData.date) : '',
@@ -325,17 +293,13 @@ const ContractReport = () => {
         report_no: reportNo
       };
       
-      // Submit form data
       const response = await api.post(endpoint, submitData, {
-        responseType: 'blob' // For file downloads
+        responseType: 'blob'
       });
       
-      // Handle file download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      
-      // Set filename based on report type
       const filename = `${reportTitle.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
       link.setAttribute('download', filename);
       document.body.appendChild(link);
@@ -350,7 +314,6 @@ const ContractReport = () => {
     }
   };
   
-  // Format date to dd-mm-yyyy
   const formatDate = (date) => {
     if (!date) return '';
     const d = new Date(date);
@@ -360,7 +323,6 @@ const ContractReport = () => {
     return `${day}-${month}-${year}`;
   };
   
-  // Determine which fields to show based on report type
   const showNextRow = [2, 3, 4, 5, 6, 8, 9].includes(parseInt(reportNo));
   const showDateDiv = reportNo === '8';
   const showContractDiv = reportNo === '2';
@@ -368,204 +330,194 @@ const ContractReport = () => {
   const showCSdiv = [1, 7].includes(parseInt(reportNo));
   
   return (
-    <div className={styles.container}>
-      {/* Header */}
-      <header className={styles.header}>
-        {/* Add your header component here */}
-        <h1>PMIS - Reports</h1>
-      </header>
-      
-      <div className={styles.content}>
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div className={styles.reportTitle}>
-              <h2>{reportTitle}</h2>
+    <div className={styles.pageWrapper}>
+      <div className={styles.reportCard}>
+        <div className={styles.reportHeader}>
+          {reportTitle}
+        </div>
+        
+        <div className={styles.reportBody}>
+          {loading && (
+            <div className={styles.loader}>
+              <div className={styles.spinner}></div>
+              <p>Loading...</p>
             </div>
-          </div>
+          )}
           
-          <div className={styles.cardContent}>
-            {loading && (
-              <div className={styles.loader}>
-                <div className={styles.spinner}></div>
-                <p>Loading...</p>
-              </div>
-            )}
-            
-            <form id="contractReportForm" className={styles.form}>
-              <div className={styles.formRow}>
-                {/* Project Selection */}
-                <div className={styles.inputField}>
-                  <label className={styles.label}>Project</label>
-                  <Select
-                    options={dropdowns.projects}
-                    value={dropdowns.projects.find(opt => opt.value === formData.project_id_fk)}
-                    onChange={(selected) => handleInputChange('project_id_fk', selected?.value || '')}
-                    isClearable
-                    placeholder="Select Project"
-                    className={styles.select}
-                  />
-                </div>
-                
-                {/* HOD Selection - Conditionally shown */}
-                {showHodDiv && (
-                  <div className={styles.inputField}>
-                    <label className={styles.label}>HOD</label>
-                    <Select
-                      options={dropdowns.hodOptions}
-                      value={dropdowns.hodOptions.filter(opt => 
-                        formData.hod_designations.includes(opt.value)
-                      )}
-                      onChange={(selected) => handleMultiSelectChange('hod_designations', selected)}
-                      isMulti
-                      isClearable
-                      placeholder="Select HOD(s)"
-                      className={styles.select}
-                    />
-                    {errors.hod_designations && (
-                      <span className={styles.error}>{errors.hod_designations}</span>
-                    )}
-                  </div>
-                )}
-                
-                {/* Contractor Selection */}
-                <div className={styles.inputField}>
-                  <label className={styles.label}>Contractor</label>
-                  <Select
-                    options={dropdowns.contractorOptions}
-                    value={dropdowns.contractorOptions.find(opt => opt.value === formData.contractor_id_fk)}
-                    onChange={(selected) => handleInputChange('contractor_id_fk', selected?.value || '')}
-                    isClearable
-                    placeholder="Select Contractor"
-                    className={styles.select}
-                  />
-                  {errors.contractor_id_fk && (
-                    <span className={styles.error}>{errors.contractor_id_fk}</span>
-                  )}
-                </div>
-                
-                {/* Contract Status - Conditionally shown */}
-                {showCSdiv && (
-                  <div className={styles.inputField}>
-                    <label className={styles.label}>Contract Status</label>
-                    <Select
-                      options={dropdowns.statusOptions}
-                      value={dropdowns.statusOptions.find(opt => opt.value === formData.status)}
-                      onChange={(selected) => handleInputChange('status', selected?.value || '')}
-                      isClearable
-                      placeholder="Select Status"
-                      className={styles.select}
-                    />
-                    {errors.status && (
-                      <span className={styles.error}>{errors.status}</span>
-                    )}
-                  </div>
-                )}
-                
-                {/* Status of Work */}
-                <div className={styles.inputField}>
-                  <label className={styles.label}>Status of Work</label>
-                  <Select
-                    options={dropdowns.contractStatusOptions}
-                    value={dropdowns.contractStatusOptions.find(opt => opt.value === formData.contract_status_fk)}
-                    onChange={(selected) => handleInputChange('contract_status_fk', selected?.value || '')}
-                    isClearable
-                    placeholder="Select Status of Work"
-                    className={styles.select}
-                  />
-                  {errors.contract_status_fk && (
-                    <span className={styles.error}>{errors.contract_status_fk}</span>
-                  )}
-                </div>
+          <form id="contractReportForm" onSubmit={(e) => e.preventDefault()}>
+            <div className={styles.formGrid}>
+              {/* Project Selection */}
+              <div className={styles.formGroup}>
+                <label>Project</label>
+                <Select
+                  options={dropdowns.projects}
+                  value={dropdowns.projects.find(opt => opt.value === formData.project_id_fk)}
+                  onChange={(selected) => handleInputChange('project_id_fk', selected?.value || '')}
+                  isClearable
+                  placeholder="Select"
+                  className={styles.select}
+                  classNamePrefix="react-select"
+                />
               </div>
               
-              {/* Additional Fields Row - Conditionally shown */}
-              {showNextRow && (
-                <div className={styles.formRow}>
-                  {/* Date Range - Only for report 8 */}
-                  {showDateDiv && (
-                    <>
-                      <div className={styles.inputField}>
-                        <label className={styles.label}>Validity Expiry From Date</label>
-                        <DatePicker
-                          selected={formData.date}
-                          onChange={(date) => handleInputChange('date', date)}
-                          dateFormat="dd-MM-yyyy"
-                          className={styles.dateInput}
-                          placeholderText="Select date"
-                        />
-                        {errors.date && (
-                          <span className={styles.error}>{errors.date}</span>
-                        )}
-                      </div>
-                      
-                      <div className={styles.inputField}>
-                        <label className={styles.label}>Validity Expiry To Date</label>
-                        <DatePicker
-                          selected={formData.todate}
-                          onChange={(date) => handleInputChange('todate', date)}
-                          dateFormat="dd-MM-yyyy"
-                          className={styles.dateInput}
-                          placeholderText="Select date"
-                        />
-                        {errors.todate && (
-                          <span className={styles.error}>{errors.todate}</span>
-                        )}
-                      </div>
-                    </>
-                  )}
-                  
-                  {/* Contract Selection - Only for report 2 */}
-                  {showContractDiv && (
-                    <div className={styles.inputField}>
-                      <label className={styles.label}>
-                        Contract <span className={styles.required}>*</span>
-                      </label>
-                      <Select
-                        options={dropdowns.contractOptions}
-                        value={dropdowns.contractOptions.find(opt => opt.value === formData.contract_id)}
-                        onChange={(selected) => handleInputChange('contract_id', selected?.value || '')}
-                        isClearable
-                        placeholder="Select Contract"
-                        className={styles.select}
-                      />
-                      {errors.contract_id && (
-                        <span className={styles.error}>{errors.contract_id}</span>
-                      )}
-                    </div>
+              {/* HOD Selection - Conditionally shown */}
+              {showHodDiv && (
+                <div className={styles.formGroup}>
+                  <label>HOD</label>
+                  <Select
+                    options={dropdowns.hodOptions}
+                    value={dropdowns.hodOptions.filter(opt => 
+                      formData.hod_designations.includes(opt.value)
+                    )}
+                    onChange={(selected) => handleMultiSelectChange('hod_designations', selected)}
+                    isMulti
+                    isClearable
+                    placeholder="Select"
+                    className={styles.select}
+                    classNamePrefix="react-select"
+                  />
+                  {errors.hod_designations && (
+                    <span className={styles.error}>{errors.hod_designations}</span>
                   )}
                 </div>
               )}
               
-              {/* Action Buttons */}
-              <div className={styles.buttonRow}>
-                <button
-                  type="button"
-                  onClick={generateReport}
-                  className={styles.primaryButton}
-                  disabled={loading}
-                >
-                  {loading ? 'Generating...' : 'Generate Report'}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className={styles.secondaryButton}
-                  disabled={loading}
-                >
-                  Reset Filters
-                </button>
+              {/* Contractor Selection */}
+              <div className={styles.formGroup}>
+                <label>Contractor</label>
+                <Select
+                  options={dropdowns.contractorOptions}
+                  value={dropdowns.contractorOptions.find(opt => opt.value === formData.contractor_id_fk)}
+                  onChange={(selected) => handleInputChange('contractor_id_fk', selected?.value || '')}
+                  isClearable
+                  placeholder="Select"
+                  className={styles.select}
+                  classNamePrefix="react-select"
+                />
+                {errors.contractor_id_fk && (
+                  <span className={styles.error}>{errors.contractor_id_fk}</span>
+                )}
               </div>
-            </form>
-          </div>
+              
+              {/* Contract Status - Conditionally shown */}
+              {showCSdiv && (
+                <div className={styles.formGroup}>
+                  <label>Contract Status</label>
+                  <Select
+                    options={dropdowns.statusOptions}
+                    value={dropdowns.statusOptions.find(opt => opt.value === formData.status)}
+                    onChange={(selected) => handleInputChange('status', selected?.value || '')}
+                    isClearable
+                    placeholder="Select"
+                    className={styles.select}
+                    classNamePrefix="react-select"
+                  />
+                  {errors.status && (
+                    <span className={styles.error}>{errors.status}</span>
+                  )}
+                </div>
+              )}
+              
+              {/* Status of Work */}
+              <div className={styles.formGroup}>
+                <label>Status of Work</label>
+                <Select
+                  options={dropdowns.contractStatusOptions}
+                  value={dropdowns.contractStatusOptions.find(opt => opt.value === formData.contract_status_fk)}
+                  onChange={(selected) => handleInputChange('contract_status_fk', selected?.value || '')}
+                  isClearable
+                  placeholder="Select"
+                  className={styles.select}
+                  classNamePrefix="react-select"
+                />
+                {errors.contract_status_fk && (
+                  <span className={styles.error}>{errors.contract_status_fk}</span>
+                )}
+              </div>
+            </div>
+            
+            {/* Additional Fields - Conditionally shown */}
+            {showNextRow && (
+              <div className={styles.formGrid}>
+                {/* Date Range - Only for report 8 */}
+                {showDateDiv && (
+                  <>
+                    <div className={styles.formGroup}>
+                      <label>Validity Expiry From Date</label>
+                      <DatePicker
+                        selected={formData.date}
+                        onChange={(date) => handleInputChange('date', date)}
+                        dateFormat="dd-MM-yyyy"
+                        className={styles.dateInput}
+                        placeholderText="Select"
+                      />
+                      {errors.date && (
+                        <span className={styles.error}>{errors.date}</span>
+                      )}
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label>Validity Expiry To Date</label>
+                      <DatePicker
+                        selected={formData.todate}
+                        onChange={(date) => handleInputChange('todate', date)}
+                        dateFormat="dd-MM-yyyy"
+                        className={styles.dateInput}
+                        placeholderText="Select"
+                      />
+                      {errors.todate && (
+                        <span className={styles.error}>{errors.todate}</span>
+                      )}
+                    </div>
+                  </>
+                )}
+                
+                {/* Contract Selection - Only for report 2 */}
+                {showContractDiv && (
+                  <div className={styles.formGroup}>
+                    <label>
+                      Contract <span className={styles.required}>*</span>
+                    </label>
+                    <Select
+                      options={dropdowns.contractOptions}
+                      value={dropdowns.contractOptions.find(opt => opt.value === formData.contract_id)}
+                      onChange={(selected) => handleInputChange('contract_id', selected?.value || '')}
+                      isClearable
+                      placeholder="Select"
+                      className={styles.select}
+                      classNamePrefix="react-select"
+                    />
+                    {errors.contract_id && (
+                      <span className={styles.error}>{errors.contract_id}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Action Buttons */}
+            <div className={styles.actionButtons}>
+              <button
+                type="button"
+                onClick={generateReport}
+                className={styles.generateBtn}
+                disabled={loading}
+              >
+                {loading ? 'Generating...' : 'Generate Report'}
+              </button>
+              
+              <button
+                type="button"
+                onClick={clearFilters}
+                className={styles.resetBtn}
+                disabled={loading}
+              >
+                Reset Filters
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-      
-      {/* Footer */}
-      <footer className={styles.footer}>
-        {/* Add your footer component here */}
-        <p>© PMIS - Project Management Information System</p>
-      </footer>
     </div>
   );
 };

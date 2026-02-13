@@ -76,8 +76,7 @@ public class ProjectRepository implements IProjectRepository {
         String sql = """
             SELECT DISTINCT p.project_name
             FROM dbo.[project] p
-            JOIN work w ON w.project_id_fk = p.project_id
-            JOIN [contract] c ON c.work_id_fk = w.work_id
+            JOIN [contract] c ON c.project_id_fk = p.project_id
             JOIN contractor co ON co.contractor_id = c.contractor_id_fk
             JOIN [user] u ON co.contractor_name = u.[user_name]
             WHERE u.user_id = ?
@@ -95,8 +94,7 @@ public class ProjectRepository implements IProjectRepository {
         String sql = """
             SELECT DISTINCT p.project_name
             FROM project p
-            JOIN work w ON p.project_id = w.project_id_fk
-            JOIN contract c ON c.work_id_fk = w.work_id
+            JOIN [contract] c ON c.project_id_fk = p.project_id
             JOIN contract_executive scrp ON scrp.contract_id_fk = c.contract_id
             WHERE scrp.executive_user_id_fk = ?
             """;

@@ -6,6 +6,7 @@ import com.wcr.wcrbackend.DTO.BankGuarantee;
 import com.wcr.wcrbackend.DTO.Contract;
 import com.wcr.wcrbackend.DTO.Insurence;
 import com.wcr.wcrbackend.DTO.User;
+import com.wcr.wcrbackend.dms.dto.ContractDTO;
 
 public interface IContractRepo {
 
@@ -72,6 +73,12 @@ public interface IContractRepo {
 	public List<Contract> contractInsuranceList(Contract contract) throws Exception;
 
 	public List<Contract> contractMilestoneList(Contract contract) throws Exception;
+
+	 public List<ContractDTO> findAllContracts();
+
+	  public List<ContractDTO> findContractsByUserId(String userId);
+
+	   public List<ContractDTO> findContractsForOtherUsers(String userId);
 
 }
 
