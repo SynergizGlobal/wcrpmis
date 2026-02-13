@@ -1,36 +1,27 @@
-/* Main Background */
-.menuPage {
+/* Full page background */
+.pageWrapper {
   min-height: calc(100vh - 110px);
-  background-color: #e9edf3;   /* as requested */
+  background-color: #e9edf3;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* Container */
-.menuContainer {
-  display: flex;
-  gap: 60px;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-/* Card wrapper */
+/* Card container */
 .card {
   width: 260px;
 }
 
-/* Default button style (WHITE) */
-.cardButton {
+/* Button style */
+.button {
   display: flex;
   justify-content: center;
   align-items: center;
 
-  height: 60px;
   width: 100%;
+  height: 60px;
 
-  background-color: #ffffff;   /* ✅ white */
+  background-color: #ffffff;
   border-radius: 8px;
 
   font-weight: 600;
@@ -42,8 +33,9 @@
   transition: all 0.3s ease;
 }
 
-.cardButton:hover {
-  background-color: #3f4a7f;   
+/* Hover effect */
+.button:hover {
+  background-color: #4b558b;
   color: #ffffff;
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);

@@ -1,51 +1,40 @@
-/* Menu Page Only */
 .menuPage {
   min-height: calc(100vh - 110px);
-  background-color: #e9edf3; /* light grey */
+  background-color: #e9edf3;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px 20px;
 }
 
-/* Wrapper */
-.menuWrapper {
-  width: 100%;
-  max-width: 1000px;
-}
-
-/* Horizontal layout */
-.menuList {
+.menuContainer {
   display: flex;
-  justify-content: center;
   gap: 60px;
+  justify-content: center;
+  align-items: center;
   flex-wrap: wrap;
 }
 
-/* Card */
 .card {
   width: 260px;
 }
 
-/* Button */
 .cardButton {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 100%;
   height: 60px;
   background-color: #ffffff;
+  border: none;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 16px;
-  text-decoration: none;
+  font-size: 15px;
   color: #000;
+  cursor: pointer;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
 }
 
 .cardButton:hover {
-  background-color: #3f4a7f;
+  background-color: #4b558b;
   color: #ffffff;
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }

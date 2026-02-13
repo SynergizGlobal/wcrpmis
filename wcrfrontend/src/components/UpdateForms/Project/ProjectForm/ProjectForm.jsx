@@ -312,7 +312,7 @@ export default function ProjectForm() {
                       classNamePrefix="react-select"
                       options={railwayZones.map(zone => ({
                         value: zone.railway_id,
-                        label: zone.railway_name,
+                        label: zone.railway_id,
                       }))}
                       placeholder="Select Railway Zone"
                       isSearchable

@@ -1,4 +1,7 @@
 import ContractReport from "./components/Reports/ContractReport/ContractReport";
+import CodesAndManuals from "./components/Documents/CodesAndManuals/CodesAndManuals";
+import FAQ from "./components/Documents/FAQ/FAQ";
+import PoliciesAndCirculars from "./components/Documents/PoliciesAndCirculars/PoliciesAndCirculars";
 import Folders from "./components/UpdateForms/Dms/Folders/Folders";
 import PendingIssuesReport from "./components/Reports/PendingIssuesReport/PendingIssuesReport";
 import UtilityReport from "./components/Reports/UtilityReport/UtilityReport";
@@ -245,7 +248,7 @@ function App() {
 							<Route path="dms" element={<Dms />}>
   								<Route index element={<Navigate to="correspondence" replace />} />
 								<Route path="correspondence" element={<Correspondence />} />
-								<Route path="documents" element={<DmsDocuments />} />
+								<Route path="dms-documents" element={<DmsDocuments />} />
 								<Route path="folders" element={<Folders />} />
 								<Route path="filterform" element={<FilterForm />} />
 							</Route>
@@ -285,7 +288,11 @@ function App() {
 						{/* <Route path="modules/progress-table" element={<ProgressTable />} /> */}
 						{/* <Route path="modules/contract-status" element={<ContractStatus />} /> */}
 						{/* <Route path="modules/issues" element={<Issues />} /> */}						
-						
+										<Route path="documents" element={<Documents />}>
+							<Route path="codes-and-manuals" element={<CodesAndManuals />} />
+							<Route path="faq" element={<FAQ />} />
+							<Route path="policiesandcirculars" element={<PoliciesAndCirculars />} />
+						</Route>
 						
 						
 						<Route path="admin" element={<Admin />}>
@@ -360,14 +367,13 @@ function App() {
 						<Route path="issues" element={<Issues />} />
 						<Route path="pendingissuesreport" element={<PendingIssuesReport />} />
 												
-						<Route path="documents" element={<Documents />} />
-						<Route path="quicklinks" element={<QuickLinks />} />
+					
 						<Route path="department" element={<Department />} />
 						<Route path="projectType" element={<ProjectType />} />
 	          <Route path="railway" element={<Railway />} />
 						<Route path="documentType" element={<DocumentType />} />
 						<Route path="utility-report" element={<UtilityReport />} />
-
+						<Route path="quicklinks" element={<QuickLinks />} />
 
 					</Route>
 					<Route path="*" element={<div style={{

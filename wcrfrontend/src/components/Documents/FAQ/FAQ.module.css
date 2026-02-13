@@ -1,0 +1,200 @@
+.pageWrapper {
+  min-height: 100vh;
+  background: #f2f2f2;
+  padding: 0;              /* ✅ removed gap */
+  margin: 0;               /* ✅ remove default margin */
+}
+
+.card {
+  background: #ffffff;
+  min-height: 100vh;       /* ✅ full height */
+  box-shadow: none;        /* optional: remove card floating look */
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+/* Header */
+.header {
+  background-color: #A6CAEC;
+  color: #000;             /* fixed invalid Black */
+  text-align: center;
+  padding: 12px;
+  font-size: 22px;
+  margin: 0;               /* ✅ remove gap */
+}
+
+/* Top Bar */
+.topBar {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 16px;
+}
+
+.searchWrapper {
+  position: relative;
+  width: 620px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 40px 8px 15px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+}
+
+.searchIcon {
+  position: absolute;
+  right: 12px;
+  top: 7px;
+  font-size: 18px;
+  color: #2E3A71;
+}
+
+.uploadBtn {
+  background: #3f4a7f;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 30px;
+  cursor: pointer;
+}
+
+.emptyState {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 16px;
+}
+
+/* ================= MODAL ================= */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal {
+  width: 700px;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+.modalHeader {
+  background: #3f4a7f;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+}
+
+.closeBtn {
+  cursor: pointer;
+}
+
+.modalBody {
+  padding: 30px 40px 40px;
+}
+
+.formRow {
+  display: flex;
+  gap: 40px;
+}
+
+.formGroup {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup label {
+  font-size: 12px;
+  color: #9a9a9a;
+  margin-bottom: 6px;
+}
+
+.formGroup input,
+.formGroup select {
+  border: none;
+  border-bottom: 1px solid #9a9a9a;
+  padding: 6px;
+  outline: none;
+}
+
+.fileRow {
+  margin-top: 26px;
+  display: flex;
+  align-items: flex-end;
+  gap: 40px;
+}
+
+.uploadFileBtn {
+  background: #3f4a7f;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+
+.fileLine {
+  width: 120px;
+  height: 1px;
+  background: #9a9a9a;
+  margin-bottom: 8px;
+}
+
+.fileName {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #333;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.modalActions {
+  margin-top: 36px;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.submitBtn {
+  background: #3f4a7f;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 40px;
+  cursor: pointer;
+}
+
+.cancelBtn {
+  background: #ffffff;
+  color: #000;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 10px 40px;
+  cursor: pointer;
+}
+
+.requiredText {
+  color: red;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* ✅ Darker Label Text ONLY */
+.formGroup label {
+  font-size: 16px;
+  color: #000000;
+  margin-bottom: 6px;
+}
