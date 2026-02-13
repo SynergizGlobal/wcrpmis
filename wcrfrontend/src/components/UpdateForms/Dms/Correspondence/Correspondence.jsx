@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import api from "../../../../api/axiosInstance";
+import AsyncSelect from "react-select/async";
 import DmsTable from "../DmsTable/DmsTable";
 import Drafts from "./Drafts";
 import styles from "./Correspondence.module.css";
@@ -7,48 +9,189 @@ export default function Correspondence() {
 
   const [showUpload, setShowUpload] = useState(false);
   const [showDrafts, setShowDrafts] = useState(false);
+  const [tableData, setTableData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [toUser, setToUser] = useState(null);
+  const [ccUsers, setCcUsers] = useState([]);
+  const [userOptions, setUserOptions] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [contracts, setContracts] = useState([]);
+
+  const [form, setForm] = useState({
+    category: "",
+    project: "",
+    contract: "",
+    letterNo: "",
+    letterDate: "",
+    to: "",
+    subject: "",
+  });
+
+  const [file, setFile] = useState(null);
+
+  useEffect(() => {
+  api.get("/projects/get-project-name")
+    .then(r => setProjects(r.data || []));
+
+  api.get("/contract/get-contract-name")
+    .then(r => setContracts(r.data || []));
+}, []);
+
+
+  const fetchCorrespondence = async () => {
+    try {
+      setLoading(true);
+
+      const fd = new FormData();
+      fd.append("action", "send"); 
+
+      const res = await api.get(
+        "/api/correspondence/getCorrespondeneceList",
+        {
+          params: { action: "send" }
+        }
+      );
+
+      const mapped = (res.data || []).map((r) => ({
+        "Reference Number": r.referenceNumber || "",
+        Category: r.category || "",
+        "Letter No": r.letterNumber || "",
+        From: r.fromName || "",
+        To: r.toName || "",
+        Subject: r.subject || "",
+        "Required Response": r.requiredResponse || "",
+        "Due Date": r.dueDate || "",
+        Project: r.projectName || "",
+        Contract: r.contractName || "",
+        Status: r.action || "",
+        Department: r.department || "",
+        Attachment: "View",
+        Type: r.type || "",
+      }));
+
+      setTableData(mapped);
+
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCorrespondence();
+  }, []);
+
+  const handleChange = (e) => {
+    setForm(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSend = async () => {
+  try {
+    const fd = new FormData();
+
+    fd.append("dto", JSON.stringify({
+      ...form,
+      to: toUser?.value,
+      ccRecipients: ccUsers.map(x => x.value),
+      action: "send"
+    }));
+
+    if (file) {
+      fd.append("document", file);
+    }
+
+    await api.post("/api/correspondence/uploadLetter", fd);
+
+    fetchCorrespondence();
+    setShowUpload(false);
+
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+
+  const handleDraft = async () => {
+    try {
+      const formData = new FormData();
+
+      Object.keys(form).forEach(key => {
+        formData.append(key, form[key]);
+      });
+
+      formData.append("status", "DRAFT");
+
+      if (file) {
+        formData.append("file", file);
+      }
+
+      await api.post(
+        "/api/correspondence/uploadLetter",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" }
+        }
+      );
+
+      alert("Draft saved");
+      setShowUpload(false);
+
+    } catch (error) {
+      console.error("Draft error:", error);
+      alert("Failed to save draft");
+    }
+  };
+
+  const searchUsers = async (inputValue) => {
+  try {
+    const body = inputValue
+      ? { to: inputValue }   // OR name/email field backend expects
+      : {};
+
+    const res = await api.post(
+      "/api/correspondence/search",
+      body
+    );
+
+    return (res.data || []).map((u) => ({
+      value: u.userId || u.id,
+      label: `${u.userName || u.name} (${u.email || ""})`,
+    }));
+
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+};
+
 
   return (
     <>
-      {/* ACTION BAR */}
       <div className={styles.actionBar}>
         <button className="btn-2 btn-primary" onClick={() => setShowUpload(true)}>Upload Letter</button>
         <button className="btn-2 btn-secondary" onClick={() => setShowDrafts(true)}>Drafts</button>
       </div>
 
-      {/* MAIN TABLE */}
       {!showDrafts && (
         <DmsTable
+          loading={loading}
           columns={[
             "Reference Number","Category","Letter No","From","To","Subject",
             "Required Response","Due Date","Project",
             "Contract","Status","Department","Attachment","Type"
           ]}
-          mockData={[
-            {
-              "Reference Number": "WCR/Over Bridge Con/001",
-              Category: "Technical",
-              "Letter No": "LTR-001",
-              From: "MRVC",
-              To: "Contractor",
-              Subject: "Design Approval",
-              "Required Response": "Yes",
-              "Due Date": "12-02-2025",
-              Project: "WCR Project",
-              Contract: "Contract A",
-              Status: "Open",
-              Department: "Engineering",
-              Attachment: "View",
-              Type: "Incoming"
-            }
-          ]}
+          mockData={tableData}
         />
       )}
 
-      {/* DRAFTS */}
+      
       {showDrafts && <Drafts onBack={() => setShowDrafts(false)} />}
 
-      {/* UPLOAD LETTER MODAL */}
+      
       {showUpload && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
@@ -61,44 +204,80 @@ export default function Correspondence() {
               <div className="form-row">
                 <div className="form-field">
                   <label>Category *</label>
-                  <select><option>Select Category</option></select>
+                  <select onChange={handleChange} name="category">
+                    <option>Select Category</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Technical">Technical</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Legal">Legal</option>
+                    <option value="Administrative">Administrative</option>
+                  </select>
                 </div>
 
               <div className="form-field">
                 <label>Project Name *</label>
-                <select><option>MUTP IIIA</option></select>
+                <select  name="project" onChange={handleChange}>
+                  <option>Select Project</option>
+                  {projects.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                </select>
               </div>
               
               <div className="form-field">
                 <label>Contract Name *</label>
-                <select>
-                  <option>224 Construction of Important Bridges</option>
+                <select name="contract" onChange={handleChange}>
+                  <option>Select Contract</option>
+                  {contracts.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
               </div>
 
               <div className="form-field">
                 <label>Letter Number *</label>
-                <input placeholder="Enter letter number" />
+                <input name="letterNo" onChange={handleChange} placeholder="Enter letter number" />
               </div>
 
               <div className="form-field">
                 <label>Letter Date *</label>
-                <input type="date" />
+                <input type="date" name="letterDate" onChange={handleChange} />
               </div>
 
               <div className="form-field">
                 <label>To *</label>
-                <input placeholder="Recipient" />
+                <AsyncSelect
+                  placeholder="Search recipient..."
+                  loadOptions={searchUsers}
+                  onChange={setToUser}
+                  isClearable
+                  cacheOptions
+                  defaultOptions
+                />
               </div>
 
               <div className="form-field">
+                <label>CC</label>
+                <AsyncSelect
+                  isMulti
+                  placeholder="Search CC recipients..."
+                  loadOptions={searchUsers}
+                  onChange={setCcUsers}
+                  value={ccUsers}
+                  closeMenuOnSelect={false}
+                  cacheOptions
+                  defaultOptions
+                />
+              </div>
+
+
+              <div className="form-field">
                 <label>Subject *</label>
-                <textarea placeholder="Enter subject" />
+                <textarea name="subject" onChange={handleChange} />
               </div>
 
               <div className="form-field">
                 <label>Attachment *</label>
-                <input type="file" />
+                <input
+                    type="file"
+                    onChange={(e) => setFile(e.target.files[0])}
+                  />
               </div>
 
             </div>
@@ -106,8 +285,8 @@ export default function Correspondence() {
           </div>
 
             <div className={styles.footer}>
-              <button className="btn btn-primary">Send</button>
-              <button className="btn btn-white">Save as Draft</button>
+              <button className="btn btn-primary" onClick={handleSend}>Send</button>
+              <button className="btn btn-white" onClick={handleDraft}>Save as Draft</button>
               <button
                 className="btn btn-red"
                 onClick={() => setShowUpload(false)}

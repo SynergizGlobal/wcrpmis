@@ -171,6 +171,7 @@
 
 .folderItem:hover {
   background: #eef2ff;
+  color: #000;
 }
 
 .activeFolder {

@@ -2,8 +2,8 @@ import React, { useMemo, useState } from "react";
 import { useTable, usePagination, useGlobalFilter } from "react-table";
 import styles from './DmsTable.module.css';
 
-export default function DmsTable({ columns, mockData }) {
-  const data = useMemo(() => mockData, [mockData]);
+export default function DmsTable({ columns = [], mockData = [], loading }) {
+  const data = useMemo(() => mockData || [], [mockData]);
   const cols = useMemo(
     () => columns.map(c => ({ Header: c, accessor: c })),
     [columns]
@@ -18,7 +18,6 @@ export default function DmsTable({ columns, mockData }) {
     state: { pageIndex, pageSize, globalFilter },
     setGlobalFilter,
     setPageSize,
-    pageOptions,
     pageCount,
     gotoPage,
     nextPage,
@@ -89,26 +88,51 @@ export default function DmsTable({ columns, mockData }) {
 
       <table {...getTableProps()} className={styles.table}>
         <thead>
-          {headerGroups.map(hg => (
-            <tr {...hg.getHeaderGroupProps()}>
-              {hg.headers.map(col => (
-                <th {...col.getHeaderProps()}>{col.render("Header")}</th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-
-        <tbody {...getTableBodyProps()}>
-          {page.map(row => {
-            prepareRow(row);
+          {headerGroups.map((hg) => {
+            const { key, ...rest } = hg.getHeaderGroupProps();
             return (
-              <tr {...row.getRowProps()}>
-                {row.cells.map(cell => (
-                  <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
-                ))}
+              <tr key={key} {...rest}>
+                {hg.headers.map((col) => {
+                  const { key, ...rest } = col.getHeaderProps();
+                  return (
+                    <th key={key} {...rest}>
+                      {col.render("Header")}
+                    </th>
+                  );
+                })}
               </tr>
             );
           })}
+        </thead>
+
+        <tbody {...getTableBodyProps()}>
+          {loading ? (
+            <tr>
+              <td colSpan={columns.length}>Loading...</td>
+            </tr>
+          ) : page.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length}>No data available</td>
+            </tr>
+          ) : (
+            page.map((row) => {
+              prepareRow(row);
+              const { key, ...restRow } = row.getRowProps();
+
+              return (
+                <tr key={key} {...restRow}>
+                  {row.cells.map((cell) => {
+                    const { key, ...restCell } = cell.getCellProps();
+                    return (
+                      <td key={key} {...restCell}>
+                        {cell.render("Cell")}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })
+          )}
         </tbody>
       </table>
 
