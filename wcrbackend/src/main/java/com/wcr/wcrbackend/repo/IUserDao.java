@@ -67,5 +67,7 @@ public interface IUserDao {
 	List<User> getReportingToUserId(String reporting_to_id_srfk) throws Exception;
 
 	int uploadUsers(List<User> usersList) throws Exception;
+	
+ public List<com.wcr.wcrbackend.entity.User> findByUserNameContainingIgnoreCase(String userName);
 
 }

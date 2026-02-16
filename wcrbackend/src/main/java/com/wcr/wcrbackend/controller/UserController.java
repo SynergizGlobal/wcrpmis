@@ -19,10 +19,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.ss.usermodel.BorderStyle;
@@ -49,6 +51,7 @@ import com.wcr.wcrbackend.DTO.User;
 import com.wcr.wcrbackend.DTO.UtilityShifting;
 import com.wcr.wcrbackend.common.CommonConstants2;
 import com.wcr.wcrbackend.common.FileUploads;
+import com.wcr.wcrbackend.dms.dto.UserSearchDto;
 import com.wcr.wcrbackend.service.IUserService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -447,6 +450,13 @@ public class UserController {
 		return ResponseEntity.ok(Map.of(attributeKey,attributeMsg));
 	}
 	
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserSearchDto>> searchUsers(@RequestParam("query") String query) {
+        return ResponseEntity.ok(userService.searchUsers(query));
+    }
+	
+	
 	@PostMapping(value="/delete-user")
 	public ResponseEntity<?> deleteUser(@RequestBody User obj,HttpSession session) {
 		//ModelAndView model = new ModelAndView();
@@ -708,17 +718,6 @@ public class UserController {
 		return ResponseEntity.ok(Map.of(attributeKey, attributeMsg));
 	}
 	
-	/**
-	 * This method uploadUsers() is called when user upload the file
-	 * 
-	 * @param obj is object for the model class User.
-	 * @param userId is type of String it store the userId
-	 * @param userName is type of String it store the userName
-	 * @param workbook is type of XSSWorkbook variable it takes the workbook as input.
-	 * @param sheetNo 
-	 * @return type of this method is count.
-	 * @throws IOException will raise an exception when abnormal termination occur.
-	 */
 	
 	public int uploadUsers(User obj, String userId, String userName, XSSFWorkbook workbook, int sheetNo) throws Exception {
 		User user = null;
@@ -729,8 +728,6 @@ public class UserController {
 		Writer w = null;
 		int count = 0;
 		try {	
-			/*List<String> fileFormat = null;				
-			fileFormat = FileFormatModel.getActivityFileFormat();*/
 			
 			MultipartFile excelfile = obj.getFileName();
 			// Creates a workbook object from the uploaded excelfile
@@ -739,15 +736,11 @@ public class UserController {
 				 String fileType = org.apache.commons.io.FilenameUtils.getExtension(fileName);
 				 
 				 if(excelfile.getSize() > 0)
-					//workbook = new XSSFWorkbook(excelfile.getInputStream());
-					// Creates a worksheet object representing the first sheet
+			
 					if(workbook != null && !"".equals(workbook)) {
 						int sheetsCount = workbook.getNumberOfSheets();
 						if(sheetsCount > 0) {
 							uploadFilesSheet = workbook.getSheetAt(sheetNo);
-							//System.out.println(uploadFilesSheet.getSheetName());
-							//header row
-							//XSSFRow headerRow = uploadFilesSheet.getRow(0);							
 							
 							for(int i = 1; i<= uploadFilesSheet.getLastRowNum();i++){
 								XSSFRow row = uploadFilesSheet.getRow(i);
@@ -786,35 +779,6 @@ public class UserController {
 								if(!StringUtils.isEmpty(formatter.formatCellValue(row.getCell(8)).trim()))
 									user.setUser_role_name_fk(formatter.formatCellValue(row.getCell(8)).trim());	
 						
-
-								/*List<User> pObjList = new ArrayList<User>();
-								if(!StringUtils.isEmpty(user.getDesignation())) {
-									XSSFSheet uploadFilesSheet2 = workbook.getSheetAt(3);
-									for(int j = 2; j<= uploadFilesSheet2.getLastRowNum();j++){
-										XSSFRow row2 = uploadFilesSheet2.getRow(j);
-										// Sets the Read data to the model class
-										DataFormatter formatter2 = new DataFormatter(); //creating formatter using the default locale
-										// Cell cell = row.getCell(0);
-										// String j_username = formatter.formatCellValue(row.getCell(0));
-										
-										User pObj = new User();
-										
-										if(!StringUtils.isEmpty(formatter2.formatCellValue(row2.getCell(0)).trim()))
-											pObj.setDesignation(formatter2.formatCellValue(row2.getCell(0)).trim());
-										if(!StringUtils.isEmpty(formatter2.formatCellValue(row2.getCell(1)).trim()))
-											pObj.setUser_access_type(formatter2.formatCellValue(row2.getCell(1)).trim());
-										if(!StringUtils.isEmpty(formatter2.formatCellValue(row2.getCell(2)).trim()))
-											pObj.setAccess_value(formatter2.formatCellValue(row2.getCell(2)).trim());								
-										
-										if(!StringUtils.isEmpty(pObj) && !StringUtils.isEmpty(pObj.getDesignation()) 
-												&& !StringUtils.isEmpty(pObj.getUser_access_type())
-												&& !StringUtils.isEmpty(pObj.getAccess_value())
-												&& pObj.getDesignation().equals(user.getDesignation()))
-											pObjList.add(pObj);
-									}
-									user.setUserPermissions(pObjList);
-								}
-								*/
 								
 								if(!StringUtils.isEmpty(user) && !StringUtils.isEmpty(user.getUser_name()) && !StringUtils.isEmpty(user.getDepartment_name())) {
 									usersList.add(user);

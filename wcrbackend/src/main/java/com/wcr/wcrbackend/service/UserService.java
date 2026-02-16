@@ -2,6 +2,7 @@ package com.wcr.wcrbackend.service;
 
 import java.util.List;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +13,7 @@ import com.wcr.wcrbackend.DTO.Risk;
 import com.wcr.wcrbackend.DTO.Structure;
 import com.wcr.wcrbackend.DTO.User;
 import com.wcr.wcrbackend.DTO.UtilityShifting;
+import com.wcr.wcrbackend.dms.dto.UserSearchDto;
 import com.wcr.wcrbackend.repo.IUserDao;
 
 import jakarta.transaction.Transactional;
@@ -158,5 +160,14 @@ public class UserService implements IUserService {
 		// TODO Auto-generated method stub
 		return userDoaService.uploadUsers(usersList);
 	}
+	@Override
+
+    public List<UserSearchDto> searchUsers(String query) {
+        return userDoaService.findByUserNameContainingIgnoreCase(query)
+                .stream()
+                .map(user -> new UserSearchDto(user.getUserName(), user.getEmailId(), user.getUserId()))
+                .toList();
+    }
+
 
 }

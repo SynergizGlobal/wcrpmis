@@ -9,6 +9,7 @@ import com.wcr.wcrbackend.DTO.Risk;
 import com.wcr.wcrbackend.DTO.Structure;
 import com.wcr.wcrbackend.DTO.User;
 import com.wcr.wcrbackend.DTO.UtilityShifting;
+import com.wcr.wcrbackend.dms.dto.UserSearchDto;
 
 public interface IUserService {
 
@@ -65,5 +66,7 @@ public interface IUserService {
 	List<User> getReportingToUserId(String reporting_to_id_srfk) throws Exception;
 
 	int uploadUsers(List<User> usersList) throws Exception;
+	
+    public List<UserSearchDto> searchUsers(String query);
 
 }
