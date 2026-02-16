@@ -4,6 +4,7 @@ import AsyncSelect from "react-select/async";
 import DmsTable from "../DmsTable/DmsTable";
 import Drafts from "./Drafts";
 import styles from "./Correspondence.module.css";
+import { API_BASE_URL } from "../../../../config";
 
 export default function Correspondence() {
 
@@ -39,44 +40,53 @@ export default function Correspondence() {
 
 
   const fetchCorrespondence = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
+    
+     const firstRes = await api.post("/api/correspondence/filter-data", {
+      draw: 1,
+      start: 0,
+      length: 10,
+      columnFilters: {}
+    });
 
-      const fd = new FormData();
-      fd.append("action", "send"); 
+    const total = firstRes.data?.recordsTotal || 10;
 
-      const res = await api.get(
-        "/api/correspondence/getCorrespondeneceList",
-        {
-          params: { action: "send" }
-        }
-      );
+    
+    const res = await api.post("/api/correspondence/filter-data", {
+      draw: 2,
+      start: 0,
+      length: total,
+      columnFilters: {}
+    });
 
-      const mapped = (res.data || []).map((r) => ({
-        "Reference Number": r.referenceNumber || "",
-        Category: r.category || "",
-        "Letter No": r.letterNumber || "",
-        From: r.fromName || "",
-        To: r.toName || "",
-        Subject: r.subject || "",
-        "Required Response": r.requiredResponse || "",
-        "Due Date": r.dueDate || "",
-        Project: r.projectName || "",
-        Contract: r.contractName || "",
-        Status: r.action || "",
-        Department: r.department || "",
-        Attachment: "View",
-        Type: r.type || "",
-      }));
+    const rows = res.data?.data || [];
 
-      setTableData(mapped);
+    const mapped = rows.map((r) => ({
+      "Reference Number": r.referenceNumber || "",
+      Category: r.category || "",
+      "Letter No": r.letterNumber || "",
+      From: r.from || "",
+      To: r.to || "",
+      Subject: r.subject || "",
+      "Required Response": r.requiredResponse || "",
+      "Due Date": r.dueDate || "",
+      Project: r.projectName || "",
+      Contract: r.contractName || "",
+      Status: r.currentStatus || "",
+      Department: r.department || "",
+      Attachment: "View",
+      Type: r.type || "",
+    }));
 
-    } catch (error) {
-      console.error("Fetch error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setTableData(mapped);
+
+  } catch (error) {
+    console.error("Fetch error:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchCorrespondence();
@@ -148,18 +158,13 @@ export default function Correspondence() {
 
   const searchUsers = async (inputValue) => {
   try {
-    const body = inputValue
-      ? { to: inputValue }   // OR name/email field backend expects
-      : {};
-
-    const res = await api.post(
-      "/api/correspondence/search",
-      body
-    );
+    const res = await api.get("/users/search", {
+      params: { query: inputValue || "" }
+    });
 
     return (res.data || []).map((u) => ({
-      value: u.userId || u.id,
-      label: `${u.userName || u.name} (${u.email || ""})`,
+      value: u.userId,
+      label: `${u.userName} (${u.emailId})`,
     }));
 
   } catch (err) {
@@ -167,7 +172,6 @@ export default function Correspondence() {
     return [];
   }
 };
-
 
   return (
     <>
@@ -248,7 +252,7 @@ export default function Correspondence() {
                   onChange={setToUser}
                   isClearable
                   cacheOptions
-                  defaultOptions
+                  defaultOptions={true} 
                 />
               </div>
 
@@ -257,12 +261,12 @@ export default function Correspondence() {
                 <AsyncSelect
                   isMulti
                   placeholder="Search CC recipients..."
+                  defaultOptions={true} 
                   loadOptions={searchUsers}
                   onChange={setCcUsers}
                   value={ccUsers}
                   closeMenuOnSelect={false}
                   cacheOptions
-                  defaultOptions
                 />
               </div>
 
