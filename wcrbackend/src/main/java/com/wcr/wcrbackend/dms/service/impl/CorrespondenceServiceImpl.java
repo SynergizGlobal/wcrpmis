@@ -108,7 +108,7 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 	
 	private final StatusRepository statusRepository;
 	
-	@PersistenceContext
+	@PersistenceContext(unitName = "dmsPU")
 	private EntityManager entityManager;
 
 	@Override
