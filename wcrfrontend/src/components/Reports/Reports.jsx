@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import styles from "./Reports.module.css";
 import { ChevronRight } from "lucide-react";
+import { API_BASE_URL } from "../../config";
+import axios from "axios";
 
 export default function Reports() {
   const menuRef = useRef(null);
@@ -9,10 +11,13 @@ export default function Reports() {
   const location = useLocation();
   const issuesRef = useRef(null);
   const contractsRef = useRef(null);
+  const progressReportRef = useRef(null);
   const [openMenu, setOpenMenu] = useState(null);
   
   const [openIssues, setOpenIssues] = useState(false);
   const [openContracts, setOpenContracts] = useState(false);
+  const [openProgressReport, setOpenProgressReport] = useState(false);
+
 
   const isSubRoute =
     !location.pathname.endsWith("/reports") &&
@@ -41,6 +46,13 @@ export default function Reports() {
       ) {
         setOpenContracts(false);
       }
+	  
+	  if (
+	    progressReportRef.current &&
+	    !progressReportRef.current.contains(event.target)
+	  ) {
+	    setOpenProgressReport(false);
+	  }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -53,6 +65,97 @@ export default function Reports() {
     setOpenContracts(false);
     navigate(path);
   };
+  
+  
+  
+  const handleTPCClick = async () => {
+	
+	setOpenProgressReport(false);
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/tpc-status-report`,
+        {},
+        {
+          responseType: "blob",
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+
+      const disposition = res.headers["content-disposition"];
+      let fileName = "TPC-Report.docx";
+
+      if (disposition) {
+        const match = disposition.match(/filename="(.+)"/);
+        if (match) fileName = match[1];
+      }
+
+      const blob = new Blob([res.data]);
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+	  
+	  setOpenProgressReport(false);
+
+    } catch (err) {
+      console.error("TPC report download failed", err);
+    }
+  };
+
+  
+  
+
+  const handleSIPROnClick = async () => {
+	setOpenProgressReport(false);
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/station-improvements-report`,
+        {}, // must match @RequestBody StripChart obj
+        {
+          responseType: "blob",
+          withCredentials: true
+        }
+      );
+
+      // ✅ Extract filename from backend header
+      const disposition = res.headers["content-disposition"];
+      let fileName = "Station-Improvements.docx"; // fallback
+
+      if (disposition) {
+        const match = disposition.match(/filename="(.+)"/);
+        if (match && match[1]) {
+          fileName = match[1];
+        }
+      }
+
+      const blob = new Blob([res.data]);
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;  
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+	  
+	  setOpenProgressReport(false);
+
+
+
+    } catch (err) {
+      console.error("Report download failed", err);
+    }
+  };
+
+
 
   return (
     <div
@@ -126,12 +229,52 @@ export default function Reports() {
                 <Link to="contract-wise-activities">Contract-wise Activities</Link>
               </div>
             </div>
-            
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <Link to="Progress-report">Progress Report</Link>
-              </div>
-            </div>
+
+					
+			
+			{/* Progress Report  */}
+			<div className={styles.card} ref={progressReportRef}>
+			  <div
+			    className={styles.cardHeader}
+			    onClick={() => setOpenProgressReport(prev => !prev)}
+			  >
+			    <span>Progress Report</span>
+
+			    <ChevronRight
+			      size={16}
+			      className={`${styles.arrow} ${
+			        openProgressReport ? styles.arrowOpen : ""
+			      }`}
+			    />
+			  </div>
+			  {openProgressReport && (
+			    <div className={styles.progSubDropdown}>
+			      <span
+			        className={styles.progMenuLink}
+			        onClick={handleTPCClick}
+			      >
+			        TCP
+			      </span>
+
+			      <Link
+			        to="/reports/network-expansion-works"
+			        className={styles.progMenuLink}
+			        onClick={() => setOpenProgressReport(false)}
+			      >
+			        Network Expansion Works
+			      </Link>
+
+			      <span
+			        className={styles.progMenuLink}
+			        onClick={handleSIPROnClick}
+			      >
+			        Station Improvement Progress Report
+			      </span>
+			    </div>
+			  )}
+			</div>
+
+			
 
             {/* ✅ ISSUES — UpdateForms-style card */}
             <div className={styles.card} ref={issuesRef}>

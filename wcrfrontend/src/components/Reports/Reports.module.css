@@ -102,3 +102,33 @@
   transform: rotate(90deg);
 }
 
+.progSubDropdown {
+  background: #caeefb;
+  border-radius: 5px;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
+}
+
+/* Unified style for BOTH span & link */
+.progMenuLink {
+  text-decoration: none;
+  color: #156082;
+  padding: 11px 15px;
+  width: 100%;
+  display: block;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.progMenuLink:hover {
+  color: var(--primary-color);
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Remove unnecessary rule */
+.progressMenuItem div {
+  display: block;
+}
+
+
