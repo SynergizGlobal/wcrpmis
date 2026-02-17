@@ -4,8 +4,8 @@ public class CommonConstants2 {
 
 	static UrlGenerator ugObj = new UrlGenerator();
 	static String context_path = ugObj.getContextPath();
-//	static String base_path = ugObj.getNGINXFilesBasePath();
-    static String base_path ="C:\\Users\\Aman Kumar Thakur\\Pictures\\WCR DOC";
+	static String base_path = ugObj.getNGINXFilesBasePath();
+  
 
 	static String user_login_report_mail_id = ugObj.getUser_login_report_mail_id();
 	static String managers_mail_ids = ugObj.getManagers_mail_ids_for_alerts();

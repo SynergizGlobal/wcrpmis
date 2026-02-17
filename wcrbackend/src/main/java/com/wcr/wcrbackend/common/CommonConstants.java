@@ -6,8 +6,8 @@ public class CommonConstants {
 	
 	static UrlGenerator ugObj = new UrlGenerator();
 	static String context_path = ugObj.getContextPath();
-	//static String base_path = ugObj.getNGINXFilesBasePath();
-	 static String base_path ="C:\\Users\\Aman Kumar Thakur\\Pictures\\WCR DOC";
+	static String base_path = ugObj.getNGINXFilesBasePath();
+	
 	 
 	public final static String BASE_URL_SYNTRACK = "https://infoviz.syntrackpro.com/trusted/{0}/";  //{1} is the placeholder for tableau trusted token
 	public final static String BASE_URL_MRVC = "http://203.153.40.44:8000/trusted/{0}/";  //{0} is the placeholder for tableau trusted token
