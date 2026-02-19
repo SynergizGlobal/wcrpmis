@@ -1152,15 +1152,12 @@ sl.to_user_name as `to`,  c.subject as subject,  c.required_response as required
     	""")
     Optional<CorrespondenceLetter> findByCorrespondenceId(@Param("correspondenceId") Long correspondenceId);
 
-//    @Query("""
-//    	    SELECT DISTINCT c
-//    	    FROM CorrespondenceLetter c
-//    	    LEFT JOIN FETCH c.files
-//    	    LEFT JOIN FETCH c.correspondenceReferences
-//    	    LEFT JOIN FETCH c.sendCorLetters
-//    	    WHERE c.correspondenceId = :id
-//    	""")
-//    	Optional<CorrespondenceLetter> findFullById(Long id);
+    @Query(value = """
+    	    SELECT MAX(reference_number)
+    	    FROM correspondence_letter
+    	    WHERE reference_number LIKE :prefix%
+    	""", nativeQuery = true)
+    	String findMaxReferenceByPrefix(@Param("prefix") String prefix);
 
 
 

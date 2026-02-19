@@ -39,14 +39,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
 	 <dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
+	<dependency>
 			<groupId>com.mysql</groupId>
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
@@ -66,26 +65,40 @@
     		<artifactId>mssql-jdbc</artifactId>
     		<scope>runtime</scope> <!-- Use a version compatible with your Java version -->
 		</dependency>
-		<dependency>
+	<!--<dependency>
       		<groupId>log4j</groupId>
       		<artifactId>log4j</artifactId>
       		<version>1.2.14</version>
-    	</dependency>
+    	</dependency>-->
+    	<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>log4j-over-slf4j</artifactId>
+</dependency>
+       <!--  <dependency>
+             <groupId>org.eclipse.angus</groupId>
+              <artifactId>angus-mail</artifactId>
+           </dependency>-->
+    <!--	<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-to-slf4j</artifactId>
+</dependency>-->
+
     	<dependency>
     		<groupId>org.apache.poi</groupId>
     		<artifactId>poi-ooxml</artifactId>
    			<version>5.3.0</version>
 		</dependency>
-		<dependency>
+<!--		<dependency>
 	    	<groupId>javax.mail</groupId>
 	    	<artifactId>mail</artifactId>
 	    	<version>1.4.6</version>
-		</dependency>
+		</dependency>-->
 		<dependency>
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
-
+        
+                 
 		<dependency>
 	    	<groupId>org.apache.velocity</groupId>
 	    	<artifactId>velocity</artifactId>

@@ -166,6 +166,9 @@ public class CorrespondenceLetter {
 
     @Column(name = "to_user_name", length = 200)
     private String toUserName;
+    
+    @Column(name = "reference_number", unique = true, length = 50)
+    private String referenceNumber;
 
     @OneToMany(mappedBy = "correspondenceLetter", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

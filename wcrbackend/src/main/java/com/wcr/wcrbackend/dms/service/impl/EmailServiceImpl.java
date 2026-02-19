@@ -2,6 +2,7 @@ package com.wcr.wcrbackend.dms.service.impl;
 
 import java.io.File;
 
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.format.DateTimeFormatter;
@@ -16,8 +17,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-//import org.springframework.mail.javamail.JavaMailSender;
-//import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,10 +30,6 @@ import com.wcr.wcrbackend.dms.repository.SendCorrespondenceLetterRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
-
-//import jakarta.mail.MessagingException;
-//import jakarta.mail.internet.MimeMessage;
-//import jakarta.mail.util.ByteArrayDataSource;
 
 @Service
 @Slf4j

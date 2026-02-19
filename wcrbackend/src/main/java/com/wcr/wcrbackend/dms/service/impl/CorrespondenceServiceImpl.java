@@ -67,6 +67,7 @@ import com.wcr.wcrbackend.dms.repository.SendCorrespondenceLetterRepository;
 import com.wcr.wcrbackend.dms.repository.StatusRepository;
 import com.wcr.wcrbackend.dms.service.ICorrespondenceService;
 import com.wcr.wcrbackend.entity.User;
+import com.wcr.wcrbackend.repo.ContractorRepository;
 import com.wcr.wcrbackend.repo.UserDao;
 
 import java.nio.file.Paths;
@@ -99,7 +100,6 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 
 	private final EmailServiceImpl emailService;
 
-	//private final UserRepository userRepository;
 	private final UserDao userRepository;
 
 	private final SendCorrespondenceLetterRepository sendCorrespondenceLetterRepository;
@@ -107,6 +107,8 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 	private final DMSDepartmentRepository departmentRepository;
 	
 	private final StatusRepository statusRepository;
+	
+	private final ContractorRepository contractorRepository;
 	
 	@PersistenceContext(unitName = "dmsPU")
 	private EntityManager entityManager;
@@ -122,19 +124,34 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 		} else if(existingLetter.isPresent()) {
 			throw new IllegalArgumentException("Letter number " + dto.getLetterNumber() + " already exists");
 		}
-		CorrespondenceLetter entity = null;
-		if (dto.getCorrespondenceId() != null) {
-			entity = existingLetter.get();
-			// entity.getFiles().clear();
-			for (String fileId : dto.getRemovedExistingFiles()) {
-				Optional<CorrespondenceFile> fileToRemove = entity.getFiles().stream()
-						.filter(t -> fileId.equals("" + t.getId())).findFirst();
-				if (fileToRemove.isPresent()) {
-					CorrespondenceFile cf = fileToRemove.get();
-					entity.getFiles().remove(cf); // Remove from in-memory collection
-					//correspondenceFileRepository.deleteById(Long.parseLong(fileId));
-				}
-			}
+//		CorrespondenceLetter entity = null;
+//		if (dto.getCorrespondenceId() != null) {
+//			entity = existingLetter.get();
+//			// entity.getFiles().clear();
+//			for (String fileId : dto.getRemovedExistingFiles()) {
+//				Optional<CorrespondenceFile> fileToRemove = entity.getFiles().stream()
+//						.filter(t -> fileId.equals("" + t.getId())).findFirst();
+//				if (fileToRemove.isPresent()) {
+//					CorrespondenceFile cf = fileToRemove.get();
+//					entity.getFiles().remove(cf); // Remove from in-memory collection
+//					//correspondenceFileRepository.deleteById(Long.parseLong(fileId));
+//				}
+//			}
+		
+		
+		  CorrespondenceLetter entity;
+
+		    if (dto.getCorrespondenceId() != null) {
+		        entity = existingLetter.orElseThrow(
+		                () -> new RuntimeException("Correspondence not found"));
+
+		        // -------- Remove deleted files (NULL SAFE) --------
+		        if (dto.getRemovedExistingFiles() != null && !dto.getRemovedExistingFiles().isEmpty()) {
+		            for (String fileId : dto.getRemovedExistingFiles()) {
+		                entity.getFiles().removeIf(f ->
+		                        String.valueOf(f.getId()).equals(fileId));
+		            }
+		        }
 			entity.getCorrespondenceReferences().clear();
 			entity.getSendCorLetters().clear();
 			correspondenceRepo.saveAndFlush(entity);
@@ -156,7 +173,14 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 		entity.setDepartment(department);
 		entity.setProjectName(dto.getProjectName());
 		entity.setContractName(dto.getContractName());
+		
+		
+		   System.out.println("Correspondence Inside");
+		
 		CorrespondenceLetter savedEntity = correspondenceRepo.save(entity);
+		
+		 System.out.println("Correspondence Inside finding loggedUSerID"+ loggedUserId);
+		
 		User loggedInUserObj = userRepository
 		        .findById(loggedUserId)
 		        .orElseThrow(() -> new RuntimeException("User not found"));
@@ -165,7 +189,12 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 		// ---------- Handle TO -----------
 		if (dto.getTo() != null && !dto.getTo().isBlank()) {
 			User userTo = findUserByEmailOrUsername(dto.getTo());
+			 if (dto.getCorrespondenceId() == null
+			            && Constant.SEND.equalsIgnoreCase(dto.getAction())) {
 
+			        String refNo = generateReferenceNumber(loggedInUserObj, userTo);
+			        entity.setReferenceNumber(refNo);
+			    }
 			// OUTGOING row
 			SendCorrespondenceLetter outgoing = new SendCorrespondenceLetter();
 			outgoing.setToUserId(userTo.getUserId());
@@ -281,69 +310,124 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 
 		return savedEntity;
 	}
+	
+	private String generateReferenceNumber(
+	        User fromUser,
+	        User toUser
+	) {
 
+	    boolean fromContractor = "Contractor".equalsIgnoreCase(fromUser.getUserRoleNameFk());
+	    boolean toContractor   = "Contractor".equalsIgnoreCase(toUser.getUserRoleNameFk());
 
+	    String fromCode = fromContractor
+	            ? getContractorShortCodeByUserId(fromUser.getUserId())
+	            : "wcr";
+
+	    String toCode = toContractor
+	            ? getContractorShortCodeByUserId(toUser.getUserId())
+	            : "wcr";
+
+	    // prefix logic
+	    String prefix;
+	    if (!fromContractor && toContractor) {
+	        // Employee → Contractor
+	        prefix = "wcr/" + toCode + "/";
+	    } else if (fromContractor && !toContractor) {
+	        // Contractor → Employee
+	        prefix = fromCode + "/wcr/";
+	    } else {
+	        // Contractor → Contractor
+	        prefix = fromCode + "/" + toCode + "/";
+	    }
+
+	    // get max existing
+	    String maxRef = correspondenceRepo.findMaxReferenceByPrefix(prefix);
+
+	    int nextSeq = 1;
+	    if (maxRef != null) {
+	        String lastPart = maxRef.substring(maxRef.lastIndexOf('/') + 1);
+	        nextSeq = Integer.parseInt(lastPart) + 1;
+	    }
+
+	    return prefix + String.format("%03d", nextSeq);
+	}
+	
+	private String getContractorShortCodeByUserId(String userId) {
+
+	    return contractorRepository
+	            .findContractorShortCodeByUserId(userId)
+	            .orElseThrow(() ->
+	                    new RuntimeException("Contractor short code not found for user: " + userId)
+	            );
+	}
 	private User findUserByEmailOrUsername(String value) {
 		return userRepository.findByEmailId(value).or(() -> userRepository.findByUserName(value))
 				.orElseThrow(() -> new IllegalArgumentException("User not found: " + value));
 	}
 
-	private CorrespondenceLetter saveFileDetails(CorrespondenceUploadLetter dto, CorrespondenceLetter entity)
-			throws Exception {
-		List<MultipartFile> documents = dto.getDocuments();
+	private CorrespondenceLetter saveFileDetails(
+	        CorrespondenceUploadLetter dto,
+	        CorrespondenceLetter entity) throws Exception {
 
-		if (documents != null && !documents.isEmpty()) {
-			entity.setFileCount(documents.size() + dto.getExistingFilesCount());
+	    List<MultipartFile> documents = dto.getDocuments();
 
+	    // 🔐 NULL SAFE DEFAULT
+	    int existingFilesCount = dto.getExistingFilesCount() != null
+	            ? dto.getExistingFilesCount()
+	            : 0;
 
+	    if (documents != null && !documents.isEmpty()) {
 
-			// call new file storage method (returns relative paths)
-			List<String> fileRelativePaths = fileStorageService.saveFiles(documents);
-			// entity.getFiles().clear();
-			List<CorrespondenceFile> fileEntities = null;
-			if (dto.getCorrespondenceId() != null) {
-				fileEntities = entity.getFiles();
-			} else {
-				fileEntities = new ArrayList<>();
-			}
-			for (int i = 0; i < documents.size(); i++) {
-				MultipartFile file = documents.get(i);
-				String relativePath = (i < fileRelativePaths.size()) ? fileRelativePaths.get(i) : null;
+	        entity.setFileCount(existingFilesCount + documents.size());
 
-				String fileName = file.getOriginalFilename();
-				String fileExtension = "unknown";
+	        List<String> fileRelativePaths = fileStorageService.saveFiles(documents);
 
-				if (fileName != null && fileName.contains(".")) {
-					fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1);
-				}
+	        List<CorrespondenceFile> fileEntities =
+	                (dto.getCorrespondenceId() != null)
+	                        ? entity.getFiles()
+	                        : new ArrayList<>();
 
-				CorrespondenceFile cf = new CorrespondenceFile();
-				// store only the filename portion in DB OR store the relative path depending on
-				// your needs
-				if (relativePath != null) {
-					cf.setFilePath(relativePath); // relative path (OUTGOING/123/xxx.pdf)
-					cf.setFileName(Paths.get(relativePath).getFileName().toString());
-				} else {
-					cf.setFileName(fileName);
-					cf.setFilePath(null);
-				}
-				cf.setFileType(fileExtension.toLowerCase());
-				cf.setCorrespondenceLetter(entity);
+	        for (int i = 0; i < documents.size(); i++) {
+	            MultipartFile file = documents.get(i);
+	            String relativePath = (i < fileRelativePaths.size())
+	                    ? fileRelativePaths.get(i)
+	                    : null;
 
-				fileEntities.add(cf);
-			}
-			if (dto.getCorrespondenceId() != null)
-				entity.getFiles().addAll(fileEntities);
-			else
-				entity.setFiles(fileEntities);
-		} else {
-			;
-			entity.setFileCount((int)entity.getFiles().stream().count());
-			//entity.setFiles(new ArrayList<>());
-		}
+	            String fileName = file.getOriginalFilename();
+	            String fileExtension = "unknown";
 
-		return entity;
+	            if (fileName != null && fileName.contains(".")) {
+	                fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
+	            }
+
+	            CorrespondenceFile cf = new CorrespondenceFile();
+	            cf.setCorrespondenceLetter(entity);
+	            cf.setFileType(fileExtension.toLowerCase());
+
+	            if (relativePath != null) {
+	                cf.setFilePath(relativePath);
+	                cf.setFileName(Paths.get(relativePath).getFileName().toString());
+	            } else {
+	                cf.setFileName(fileName);
+	            }
+
+	            fileEntities.add(cf);
+	        }
+
+	        if (dto.getCorrespondenceId() == null) {
+	            entity.setFiles(fileEntities);
+	        }
+
+	    } else {
+	        // No new documents
+	        entity.setFileCount(
+	                entity.getFiles() != null ? entity.getFiles().size() : 0
+	        );
+	    }
+
+	    return entity;
 	}
+
 
 	public List<CorrespondenceLetter> getAllCorrespondences() {
 		return correspondenceRepo.findAll();

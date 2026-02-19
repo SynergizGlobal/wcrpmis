@@ -57,4 +57,7 @@ public class Contractor {
 
     @Column(name = "remarks")
     private String remarks;
+    
+    @Column(name = "contractor_short_code")
+    private String contractorShortCode;
 }

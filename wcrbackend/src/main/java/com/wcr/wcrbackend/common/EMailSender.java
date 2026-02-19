@@ -11,20 +11,20 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-import javax.activation.DataHandler;
-import javax.activation.DataSource;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.InternetHeaders;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import javax.mail.util.ByteArrayDataSource;
+import jakarta.activation.DataHandler;
+import jakarta.activation.DataSource;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.InternetHeaders;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.util.ByteArrayDataSource;
 
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
@@ -46,53 +46,11 @@ public class EMailSender {
 	
 	private static Logger logger = Logger.getLogger(EMailSender.class);
 	
-	/*private static String mailId = "syntrack@synergizglobal.com";
-	private static String pass = "Synergiz@2018";*/
-	
-	/************** ZIMBRA Mail Server Credentials**************************************/
-//	private static String mailId = "syntrack@synergizglobal.com";
-//	private static String pass = "@@Synergiz2025!";
-//	
-//	public static Session getSession() {
-//		Properties props = new Properties();
-//		
-//		/************** ZIMBRA Server Starts**************************************/
-//		props.put("mail.smtp.auth", "true");
-//		props.put("mail.smtp.starttls.enable", "true");
-//		props.put("mail.smtp.starttls.required", "true"); 
-//		props.put("mail.smtp.host", "smtp.smtp.office365.com");
-//		props.put("mail.smtp.port", "587");
-//		
-//		  //  The critical fix. Force TLS 1.2 for STARTTLS
-//	    props.put("mail.smtp.ssl.protocols", "TLSv1.2");
-//		
-//		/************** ZIMBRA Server ends*************************************/
-//		
-//		/************** GMAIL Server Starts**************************************/
-//		/*props.put("mail.smtp.auth", "true");
-//		props.put("mail.smtp.starttls.enable", "true");
-//		props.put("mail.smtp.host", "smtp.gmail.com");
-//		props.put("mail.smtp.port", "587");*/
-//		/************** GMAIL Server ends*************************************/
-//		
-//		Session session = Session.getInstance(props,
-//		  new javax.mail.Authenticator() {
-//			protected PasswordAuthentication getPasswordAuthentication() {
-//				return new PasswordAuthentication(mailId, pass);
-//			}
-//		  });
-//		return session;
-//	}
-	
-	
-	
-	
-	
-	
-	
+
+
 	
 	private static String mailId = "syntrack@synergizglobal.com";
-	private static String pass = "@@Synergiz2025!";
+	private static String pass = "vxwlmvsyvflnlnhn";
 
 	public static Session getSession() {
 	    Properties props = new Properties();
@@ -106,7 +64,7 @@ public class EMailSender {
 	    props.put("mail.smtp.host", "smtp.office365.com");
 	    props.put("mail.smtp.port", "587");
 
-	    Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+	    Session session = Session.getInstance(props, new jakarta.mail.Authenticator() {
 	        @Override
 	        protected PasswordAuthentication getPasswordAuthentication() {
 	            return new PasswordAuthentication(mailId, pass);
