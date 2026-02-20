@@ -301,7 +301,25 @@ export default function FilterForm() {
   const fetchFolders = async () => {
     try {
       const res = await axiosInstance.get('/api/folders/get');
-      setFolders(extractData(res));
+      const folderList = extractData(res);
+
+      // Fetch subfolders for each folder from /api/subfolders/{folderId}
+      const foldersWithSubs = await Promise.all(
+        folderList.map(async (folder) => {
+          const folderId = folder.id || folder._id;
+          try {
+            const subRes = await axiosInstance.get(`/api/subfolders/${folderId}`);
+            const subs = Array.isArray(subRes.data) ? subRes.data
+                       : Array.isArray(subRes.data?.data) ? subRes.data.data
+                       : [];
+            return { ...folder, subFolders: subs };
+          } catch {
+            return { ...folder, subFolders: [] };
+          }
+        })
+      );
+
+      setFolders(foldersWithSubs);
     } catch (err) {
       console.error(err);
     }
@@ -395,7 +413,24 @@ export default function FilterForm() {
 
   const handleEditFolderConfirm = async (id, updatedData) => {
     try {
-      await axiosInstance.put(`/api/folders/update/${id}`, updatedData);
+      // 1. Update the folder name via existing folder update endpoint
+      await axiosInstance.put(`/api/folders/update-folder/${id}`, { name: updatedData.name });
+
+      // 2. Find truly new sub-folders (not already in DB) and POST each to /api/subfolders/create/{folderId}
+      const existingSubFolders = folderToEdit?.subFolders || [];
+      const existingNames = existingSubFolders.map(sf => (sf.name || sf).toLowerCase());
+      const newSubFolders = (updatedData.subFolders || []).filter(
+        sfName => !existingNames.includes(sfName.toLowerCase())
+      );
+
+      if (newSubFolders.length > 0) {
+        await Promise.all(
+          newSubFolders.map(sfName =>
+            axiosInstance.post(`/api/subfolders/create/${id}`, { name: sfName })
+          )
+        );
+      }
+
       fetchFolders();
       setShowEditFolderModal(false);
       setFolderToEdit(null);
