@@ -85,13 +85,13 @@ const CodesAndManuals = () => {
                   setErrors({});
                 }}
               >
-                close
+                Close
               </span>
             </div>
 
             <div className={styles.modalBody}>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
+              <div className="form-row">
+                <div className="form-field">
                   <label>Title</label>
                   <input
                     type="text"
@@ -103,7 +103,7 @@ const CodesAndManuals = () => {
                   )}
                 </div>
 
-                <div className={styles.formGroup}>
+                <div className="form-field">
                   <label>Category</label>
                   <input
                     type="text"

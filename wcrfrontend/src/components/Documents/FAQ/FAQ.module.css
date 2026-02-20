@@ -21,7 +21,8 @@
   text-align: center;
   padding: 12px;
   font-size: 22px;
-  margin: 0;               /* ✅ remove gap */
+  margin: 0;
+  font-weight: bold;
 }
 
 /* Top Bar */

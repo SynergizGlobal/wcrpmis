@@ -1,0 +1,175 @@
+/* ================= PAGE ================= */
+
+.pageWrapper {
+  width: 100%;
+  background: #f4f6f9;  /* Grey background */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ================= CARD ================= */
+
+.tableCard {
+  width: 100%;
+  background: #ffffff;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= TITLE ================= */
+
+.titleBar {
+  background: #a6caec;
+  color: #000;
+  text-align: center;
+  padding: 14px 0;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ================= TOP CONTROLS ================= */
+
+.topControls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+}
+
+/* Show entries */
+
+.showEntries {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #555;
+}
+
+.showEntries select {
+  width: 60px;
+  height: 30px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+
+/* ================= SEARCH ================= */
+
+.searchBox {
+  position: relative;
+  width: 220px;
+}
+
+.searchInput {
+  width: 100%;
+  height: 32px;
+  padding: 0 34px 0 12px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+
+.searchIcon {
+  position: absolute;
+  right: 10px;
+  top: 6px;
+  font-size: 14px;
+  color: #555;
+  pointer-events: none;
+}
+
+/* ================= TABLE ================= */
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+
+  /* ✅ THIS CREATES LEFT & RIGHT GREY GAP */
+  padding: 0 20px 20px 20px;
+  background: #f4f6f9;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff; /* White table inside grey gap */
+  min-width: 1100px;
+}
+
+/* Header */
+
+.table th {
+  background: #3f4a7f;
+  color: #fff;
+  padding: 10px;
+  text-align: left;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Body */
+
+.table td {
+  padding: 12px 10px;
+  font-size: 14px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #fff;
+}
+
+/* Align last column right */
+
+.table th:last-child,
+.table td:last-child {
+  text-align: right;
+}
+
+/* No data row */
+
+.noData {
+  text-align: center !important;
+  padding: 20px;
+  color: #666;
+  background: #fff;
+}
+
+/* ================= FOOTER ================= */
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  font-size: 14px;
+  border-top: 1px solid #eee;
+  background: #fff;
+}
+
+/* Pagination */
+
+.pagination {
+  display: flex;
+  gap: 24px;
+}
+
+.pageBtn {
+  color: #3f4a7f;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.pageBtn:hover {
+  opacity: 0.75;
+}

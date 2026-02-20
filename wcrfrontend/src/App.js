@@ -1,4 +1,6 @@
 import ContractReport from "./components/Reports/ContractReport/ContractReport";
+import InsuranceContractualLetters from "./components/Reports/InsuranceContractualLetters/InsuranceContractualLetters";
+import DateofCompletionLetters from "./components/Reports/DateofCompletionLetters/DateofCompletionLetters";
 import CodesAndManuals from "./components/Documents/CodesAndManuals/CodesAndManuals";
 import FAQ from "./components/Documents/FAQ/FAQ";
 import PoliciesAndCirculars from "./components/Documents/PoliciesAndCirculars/PoliciesAndCirculars";
@@ -367,7 +369,9 @@ function App() {
 						<Route path="issues" element={<Issues />} />
 						<Route path="pendingissuesreport" element={<PendingIssuesReport />} />
 												
-					
+						<Route path="insurance-contractual-letters" element={<InsuranceContractualLetters />} />
+						
+						<Route path="doc-contractual-letters" element={<DateofCompletionLetters />} />
 						<Route path="department" element={<Department />} />
 						<Route path="projectType" element={<ProjectType />} />
 	          <Route path="railway" element={<Railway />} />

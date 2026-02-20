@@ -1,0 +1,153 @@
+.wrapper {
+  background: #f4f5f7; /* page light grey */
+  border: 1px solid #dcdfe4;
+  width: 100%;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Header */
+.header {
+  background: #a6caec; /* light blue header */
+  color: #1b1b1b;
+  text-align: center;
+  padding: 14px 10px;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 20px;
+  background: #f4f5f7;
+}
+
+.entriesControl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #444;
+  font-size: 14px;
+}
+
+.entriesControl select {
+  padding: 6px 10px;
+  border: 1px solid #c9ced6;
+  border-radius: 4px;
+  background: #fff;
+}
+
+/* =========================
+   SEARCH STYLE
+========================= */
+.searchBox {
+  display: flex;
+  align-items: center;
+  width: 165px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #b8bcc3;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.searchBox input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 14px;
+  color: #000;
+  font-family: inherit;
+}
+
+.searchBox input::placeholder {
+  color: #000;
+}
+
+.searchIcon {
+  color: #7b5aa6;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Table */
+.tableContainer {
+  margin: 0 20px;
+  background: #fff;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Dark blue table header */
+.table thead tr {
+  background: #4b569d;
+  color: #fff;
+}
+
+.table th {
+  padding: 12px 10px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Table body */
+.table tbody td {
+  padding: 12px 10px;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+/* Alternate row striping */
+.table tbody tr:nth-child(even) td {
+  background: #eaf2fb;
+}
+
+/* =========================
+   EMPTY ROW (CENTER FIX)
+========================= */
+.emptyRow td {
+  background: #f7d9d1;
+  color: #222;
+  text-align: center;       
+  vertical-align: middle;
+  padding: 14px 10px;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  color: #333;
+  font-size: 15px;
+  background: #f4f5f7;
+}
+
+.pagination {
+  display: flex;
+  gap: 20px;
+}
+
+.pagination button {
+  background: none;
+  border: none;
+  color: #7d8794;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.pagination button:hover {
+  color: #2f3b52;
+}
