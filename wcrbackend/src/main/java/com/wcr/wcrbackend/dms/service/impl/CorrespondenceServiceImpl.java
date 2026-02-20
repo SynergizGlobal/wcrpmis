@@ -321,20 +321,20 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 
 	    String fromCode = fromContractor
 	            ? getContractorShortCodeByUserId(fromUser.getUserId())
-	            : "wcr";
+	            : "WCR";
 
 	    String toCode = toContractor
 	            ? getContractorShortCodeByUserId(toUser.getUserId())
-	            : "wcr";
+	            : "WCR";
 
 	    // prefix logic
 	    String prefix;
 	    if (!fromContractor && toContractor) {
 	        // Employee → Contractor
-	        prefix = "wcr/" + toCode + "/";
+	        prefix = "WCR/" + toCode + "/";
 	    } else if (fromContractor && !toContractor) {
 	        // Contractor → Employee
-	        prefix = fromCode + "/wcr/";
+	        prefix = fromCode + "/WCR/";
 	    } else {
 	        // Contractor → Contractor
 	        prefix = fromCode + "/" + toCode + "/";

@@ -54,6 +54,7 @@ public class ContractorService {
                 .orElseThrow(() -> new RuntimeException("Contractor not found"));
 
         existing.setContractorName(c.getContractorName());
+        existing.setContractorShortCode(c.getContractorShortCode());
         existing.setPanNumber(c.getPanNumber());
         existing.setSpecilaization(c.getSpecilaization());
         existing.setAddress(c.getAddress());

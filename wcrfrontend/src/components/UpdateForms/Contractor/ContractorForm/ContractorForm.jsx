@@ -22,6 +22,7 @@ export default function ContractorForm() {
   } = useForm({
     defaultValues: {
       contractorName: "",
+      contractorShortCode: "", // Added new field
       panNumber: "",
       specilaization: "",
       address: "",
@@ -87,7 +88,6 @@ export default function ContractorForm() {
     }
   };
 
-
   return (
       <div className={`${styles.container} container-padding`}>
         <div className="card">
@@ -150,6 +150,41 @@ export default function ContractorForm() {
 				  {errors.contractorName && (
 				      <span className="red">{errors.contractorName.message}</span>
 				    )}
+                </div>
+            
+
+              {/* Contractor Short Code - New Field */}
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Contractor Short Code <span className="red">*</span></label>
+                  <input 
+                    {...register("contractorShortCode", { 
+                      required: "Contractor short code is required",
+                      maxLength: {
+                        value: 5,
+                        message: "Short code cannot exceed 5 characters"
+                      },
+                      minLength: {
+                        value: 1,
+                        message: "Short code is required"
+                      },
+                      pattern: {
+                        value: /^[A-Za-z0-9]{1,5}$/,
+                        message: "Only letters and numbers allowed"
+                      }
+                    })} 
+                    type="text" 
+                    maxLength={5}
+                    placeholder="Enter max 5 chars"
+                    onInput={(e) => (e.target.value = e.target.value.toUpperCase())}
+                  />
+                  {errors.contractorShortCode && (
+                    <span className="red">{errors.contractorShortCode.message}</span>
+                  )}
+                  <div style={{ textAlign: "right", fontSize: "0.85em", color: "#666" }}>
+                    {watch("contractorShortCode")?.length || 0}/5
+                  </div>
+                </div>
                 </div>
               </div>
 
