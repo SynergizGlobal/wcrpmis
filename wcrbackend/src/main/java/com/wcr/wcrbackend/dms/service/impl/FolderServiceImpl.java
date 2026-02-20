@@ -1,13 +1,11 @@
 package com.wcr.wcrbackend.dms.service.impl;
 
-import java.util.ArrayList;
-
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wcr.wcrbackend.dms.dto.FolderDTO;
 import com.wcr.wcrbackend.dms.dto.SubFolderDTO;
@@ -21,114 +19,128 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class FolderServiceImpl implements FolderService {
 
-	private final FolderRepository folderRepository;
+    private final FolderRepository folderRepository;
+    private final SubFolderRepository subFolderRepository;
 
-	private final SubFolderRepository subFolderRepository;
+    // read
 
-	@Override
-	public List<FolderDTO> getAllFolders() {
-		return folderRepository.findAll().stream()
-				.map(folder -> new FolderDTO(folder.getId(), folder.getName(), folder.getSubFolders().stream()
-						.map(sf -> new SubFolderDTO(sf.getId(), sf.getName())).collect(Collectors.toList())))
-				.collect(Collectors.toList());
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public List<FolderDTO> getAllFolders() {
+        return folderRepository.findAllWithSubFolders()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 
-	@Override
-	public FolderDTO getFolderById(Long id) {
-		Folder folder = folderRepository.findById(id).orElseThrow(() -> new RuntimeException("Folder not found"));
-		return new FolderDTO(folder.getId(), folder.getName(), folder.getSubFolders().stream()
-				.map(sf -> new SubFolderDTO(sf.getId(), sf.getName())).collect(Collectors.toList()));
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public FolderDTO getFolderById(Long id) {
+        Folder folder = folderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Folder not found"));
+        return toDTO(folder);
+    }
 
-	@Override
-	public FolderDTO createFolder(FolderDTO folderDTO) {
-		Folder folder = new Folder(folderDTO.getName());
-		if (folderDTO.getSubFolders() != null) {
-			folderDTO.getSubFolders().forEach(sf -> folder.getSubFolders().add(new SubFolder(sf.getName(), folder)));
-		}
-		Folder saved = folderRepository.save(folder);
-		return getFolderById(saved.getId());
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public FolderDTO getFolderByName(String name) {
+        return folderRepository.findByNameWithSubFolders(name)
+                .map(this::toDTO)
+                .orElse(null);
+    }
 
-	@Override
-	public FolderDTO updateFolder(Long id, FolderDTO folderDTO) {
-		Folder folder = folderRepository.findById(id).orElseThrow(() -> new RuntimeException("Folder not found"));
+    // WRITE 
 
-		// Update folder name
-		folder.setName(folderDTO.getName());
+    @Override
+    public FolderDTO createFolder(FolderDTO folderDTO) {
+        Folder folder = new Folder(folderDTO.getName());
 
-		if (folderDTO.getSubFolders() != null) {
-			// Existing children in DB
-			Map<Long, SubFolder> existingSubFolders = folder.getSubFolders().stream()
-					.collect(Collectors.toMap(SubFolder::getId, sf -> sf));
+        if (folderDTO.getSubFolders() != null) {
+            folderDTO.getSubFolders().forEach(sf ->
+                folder.getSubFolders().add(new SubFolder(sf.getName(), folder))
+            );
+        }
 
-			// Iterate DTO subfolders
-			for (SubFolderDTO sfDto : folderDTO.getSubFolders()) {
-				if (sfDto.getId() != null && existingSubFolders.containsKey(sfDto.getId())) {
-					// Update existing subfolder
-					SubFolder existing = existingSubFolders.get(sfDto.getId());
-					existing.setName(sfDto.getName());
-					existingSubFolders.remove(sfDto.getId()); // Mark as processed
-				} else {
-					// New subfolder → add
-					folder.getSubFolders().add(new SubFolder(sfDto.getName(), folder));
-				}
-			}
+        Folder saved = folderRepository.save(folder);
+        return toDTO(saved);
+    }
 
-			// Optional: remove subfolders not present in DTO
-			// folder.getSubFolders().removeAll(existingSubFolders.values());
-		}
+    @Override
+    public FolderDTO updateFolder(Long id, FolderDTO folderDTO) {
+        Folder folder = folderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Folder not found"));
 
-		Folder updated = folderRepository.save(folder);
-		return getFolderById(updated.getId());
-	}
+        folder.setName(folderDTO.getName());
 
-	@Override
-	public void deleteFolder(Long folderId) {
-		folderRepository.deleteById(folderId);
-	}
+        if (folderDTO.getSubFolders() != null) {
 
-	@Override
-	public void deleteSubFolder(Long subFolderId) {
-		subFolderRepository.deleteById(subFolderId);
-	}
+            Map<Long, SubFolder> existing =
+                    folder.getSubFolders().stream()
+                            .collect(Collectors.toMap(SubFolder::getId, sf -> sf));
 
-	@Override
-	public FolderDTO getFolderByName(String name) {
-		Optional<Folder> folderOpt = folderRepository.findByName(name);
-		if (folderOpt.isPresent()) {
-			Folder folder = folderOpt.get();
-			return new FolderDTO(folder.getId(), folder.getName(), folder.getSubFolders().stream()
-					.map(sf -> new SubFolderDTO(sf.getId(), sf.getName())).collect(Collectors.toList()));
-		}
-		return null;
-	}
+            for (SubFolderDTO sfDto : folderDTO.getSubFolders()) {
+                if (sfDto.getId() != null && existing.containsKey(sfDto.getId())) {
+                    existing.get(sfDto.getId()).setName(sfDto.getName());
+                    existing.remove(sfDto.getId());
+                } else {
+                    folder.getSubFolders()
+                          .add(new SubFolder(sfDto.getName(), folder));
+                }
+            }
+        }
 
-	@Override
-	public List<FolderDTO> getAllFoldersByProjectsAndContracts(List<String> project, List<String> contract,String userId) {
-		// TODO Auto-generated method stub
-		List<Folder> folders = folderRepository.getAllFoldersByProjectsAndContracts(project, contract, userId);
-		List<FolderDTO> dtos = new ArrayList<>();
-		for(Folder folder : folders) {
-			FolderDTO dto = new FolderDTO(folder.getId(), folder.getName());
-			dtos.add(dto);
-		}
-		return dtos;
-		
-	}
+        return toDTO(folderRepository.save(folder));
+    }
 
-	@Override
-	public List<FolderDTO> getAllFoldersByProjectsAndContracts(List<String> projects, List<String> contracts) {
-		List<Folder> folders = folderRepository.getAllFoldersByProjectsAndContracts(projects, contracts);
-		List<FolderDTO> dtos = new ArrayList<>();
-		for(Folder folder : folders) {
-			FolderDTO dto = new FolderDTO(folder.getId(), folder.getName());
-			dtos.add(dto);
-		}
-		return dtos;
-		
-	}
+    @Override
+    public void deleteFolder(Long folderId) {
+        folderRepository.deleteById(folderId);
+    }
 
+    @Override
+    public void deleteSubFolder(Long subFolderId) {
+        subFolderRepository.deleteById(subFolderId);
+    }
+
+    
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FolderDTO> getAllFoldersByProjectsAndContracts(
+            List<String> project, List<String> contract, String userId) {
+
+        return folderRepository
+                .getAllFoldersByProjectsAndContracts(project, contract, userId)
+                .stream()
+                .map(f -> new FolderDTO(f.getId(), f.getName()))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FolderDTO> getAllFoldersByProjectsAndContracts(
+            List<String> projects, List<String> contracts) {
+
+        return folderRepository
+                .getAllFoldersByProjectsAndContracts(projects, contracts)
+                .stream()
+                .map(f -> new FolderDTO(f.getId(), f.getName()))
+                .toList();
+    }
+
+    
+
+    private FolderDTO toDTO(Folder folder) {
+        List<SubFolderDTO> subFolders = folder.getSubFolders() == null
+                ? List.of()
+                : folder.getSubFolders().stream()
+                        .map(sf -> new SubFolderDTO(sf.getId(), sf.getName()))
+                        .toList();
+
+        return new FolderDTO(folder.getId(), folder.getName(), subFolders);
+    }
 }
+

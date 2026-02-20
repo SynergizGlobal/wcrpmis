@@ -1,13 +1,8 @@
 /* CSS Variables for easy theme management */
+
+/* CSS Variables for easy theme management */
 :root {
-  --primary-color: #4a90e2;
-  --primary-fade-color: #357ae8;
-  --success-color: #28a745;
-  --success-hover: #218838;
-  --danger-color: #dc3545;
-  --danger-hover: #c82333;
-  --secondary-color: #6c757d;
-  --secondary-hover: #5a6268;
+ 
   --bg-light: #f8f9fa;
   --border-color: #e9ecef;
   --text-primary: #333;
@@ -27,37 +22,25 @@
   --spacing-xxl: 24px;
 }
 
+
 .container {
-  padding: var(--spacing-xl);
-  background-color: #f9f9f9;
-  border-radius: var(--border-radius);
-  min-height: 100vh;
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
+  background-color: #fff;
+  padding: 10px;
 }
 
 .mainLayout {
   display: flex;
-  gap: var(--spacing-xl);
+  gap: 10px;
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
-.leftColumn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
-  min-width: 300px;
-}
-
-.rightColumn {
-  flex: 1;
-  min-width: 300px;
+.card{
+  flex: 0 0 49%;
 }
 
 .sectionContainer {
-  background-color: var(--white);
+  background-color: #fff;
   border-radius: var(--border-radius);
   padding: var(--spacing-xl);
   box-shadow: var(--shadow);
@@ -169,11 +152,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.dataTable {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 400px;
-}
+
 
 .tableHeader {
   text-align: left;
@@ -189,6 +168,10 @@
 .tableRow {
   border-bottom: 1px solid var(--border-color);
   transition: background-color 0.2s ease;
+}
+
+.tableWrapper tbody tr td{
+  padding: 5px;
 }
 
 .tableRow:hover {
@@ -516,35 +499,33 @@
 .modalFooter {
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  border-top: 1px solid var(--border-color);
-  background-color: var(--bg-light);
-  position: sticky;
-  bottom: 0;
-  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .modalButtonSecondary,
 .modalButtonPrimary,
 .modalButtonDanger {
-  padding: var(--spacing-sm) var(--spacing-lg);
+  background-color: #dc2626;   
+  color: #ffffff;             
   border: none;
-  border-radius: var(--border-radius-sm);
-  font-size: clamp(13px, 1.8vw, 14px);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 80px;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-xs);
 }
 
 .modalButtonSecondary {
-  background-color: var(--secondary-color);
-  color: var(--white);
+  background-color: #e5e7eb;   /* light gray */
+  color: #111827;              /* DARK TEXT (important) */
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .modalButtonSecondary:hover {
@@ -564,12 +545,11 @@
 
 .modalButtonDanger {
   background-color: var(--danger-color);
-  color: var(--white);
+  color: var(--red);
 }
 
 .modalButtonDanger:hover {
-  background-color: var(--danger-hover);
-  transform: translateY(-1px);
+  background-color: #b91c1c;
 }
 
 .textInput,
@@ -805,4 +785,9 @@
   .dataSection {
     background-color: white;
     border: none;
+  }
+  .actionBtns {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
   }

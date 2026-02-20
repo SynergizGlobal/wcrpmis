@@ -1,7 +1,6 @@
 package com.wcr.wcrbackend.dms.repository;
 
 import java.util.List;
-
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +13,15 @@ import com.wcr.wcrbackend.dms.entity.Folder;
 public interface FolderRepository extends JpaRepository<Folder, Long> {
 
 	Optional<Folder> findByName(String folder);
+
+	@Query("""
+		SELECT f
+		FROM Folder f
+		LEFT JOIN FETCH f.subFolders
+		WHERE f.name = :name
+	""")
+	Optional<Folder> findByNameWithSubFolders(@Param("name") String name);
+
 	
 	@Query(value="""
 		   select distinct f.*
@@ -39,4 +47,27 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 		      and d.contractName in :contracts
 		""")
 	List<Folder> getAllFoldersByProjectsAndContracts(@Param("projects")List<String> projects,@Param("contracts") List<String> contracts);
+
+	@Query("""
+			SELECT DISTINCT f
+			FROM Folder f
+			LEFT JOIN FETCH f.subFolders
+		""")
+		List<Folder> findAllWithSubFolders();
+
+	@Query("""
+		SELECT DISTINCT f
+		FROM Document d
+		JOIN d.folder f
+		LEFT JOIN FETCH f.subFolders
+		WHERE
+		(d.notRequired IS NULL OR d.notRequired = false)
+		AND d.projectName IN :projects
+		AND d.contractName IN :contracts
+	""")
+	List<Folder> getAllFoldersByProjectsAndContractsWithSubFolders(
+		@Param("projects") List<String> projects,
+		@Param("contracts") List<String> contracts
+	);
+
 }
