@@ -20,6 +20,7 @@ public class CorrespondenceGridDTO {
 	private Long correspondenceId;
 	private String category;
 	private String letterNumber;
+	private String referenceNumber;
 	private String from;
 	private String to;
 	private String subject;
@@ -32,4 +33,5 @@ public class CorrespondenceGridDTO {
 	private String contractName;
 	private Integer attachment;
 	private String type;
+
 }

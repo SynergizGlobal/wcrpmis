@@ -957,7 +957,7 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 		String userId = user.getUserId();
 
 		String baseSelect = " SELECT c.correspondence_id as correspondenceId, c.category as category, "
-				+ " c.letter_number as letterNumber, " + " sl.from_user_name as `from`, " + " sl.to_user_name as `to`, "
+				+ " c.letter_number as letterNumber, " + "  c.reference_number as referenceNumber," + " sl.from_user_name as `from`, " + " sl.to_user_name as `to`, "
 				+ " c.subject as subject, " + " c.required_response as requiredResponse, " + " c.due_date as dueDate, "
 				+ " c.project_name as projectName, " + " c.contract_name as contractName, "
 				+ " s.name as currentStatus, " + " d.name as department, "
@@ -1050,8 +1050,8 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 
 		String userId = user.getUserId();
 
-		String baseSelect = " SELECT c.category as category, " + " c.letter_number as letterNumber, "
-				+ " sl.from_user_name as `from`, " + " sl.to_user_name as `to`, " + " c.subject as subject, "
+		String baseSelect = " SELECT c.category as category, " + " c.letter_number as letterNumber, " + " c.reference_number  as referenceNumber," 
+				+ " sl.from_user_name as `from`, "+" sl.to_user_name as `to`, " + " c.subject as subject, "
 				+ " c.required_response as requiredResponse, " + " c.due_date as dueDate, "
 				+ " c.project_name as projectName, " + " c.contract_name as contractName, "
 				+ " c.current_status as currentStatus, " + " c.department as department, "
@@ -1128,20 +1128,7 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 		// return cnt.longValue();
 	}
 
-//	@Override
-//	@Transactional(readOnly = true)
-//	public CorrespondenceLetter getCorrespondeneceById(Long correspondenceId) {
-//
-//	    CorrespondenceLetter letter =
-//	            correspondenceRepo.findById(correspondenceId)
-//	                    .orElseThrow(() -> new RuntimeException("Letter not found"));
-//
-//	    Hibernate.initialize(letter.getFiles());
-//	    Hibernate.initialize(letter.getSendCorLetters());
-//	    Hibernate.initialize(letter.getCorrespondenceReferences());
-//
-//	    return letter;
-//	}
+
 	@Transactional(readOnly = true)
 	public CorrespondenceLetter getCorrespondeneceById(Long id) {
 

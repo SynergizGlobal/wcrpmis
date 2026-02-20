@@ -15,16 +15,6 @@ import com.wcr.wcrbackend.dms.entity.CorrespondenceLetter;
 import com.wcr.wcrbackend.dms.entity.SendCorrespondenceLetter;
 import com.wcr.wcrbackend.entity.User;
 
-//import com.synergizglobal.dms.dto.CorrespondenceDraftGridDTO;
-//import com.synergizglobal.dms.dto.CorrespondenceGridDTO;
-//import com.synergizglobal.dms.dto.CorrespondenceLetterProjection;
-//import com.synergizglobal.dms.dto.CorrespondenceLetterViewDto;
-//import com.synergizglobal.dms.dto.CorrespondenceUploadLetter;
-//import com.synergizglobal.dms.dto.DraftDataTableRequest;
-//import com.synergizglobal.dms.dto.DraftDataTableResponse;
-//import com.synergizglobal.dms.entity.dms.CorrespondenceLetter;
-//import com.synergizglobal.dms.entity.dms.SendCorrespondenceLetter;
-//import com.synergizglobal.dms.entity.pmis.User;
 
 public interface ICorrespondenceService {
 
