@@ -75,7 +75,7 @@ export default function Correspondence() {
       Contract: r.contractName || "",
       Status: r.currentStatus || "",
       Department: r.department || "",
-      Attachment: "View",
+      Attachment: r.attachment || "",	
       Type: r.type || "",
     }));
 

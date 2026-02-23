@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './ContractReport.module.css';
 import api from "../../../api/axiosInstance";
@@ -9,7 +9,7 @@ import Select from 'react-select';
 const ContractReport = () => {
   const { reportNo } = useParams();
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     project_id_fk: '',
     hod_designations: [],
@@ -20,7 +20,7 @@ const ContractReport = () => {
     date: null,
     todate: null
   });
-  
+
   const [dropdowns, setDropdowns] = useState({
     projects: [],
     hodOptions: [],
@@ -29,13 +29,13 @@ const ContractReport = () => {
     contractStatusOptions: [],
     contractOptions: []
   });
-  
+
   const [loading, setLoading] = useState(false);
+  const [loadingField, setLoadingField] = useState(null);
   const [errors, setErrors] = useState({});
   const [reportTitle, setReportTitle] = useState('');
   const [filtersMap, setFiltersMap] = useState({});
-  
-  // Report titles mapping
+
   const reportTitles = {
     1: "List of Contracts",
     2: "Contract Detail Report",
@@ -47,385 +47,312 @@ const ContractReport = () => {
     8: "BG Insurance Report",
     9: "Contract Completion Report"
   };
-  
-  // UI visibility conditions based on report type
-  const showNextRow = [2, 3, 4, 5, 6, 8, 9].includes(parseInt(reportNo));
-  const showDateDiv = reportNo === '8';
+
+  // UI visibility conditions
+  const showDateDiv    = reportNo === '8';
   const showContractDiv = reportNo === '2';
-  const showHodDiv = ![8].includes(parseInt(reportNo));
-  const showCSdiv = [1, 7].includes(parseInt(reportNo));
-  
+  const showHodDiv     = ![8].includes(parseInt(reportNo));
+  const showCSdiv      = [1, 7].includes(parseInt(reportNo));
+
   useEffect(() => {
     setReportTitle(reportTitles[reportNo] || "Contract Reports");
     initializeReport();
   }, [reportNo]);
-  
+
+  // ─── Init ────────────────────────────────────────────────────────────────────
+
   const initializeReport = async () => {
     setLoading(true);
-    
-    // Load saved filters from localStorage
+    const currentReportTitle = reportTitles[reportNo] || "Contract Reports";
+
+    await loadProjects();
+
     const savedFilters = localStorage.getItem(`contarctReportFilters${reportNo}`);
     if (savedFilters) {
       try {
-        // Parse JSP-style filters (key=value^key=value^)
         const filters = {};
         const temp = savedFilters.split('^');
-        for(let i = 0; i < temp.length; i++) {
-          if(temp[i].trim() !== '') {
+        for (let i = 0; i < temp.length; i++) {
+          if (temp[i].trim() !== '') {
             const temp2 = temp[i].split('=');
-            const key = temp2[0];
+            const key   = temp2[0];
             const value = temp2[1];
-            
-            if(key === 'hod_designation') {
-              filters.hod_designations = value.split(',');
-            } else if(key === 'contractor_id_fk') {
-              filters.contractor_id_fk = value;
-            } else if(key === 'status') {
-              filters.status = value;
-            } else if(key === 'contract_status_fk') {
-              filters.contract_status_fk = value;
-            } else if(key === 'contract_id') {
-              filters.contract_id = value;
-            }
+            if (key === 'hod_designation')    filters.hod_designations  = value.split(',');
+            else if (key === 'contractor_id_fk') filters.contractor_id_fk = value;
+            else if (key === 'status')           filters.status           = value;
+            else if (key === 'contract_status_fk') filters.contract_status_fk = value;
+            else if (key === 'contract_id')      filters.contract_id      = value;
           }
         }
-        
         setFormData(prev => ({ ...prev, ...filters }));
         setFiltersMap(filters);
       } catch (e) {
         console.error('Error parsing saved filters:', e);
       }
     }
-    
-    // Load projects first
-    await loadProjects();
-    
-    // Load other dropdowns based on saved filters or initial state
-    await loadAllDropdowns();
-    
+
+    await loadAllDropdowns(currentReportTitle);
     setLoading(false);
   };
-  
+
+  // ─── Data loaders ────────────────────────────────────────────────────────────
+
   const loadProjects = async () => {
     try {
       const response = await api.get('/contract-report/api/getProjectList');
       setDropdowns(prev => ({
         ...prev,
         projects: [
-          { value: '', label: 'Select' },
-          ...response.data.map(proj => ({
-            value: proj.project_id,
-            label: proj.project_name
-          }))
+          { value: '', label: 'Select Project' },
+          ...response.data.map(proj => ({ value: proj.project_id, label: proj.project_name }))
         ]
       }));
     } catch (error) {
       console.error('Error loading projects:', error);
     }
   };
-  
-  const loadAllDropdowns = async () => {
+
+  const loadAllDropdowns = async (currentReportTitle) => {
+    const requestBody = prepareRequestBody();
     await Promise.all([
-      loadHODs(),
-      loadContractors(),
-      loadStatusOptions(),
-      loadContractStatusOptions(),
-      loadContracts()
+      loadContractorsWithBody(requestBody),
+      loadHODsWithBody(requestBody),
+      loadContractsWithBody(requestBody),
+      loadStatusOptionsWithBody(requestBody)
     ]);
+    await loadContractStatusOptionsWithBody(requestBody, currentReportTitle);
   };
-  
-  const prepareRequestBody = () => {
-    // CRITICAL FIX: Always send array for hod_designations, never send empty string
-    const requestBody = {
-      hod_designations: Array.isArray(formData.hod_designations) && formData.hod_designations.length > 0 
-        ? formData.hod_designations  // Send as array when values exist
-        : null,  // Send null instead of empty string or empty array
-      contractor_id_fk: formData.contractor_id_fk || null,
-      contract_status_fk: formData.contract_status_fk || null,
-      contract_id: formData.contract_id || null,
-      status: formData.status || null,
-      project_id_fk: formData.project_id_fk || null
-    };
-    
-    // Remove null values to clean up request
-    Object.keys(requestBody).forEach(key => {
-      if (requestBody[key] === null) {
-        delete requestBody[key];
-      }
-    });
-    
-    return requestBody;
+
+  // ─── prepareRequestBody ──────────────────────────────────────────────────────
+
+  const prepareRequestBody = (customData = null) => {
+    const d = customData || formData;
+    const body = {};
+
+    if (d.project_id_fk)      body.project_id_fk      = d.project_id_fk;
+    if (d.contractor_id_fk)   body.contractor_id_fk   = d.contractor_id_fk;
+    if (d.contract_status_fk) body.contract_status_fk = d.contract_status_fk;
+    if (d.contract_id)        body.contract_id        = d.contract_id;
+    if (d.status)             body.status             = d.status;
+
+    // Backend SQL: u.designation IN (?,?) — needs designation strings
+    if (Array.isArray(d.hod_designations) && d.hod_designations.length > 0) {
+      body.hod_designations = d.hod_designations;
+    }
+
+    return body;
   };
-  
-  const loadHODs = async () => {
+
+  // ─── Individual loaders ──────────────────────────────────────────────────────
+
+  const loadHODsWithBody = async (requestBody) => {
     try {
-      const requestBody = prepareRequestBody();
-      
       const response = await api.post('/contract-report/ajax/getHODListInContractReport', requestBody);
-      
+      let options = [];
       if (response.data && response.data.length > 0) {
-        const options = response.data.map(hod => ({
-          value: hod.designation,
-          label: `${hod.designation} - ${hod.user_name || ''}`
-        }));
-        setDropdowns(prev => ({ ...prev, hodOptions: options }));
-      } else {
-        setDropdowns(prev => ({ ...prev, hodOptions: [] }));
+        // Deduplicate by designation — backend filters on designation string
+        const seen = new Set();
+        response.data.forEach(hod => {
+          if (!seen.has(hod.designation)) {
+            seen.add(hod.designation);
+            options.push({ value: hod.designation, label: `${hod.designation} - ${hod.user_name || ''}` });
+          }
+        });
       }
+      setDropdowns(prev => ({ ...prev, hodOptions: options }));
     } catch (error) {
       console.error('Error loading HODs:', error);
       setDropdowns(prev => ({ ...prev, hodOptions: [] }));
     }
   };
-  
-  const loadContractors = async () => {
+
+  const loadContractorsWithBody = async (requestBody) => {
     try {
-      const requestBody = prepareRequestBody();
-      
       const response = await api.post('/contract-report/ajax/getContractorsListInContractReport', requestBody);
-      
-      // Always include "All" option at the top
-      let options = [{ value: '', label: 'All' }];
-      
+      let options = [];
       if (response.data && response.data.length > 0) {
-        const dataOptions = response.data.map(contractor => {
-          const contractorName = contractor.contractor_name ? ` - ${contractor.contractor_name}` : '';
-          return {
-            value: contractor.contractor_id_fk,
-            label: `${contractor.contractor_id_fk}${contractorName}`
-          };
-        });
-        options = [...options, ...dataOptions];
+        options = response.data.map(c => ({
+          value: c.contractor_id_fk,
+          label: c.contractor_name ? `${c.contractor_id_fk} - ${c.contractor_name}` : c.contractor_id_fk
+        }));
       }
-      
       setDropdowns(prev => ({ ...prev, contractorOptions: options }));
     } catch (error) {
       console.error('Error loading contractors:', error);
-      setDropdowns(prev => ({ ...prev, contractorOptions: [{ value: '', label: 'All' }] }));
+      setDropdowns(prev => ({ ...prev, contractorOptions: [] }));
     }
   };
-  
-  const loadStatusOptions = async () => {
+
+  const loadStatusOptionsWithBody = async (requestBody) => {
     try {
-      const requestBody = prepareRequestBody();
-      
       const response = await api.post('/contract-report/ajax/getStatsuListInContractReport', requestBody);
-      
-      // Always include "All" option at the top
-      let options = [{ value: '', label: 'All' }];
-      
+      let options = [];
       if (response.data && response.data.length > 0) {
-        const dataOptions = response.data.map(status => ({
-          value: status.status,
-          label: status.status
-        }));
-        options = [...options, ...dataOptions];
+        options = response.data.map(s => ({ value: s.status, label: s.status }));
       }
-      
       setDropdowns(prev => ({ ...prev, statusOptions: options }));
     } catch (error) {
       console.error('Error loading status options:', error);
-      setDropdowns(prev => ({ ...prev, statusOptions: [{ value: '', label: 'All' }] }));
+      setDropdowns(prev => ({ ...prev, statusOptions: [] }));
     }
   };
-  
-  const loadContractStatusOptions = async () => {
+
+  const loadContractStatusOptionsWithBody = async (requestBody, currentReportTitle) => {
     try {
-      let response;
-      let options = [{ value: '', label: 'All' }];
-      
-      if (formData.status) {
-        // For getStatusofWorkItems, send simple object with status
-        const requestBody = { status: formData.status };
-        response = await api.post('/contract-report/ajax/getStatusofWorkItems', requestBody);
-        
+      let options = [];
+      if (requestBody.status) {
+        const response = await api.post('/contract-report/ajax/getStatusofWorkItems', { status: requestBody.status });
         if (response.data && response.data.length > 0) {
-          const dataOptions = response.data.map(item => ({
-            value: item.contract_status_fk,
-            label: item.contract_status_fk
-          }));
-          options = [...options, ...dataOptions];
+          options = response.data.map(item => ({ value: item.contract_status_fk, label: item.contract_status_fk }));
         }
       } else {
-        const requestBody = prepareRequestBody();
-        response = await api.post('/contract-report/ajax/getContractStatusListInContractReport', requestBody);
-        
+        const response = await api.post('/contract-report/ajax/getContractStatusListInContractReport', requestBody);
         if (response.data && response.data.length > 0) {
-          let dataOptions = response.data.map(item => ({
-            value: item.contract_status_fk,
-            label: item.contract_status_fk
-          }));
-          
-          // Remove 'Closed' option for specific reports
-          const name = reportTitle;
-          if(name === 'DOC Report' || name === 'BG Report' || name === 'Insurance Report' || name === 'DOC, BG & Insurance Report') {
+          let dataOptions = response.data.map(item => ({ value: item.contract_status_fk, label: item.contract_status_fk }));
+          const name = currentReportTitle || reportTitle;
+          if (['DOC Report','BG Report','Insurance Report','DOC, BG & Insurance Report'].includes(name)) {
             dataOptions = dataOptions.filter(opt => opt.value !== 'Closed');
           }
-          
-          options = [...options, ...dataOptions];
+          options = dataOptions;
         }
       }
-      
       setDropdowns(prev => ({ ...prev, contractStatusOptions: options }));
     } catch (error) {
       console.error('Error loading contract status:', error);
-      setDropdowns(prev => ({ ...prev, contractStatusOptions: [{ value: '', label: 'All' }] }));
+      setDropdowns(prev => ({ ...prev, contractStatusOptions: [] }));
     }
   };
-  
-  const loadContracts = async () => {
+
+  const loadContractsWithBody = async (requestBody) => {
     try {
-      const requestBody = prepareRequestBody();
-      
       const response = await api.post('/contract-report/ajax/getContractListInContractReport', requestBody);
-      
-      // Always include "Select" option at the top
-      let options = [{ value: '', label: 'Select' }];
-      
+      let options = [{ value: '', label: 'Select Contract' }];
       if (response.data && response.data.length > 0) {
-        const dataOptions = response.data.map(contract => {
-          const contractName = contract.contract_short_name ? ` - ${contract.contract_short_name}` : '';
-          return {
-            value: contract.contract_id,
-            label: `${contract.contract_id}${contractName}`
-          };
-        });
-        options = [...options, ...dataOptions];
+        options = [...options, ...response.data.map(c => ({
+          value: c.contract_id,
+          label: c.contract_short_name ? `${c.contract_id} - ${c.contract_short_name}` : c.contract_id
+        }))];
       }
-      
       setDropdowns(prev => ({ ...prev, contractOptions: options }));
     } catch (error) {
       console.error('Error loading contracts:', error);
-      setDropdowns(prev => ({ ...prev, contractOptions: [{ value: '', label: 'Select' }] }));
+      setDropdowns(prev => ({ ...prev, contractOptions: [{ value: '', label: 'Select Contract' }] }));
     }
   };
-  
-  const handleInputChange = useCallback(async (name, value) => {
-    setFormData(prev => {
-      let processedValue = value;
-      
-      // Handle hod_designations specially - ensure it's always an array
-      if (name === 'hod_designations') {
-        processedValue = Array.isArray(value) ? value : [];
-      }
-      
-      const updated = { ...prev, [name]: processedValue };
-      
-      // Update filtersMap
-      const newFiltersMap = { ...filtersMap };
-      
-      // Remove existing key first
-      Object.keys(newFiltersMap).forEach(key => {
-        if(key.includes(name) || (name === 'hod_designations' && key === 'hod_designation')) {
-          delete newFiltersMap[key];
+
+  // ─── Filters map / localStorage ──────────────────────────────────────────────
+
+  const addToFiltersMap = (name, value) => {
+    setFiltersMap(prev => {
+      const newMap = { ...prev };
+      Object.keys(newMap).forEach(key => {
+        if (key.includes(name) || (name === 'hod_designations' && key === 'hod_designation')) {
+          delete newMap[key];
         }
       });
-      
-      // Only add to filtersMap if NOT empty
-      if (name === 'hod_designations') {
-        if (processedValue && processedValue.length > 0) {
-          newFiltersMap['hod_designation'] = processedValue.join(',');
-        }
-      } else if (name === 'contractor_id_fk' && processedValue) {
-        newFiltersMap['contractor_id_fk'] = processedValue;
-      } else if (name === 'status' && processedValue) {
-        newFiltersMap['status'] = processedValue;
-      } else if (name === 'contract_status_fk' && processedValue) {
-        newFiltersMap['contract_status_fk'] = processedValue;
-      } else if (name === 'contract_id' && processedValue) {
-        newFiltersMap['contract_id'] = processedValue;
-      }
-      
-      setFiltersMap(newFiltersMap);
-      
-      // Save to localStorage in JSP format
+      if (name === 'hod_designations' && value && value.length > 0) {
+        newMap['hod_designation'] = value.join(',');
+      } else if (name === 'contractor_id_fk'   && value) { newMap['contractor_id_fk']   = value; }
+        else if (name === 'status'               && value) { newMap['status']               = value; }
+        else if (name === 'contract_status_fk'   && value) { newMap['contract_status_fk']   = value; }
+        else if (name === 'contract_id'          && value) { newMap['contract_id']          = value; }
+        else if (name === 'date'                 && value) { newMap['date']                 = value; }
+        else if (name === 'todate'               && value) { newMap['todate']               = value; }
+
       let filters = '';
-      Object.keys(newFiltersMap).forEach(key => {
-        filters = filters + key + "=" + newFiltersMap[key] + "^";
-      });
+      Object.keys(newMap).forEach(key => { filters += `${key}=${newMap[key]}^`; });
       localStorage.setItem(`contarctReportFilters${reportNo}`, filters);
-      
-      return updated;
+      return newMap;
     });
-    
-    // Clear error for this field
+  };
+
+  // ─── Change handlers ─────────────────────────────────────────────────────────
+
+  const handleInputChange = async (name, value) => {
+    const updatedFormData = { ...formData, [name]: value };
+    setFormData(updatedFormData);
     setErrors(prev => ({ ...prev, [name]: '' }));
-    
-    // Reload dependent dropdowns
+    addToFiltersMap(name, value);
+
     setLoading(true);
-    await loadAllDropdowns();
-    setLoading(false);
-  }, [reportNo, filtersMap]);
-  
+    setLoadingField(name);
+
+    try {
+      const requestBody = prepareRequestBody(updatedFormData);
+      console.log('Request Body after', name, ':', requestBody);
+
+      // Mirror JSP getResetFiltersList() — each dropdown only reloads if its own value is empty
+      const promises = [];
+
+      if (!updatedFormData.hod_designations || updatedFormData.hod_designations.length === 0) {
+        promises.push(loadHODsWithBody(requestBody));
+      }
+      if (!updatedFormData.contractor_id_fk) {
+        promises.push(loadContractorsWithBody(requestBody));
+      }
+      if (!updatedFormData.contract_id) {
+        promises.push(loadContractsWithBody(requestBody));
+      }
+      if (!updatedFormData.status) {
+        promises.push(loadStatusOptionsWithBody(requestBody));
+      }
+
+      await Promise.all(promises);
+
+      if (!updatedFormData.contract_status_fk) {
+        await loadContractStatusOptionsWithBody(requestBody, reportTitle);
+      }
+    } catch (error) {
+      console.error('Error reloading dropdowns:', error);
+    } finally {
+      setLoading(false);
+      setLoadingField(null);
+    }
+  };
+
   const handleMultiSelectChange = (name, selectedOptions) => {
     const values = selectedOptions ? selectedOptions.map(opt => opt.value) : [];
     handleInputChange(name, values);
   };
-  
+
   const handleProjectChange = async (selected) => {
-    const value = selected?.value || '';
-    setFormData(prev => {
-      const updated = { ...prev, project_id_fk: value };
-      
-      // Save to localStorage
-      let filters = '';
-      Object.keys(filtersMap).forEach(key => {
-        filters = filters + key + "=" + filtersMap[key] + "^";
-      });
-      localStorage.setItem(`contarctReportFilters${reportNo}`, filters);
-      
-      return updated;
-    });
-    
-    setLoading(true);
-    await loadAllDropdowns();
-    setLoading(false);
+    await handleInputChange('project_id_fk', selected?.value || '');
   };
-  
+
   const clearFilters = () => {
-    setFormData({
-      project_id_fk: '',
-      hod_designations: [],
-      contractor_id_fk: '',
-      status: '',
-      contract_status_fk: '',
-      contract_id: '',
-      date: null,
-      todate: null
-    });
-    
+    const clearedData = {
+      project_id_fk: '', hod_designations: [], contractor_id_fk: '',
+      status: '', contract_status_fk: '', contract_id: '', date: null, todate: null
+    };
+    setFormData(clearedData);
     setFiltersMap({});
     localStorage.removeItem(`contarctReportFilters${reportNo}`);
     setErrors({});
-    
-    // Reload dropdowns
     setLoading(true);
-    setDropdowns(prev => ({
-      ...prev,
-      hodOptions: [],
-      contractorOptions: [{ value: '', label: 'All' }],
-      statusOptions: [{ value: '', label: 'All' }],
-      contractStatusOptions: [{ value: '', label: 'All' }],
-      contractOptions: [{ value: '', label: 'Select' }]
-    }));
-    
-    loadAllDropdowns().finally(() => setLoading(false));
+    const requestBody = prepareRequestBody(clearedData);
+    Promise.all([
+      loadContractorsWithBody(requestBody),
+      loadHODsWithBody(requestBody),
+      loadStatusOptionsWithBody(requestBody),
+      loadContractsWithBody(requestBody),
+      loadContractStatusOptionsWithBody(requestBody, reportTitle)
+    ]).finally(() => setLoading(false));
   };
-  
+
+  const formatDate = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+  };
+
+  // ─── Generate report ─────────────────────────────────────────────────────────
+
   const generateReport = async () => {
-    // Validate required fields
-    const newErrors = {};
     if (reportNo === '2' && !formData.contract_id) {
-      newErrors.contract_id = 'Please select contract';
-    }
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      setErrors({ contract_id: 'Please select contract' });
       return;
     }
-    
     setLoading(true);
-    
     try {
       const endpoints = {
         1: '/contract-report/generate-contract-report',
@@ -438,87 +365,78 @@ const ContractReport = () => {
         8: '/contract-report/generate-bg-insurance-report',
         9: '/contract-report/generate-contract-completion-report'
       };
-      
-      const endpoint = endpoints[reportNo];
-      
-      // CRITICAL FIX: For report generation, convert hod_designations array to comma-separated string
-      // This matches what the JSP does in form submission
-      const submitData = {
-        project_id_fk: formData.project_id_fk || '',
-        hod_designations: Array.isArray(formData.hod_designations) && formData.hod_designations.length > 0 
-          ? formData.hod_designations.join(',') 
-          : '',
-        contractor_id_fk: formData.contractor_id_fk || '',
-        status: formData.status || '',
-        contract_status_fk: formData.contract_status_fk || '',
-        contract_id: formData.contract_id || '',
-        date: formData.date ? formatDate(formData.date) : '',
-        todate: formData.todate ? formatDate(formData.todate) : '',
-        report_no: reportNo
-      };
-      
-      const response = await api.post(endpoint, submitData, {
+      const formDataToSend = new FormData();
+      formDataToSend.append('project_id_fk', formData.project_id_fk || '');
+      formDataToSend.append('hod_designations',
+        Array.isArray(formData.hod_designations) && formData.hod_designations.length > 0
+          ? formData.hod_designations.join(',') : '');
+      formDataToSend.append('contractor_id_fk', formData.contractor_id_fk || '');
+      formDataToSend.append('status', formData.status || '');
+      formDataToSend.append('contract_status_fk', formData.contract_status_fk || '');
+      formDataToSend.append('contract_id', formData.contract_id || '');
+      formDataToSend.append('date', formData.date ? formatDate(formData.date) : '');
+      formDataToSend.append('todate', formData.todate ? formatDate(formData.todate) : '');
+      formDataToSend.append('report_no', reportNo);
+
+      const response = await api.post(endpoints[reportNo], formDataToSend, {
+        headers: { Accept: 'application/msword' },
         responseType: 'blob'
       });
-      
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      const url  = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = url;
-      
-      // Get filename from Content-Disposition header or generate one
+      link.href  = url;
       const contentDisposition = response.headers['content-disposition'];
-      let filename = `${reportTitle.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
-      
+      let filename = `${reportTitle.replace(/\s+/g,'_')}_${Date.now()}.doc`;
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1].replace(/['"]/g, '');
-        }
+        const m = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (m && m[1]) filename = m[1].replace(/['"]/g, '');
       }
-      
       link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
     } catch (error) {
       console.error('Error generating report:', error);
-      
-      // Error handling
       if (error.response) {
-        if (error.response.status === 404) {
-          alert('Requested page not found. [404]');
-        } else if (error.response.status === 500) {
-          alert('Internal Server Error [500].');
-        } else {
-          alert('Error generating report. Please try again.');
-        }
-      } else {
-        alert('Not connect.\n Verify Network.');
-      }
+        if (error.response.data instanceof Blob) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            try { alert(JSON.parse(reader.result).message || 'Error generating report'); }
+            catch { alert('Error generating report. Please try again.'); }
+          };
+          reader.readAsText(error.response.data);
+        } else if (error.response.status === 404) { alert('Requested page not found. [404]'); }
+          else if (error.response.status === 500) { alert('Internal Server Error [500].'); }
+          else { alert('Error generating report. Please try again.'); }
+      } else { alert('Not connect.\n Verify Network.'); }
     } finally {
       setLoading(false);
     }
   };
-  
-  const formatDate = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+  const getSelectedValue = (options, value) => {
+    if (!value) return null;
+    return options.find(opt => opt.value === value) || null;
   };
-  
+
+  const getSelectedValues = (options, values) => {
+    if (!values || values.length === 0) return [];
+    return options.filter(opt => values.includes(opt.value));
+  };
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.reportCard}>
         <div className={styles.reportHeader}>
           <h6 id="rptName">{reportTitle}</h6>
         </div>
-        
+
         <div className={styles.reportBody}>
           {loading && (
             <div className={styles.pageLoader}>
@@ -527,56 +445,61 @@ const ContractReport = () => {
               </div>
             </div>
           )}
-          
+
           <form id="contractReportForm" onSubmit={(e) => e.preventDefault()}>
+
+            {/* ── Row 1: Project | Contract* | Contractor | Contract Status | Status of Work ── */}
             <div className={styles.formGrid}>
-              {/* Project Selection */}
+
+              {/* 1. Project */}
               <div className={styles.formGroup}>
                 <label className={styles.searchableLabel}>Project</label>
                 <Select
                   options={dropdowns.projects}
-                  value={dropdowns.projects.find(opt => opt.value === formData.project_id_fk) || dropdowns.projects[0]}
+                  value={getSelectedValue(dropdowns.projects, formData.project_id_fk)}
                   onChange={handleProjectChange}
-                  isClearable={false}
-                  placeholder="Select"
+                  isClearable
+                  placeholder="Select Project"
                   className={styles.select}
                   classNamePrefix="react-select"
                   isDisabled={loading}
                 />
               </div>
-              
-              {/* HOD Selection - Conditionally shown */}
-              {showHodDiv && (
-                <div className={styles.formGroup} id="hodDiv">
-                  <label className={styles.searchableLabel}>HOD</label>
+
+              {/* 2. Contract — report 2 only (moved to row 1) */}
+              {showContractDiv && (
+                <div className={styles.formGroup} id="contractDiv">
+                  <label className={styles.searchableLabel}>
+                    Contract <span className={styles.required}>*</span>
+                  </label>
                   <Select
-                    options={dropdowns.hodOptions}
-                    value={dropdowns.hodOptions.filter(opt => 
-                      formData.hod_designations && formData.hod_designations.includes(opt.value)
-                    )}
-                    onChange={(selected) => handleMultiSelectChange('hod_designations', selected)}
-                    isMulti
+                    options={dropdowns.contractOptions}
+                    value={getSelectedValue(dropdowns.contractOptions, formData.contract_id)}
+                    onChange={(selected) => {
+                      handleInputChange('contract_id', selected?.value || '');
+                      if (selected?.value) setErrors(prev => ({ ...prev, contract_id: '' }));
+                    }}
                     isClearable
-                    placeholder="Select"
+                    placeholder="Select Contract"
                     className={styles.select}
                     classNamePrefix="react-select"
                     isDisabled={loading}
                   />
-                  {errors.hod_designations && (
-                    <span className={styles.errorMsg}>{errors.hod_designations}</span>
+                  {errors.contract_id && (
+                    <span className={styles.errorMsg}>{errors.contract_id}</span>
                   )}
                 </div>
               )}
-              
-              {/* Contractor Selection */}
+
+              {/* 3. Contractor */}
               <div className={styles.formGroup}>
                 <label className={styles.searchableLabel}>Contractor</label>
                 <Select
                   options={dropdowns.contractorOptions}
-                  value={dropdowns.contractorOptions.find(opt => opt.value === formData.contractor_id_fk) || dropdowns.contractorOptions[0]}
+                  value={getSelectedValue(dropdowns.contractorOptions, formData.contractor_id_fk)}
                   onChange={(selected) => handleInputChange('contractor_id_fk', selected?.value || '')}
-                  isClearable={false}
-                  placeholder="All"
+                  isClearable
+                  placeholder="Select Contractor"
                   className={styles.select}
                   classNamePrefix="react-select"
                   isDisabled={loading}
@@ -585,23 +508,17 @@ const ContractReport = () => {
                   <span className={styles.errorMsg}>{errors.contractor_id_fk}</span>
                 )}
               </div>
-              
-              {/* Contract Status - Conditionally shown */}
+
+              {/* 4. Contract Status — reports 1 & 7 only */}
               {showCSdiv && (
                 <div className={styles.formGroup} id="CSdiv">
                   <label className={styles.searchableLabel}>Contract Status</label>
                   <Select
                     options={dropdowns.statusOptions}
-                    value={dropdowns.statusOptions.find(opt => opt.value === formData.status) || dropdowns.statusOptions[0]}
-                    onChange={(selected) => {
-                      handleInputChange('status', selected?.value || '');
-                      // Trigger getStatusofWorkItems when status changes
-                      if (selected?.value) {
-                        setTimeout(() => loadContractStatusOptions(), 100);
-                      }
-                    }}
-                    isClearable={false}
-                    placeholder="All"
+                    value={getSelectedValue(dropdowns.statusOptions, formData.status)}
+                    onChange={(selected) => handleInputChange('status', selected?.value || '')}
+                    isClearable
+                    placeholder="Select Contract Status"
                     className={styles.select}
                     classNamePrefix="react-select"
                     isDisabled={loading}
@@ -611,16 +528,16 @@ const ContractReport = () => {
                   )}
                 </div>
               )}
-              
-              {/* Status of Work */}
+
+              {/* 5. Status of Work */}
               <div className={styles.formGroup}>
                 <label className={styles.searchableLabel}>Status of Work</label>
                 <Select
                   options={dropdowns.contractStatusOptions}
-                  value={dropdowns.contractStatusOptions.find(opt => opt.value === formData.contract_status_fk) || dropdowns.contractStatusOptions[0]}
+                  value={getSelectedValue(dropdowns.contractStatusOptions, formData.contract_status_fk)}
                   onChange={(selected) => handleInputChange('contract_status_fk', selected?.value || '')}
-                  isClearable={false}
-                  placeholder="All"
+                  isClearable
+                  placeholder="Select Status of Work"
                   className={styles.select}
                   classNamePrefix="react-select"
                   isDisabled={loading}
@@ -629,71 +546,77 @@ const ContractReport = () => {
                   <span className={styles.errorMsg}>{errors.contract_status_fk}</span>
                 )}
               </div>
+
             </div>
-            
-            {/* Additional Fields - Conditionally shown */}
-            {showNextRow && (
-              <div className={styles.formGrid}>
-                {/* Date Range - Only for report 8 */}
-                {showDateDiv && (
-                  <>
-                    <div className={styles.formGroup} id="dateDiv">
-                      <label className={styles.searchableLabel}>Validity Expiry From Date</label>
-                      <DatePicker
-                        selected={formData.date}
-                        onChange={(date) => handleInputChange('date', date)}
-                        dateFormat="dd-MM-yyyy"
-                        className={styles.dateInput}
-                        placeholderText="Select"
-                        disabled={loading}
-                      />
-                      {errors.date && (
-                        <span className={styles.errorMsg}>{errors.date}</span>
-                      )}
-                    </div>
-                    
-                    <div className={styles.formGroup}>
-                      <label className={styles.searchableLabel}>Validity Expiry To Date</label>
-                      <DatePicker
-                        selected={formData.todate}
-                        onChange={(date) => handleInputChange('todate', date)}
-                        dateFormat="dd-MM-yyyy"
-                        className={styles.dateInput}
-                        placeholderText="Select"
-                        disabled={loading}
-                      />
-                      {errors.todate && (
-                        <span className={styles.errorMsg}>{errors.todate}</span>
-                      )}
-                    </div>
-                  </>
-                )}
-                
-                {/* Contract Selection - Only for report 2 */}
-                {showContractDiv && (
-                  <div className={styles.formGroup} id="contractDiv">
-                    <label className={styles.searchableLabel}>
-                      Contract <span className={styles.required}>*</span>
-                    </label>
-                    <Select
-                      options={dropdowns.contractOptions}
-                      value={dropdowns.contractOptions.find(opt => opt.value === formData.contract_id) || dropdowns.contractOptions[0]}
-                      onChange={(selected) => handleInputChange('contract_id', selected?.value || '')}
-                      isClearable={false}
-                      placeholder="Select"
-                      className={styles.select}
-                      classNamePrefix="react-select"
-                      isDisabled={loading}
+            {/* ── End Row 1 ── */}
+
+            {/* ── Row 2: HOD | Date fields (conditional) ── */}
+            <div className={styles.formGrid}>
+
+              {/* 6. HOD — all reports except report 8 */}
+              {showHodDiv && (
+                <div className={styles.formGroup} id="hodDiv">
+                  <label className={styles.searchableLabel}>HOD</label>
+                  <Select
+                    options={dropdowns.hodOptions}
+                    value={getSelectedValues(dropdowns.hodOptions, formData.hod_designations)}
+                    onChange={(selected) => handleMultiSelectChange('hod_designations', selected)}
+                    isMulti
+                    isClearable
+                    placeholder="Select HOD(s)"
+                    className={styles.select}
+                    classNamePrefix="react-select"
+                    isDisabled={loading && loadingField !== 'hod_designations'}
+                  />
+                  {errors.hod_designations && (
+                    <span className={styles.errorMsg}>{errors.hod_designations}</span>
+                  )}
+                </div>
+              )}
+
+              {/* 7. Date fields — report 8 only */}
+              {showDateDiv && (
+                <>
+                  <div className={styles.formGroup} id="dateDiv">
+                    <label className={styles.searchableLabel}>Validity Expiry From Date</label>
+                    <DatePicker
+                      selected={formData.date}
+                      onChange={(date) => {
+                        setFormData(prev => ({ ...prev, date }));
+                        addToFiltersMap('date', date ? formatDate(date) : '');
+                      }}
+                      dateFormat="dd-MM-yyyy"
+                      className={styles.dateInput}
+                      placeholderText="Select From Date"
+                      disabled={loading}
+                      isClearable
                     />
-                    {errors.contract_id && (
-                      <span className={styles.errorMsg}>{errors.contract_id}</span>
-                    )}
+                    {errors.date && <span className={styles.errorMsg}>{errors.date}</span>}
                   </div>
-                )}
-              </div>
-            )}
-            
-            {/* Action Buttons */}
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.searchableLabel}>Validity Expiry To Date</label>
+                    <DatePicker
+                      selected={formData.todate}
+                      onChange={(date) => {
+                        setFormData(prev => ({ ...prev, todate: date }));
+                        addToFiltersMap('todate', date ? formatDate(date) : '');
+                      }}
+                      dateFormat="dd-MM-yyyy"
+                      className={styles.dateInput}
+                      placeholderText="Select To Date"
+                      disabled={loading}
+                      isClearable
+                    />
+                    {errors.todate && <span className={styles.errorMsg}>{errors.todate}</span>}
+                  </div>
+                </>
+              )}
+
+            </div>
+            {/* ── End Row 2 ── */}
+
+            {/* ── Action Buttons ── */}
             <div className={styles.actionButtons}>
               <button
                 type="button"
@@ -703,7 +626,6 @@ const ContractReport = () => {
               >
                 {loading ? 'Generating...' : 'Generate Report'}
               </button>
-              
               <button
                 type="button"
                 onClick={clearFilters}
@@ -713,6 +635,7 @@ const ContractReport = () => {
                 Reset
               </button>
             </div>
+
           </form>
         </div>
       </div>
