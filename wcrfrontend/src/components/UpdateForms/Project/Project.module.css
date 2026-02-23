@@ -7,47 +7,80 @@
   padding: 0;
 }
 
+/* FILTER ROW */
 .filterRow {
   display: flex;
-  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  padding: 10px 12px;
+  border-radius: 6px;
   align-items: flex-end;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
-.leftFilters {
+/* CONTROL ROW */
+.controlRow {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.rightFilters {
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
 }
 
-.filterGroup {
+/* Filter blocks */
+.filterOptions {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  width: 220px;
+  gap: 3px;
+  min-width: 180px;
+  font-size: 13px;
 }
 
-.filterGroup label {
+.filterOptions label {
   font-size: 13px;
-  color: #444;
   font-weight: 500;
+  color: #444;
 }
 
-.globalSearch {
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+/* Show entries */
+.showEntriesCount {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
-  width: 220px;
 }
+
+.showEntriesCount select {
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 13px;
+}
+
+/* Search */
+.searchRow input {
+  width: 220px;
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filterRow,
+  .controlRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchRow input {
+    width: 100%;
+  }
+}
+
+
+
 
 /* Pagination layout */
 .paginationBar {
@@ -175,16 +208,4 @@
   background: #f4f7ff;
 }
 
-@media(max-width: 992px) {
-  .filterRow{
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-  }
-  .projectTable thead tr th{
-    min-width: 100px;
-  }
-  .filterOptions{
-    flex: 0 0 46%;
-  }
-}
+

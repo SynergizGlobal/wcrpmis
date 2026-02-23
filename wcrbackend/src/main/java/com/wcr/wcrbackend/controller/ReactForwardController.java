@@ -77,8 +77,10 @@ public class ReactForwardController {
         "/utility-types",
         "/utility-shifting-filetyp",
         "/utility-shifting-executives",
+        
 
         /* ===================== Update Forms ===================== */
+        "/updateforms",
         "/updateforms/project",
         "/updateforms/project/projectform",
 
