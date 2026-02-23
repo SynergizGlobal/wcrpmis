@@ -17,7 +17,7 @@ export default function DMS() {
         <NavLink to="correspondence" className={({ isActive }) => isActive ? styles.active : ""}>
           Correspondence
         </NavLink>
-        <NavLink to="documents" className={({ isActive }) => isActive ? styles.active : ""}>
+        <NavLink to="dms-documents" className={({ isActive }) => isActive ? styles.active : ""}>
           Documents
         </NavLink>
         <NavLink to="folders" className={({ isActive }) => isActive ? styles.active : ""}>
