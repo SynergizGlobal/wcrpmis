@@ -308,6 +308,12 @@ input:focus, select:focus{
   margin: 15px 0;
   position: relative;
 }
+.form-action-btns{
+	display: flex;
+	justify-content: center;
+	gap: 20px;
+	margin: 2em 0;
+}
 .flex-2 .form-field{
   flex: 0 0 46%;
 }

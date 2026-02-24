@@ -147,23 +147,23 @@ export default function PendingIssuesReport() {
       </div>
 
       <div className="innerPage">
-        <div className={styles.filterRow}>
+        <div className="form-row">
           {/* HOD */}
-		  <div className={styles.inputField}>
-        <label className={styles.label}>HOD</label>
-        <Select
-          options={hodOptions}
-          value={hodOptions.find((o) => o.value === filters.hod)}
-          onChange={(opt) =>
-            setFilters({ ...filters, hod: opt.value })
-          }
-          placeholder="Select HOD"
-          className={styles.filterOptions}
-        />
-      </div>
+		  <div className="form-field">
+		        <label className={styles.label}>HOD</label>
+		        <Select
+		          options={hodOptions}
+		          value={hodOptions.find((o) => o.value === filters.hod)}
+		          onChange={(opt) =>
+		            setFilters({ ...filters, hod: opt.value })
+		          }
+		          placeholder="Select HOD"
+		          className={styles.filterOptions}
+		        />
+		      </div>
 
           {/* Contract */}
-		  <div className={styles.inputField}>
+		  <div className="form-field">
 	        <label className={styles.label}>Contract</label>
 	        <Select
 	          options={contractOptions}
@@ -178,7 +178,7 @@ export default function PendingIssuesReport() {
         </div>
 
         {/* BUTTON ROW */}
-        <div className={styles.buttonRow}>
+        <div className="form-action-btns">
           <button
             className="btn btn-2 btn-primary"
             onClick={handleClearFilters}
