@@ -1,3 +1,4 @@
+import LandAcquisitionReport from "./components/Reports/LandAcquisitionReport/LandAcquisitionReport";
 import ContractReport from "./components/Reports/ContractReport/ContractReport";
 import InsuranceContractualLetters from "./components/Reports/InsuranceContractualLetters/InsuranceContractualLetters";
 import DateofCompletionLetters from "./components/Reports/DateofCompletionLetters/DateofCompletionLetters";
@@ -5,6 +6,7 @@ import CodesAndManuals from "./components/Documents/CodesAndManuals/CodesAndManu
 import FAQ from "./components/Documents/FAQ/FAQ";
 import PoliciesAndCirculars from "./components/Documents/PoliciesAndCirculars/PoliciesAndCirculars";
 import Folders from "./components/UpdateForms/Dms/Folders/Folders";
+import IssuesDetailsReport from "./components/Reports/IssuesDetailsReport/IssuesDetailsReport";
 import PendingIssuesReport from "./components/Reports/PendingIssuesReport/PendingIssuesReport";
 import UtilityReport from "./components/Reports/UtilityReport/UtilityReport";
 import FilterForm from "./components/UpdateForms/Dms/FilterForm/FilterForm";
@@ -368,6 +370,8 @@ function App() {
             <Route path="/reports/contracts/:reportNo" element={<ContractReport />} />
 						<Route path="issues" element={<Issues />} />
 						<Route path="pendingissuesreport" element={<PendingIssuesReport />} />
+						<Route path="issuesdetailsreport" element={<IssuesDetailsReport />} />
+						<Route path="landacquisitionreport" element={<LandAcquisitionReport />} />
 												
 						<Route path="insurance-contractual-letters" element={<InsuranceContractualLetters />} />
 						

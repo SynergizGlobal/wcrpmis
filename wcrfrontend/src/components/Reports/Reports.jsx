@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import styles from "./Reports.module.css";
 import { ChevronRight } from "lucide-react";
+import api from "../../api/axiosInstance";
 import { API_BASE_URL } from "../../config";
 import axios from "axios";
 
@@ -17,6 +18,7 @@ export default function Reports() {
   const [openIssues, setOpenIssues] = useState(false);
   const [openContracts, setOpenContracts] = useState(false);
   const [openProgressReport, setOpenProgressReport] = useState(false);
+    const [openLandAcquisition, setOpenLandAcquisition] = useState(false);
 
 
   const isSubRoute =
@@ -32,41 +34,34 @@ export default function Reports() {
   };
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        issuesRef.current &&
-        !issuesRef.current.contains(event.target)
-      ) {
-        setOpenIssues(false);
-      }
-      
-      if (
-        contractsRef.current &&
-        !contractsRef.current.contains(event.target)
-      ) {
-        setOpenContracts(false);
-      }
-	  
-	  if (
-	    progressReportRef.current &&
-	    !progressReportRef.current.contains(event.target)
-	  ) {
-	    setOpenProgressReport(false);
-	  }
-    };
+      const handleClickOutside = (event) => {
+        if (
+          issuesRef.current &&
+          !issuesRef.current.contains(event.target)
+        ) {
+          setOpenIssues(false);
+        }
+        
+        if (
+          contractsRef.current &&
+          !contractsRef.current.contains(event.target)
+        ) {
+          setOpenContracts(false);
+        }
+      };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
-  }, []);  
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }, []);  
 
-  const goTo = (path) => {
-    setOpenIssues(false);
-    setOpenContracts(false);
-    navigate(path);
-  };
-  
-  
+    const goTo = (path) => {
+      setOpenIssues(false);
+      setOpenContracts(false);
+  	setOpenLandAcquisition(false);
+      navigate(path);
+    }; 
+   
   
   const handleTPCClick = async () => {
 	
@@ -154,6 +149,34 @@ export default function Reports() {
       console.error("Report download failed", err);
     }
   };
+  
+  const handleIssuesSummaryDownload = async () => {
+      try {
+        const response = await api.post(
+          `${API_BASE_URL}/api/issues-report/generate-issues-summary-report`,
+          {},
+          {
+            responseType: "blob",
+            withCredentials: true
+          }
+        );
+
+        const blob = new Blob([response.data], {
+          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "Issues_Summary_Report.docx";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+      } catch (error) {
+        console.error("Error downloading summary report", error);
+      }
+    };
 
 
 
@@ -286,31 +309,40 @@ export default function Reports() {
                     openIssues ? styles.arrowOpen : ""
                   }`}
                 />
-              </div>
-              {openIssues && (
-                <div className={styles.subDropdown}>
-                  <div className={styles.menuItem}>
-                    <Link to="/pendingissuesreport" onClick={() => setOpenIssues(false)}>
-                      Pending Issues Report
-                    </Link>
-                  </div>
-                  <div className={styles.menuItem}>
-                    <Link to="/issuessummaryreport" onClick={() => setOpenIssues(false)}>
-                      Issues Summary Report
-                    </Link>
-                  </div>
-                  <div className={styles.menuItem}>
-                    <Link to="/issuesdetailsreport" onClick={() => setOpenIssues(false)}>
-                      Issues Details Report
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
+				</div>
+	              {openIssues && (
+	                <div className={styles.subDropdown}>
+	                  <div className={styles.menuItem}>
+	                    <Link to="/pendingissuesreport" onClick={() => setOpenIssues(false)}>
+	                      Pending Issues Report
+	                    </Link>
+	                  </div>
+					  <div className={styles.menuItem}>
+					    <Link
+					      to="#"
+					      onClick={(e) => {
+					        e.preventDefault();
+					        handleIssuesSummaryDownload();
+					        setOpenIssues(false);
+					      }}
+					    >
+					      Issues Summary Report
+					    </Link>
+					  </div>
+	                  <div className={styles.menuItem}>
+	                    <Link to="/issuesdetailsreport" onClick={() => setOpenIssues(false)}>
+	                      Issues Details Report
+	                    </Link>
+	                  </div>
+	                </div>
+	              )}
+	            </div>
 
             <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <Link to="land-acquisition">Land Acquisition</Link>
+			  <div
+			    className={styles.cardHeader} onClick={() => goTo("/landacquisitionreport")}
+			  >
+			    Land Acquisition
               </div>
             </div>
             
