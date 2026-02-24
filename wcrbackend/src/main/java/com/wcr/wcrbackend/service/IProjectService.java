@@ -26,6 +26,8 @@ public interface IProjectService {
 	public List<Project> getProjectPinkBookList() throws Exception;
 
 	public List<Project> getProjectFileTypes() throws Exception;
+	
+	public List<Project> getAllDivisionsForRailWayZone(String railwayZone) throws Exception ;
 
 	public List<Project> getProjectTypeDetails() throws Exception;
 

@@ -809,6 +809,25 @@ public class ProjectRepository implements IProjectRepository {
 		}
 		return objsList;
 	}
+	
+	@Override
+	public List<Project> getAllDivisionsForRailWayZone(String railwayZone) throws Exception {
+		List<Project> objsList = null;
+		try {
+			String qry ="SELECT division_id, division_name FROM divisions where railway_zone = ? order by division_name";
+			
+			int arrSize = 1;
+			Object[] pValues = new Object[arrSize];
+			int i = 0;
+			pValues[i++] = railwayZone;
+
+				objsList = jdbcTemplate.query( qry, pValues ,new BeanPropertyRowMapper<Project>(Project.class));	
+		}catch(Exception e){ 
+			throw new Exception(e);
+		}
+		return objsList;
+	}
+
 
 	@Override
 	public List<Year> getYearList()throws Exception{
@@ -890,6 +909,7 @@ public class ProjectRepository implements IProjectRepository {
 		return objsList;
 	}
 
+	
 
 
 	@Override

@@ -10,6 +10,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -95,9 +96,9 @@ public class ProjectsController {
     @ResponseBody
     public ResponseEntity<?> addProjectAjax(@RequestBody Project project, HttpSession session) {
         try {
-            String user_Id = (String) session.getAttribute("USER_ID");
-            String userName = (String) session.getAttribute("USER_NAME");
-            String userDesignation = (String) session.getAttribute("USER_DESIGNATION");
+            String user_Id = (String) session.getAttribute("userId");
+            String userName = (String) session.getAttribute("userName");
+            String userDesignation = (String) session.getAttribute("designation");
 
             project.setCreated_by_user_id_fk(user_Id);
             project.setUser_name(userName);
@@ -156,5 +157,23 @@ public class ProjectsController {
     	List<ProjectDTO> dtos =  projectService.getProjects(user.getUserId(), user.getUserRoleNameFk());
     	dtos.sort(Comparator.comparing(ProjectDTO::getName));
     	return ResponseEntity.ok(dtos);
+    }
+    
+    
+    @PostMapping("/api/get-divisions")
+    public Map<String, Object> getDivisionsForRailwayZone(String railwayZone, HttpSession session) throws Exception {
+    	
+    	Map<String, Object> res = new HashMap<>();
+    	
+    	List<Project> list = projectService.getAllDivisionsForRailWayZone(railwayZone);
+//    	if(!list.isEmpty()) {
+//        	res.put("divisionsList", list);
+//        	return res;
+//    	}
+//    	else return null;
+//    }
+    	
+    	res.put("divisionsList", list);
+    	return res;
     }
 }

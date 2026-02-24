@@ -52,6 +52,11 @@ public class ProjectService implements IProjectService {
 	public List<Project> getFileNames(String projectId) throws Exception {
 		return projectRepository.getFileNames(projectId);
 	}
+	
+	@Override
+	public List<Project> getAllDivisionsForRailWayZone(String railwayZone) throws Exception {
+		return projectRepository.getAllDivisionsForRailWayZone(railwayZone);
+	}
 
 
 	@Override

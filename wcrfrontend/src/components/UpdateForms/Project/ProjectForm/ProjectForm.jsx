@@ -5,13 +5,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../../../api/axiosInstance";
 import styles from "./ProjectForm.module.css";
 import { API_BASE_URL } from "../../../../config";
-
-import { MdOutlineDeleteSweep } from 'react-icons/md';
+import { MdOutlineDeleteSweep, MdRailwayAlert } from 'react-icons/md';
 import { BiListPlus } from 'react-icons/bi';
 
 export default function ProjectForm() {
 	const navigate = useNavigate();
-	const { state } = useLocation(); 
+	const { state } = useLocation();
 	const isEdit = Boolean(state?.project);
 
 	const [projectTypes, setProjectTypes] = useState([]);
@@ -21,15 +20,15 @@ export default function ProjectForm() {
 	const [sections, setSections] = useState([]);
 
 	const projectStatusOptions = [
-	  { value: "Open", label: "Open" },
-	  { value: "Closed", label: "Closed" }
+		{ value: "Open", label: "Open" },
+		{ value: "Closed", label: "Closed" }
 	];
-	
+
 	const projectTypeOptions = projectTypes.map(pt => ({
-	  value: pt.project_type_id,
-	  label: pt.project_type_name
+		value: pt.project_type_id,
+		label: pt.project_type_name
 	}));
-	
+
 	// React Hook Form setup
 	const {
 		register,
@@ -37,6 +36,7 @@ export default function ProjectForm() {
 		handleSubmit,
 		setValue,
 		formState: { errors },
+		watch
 	} = useForm({
 		defaultValues: {
 			project_name: "",
@@ -261,6 +261,36 @@ export default function ProjectForm() {
 		}
 	};
 
+	const railwayZoneOptions = railwayZones.map(zone => ({
+		value: zone.railway_id,
+		label: zone.railway_id
+	}));
+
+
+
+	const fetchDivisions = async (railwayZone) => {
+
+		const res = await api.post(
+			`${API_BASE_URL}/projects/api/get-divisions`,
+			null,
+			{
+				params: { railwayZone },
+				withCredentials: true
+			}
+		);
+		setDivisions(res.data.divisionsList);
+	};
+
+	const selectedZone = watch("railway_zone");
+
+	useEffect(() => {
+		if (!selectedZone) return;
+
+		fetchDivisions(selectedZone);
+
+	}, [selectedZone]);
+
+
 	return (
 		<div className={`${styles.container} container-padding`}>
 			<div className="card">
@@ -284,19 +314,19 @@ export default function ProjectForm() {
 							<div className="form-field">
 								<label>Project Status <span className="red">*</span></label>
 								<Controller
-								  name="project_status"
-								  control={control}
-								  rules={{ required: true }}
-								  render={({ field }) => (
-								    <Select
-									classNamePrefix="react-select"
-								      options={projectStatusOptions}
-								      placeholder="Select"
-								      isSearchable
-								      value={projectStatusOptions.find(o => o.value === field.value) || null}
-								      onChange={o => field.onChange(o?.value)}
-								    />
-								  )}
+									name="project_status"
+									control={control}
+									rules={{ required: true }}
+									render={({ field }) => (
+										<Select
+											classNamePrefix="react-select"
+											options={projectStatusOptions}
+											placeholder="Select"
+											isSearchable
+											value={projectStatusOptions.find(o => o.value === field.value) || null}
+											onChange={o => field.onChange(o?.value)}
+										/>
+									)}
 								/>
 								{errors.project_status && <span className="red">This field is required</span>}
 							</div>
@@ -305,54 +335,50 @@ export default function ProjectForm() {
 							<div className="form-field">
 								<label>Project Type </label>
 								<Controller
-								  name="project_type_id"
-								  control={control}
-								  render={({ field }) => (
-								    <Select
-								      classNamePrefix="react-select"
-								      options={projectTypeOptions}
-								      placeholder="Select"
-								      isSearchable
+									name="project_type_id"
+									control={control}
+									render={({ field }) => (
+										<Select
+											classNamePrefix="react-select"
+											options={projectTypeOptions}
+											placeholder="Select"
+											isSearchable
 
-								      /* ✅ show selected value */
-								      value={projectTypeOptions.find(
-								        option => option.value === field.value
-								      ) || null}
+											/* ✅ show selected value */
+											value={projectTypeOptions.find(
+												option => option.value === field.value
+											) || null}
 
-								      /* ✅ store only ID in form */
-								      onChange={option => field.onChange(option?.value)}
-								    />
-								  )}
+											/* ✅ store only ID in form */
+											onChange={option => field.onChange(option?.value)}
+										/>
+									)}
 								/>
 							</div>
 
 							<div className="form-field">
-							  <label>Railway Zone</label>
+								<label>Railway Zone</label>
 
-							  <Controller
-							    name="railway_zone"
-							    control={control}
-							    render={({ field }) => (
-							      <Select
-							        classNamePrefix="react-select"
-							        options={railwayZones.map(zone => ({
-							          value: zone.railway_id,
-							          label: zone.railway_id,
-							        }))}
-							        placeholder="Select"
-							        isSearchable
-							        value={
-							          railwayZones
-							            .map(zone => ({
-							              value: zone.railway_id,
-							              label: zone.railway_id,
-							            }))
-							            .find(option => option.value === field.value) || null
-							        }
-							        onChange={option => field.onChange(option?.value)}
-							      />
-							    )}
-							  />
+								<Controller
+									name="railway_zone"
+									control={control}
+									render={({ field }) => (
+										<Select
+											classNamePrefix="react-select"
+											options={railwayZoneOptions}
+											placeholder="Select"
+											isSearchable
+
+											value={
+												railwayZoneOptions.find(
+													option => option.value === field.value
+												) || null
+											}
+
+											onChange={option => field.onChange(option?.value)}
+										/>
+									)}
+								/>
 							</div>
 
 							{/* Plan Head Number */}
@@ -364,32 +390,32 @@ export default function ProjectForm() {
 
 							{/* Sanctioned Year */}
 							<div className="form-field">
-							  <label>Sanctioned Year</label>
+								<label>Sanctioned Year</label>
 
-							  <Controller
-							    name="financial_year"
-							    control={control}
-							    render={({ field }) => (
-							      <Select
-							        classNamePrefix="react-select"
-							        options={yearList.map(year => ({
-							          value: year.financial_year_id,
-							          label: year.financial_year,
-							        }))}
-							        placeholder="Select"
-							        isSearchable
-							        value={
-							          yearList
-							            .map(year => ({
-							              value: year.financial_year_id,
-							              label: year.financial_year,
-							            }))
-							            .find(option => option.value === field.value) || null
-							        }
-							        onChange={option => field.onChange(option?.value)}
-							      />
-							    )}
-							  />
+								<Controller
+									name="financial_year"
+									control={control}
+									render={({ field }) => (
+										<Select
+											classNamePrefix="react-select"
+											options={yearList.map(year => ({
+												value: year.financial_year_id,
+												label: year.financial_year,
+											}))}
+											placeholder="Select"
+											isSearchable
+											value={
+												yearList
+													.map(year => ({
+														value: year.financial_year_id,
+														label: year.financial_year,
+													}))
+													.find(option => option.value === field.value) || null
+											}
+											onChange={option => field.onChange(option?.value)}
+										/>
+									)}
+								/>
 							</div>
 
 							{/* Sanctioned Amount */}
@@ -408,62 +434,62 @@ export default function ProjectForm() {
 							<div className="form-field">
 								<label>Division </label>
 								<Controller
-								  name="division_id"
-								  control={control}
-								  render={({ field }) => (
-								    <Select
-								      classNamePrefix="react-select"
-								      placeholder="Select Division"
-								      options={divisions.map(div => ({
-								        value: div.division_id,
-								        label: div.division_name
-								      }))}
-								      value={divisions
-								        .map(div => ({
-								          value: div.division_id,
-								          label: div.division_name
-								        }))
-								        .find(option => option.value === field.value) || null}
+									name="division_id"
+									control={control}
+									render={({ field }) => (
+										<Select
+											classNamePrefix="react-select"
+											placeholder="Select Division"
+											options={divisions.map(div => ({
+												value: div.division_id,
+												label: div.division_name
+											}))}
+											value={divisions
+												.map(div => ({
+													value: div.division_id,
+													label: div.division_name
+												}))
+												.find(option => option.value === field.value) || null}
 
-								      onChange={selectedOption =>
-								        field.onChange(selectedOption ? selectedOption.value : null)
-								      }
+											onChange={selectedOption =>
+												field.onChange(selectedOption ? selectedOption.value : null)
+											}
 
-								      isSearchable
-								    />
-								  )}
+											isSearchable
+										/>
+									)}
 								/>
 							</div>
 
 							{/* Section */}
 							<div className="form-field">
-							  <label>Section</label>
+								<label>Section</label>
 
-							  <Controller
-							    name="section_id"
-							    control={control}
-							    render={({ field }) => (
-							      <Select
-							        classNamePrefix="react-select"
-							        options={sections.map(sec => ({
-							          value: sec.section_id,
-							          label: sec.section_name
-							        }))}
-							        placeholder="Select"
-							        isSearchable
+								<Controller
+									name="section_id"
+									control={control}
+									render={({ field }) => (
+										<Select
+											classNamePrefix="react-select"
+											options={sections.map(sec => ({
+												value: sec.section_id,
+												label: sec.section_name
+											}))}
+											placeholder="Select"
+											isSearchable
 
-							        value={
-							          sections
-							            .map(sec => ({
-							              value: sec.section_id,
-							              label: sec.section_name
-							            }))
-							            .find(option => option.value === field.value) || null
-							        }
-							        onChange={option => field.onChange(option?.value)}
-							      />
-							    )}
-							  />
+											value={
+												sections
+													.map(sec => ({
+														value: sec.section_id,
+														label: sec.section_name
+													}))
+													.find(option => option.value === field.value) || null
+											}
+											onChange={option => field.onChange(option?.value)}
+										/>
+									)}
+								/>
 							</div>
 
 							{/* PB Item No */}
@@ -477,6 +503,62 @@ export default function ProjectForm() {
 								<label>Actual Completion Cost </label>
 								<input {...register("actual_completion_cost")} type="text" placeholder="Enter Value" />
 							</div>
+
+
+							{/* Actual Completion Date */}
+							<div className="form-field">
+								<label>Actual Completion Date</label>
+								<input
+									{...register("actual_completion_date")}
+									type="date"
+									placeholder="Select Date"
+								/>
+							</div>
+
+							{/* Proposed Length */}
+							<div className="form-field">
+								<label>Proposed Length (km)</label>
+								<input
+									{...register("proposed_length")}
+									type="text"
+									placeholder="Enter Proposed Length"
+								/>
+							</div>
+
+
+						</div>
+
+						<div>
+
+							{/* Benefits */}
+							<div className="form-field">
+								<label>Benefits</label>
+								<textarea
+									{...register("benefits")}
+									maxLength={1000}
+									placeholder="Enter Benefits"
+									onInput={(e) => {
+										const count = e.target.value.length;
+										e.target.nextSibling.innerText = `${count}/1000`;
+									}}
+								/>
+								<div className="char-counter">0/1000</div>
+							</div>
+
+							{/* Remarks */}
+							<div className="form-field">
+								<label>Remarks</label>
+								<textarea
+									{...register("remarks")}
+									maxLength={1000}
+									placeholder="Enter Remarks"
+									onInput={(e) => {
+										const count = e.target.value.length;
+										e.target.nextSibling.innerText = `${count}/1000`;
+									}}
+								/>
+								<div className="char-counter">0/1000</div>
+							</div>
 						</div>
 
 						{/* Commissioned Length */}
@@ -485,7 +567,7 @@ export default function ProjectForm() {
 
 
 							<div className={`dataTable ${styles.tableWrapper}`}>
-							<h3 className="d-flex justify-content-center mt-1 mb-2">Commissioned Length</h3>
+								<h3 className="d-flex justify-content-center mt-1 mb-2">Commissioned Length</h3>
 
 								<table className="table user-table">
 									<thead>
@@ -499,46 +581,46 @@ export default function ProjectForm() {
 									</thead>
 									<tbody>
 										{CommissionedLengthFields.length > 0 ? (
-											
-												CommissionedLengthFields.map((row, index) => (
-													<tr key={row.id}>
 
-														<td>{index + 1}</td>
+											CommissionedLengthFields.map((row, index) => (
+												<tr key={row.id}>
+
+													<td>{index + 1}</td>
 
 
-														<td>
-															<input
-																type="number"
-																step="0.01"
-																{...register(`commissionedLength.${index}.fromChainage`)}
-																placeholder="From"
-																className="form-control"
-															/>
-														</td>
+													<td>
+														<input
+															type="number"
+															step="0.01"
+															{...register(`commissionedLength.${index}.fromChainage`)}
+															placeholder="From"
+															className="form-control"
+														/>
+													</td>
 
-														<td>
-															<input
-																type="number"
-																step="0.01"
-																{...register(`commissionedLength.${index}.toChainage`)}
-																placeholder="To"
-															/>
-														</td>
+													<td>
+														<input
+															type="number"
+															step="0.01"
+															{...register(`commissionedLength.${index}.toChainage`)}
+															placeholder="To"
+														/>
+													</td>
 
-														<td>
-															<input
-																type="number"
-																{...register(`commissionedLength.${index}.commisionedLength`)}
-																placeholder="Commissioned Length"
-															/>
-														</td>
-														<td><button type="button" className="btn btn-outline-danger" onClick={() => removeCommissionedLength(index)}>
-															<MdOutlineDeleteSweep size="26" />
-														</button>
-														</td>
-													</tr>
-												))
-											
+													<td>
+														<input
+															type="number"
+															{...register(`commissionedLength.${index}.commisionedLength`)}
+															placeholder="Commissioned Length"
+														/>
+													</td>
+													<td><button type="button" className="btn btn-outline-danger" onClick={() => removeCommissionedLength(index)}>
+														<MdOutlineDeleteSweep size="26" />
+													</button>
+													</td>
+												</tr>
+											))
+
 										) :
 
 											(

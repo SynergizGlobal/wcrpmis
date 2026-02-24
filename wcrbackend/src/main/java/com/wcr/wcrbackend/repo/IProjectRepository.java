@@ -43,4 +43,6 @@ public interface IProjectRepository {
 
 	    public List<String> getProjectsForOtherUsersByUserId(String userId);
 
+	    public	List<Project> getAllDivisionsForRailWayZone(String railwayZone) throws Exception;
+
 }
