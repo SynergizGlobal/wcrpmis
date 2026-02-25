@@ -56,7 +56,6 @@ import jakarta.xml.bind.JAXBElement;
 public class DocxTableCreationForContractReport {
 
 
-
 	public static void createTableForContractReport(WordprocessingMLPackage wordMLPackage, MainDocumentPart mp,
 			ObjectFactory factory, Map<String, List<Contract>> contractsData,String report_created_date,String Status) throws Exception {
 
