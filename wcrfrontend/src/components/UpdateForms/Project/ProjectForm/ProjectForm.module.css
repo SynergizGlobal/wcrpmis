@@ -40,3 +40,36 @@
 .tableWrapper table td input{
 	width: 100%;
 }
+/* Dark background overlay */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Center popup box */
+.popup {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    animation: popupFade 0.2s ease-out;
+}
+
+/* Optional smooth animation */
+@keyframes popupFade {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

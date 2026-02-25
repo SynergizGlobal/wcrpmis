@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -9,6 +9,9 @@ import { MdOutlineDeleteSweep, MdRailwayAlert } from 'react-icons/md';
 import { BiListPlus } from 'react-icons/bi';
 
 export default function ProjectForm() {
+
+
+
 	const navigate = useNavigate();
 	const { state } = useLocation();
 	const isEdit = Boolean(state?.project);
@@ -19,6 +22,7 @@ export default function ProjectForm() {
 	const [divisions, setDivisions] = useState([]);
 	const [sections, setSections] = useState([]);
 
+
 	const projectStatusOptions = [
 		{ value: "Open", label: "Open" },
 		{ value: "Closed", label: "Closed" }
@@ -27,45 +31,61 @@ export default function ProjectForm() {
 	const projectTypeOptions = projectTypes.map(pt => ({
 		value: pt.project_type_id,
 		label: pt.project_type_name
-	}));
-
-	// React Hook Form setup
+	}));	// React Hook Form setup
 	const {
-		register,
-		control,
-		handleSubmit,
-		setValue,
-		formState: { errors },
-		watch
-	} = useForm({
-		defaultValues: {
-			project_name: "",
-			project_status: { value: "", label: "" },
-			project_type_id: { value: "", label: "" },
-			railway_zone: { value: "", label: "" },
-			plan_head_number: "",
-			financial_year: { value: "", label: "" },
-			sanctioned_amount: "",
-			sanctioned_commissioning_date: "",
-			division_id: { value: "", label: "" },
-			section_id: { value: "", label: "" },
-			pink_book_item_numbers: "",
-			actual_completion_cost: "",
-			actual_completion_date: "",
-			benefits: "",
-			remarks: "",
+			register,
+			control,
+			handleSubmit,
+			setValue,
+			formState: { errors },
+			watch
+		} = useForm({
+			defaultValues: {
+			    project_name: "",
 
-			// Completion Costs table
-			completionCosts: [
-				{ date: "", estimatedCost: "", revisedDate: "" }
-			],
+			    project_status: null,
+			    project_type_id: null,
+			    railway_zone: null,
+			    division_id: null,
+			    section_id: null,
 
-			// Commission Length Chainage table
-			commissionedLength: [
-				{ fromChainage: "", toChainage: "", commissionedLength: "" }
-			]
-		},
-	});
+			    plan_head_number: "",
+			    sanctioned_amount: "",
+			    sanctioned_commissioning_date: "",
+
+			    pink_book_item_numbers: "",
+			    actual_completion_cost: "",
+			    actual_completion_date: "",
+			    benefits: "",
+			    remarks: "",
+			
+
+				// Completion Costs table
+				completionCosts: [
+					{ date: "", estimatedCost: "", revisedDate: "" }
+				],
+
+				// Commission Length Chainage table
+				commissionedLength: [
+					{ fromChainage: "", toChainage: "", commissionedLength: "" }
+				],
+				
+				pinkBooks: [
+				   { financial_year: "", railway: "", pb_item_no: "" }
+				]
+				
+			},
+		});
+		
+		
+/*// pink book fiels	
+	const { fields: pinkBookFields, append: appendPinkBook, remove: removePinkBook } =
+	    useFieldArray({
+	        control,
+	        name: "pinkBooks",
+	    });
+		*/
+		
 
 	// Completion Cost Table FieldArray
 	const { fields: costFields, append: appendCost, remove: removeCost } =
@@ -115,151 +135,85 @@ export default function ProjectForm() {
 		fetchDropdowns();
 	}, []);
 
-	// Prefill form if editing
 	useEffect(() => {
-		if (isEdit && state?.project) {
-			const project = state.project;
+	    if (isEdit && state?.project) {
 
-			setValue("project_name", project.project_name ?? "");
-			setValue("plan_head_number", project.plan_head_number ?? "");
-			setValue("sanctioned_amount", project.sanctioned_amount ?? "");
-			setValue("sanctioned_commissioning_date", project.sanctioned_commissioning_date ?? "");
-			setValue("pink_book_item_numbers", project.pink_book_item_numbers ?? "");
-			setValue("actual_completion_cost", project.actual_completion_cost ?? "");
-			setValue("actual_completion_date", project.actual_completion_date ?? "");
-			setValue("benefits", project.benefits ?? "");
-			setValue("remarks", project.remarks ?? "");
-			setValue("project_status", project.project_status ? { value: project.project_status, label: project.project_status } : { value: "", label: "" });
-			setValue("project_type_id", project.project_type_id ? { value: project.project_type_id, label: project.project_type_name || project.project_type_id } : { value: "", label: "" });
-			setValue("railway_zone", project.railway_zone ? { value: project.railway_zone, label: project.railway_zone_name || project.railway_zone } : { value: "", label: "" });
-			setValue("financial_year", project.financial_year ? { value: project.financial_year, label: project.financial_year } : { value: "", label: "" });
-			setValue("division_id", project.division_id ? { value: project.division_id, label: project.division_name || project.division_id } : { value: "", label: "" });
-			setValue("section_id", project.section_id ? { value: project.section_id, label: project.section_name || project.section_id } : { value: "", label: "" });
+	        const project = state.project;
 
-			if (project.commissionedlength && project.commissionedlength.length) {
-				project.commissionedlength.forEach((com, index) => {
-					if (index === 0) {
-						setValue(`commissionedlength.${index}.fromChainage`, com.fromChainage ?? "");
-						setValue(`commissionedlength.${index}.toChainage`, com.toChainage ?? "");
-						setValue(`commissionedlength.${index}.commissionedLength`, com.commissionedLength ?? "");
-					} else {
-						appendCommissionedLength({
-							fromChainage: com.fromChainage ?? "",
-							toChainage: com.toChainage ?? "",
-							commissionedLength: com.commissionedLength ?? "",
-						});
-					}
-				});
-			}
-			if (project.completionCosts && project.completionCosts.length) {
-				project.completionCosts.forEach((cost, index) => {
-					if (index === 0) {
-						setValue(`completionCosts.${index}.date`, cost.date ?? "");
-						setValue(`completionCosts.${index}.estimatedCost`, cost.estimatedCost ?? "");
-						setValue(`completionCosts.${index}.revisedDate`, cost.revisedDate ?? "");
-					} else {
-						appendCost({
-							date: cost.date ?? "",
-							estimatedCost: cost.estimatedCost ?? "",
-							revisedDate: cost.revisedDate ?? "",
-						});
-					}
-				});
-			}
-		}
-	}, [state, setValue, isEdit, appendCost, appendCommissionedLength]);
+	        /* ---------- Basic Fields ---------- */
+
+	        setValue("project_name", project.project_name ?? "");
+	        setValue("plan_head_number", project.plan_head_number ?? "");
+	        setValue("sanctioned_amount", project.sanctioned_amount ?? "");
+	        setValue("sanctioned_commissioning_date", project.sanctioned_commissioning_date ?? "");
+	        setValue("pink_book_item_numbers", project.pink_book_item_numbers ?? "");
+	        setValue("actual_completion_cost", project.actual_completion_cost ?? "");
+	        setValue("actual_completion_date", project.actual_completion_date ?? "");
+	        setValue("benefits", project.benefits ?? "");
+	        setValue("remarks", project.remarks ?? "");
+
+	        /* ---------- Select Fields ---------- */
 
 
-	const onSubmit = async (formData) => {
-		try {
-			const payload = {
-				...formData,
-				project_id: isEdit ? state.project.project_id : undefined,
-				project_status: formData.project_status?.value || "",
-				project_type_id: formData.project_type_id?.value || "",
-				railway_zone: formData.railway_zone?.value || "",
-				financial_year: formData.financial_year?.value || "",
-				division_id: formData.division_id?.value || "",
-				section_id: formData.section_id?.value || "",
-				commissionedLength: formData.commissionedLength.map(com => ({
-					fromChainage: com.fromChainage || "",
-					toChainage: com.toChainage || "",
-					commissionedLength: com.commissionedLength || ""
-				})),
-				completionCosts: formData.completionCosts.map(cost => ({
-					date: cost.date || "",
-					estimatedCost: cost.estimatedCost || "",
-					revisedDate: cost.revisedDate || ""
-				})),
-
-			};
-
-			if (typeof formData.pink_book_item_numbers === "string") {
-				if (formData.pink_book_item_numbers.trim() === "") {
-					delete payload.pink_book_item_numbers;
-				} else {
-					payload.pink_book_item_numbers = formData.pink_book_item_numbers.split(",").map(s => s.trim());
-				}
-			}
-
-			const arrayFields = [
-				"pink_book_item_numbers",
-				"financial_years",
-				"railways",
-				"projectFileNames",
-				"project_file_types",
-				"project_file_ids",
-				"created_dates",
-				"completion_dates",
-				"estimated_completion_costs",
-				"revised_completion_dates"
-			];
+	        setValue(
+	            "project_type_id",
+	            project.project_type_id
+	                ? { value: project.project_type_id, label: project.project_type_name || project.project_type_id }
+	                : null
+	        );
 
 
-			arrayFields.forEach(f => {
-				if (!Array.isArray(payload[f])) {
-					delete payload[f];
-				}
-			});
+	        setValue(
+	            "financial_year",
+	            project.financial_year
+	                ? { value: project.financial_year, label: project.financial_year }
+	                : null
+	        );
 
-			console.log("FINAL PAYLOAD:", payload);
 
-			let response;
 
-			if (isEdit) {
-				response = await api.put(
-					`${API_BASE_URL}/projects/api/updateProject/${state.project.project_id}`,
-					payload,
-					{ headers: { "Content-Type": "application/json" }, withCredentials: true }
-				);
-			} else {
-				response = await api.post(
-					`${API_BASE_URL}/projects/api/addProject`,
-					payload,
-					{ headers: { "Content-Type": "application/json" }, withCredentials: true }
-				);
-			}
+	        /* ---------- Commissioned Length (Single Object) ---------- */
 
-			if (response.status === 200) {
-				navigate("/updateforms/project");
-			}
-		} catch (err) {
+	        if (project.commissionedLength) {
 
-			// Show a readable message
-			let errorMsg = "Error saving project. Please try again later.";
-			if (err.response?.data) {
-				// If backend sends a message field
-				if (err.response.data.message) {
-					errorMsg = `Error: ${err.response.data.message}`;
-				} else {
-					// Fallback: stringify object
-					errorMsg = `Error: ${JSON.stringify(err.response.data)}`;
-				}
-			}
+	            setValue(
+	                "commissionedLength.0.fromChainage",
+	                project.commissionedLength.fromChainage ?? ""
+	            );
 
-			alert(errorMsg);
-		}
-	};
+	            setValue(
+	                "commissionedLength.0.toChainage",
+	                project.commissionedLength.toChainage ?? ""
+	            );
+
+	            setValue(
+	                "commissionedLength.0.commissionedLength",
+	                project.commissionedLength.commissionedLength ?? ""
+	            );
+	        }
+
+	        /* ---------- Completion Costs (Single Object) ---------- */
+
+	        if (project.completionCosts) {
+
+	            setValue(
+	                "completionCosts.0.date",
+	                project.completionCosts.date ?? ""
+	            );
+
+	            setValue(
+	                "completionCosts.0.estimatedCost",
+	                project.completionCosts.estimatedCost ?? ""
+	            );
+
+	            setValue(
+	                "completionCosts.0.revisedDate",
+	                project.completionCosts.revisedDate ?? ""
+	            );
+	        }
+	    }
+	}, [isEdit, state, setValue]);
+
 
 	const railwayZoneOptions = railwayZones.map(zone => ({
 		value: zone.railway_id,
@@ -291,6 +245,124 @@ export default function ProjectForm() {
 	}, [selectedZone]);
 
 
+
+
+
+
+
+	const onSubmit = async (formData) => {
+	    try {
+
+	        const payload = {
+
+	            project_id: isEdit ? state.project.project_id : undefined,
+
+	            project_name: formData.project_name || null,
+	            plan_head_number: formData.plan_head_number || null,
+	            project_status: formData.project_status || null,
+	            project_type_id: formData.project_type_id || null,
+	            railway_zone: formData.railway_zone || null,
+
+	            sanctioned_year: formData.sanctioned_year || null,
+
+	            sanctioned_amount: formData.sanctioned_amount
+	                ? Number(formData.sanctioned_amount)
+	                : null,
+
+	            sanctioned_commissioning_date:
+	                formData.sanctioned_commissioning_date || null,
+
+	            actual_completion_cost: formData.actual_completion_cost
+	                ? Number(formData.actual_completion_cost)
+	                : null,
+
+	            actual_completion_date:
+	                formData.actual_completion_date || null,
+
+	            benefits: formData.benefits || null,
+	            remarks: formData.remarks || null,
+
+	            division_id: formData.division_id || null,
+	            section_id: formData.section_id || null,
+
+	            structure_details: formData.structure_details || null,
+
+	            from_chainage: formData.from_chainage
+	                ? Number(formData.from_chainage)
+	                : null,
+
+	            to_chainage: formData.to_chainage
+	                ? Number(formData.to_chainage)
+	                : null,
+
+	            completion_dates: (formData.completionCosts || []).map(
+	                c => c.date || null
+	            ),
+
+	            estimated_completion_costs: (formData.completionCosts || []).map(
+	                c => c.estimatedCost ? Number(c.estimatedCost) : null
+	            ),
+
+	            revised_completion_dates: (formData.completionCosts || []).map(
+	                c => c.revisedDate || null
+	            ),
+
+	            /* ✅ Pink Book → Convert to ARRAYS */
+	            financial_years: (formData.pinkBooks || []).map(
+	                p => p.financial_year || null
+	            ),
+
+	            railways: (formData.pinkBooks || []).map(
+	                p => p.railway || null
+	            ),
+
+	            pink_book_item_numbers: (formData.pinkBooks || []).map(
+	                p => p.pb_item_no || null
+	            ),
+	        };
+
+	        console.log("FINAL PAYLOAD:", payload);
+
+	        let response;
+
+	        if (isEdit) {
+	            response = await api.put(
+	                `${API_BASE_URL}/projects/api/updateProject/${state.project.project_id}`,
+	                payload,
+	                { headers: { "Content-Type": "application/json" }, withCredentials: true }
+	            );
+	        } else {
+	            response = await api.post(
+	                `${API_BASE_URL}/projects/api/addProject`,
+	                payload,
+	                { headers: { "Content-Type": "application/json" }, withCredentials: true }
+	            );
+	        }
+
+	        if (response.status === 200) {
+				alert("Project Added Successfully.");
+	            navigate("/updateforms/project");
+	        }
+			else{
+				alert("failed to add or update!");
+			}
+			
+
+	    } catch (err) {
+
+	        console.error(err);
+
+	        let errorMsg = "Error saving project.";
+
+	        if (err.response?.data?.message) {
+	            errorMsg = err.response.data.message;
+	        }
+
+	        alert(errorMsg);
+	    }
+	};
+
+
 	return (
 		<div className={`${styles.container} container-padding`}>
 			<div className="card">
@@ -314,182 +386,221 @@ export default function ProjectForm() {
 							<div className="form-field">
 								<label>Project Status <span className="red">*</span></label>
 								<Controller
-									name="project_status"
-									control={control}
-									rules={{ required: true }}
-									render={({ field }) => (
-										<Select
-											classNamePrefix="react-select"
-											options={projectStatusOptions}
-											placeholder="Select"
-											isSearchable
-											value={projectStatusOptions.find(o => o.value === field.value) || null}
-											onChange={o => field.onChange(o?.value)}
-										/>
-									)}
+								    name="project_status"
+								    control={control}
+								    rules={{ required: "Project Status is required" }}
+								    render={({ field }) => (
+								        <Select
+								            classNamePrefix="react-select"
+								            options={projectStatusOptions}
+								            placeholder="Select"
+								            isSearchable
+								            value={projectStatusOptions.find(o => o.value === field.value) || null}
+								            onChange={o => field.onChange(o?.value)}
+								        />
+								    )}
 								/>
-								{errors.project_status && <span className="red">This field is required</span>}
+
+								{errors.project_status && (
+								    <span className="red">{errors.project_status.message}</span>
+								)}
 							</div>
 
 							{/* Project Type */}
 							<div className="form-field">
-								<label>Project Type </label>
+								<label>Project Type <span className="red">*</span> </label>
 								<Controller
-									name="project_type_id"
-									control={control}
-									render={({ field }) => (
-										<Select
-											classNamePrefix="react-select"
-											options={projectTypeOptions}
-											placeholder="Select"
-											isSearchable
-
-											/* ✅ show selected value */
-											value={projectTypeOptions.find(
-												option => option.value === field.value
-											) || null}
-
-											/* ✅ store only ID in form */
-											onChange={option => field.onChange(option?.value)}
-										/>
-									)}
+								    name="project_type_id"
+								    control={control}
+								    rules={{ required: "Project Type is required" }}
+								    render={({ field }) => (
+								        <Select
+								            classNamePrefix="react-select"
+								            options={projectTypeOptions}
+								            placeholder="Select"
+								            isSearchable
+								            value={projectTypeOptions.find(o => o.value === field.value) || null}
+								            onChange={o => field.onChange(o?.value)}
+								        />
+								    )}
 								/>
+
+								{errors.project_type_id && (
+								    <span className="red">{errors.project_type_id.message}</span>
+								)}
 							</div>
 
 							<div className="form-field">
-								<label>Railway Zone</label>
+								<label>Railway Zone <span className="red">*</span> </label>
 
 								<Controller
-									name="railway_zone"
-									control={control}
-									render={({ field }) => (
-										<Select
-											classNamePrefix="react-select"
-											options={railwayZoneOptions}
-											placeholder="Select"
-											isSearchable
-
-											value={
-												railwayZoneOptions.find(
-													option => option.value === field.value
-												) || null
-											}
-
-											onChange={option => field.onChange(option?.value)}
-										/>
-									)}
+								    name="railway_zone"
+								    control={control}
+								    rules={{ required: "Railway Zone is required" }}
+								    render={({ field }) => (
+								        <Select
+								            classNamePrefix="react-select"
+								            options={railwayZoneOptions}
+								            placeholder="Select"
+								            isSearchable
+								            value={railwayZoneOptions.find(o => o.value === field.value) || null}
+								            onChange={o => field.onChange(o?.value)}
+								        />
+								    )}
 								/>
+
+								{errors.railway_zone && (
+								    <span className="red">{errors.railway_zone.message}</span>
+								)}
 							</div>
 
 							{/* Plan Head Number */}
 							<div className="form-field">
 								<label>Plan Head Number <span className="red">*</span> </label>
-								<input {...register("plan_head_number")} type="text" placeholder="Enter Value" />
-								{errors.plan_head_number && <span className="red">This field is required</span>}
-							</div>
-
-							{/* Sanctioned Year */}
-							<div className="form-field">
-								<label>Sanctioned Year</label>
-
-								<Controller
-									name="financial_year"
-									control={control}
-									render={({ field }) => (
-										<Select
-											classNamePrefix="react-select"
-											options={yearList.map(year => ({
-												value: year.financial_year_id,
-												label: year.financial_year,
-											}))}
-											placeholder="Select"
-											isSearchable
-											value={
-												yearList
-													.map(year => ({
-														value: year.financial_year_id,
-														label: year.financial_year,
-													}))
-													.find(option => option.value === field.value) || null
-											}
-											onChange={option => field.onChange(option?.value)}
-										/>
-									)}
+								<input
+								    {...register("plan_head_number", {
+								        required: "Plan Head Number is required"
+								    })}
+								    type="text"
 								/>
+
+								{errors.plan_head_number && (
+								    <span className="red">{errors.plan_head_number.message}</span>
+								)}
 							</div>
 
-							{/* Sanctioned Amount */}
 							<div className="form-field">
-								<label>Sanctioned Amount </label>
-								<input {...register("sanctioned_amount")} type="number" placeholder="Enter Value" />
+							    <label>Sanctioned Year <span className="red">*</span></label>
+
+							    <Controller
+							        name="financial_year"
+							        control={control}
+							        rules={{ required: "Sanctioned Year is required" }}
+							        render={({ field }) => {
+
+							            const options = yearList.map(y => ({
+							                value: y.financial_year,
+							                label: y.financial_year
+							            }));
+
+							            return (
+							                <Select
+							                    classNamePrefix="react-select"
+							                    options={options}
+							                    placeholder="Select"
+							                    isSearchable
+							                    value={options.find(o => o.value === field.value) || null}
+							                    onChange={o => field.onChange(o ? o.value : null)}
+							                />
+							            );
+							        }}
+							    />
+
+							    {errors.financial_year && (
+							        <span className="red">{errors.financial_year.message}</span>
+							    )}
 							</div>
-
-							{/* Sanctioned Commissioning Date */}
+							
 							<div className="form-field">
-								<label>Sanctioned Commissioning Date </label>
-								<input {...register("sanctioned_commissioning_date")} type="date" placeholder="Select Date" />
+							    <label>Sanctioned Amount <span className="red">*</span></label>
+
+							    <input
+							        type="number"
+							        placeholder="Enter Value"
+							        {...register("sanctioned_amount", {
+							            required: "Sanctioned Amount is required"
+							        })}
+							    />
+
+							    {errors.sanctioned_amount && (
+							        <span className="red">{errors.sanctioned_amount.message}</span>
+							    )}
 							</div>
-
-							{/* Division */}
+							
 							<div className="form-field">
-								<label>Division </label>
-								<Controller
-									name="division_id"
-									control={control}
-									render={({ field }) => (
-										<Select
-											classNamePrefix="react-select"
-											placeholder="Select Division"
-											options={divisions.map(div => ({
-												value: div.division_id,
-												label: div.division_name
-											}))}
-											value={divisions
-												.map(div => ({
-													value: div.division_id,
-													label: div.division_name
-												}))
-												.find(option => option.value === field.value) || null}
+							    <label>Sanctioned Commissioning Date <span className="red">*</span></label>
 
-											onChange={selectedOption =>
-												field.onChange(selectedOption ? selectedOption.value : null)
-											}
+							    <input
+							        type="date"
+							        {...register("sanctioned_commissioning_date", {
+							            required: "Commissioning Date is required"
+							        })}
+							    />
 
-											isSearchable
-										/>
-									)}
-								/>
+							    {errors.sanctioned_commissioning_date && (
+							        <span className="red">
+							            {errors.sanctioned_commissioning_date.message}
+							        </span>
+							    )}
 							</div>
+							
 
-							{/* Section */}
 							<div className="form-field">
-								<label>Section</label>
+							    <label>Division <span className="red">*</span></label>
 
-								<Controller
-									name="section_id"
-									control={control}
-									render={({ field }) => (
-										<Select
-											classNamePrefix="react-select"
-											options={sections.map(sec => ({
-												value: sec.section_id,
-												label: sec.section_name
-											}))}
-											placeholder="Select"
-											isSearchable
+							    <Controller
+							        name="division_id"
+							        control={control}
+							        rules={{ required: "Division is required" }}
+							        render={({ field }) => (
+							            <Select
+							                classNamePrefix="react-select"
+							                placeholder="Select Division"
+							                options={divisions.map(div => ({
+							                    value: div.division_id,
+							                    label: div.division_name
+							                }))}
+							                isSearchable
+							                value={
+							                    divisions
+							                        .map(div => ({
+							                            value: div.division_id,
+							                            label: div.division_name
+							                        }))
+							                        .find(o => o.value === field.value) || null
+							                }
+							                onChange={option => field.onChange(option?.value)}
+							            />
+							        )}
+							    />
 
-											value={
-												sections
-													.map(sec => ({
-														value: sec.section_id,
-														label: sec.section_name
-													}))
-													.find(option => option.value === field.value) || null
-											}
-											onChange={option => field.onChange(option?.value)}
-										/>
-									)}
-								/>
+							    {errors.division_id && (
+							        <span className="red">{errors.division_id.message}</span>
+							    )}
+							</div>
+							
+							<div className="form-field">
+							    <label>Section <span className="red">*</span></label>
+
+							    <Controller
+							        name="section_id"
+							        control={control}
+							        rules={{ required: "Section is required" }}
+							        render={({ field }) => (
+							            <Select
+							                classNamePrefix="react-select"
+							                placeholder="Select Section"
+							                options={sections.map(sec => ({
+							                    value: sec.section_id,
+							                    label: sec.section_name
+							                }))}
+							                isSearchable
+							                value={
+							                    sections
+							                        .map(sec => ({
+							                            value: sec.section_id,
+							                            label: sec.section_name
+							                        }))
+							                        .find(o => o.value === field.value) || null
+							                }
+							                onChange={option => field.onChange(option?.value)}
+							            />
+							        )}
+							    />
+
+							    {errors.section_id && (
+							        <span className="red">{errors.section_id.message}</span>
+							    )}
 							</div>
 
 							{/* PB Item No */}
@@ -572,22 +683,17 @@ export default function ProjectForm() {
 								<table className="table user-table">
 									<thead>
 										<tr>
-											<th>S. No.</th>
 											<th>From Chainage (m)</th>
 											<th>To Chainage (m)</th>
 											<th>Completed Length (m)</th>
-											<th>Action</th>
+											{/*<th>Action</th>*/}		
 										</tr>
 									</thead>
 									<tbody>
-										{CommissionedLengthFields.length > 0 ? (
+										{
 
 											CommissionedLengthFields.map((row, index) => (
 												<tr key={row.id}>
-
-													<td>{index + 1}</td>
-
-
 													<td>
 														<input
 															type="number"
@@ -610,36 +716,27 @@ export default function ProjectForm() {
 													<td>
 														<input
 															type="number"
-															{...register(`commissionedLength.${index}.commisionedLength`)}
+															{...register(`commissionedLength.${index}.commissionedLength`)}
 															placeholder="Commissioned Length"
 														/>
 													</td>
-													<td><button type="button" className="btn btn-outline-danger" onClick={() => removeCommissionedLength(index)}>
+													{	/*												<td><button type="button" className="btn btn-outline-danger" onClick={() => removeCommissionedLength(index)}>
 														<MdOutlineDeleteSweep size="26" />
 													</button>
-													</td>
+													</td>*/}
 												</tr>
 											))
 
-										) :
-
-											(
-												<tr>
-													<td colSpan="5" className="text-center text-muted">
-														No Commission Length rows added yet.
-													</td>
-												</tr>
-											)
 										}
 									</tbody>
 								</table>
 							</div>
 
-							<div className="d-flex align-center justify-content-center mt-1">
+							{/*<div className="d-flex align-center justify-content-center mt-1">
 								<button type="button" className="btn-2 btn-green" onClick={() => appendCommissionedLength({ fromChainage: "", toChainage: "", commissionedLength: "" })}>
 									<BiListPlus size="24" />
 								</button>
-							</div>
+							</div>*/}
 
 						</div>
 
@@ -687,7 +784,122 @@ export default function ProjectForm() {
 								</button>
 							</div>
 						</div>
+						
+						{/*isEdit && (
+						    <div className="row mt-2">
 
+						        <h3 className="d-flex justify-content-center">Pink Book Details</h3>
+
+						        <div className={`dataTable ${styles.tableWrapper}`}>
+						            <table className="table user-table">
+						                <thead>
+						                    <tr>
+						                        <th>Financial Year</th>
+						                        <th>Railway</th>
+						                        <th>PB Item No</th>
+						                        <th>Action</th>
+						                    </tr>
+						                </thead>
+
+						                <tbody>
+
+						                    {pinkBookFields.length > 0 ? (
+						                        pinkBookFields.map((row, index) => (
+						                            <tr key={row.id}>
+
+						                                { Financial Year }
+						                                <td>
+						                                    <Controller
+						                                        name={`pinkBooks.${index}.financial_year`}
+						                                        control={control}
+						                                        render={({ field }) => (
+						                                            <Select
+						                                                classNamePrefix="react-select"
+						                                                options={yearList.map(y => ({
+						                                                    value: y.financial_year,
+						                                                    label: y.financial_year
+						                                                }))}
+						                                                placeholder="Select"
+						                                                value={
+						                                                    yearList
+						                                                        .map(y => ({
+						                                                            value: y.financial_year,
+						                                                            label: y.financial_year
+						                                                        }))
+						                                                        .find(o => o.value === field.value) || null
+						                                                }
+						                                                onChange={o => field.onChange(o?.value)}
+						                                                isSearchable
+						                                            />
+						                                        )}
+						                                    />
+						                                </td>
+
+						                                { Railway }
+						                                <td>
+						                                    <select
+						                                        {...register(`pinkBooks.${index}.railway`)}
+						                                        className="form-control"
+						                                    >
+						                                        <option value="">Select</option>
+						                                        <option value="WR">WR</option>
+						                                        <option value="CR">CR</option>
+						                                    </select>
+						                                </td>
+
+						                                { PB Item }
+						                                <td>
+						                                    <input
+						                                        {...register(`pinkBooks.${index}.pb_item_no`)}
+						                                        type="text"
+						                                        placeholder="PB Item No"
+						                                    />
+						                                </td>
+
+						                                { Remove }
+						                                <td>
+						                                    <button
+						                                        type="button"
+						                                        className="btn btn-outline-danger"
+						                                        onClick={() => removePinkBook(index)}
+						                                    >
+						                                        Remove
+						                                    </button>
+						                                </td>
+
+						                            </tr>
+						                        ))
+						                    ) : (
+						                        <tr>
+						                            <td colSpan="4" className="text-center text-muted">
+						                                No Pink Book rows added.
+						                            </td>
+						                        </tr>
+						                    )}
+
+						                </tbody>
+						            </table>
+						        </div>
+
+						        { Add Row Button }
+						        <div className="d-flex justify-content-center mt-1">
+						            <button
+						                type="button"
+						                className="btn-2 btn-green"
+						                onClick={() =>
+						                    appendPinkBook({
+						                        financial_year: "",
+						                        railway: "",
+						                        pb_item_no: ""
+						                    })
+						                }
+						            >
+						                Add Row
+						            </button>
+						        </div>
+
+						    </div>
+						)*/}
 						{/* Form Buttons */}
 						<div className="form-post-buttons">
 							<button type="submit" className="btn btn-primary">
@@ -699,5 +911,8 @@ export default function ProjectForm() {
 				</div>
 			</div>
 		</div>
+
+
 	);
+
 }

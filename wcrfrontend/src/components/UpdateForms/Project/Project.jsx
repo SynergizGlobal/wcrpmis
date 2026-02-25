@@ -12,9 +12,10 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export default function Project() {
+
+   
   const location = useLocation();
   const navigate = useNavigate();
-
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
 
@@ -26,11 +27,10 @@ export default function Project() {
   const [designPage, setDesignPage] = useState(1);
 
   const isProjectForm = location.pathname.endsWith("/projectform");
+  
 
-  /* ✅ Fetch Projects */
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+
+
 
   const fetchProjects = async () => {
     try {
@@ -44,6 +44,11 @@ export default function Project() {
       console.error("Error fetching projects:", err);
     }
   };
+  
+  /* ✅ Fetch Projects */
+  useEffect(() => {
+    fetchProjects();
+  }, [location]);
 
   /* ✅ Single Filtering Logic */
   useEffect(() => {
