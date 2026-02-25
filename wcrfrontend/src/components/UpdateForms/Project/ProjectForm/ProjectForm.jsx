@@ -31,7 +31,9 @@ export default function ProjectForm() {
 	const projectTypeOptions = projectTypes.map(pt => ({
 		value: pt.project_type_id,
 		label: pt.project_type_name
-	}));	// React Hook Form setup
+	}));
+	
+		// React Hook Form setup
 	const {
 			register,
 			control,
@@ -58,6 +60,7 @@ export default function ProjectForm() {
 			    actual_completion_date: "",
 			    benefits: "",
 			    remarks: "",
+				proposed_length: "",
 			
 
 				// Completion Costs table
@@ -87,20 +90,13 @@ export default function ProjectForm() {
 		*/
 		
 
-	// Completion Cost Table FieldArray
-	const { fields: costFields, append: appendCost, remove: removeCost } =
-		useFieldArray({
-			control,
-			name: "completionCosts",
-		});
+		const { fields: costFields, append: appendCost, remove: removeCost, replace } =
+		    useFieldArray({
+		        control,
+		        name: "completionCosts",
+		    });
 
-	// CommissionedLength FieldArray
-	const { fields: CommissionedLengthFields, append: appendCommissionedLength, remove: removeCommissionedLength } =
-		useFieldArray({
-			control,
-			name: "commissionedLength",
-		});
-
+	
 
 	// Fetch dropdown data from API
 	useEffect(() => {
@@ -140,80 +136,49 @@ export default function ProjectForm() {
 
 	        const project = state.project;
 
-	        /* ---------- Basic Fields ---------- */
-
 	        setValue("project_name", project.project_name ?? "");
 	        setValue("plan_head_number", project.plan_head_number ?? "");
 	        setValue("sanctioned_amount", project.sanctioned_amount ?? "");
 	        setValue("sanctioned_commissioning_date", project.sanctioned_commissioning_date ?? "");
-	        setValue("pink_book_item_numbers", project.pink_book_item_numbers ?? "");
 	        setValue("actual_completion_cost", project.actual_completion_cost ?? "");
 	        setValue("actual_completion_date", project.actual_completion_date ?? "");
 	        setValue("benefits", project.benefits ?? "");
 	        setValue("remarks", project.remarks ?? "");
 
-	        /* ---------- Select Fields ---------- */
+	        setValue("project_status", project.project_status ?? null);
+	        setValue("project_type_id", project.project_type_id_fk ?? null);
+	        setValue("railway_zone", project.railway_zone ?? null);
+	        setValue("division_id", project.division_id ?? null);
+	        setValue("section_id", project.section_id ?? null);
+	        setValue("sanctioned_year", project.sanctioned_year ?? null);
+	        setValue("proposed_length", project.proposed_length ?? null);
+	        setValue("structure_details", project.structure_details ?? null);
+	        setValue("from_chainage", project.from_chainage ?? null);
+	        setValue("to_chainage", project.to_chainage ?? null);
+	        setValue("pb_item_number", project.pb_item_number ?? null);
 
+	        /* ✅ Completion Costs Fix */
 
-	        setValue(
-	            "project_type_id",
-	            project.project_type_id
-	                ? { value: project.project_type_id, label: project.project_type_name || project.project_type_id }
-	                : null
-	        );
+			const normalize = (val) =>
+			    Array.isArray(val) ? val :
+			    typeof val === "string" ? val.split(",") :
+			    [];
 
+			const dates = normalize(project.completion_dates);
+			const costs = normalize(project.estimated_completion_costs);
+			const revised = normalize(project.revised_completion_dates);
 
-	        setValue(
-	            "financial_year",
-	            project.financial_year
-	                ? { value: project.financial_year, label: project.financial_year }
-	                : null
-	        );
-
-
-
-	        /* ---------- Commissioned Length (Single Object) ---------- */
-
-	        if (project.commissionedLength) {
-
-	            setValue(
-	                "commissionedLength.0.fromChainage",
-	                project.commissionedLength.fromChainage ?? ""
-	            );
-
-	            setValue(
-	                "commissionedLength.0.toChainage",
-	                project.commissionedLength.toChainage ?? ""
-	            );
-
-	            setValue(
-	                "commissionedLength.0.commissionedLength",
-	                project.commissionedLength.commissionedLength ?? ""
-	            );
-	        }
-
-	        /* ---------- Completion Costs (Single Object) ---------- */
-
-	        if (project.completionCosts) {
-
-	            setValue(
-	                "completionCosts.0.date",
-	                project.completionCosts.date ?? ""
-	            );
-
-	            setValue(
-	                "completionCosts.0.estimatedCost",
-	                project.completionCosts.estimatedCost ?? ""
-	            );
-
-	            setValue(
-	                "completionCosts.0.revisedDate",
-	                project.completionCosts.revisedDate ?? ""
-	            );
-	        }
+			if (dates.length > 0) {
+			    replace(
+			        dates.map((d, i) => ({
+			            date: d || "",
+			            estimatedCost: costs[i] || "",
+			            revisedDate: revised[i] || ""
+			        }))
+			    );
+			}
 	    }
-	}, [isEdit, state, setValue]);
-
+	}, [isEdit, state, setValue, replace]);
 
 	const railwayZoneOptions = railwayZones.map(zone => ({
 		value: zone.railway_id,
@@ -262,6 +227,8 @@ export default function ProjectForm() {
 	            project_status: formData.project_status || null,
 	            project_type_id: formData.project_type_id || null,
 	            railway_zone: formData.railway_zone || null,
+				pb_item_number: formData.pb_item_number || null,
+				
 
 	            sanctioned_year: formData.sanctioned_year || null,
 
@@ -284,6 +251,7 @@ export default function ProjectForm() {
 
 	            division_id: formData.division_id || null,
 	            section_id: formData.section_id || null,
+				proposed_length:formData.proposed_length || null,
 
 	            structure_details: formData.structure_details || null,
 
@@ -339,10 +307,16 @@ export default function ProjectForm() {
 	            );
 	        }
 
-	        if (response.status === 200) {
-				alert("Project Added Successfully.");
-	            navigate("/updateforms/project");
-	        }
+			if (response.status === 200) {
+
+				if (isEdit) {
+					alert("Project updated Successfully.");
+				}
+				else {
+					alert("Project Added Successfully.");
+				}
+				navigate("/updateforms/project");
+			}
 			else{
 				alert("failed to add or update!");
 			}
@@ -424,7 +398,6 @@ export default function ProjectForm() {
 								        />
 								    )}
 								/>
-
 								{errors.project_type_id && (
 								    <span className="red">{errors.project_type_id.message}</span>
 								)}
@@ -473,7 +446,7 @@ export default function ProjectForm() {
 							    <label>Sanctioned Year <span className="red">*</span></label>
 
 							    <Controller
-							        name="financial_year"
+							        name="sanctioned_year"
 							        control={control}
 							        rules={{ required: "Sanctioned Year is required" }}
 							        render={({ field }) => {
@@ -606,7 +579,7 @@ export default function ProjectForm() {
 							{/* PB Item No */}
 							<div className="form-field">
 								<label>PB Item No </label>
-								<input {...register("pink_book_item_numbers")} type="text" placeholder="Enter Value" />
+								<input {...register("pb_item_number")} type="text" placeholder="Enter Value" />
 							</div>
 
 							{/* Actual Completion Cost */}
@@ -678,56 +651,43 @@ export default function ProjectForm() {
 
 
 							<div className={`dataTable ${styles.tableWrapper}`}>
-								<h3 className="d-flex justify-content-center mt-1 mb-2">Commissioned Length</h3>
+								<h3 className="d-flex justify-content-center mt-1 mb-2">Structure Details</h3>
 
 								<table className="table user-table">
 									<thead>
 										<tr>
+										    <th>Structure Details</th>
 											<th>From Chainage (m)</th>
 											<th>To Chainage (m)</th>
-											<th>Completed Length (m)</th>
-											{/*<th>Action</th>*/}		
+											{/*<th>Action</th>*/}
 										</tr>
 									</thead>
 									<tbody>
-										{
+										<td>
+											<input
+												type="text"
+												{...register("structure_details")}
+												placeholder="Commissioned Length"
+											/>
+										</td>
+										<td>
+											<input
+												type="number"
+												step="0.01"
+												{...register("from_chainage")}
+												placeholder="From"
+												className="form-control"
+											/>
+										</td>
 
-											CommissionedLengthFields.map((row, index) => (
-												<tr key={row.id}>
-													<td>
-														<input
-															type="number"
-															step="0.01"
-															{...register(`commissionedLength.${index}.fromChainage`)}
-															placeholder="From"
-															className="form-control"
-														/>
-													</td>
-
-													<td>
-														<input
-															type="number"
-															step="0.01"
-															{...register(`commissionedLength.${index}.toChainage`)}
-															placeholder="To"
-														/>
-													</td>
-
-													<td>
-														<input
-															type="number"
-															{...register(`commissionedLength.${index}.commissionedLength`)}
-															placeholder="Commissioned Length"
-														/>
-													</td>
-													{	/*												<td><button type="button" className="btn btn-outline-danger" onClick={() => removeCommissionedLength(index)}>
-														<MdOutlineDeleteSweep size="26" />
-													</button>
-													</td>*/}
-												</tr>
-											))
-
-										}
+										<td>
+											<input
+												type="number"
+												step="0.01"
+												{...register("to_chainage")}
+												placeholder="To"
+											/>
+										</td>
 									</tbody>
 								</table>
 							</div>

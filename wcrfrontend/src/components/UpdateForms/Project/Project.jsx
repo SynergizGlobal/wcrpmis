@@ -281,9 +281,13 @@ export default function Project() {
                     <th>Name</th>
                     <th>Status</th>
                     <th>Type</th>
-                    <th>Zone</th>
-                    <th>Amount</th>
+                    <th>Railway Zone</th>
+					<th>Plan Head No.</th>
+                    <th>Sanctioned Amount</th>
+					<th>Sanctioned Year</th>
+					<th>Sanctioned Date</th>
                     <th>Division</th>
+					<th>Section</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -297,9 +301,12 @@ export default function Project() {
                         <td>{proj.project_status}</td>
                         <td>{proj.project_type_name}</td>
                         <td>{proj.railway_zone}</td>
-                        <td>{proj.sanctioned_amount}</td>
-                        <td>{proj.division}</td>
-
+						<td>{proj.plan_head_number}</td>
+						<td>{proj.sanctioned_amount}</td>
+						<td>{proj.sanctioned_year}</td>
+						<td>{proj.sanctioned_commissioning_date}</td>
+                        <td>{proj.division_name}</td>
+						<td>{proj.section_name}</td>
                         <td className="d-flex gap-2">
                           <button onClick={() => handleEdit(proj)}>
                             <MdEditNote size={18} />
@@ -313,7 +320,7 @@ export default function Project() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="8" style={{ textAlign: "center" }}>
+                      <td colSpan="12" style={{ textAlign: "center" }}>
                         No records found
                       </td>
                     </tr>

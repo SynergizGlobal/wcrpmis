@@ -25,7 +25,7 @@ public class Project {
 	revised_target_date,latest_sanctioned_cost,division,sections,
 	
 	created_date,created_by,railway,commissioned_length,length,project_file_type_fk,project_file_type,project_file_id,financial_progress,physical_progress,
-	uploaded_by_user_id_fk,chainages,latitude,longitude,status,srno,uploaded_file,project_data_id,	ongoing_projects,	total_length,	total_earthwork,	completed_track,	completed_major_bridges,	total_major_bridges,	completed_minor_bridges,total_minor_bridges,	completed_rob,	total_rob,	completed_rub,	total_rub
+	uploaded_by_user_id_fk,chainages,latitude,longitude,status,srno,uploaded_file,project_data_id,	ongoing_projects,	total_length,	total_earthwork,	completed_track,	completed_major_bridges,	total_major_bridges,	completed_minor_bridges,total_minor_bridges,	completed_rob,	total_rob,	completed_rub,	total_rub , proposed_length
 
 	;	
 	
