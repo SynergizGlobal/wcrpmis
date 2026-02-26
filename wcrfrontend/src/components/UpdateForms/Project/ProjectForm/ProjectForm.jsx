@@ -667,7 +667,7 @@ export default function ProjectForm() {
 											<input
 												type="text"
 												{...register("structure_details")}
-												placeholder="Commissioned Length"
+												placeholder="Enter Structure Details"
 											/>
 										</td>
 										<td>
