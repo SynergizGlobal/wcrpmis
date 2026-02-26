@@ -33,6 +33,11 @@ export default function ProjectForm() {
 		label: pt.project_type_name
 	}));
 	
+	const railwayZoneOptions = railwayZones.map(zone => ({
+		value: zone.railway_id,
+		label: zone.railway_id
+	}));
+	
 		// React Hook Form setup
 	const {
 			register,
@@ -42,6 +47,7 @@ export default function ProjectForm() {
 			formState: { errors },
 			watch
 		} = useForm({
+			shouldFocusError: true,
 			defaultValues: {
 			    project_name: "",
 
@@ -157,8 +163,6 @@ export default function ProjectForm() {
 	        setValue("to_chainage", project.to_chainage ?? null);
 	        setValue("pb_item_number", project.pb_item_number ?? null);
 
-	        /* ✅ Completion Costs Fix */
-
 			const normalize = (val) =>
 			    Array.isArray(val) ? val :
 			    typeof val === "string" ? val.split(",") :
@@ -180,12 +184,10 @@ export default function ProjectForm() {
 	    }
 	}, [isEdit, state, setValue, replace]);
 
-	const railwayZoneOptions = railwayZones.map(zone => ({
-		value: zone.railway_id,
-		label: zone.railway_id
-	}));
 
 
+	const benefitsValue = watch("benefits") || "";
+	const remarksValue = watch("remarks") || "";
 
 	const fetchDivisions = async (railwayZone) => {
 
@@ -365,6 +367,8 @@ export default function ProjectForm() {
 								    rules={{ required: "Project Status is required" }}
 								    render={({ field }) => (
 								        <Select
+										{...field}
+										inputRef={field.ref}
 								            classNamePrefix="react-select"
 								            options={projectStatusOptions}
 								            placeholder="Select"
@@ -389,6 +393,8 @@ export default function ProjectForm() {
 								    rules={{ required: "Project Type is required" }}
 								    render={({ field }) => (
 								        <Select
+										{...field}
+										inputRef={field.ref}
 								            classNamePrefix="react-select"
 								            options={projectTypeOptions}
 								            placeholder="Select"
@@ -412,6 +418,8 @@ export default function ProjectForm() {
 								    rules={{ required: "Railway Zone is required" }}
 								    render={({ field }) => (
 								        <Select
+										{...field}
+										inputRef={field.ref}
 								            classNamePrefix="react-select"
 								            options={railwayZoneOptions}
 								            placeholder="Select"
@@ -458,6 +466,8 @@ export default function ProjectForm() {
 
 							            return (
 							                <Select
+											{...field}
+											inputRef={field.ref}
 							                    classNamePrefix="react-select"
 							                    options={options}
 							                    placeholder="Select"
@@ -517,6 +527,8 @@ export default function ProjectForm() {
 							        rules={{ required: "Division is required" }}
 							        render={({ field }) => (
 							            <Select
+										{...field}
+										inputRef={field.ref}
 							                classNamePrefix="react-select"
 							                placeholder="Select Division"
 							                options={divisions.map(div => ({
@@ -551,6 +563,8 @@ export default function ProjectForm() {
 							        rules={{ required: "Section is required" }}
 							        render={({ field }) => (
 							            <Select
+										{...field}
+										inputRef={field.ref}
 							                classNamePrefix="react-select"
 							                placeholder="Select Section"
 							                options={sections.map(sec => ({
@@ -621,12 +635,8 @@ export default function ProjectForm() {
 									{...register("benefits")}
 									maxLength={1000}
 									placeholder="Enter Benefits"
-									onInput={(e) => {
-										const count = e.target.value.length;
-										e.target.nextSibling.innerText = `${count}/1000`;
-									}}
 								/>
-								<div className="char-counter">0/1000</div>
+								<div className="char-counter"> {benefitsValue.length}/1000</div>
 							</div>
 
 							{/* Remarks */}
@@ -636,12 +646,8 @@ export default function ProjectForm() {
 									{...register("remarks")}
 									maxLength={1000}
 									placeholder="Enter Remarks"
-									onInput={(e) => {
-										const count = e.target.value.length;
-										e.target.nextSibling.innerText = `${count}/1000`;
-									}}
 								/>
-								<div className="char-counter">0/1000</div>
+								<div className="char-counter"> {remarksValue.length}/1000</div>
 							</div>
 						</div>
 
@@ -651,7 +657,7 @@ export default function ProjectForm() {
 
 
 							<div className={`dataTable ${styles.tableWrapper}`}>
-								<h3 className="d-flex justify-content-center mt-1 mb-2">Structure Details</h3>
+								<h3 className="mb-1 d-flex align-center justify-content-center">Structure Details</h3>
 
 								<table className="table user-table">
 									<thead>
