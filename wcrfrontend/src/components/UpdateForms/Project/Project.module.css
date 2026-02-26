@@ -207,5 +207,35 @@
 .projectTable tr:nth-child(even) {
   background: #f4f7ff;
 }
+.actionCol {
+  width: 120px;
+  text-align: center;
+}
+
+.actionButtons {
+  display: flex;
+  justify-content: center;
+}
+
+.actionButtons button:not(:last-child) {
+  margin-right: 8px;
+}
+.editBtn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.deleteBtn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
 
 

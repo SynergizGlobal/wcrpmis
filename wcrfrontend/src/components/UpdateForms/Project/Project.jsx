@@ -3,7 +3,7 @@ import Select from "react-select";
 import styles from "./Project.module.css";
 import { CirclePlus } from "lucide-react";
 import { LuCloudDownload } from "react-icons/lu";
-import { MdEditNote, MdDelete } from "react-icons/md";
+import { FaEdit, FaTrash} from "react-icons/fa";
 import api from "../../../api/axiosInstance";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { API_BASE_URL } from "../../../config";
@@ -176,6 +176,20 @@ export default function Project() {
     setSelectedStatus(null);
     setGlobalSearch("");
   };
+  
+  const getVisiblePages = (page, total) => {
+    return Array.from({ length: total }, (_, i) => i + 1)
+      .filter(p => {
+        if (p <= 2 || p > total - 2) return true;     // first & last pages
+        if (p >= page - 1 && p <= page + 1) return true; // around current page
+        return false;
+      })
+      .reduce((acc, p, idx, arr) => {
+        if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+        acc.push(p);
+        return acc;
+      }, []);
+  };
 
   return (
     <div className={styles.container}>
@@ -306,20 +320,29 @@ export default function Project() {
 						<td>{proj.sanctioned_year}</td>
 						<td>{proj.sanctioned_commissioning_date}</td>
                         <td>{proj.division_name}</td>
-						<td>{proj.section_name}</td>
-                        <td className="d-flex gap-2">
-                          <button onClick={() => handleEdit(proj)}>
-                            <MdEditNote size={18} />
-                          </button>
-
-                          <button onClick={() => handleDelete(proj)}>
-                            <MdDelete size={18} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
+							<td>{proj.section_name}</td>
+							<td className={styles.actionCol}>
+								<div className={styles.actionButtons}>
+									<button
+										className={styles.editBtn}
+										onClick={() => handleEdit(proj)}
+										title="Edit"
+									>
+										<FaEdit />
+									</button>
+									<button
+										className={styles.deleteBtn}
+										onClick={() => handleDelete(proj)}
+										title="Delete"
+									>
+										<FaTrash />
+									</button>
+								</div>
+							</td>
+						</tr>
+					))
+								  ) : (
+									  <tr>
                       <td colSpan="12" style={{ textAlign: "center" }}>
                         No records found
                       </td>
@@ -330,42 +353,49 @@ export default function Project() {
             </div>
 
             {/* ✅ Pagination */}
-            {totalPages > 1 && (
-              <div className={styles.paginationBar}>
-                <div className={styles.paginationInfo}>
-                  Showing {filteredProjects.length ? indexOfFirst + 1 : 0}
-                  {" "}to{" "}
-                  {Math.min(indexOfLast, filteredProjects.length)}
-                  {" "}of {filteredProjects.length}
-                </div>
+			{/* ✅ Pagination */}
+			{totalPages > 1 && (
+			  <div className={styles.paginationBar}>
+			    <div className={styles.paginationInfo}>
+			      Showing {filteredProjects.length ? indexOfFirst + 1 : 0}
+			      {" "}to{" "}
+			      {Math.min(indexOfLast, filteredProjects.length)}
+			      {" "}of {filteredProjects.length}
+			    </div>
 
-                <div className={styles.paginationButtons}>
-                  <button
-                    disabled={designPage === 1}
-                    onClick={() => setDesignPage(p => p - 1)}
-                  >
-                    Prev
-                  </button>
+			    <div className="pagination">
+			      <button
+			        disabled={designPage === 1}
+			        onClick={() => setDesignPage(p => p - 1)}
+			        className="pageBtn"
+			      >
+			        ‹
+			      </button>
 
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <button
-                      key={i + 1}
-                      className={designPage === i + 1 ? styles.activePage : ""}
-                      onClick={() => setDesignPage(i + 1)}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
+			      {getVisiblePages(designPage, totalPages).map((item, i) =>
+			        item === "..." ? (
+			          <span key={i} className="ellipsis">...</span>
+			        ) : (
+			          <button
+			            key={i}
+			            onClick={() => setDesignPage(item)}
+			            className={`pageBtn ${designPage === item ? "activePage" : ""}`}
+			          >
+			            {item}
+			          </button>
+			        )
+			      )}
 
-                  <button
-                    disabled={designPage === totalPages}
-                    onClick={() => setDesignPage(p => p + 1)}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+			      <button
+			        disabled={designPage === totalPages}
+			        onClick={() => setDesignPage(p => p + 1)}
+			        className="pageBtn"
+			      >
+			        ›
+			      </button>
+			    </div>
+			  </div>
+			)}
           </div>
         </>
       )}
