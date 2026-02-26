@@ -1,16 +1,3 @@
-/*import React from 'react';
-import { Outlet } from 'react-router-dom';
-import styles from './LandAcquisitionReport.module.css';
-
-export default function LandAcquisitionReport() {
-  return (
-	<div className={styles.container}>
-	  <h3>LandAcquisitionReport Component</h3>
-	  <Outlet />
-	</div>
-  );
-}*/
-
 import React, { useEffect, useState, useContext } from "react";
 import { RefreshContext } from "../../../context/RefreshContext";
 import Select from "react-select";

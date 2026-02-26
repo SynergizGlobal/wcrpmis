@@ -248,12 +248,11 @@ export default function Reports() {
             </div>
             
             <div className={styles.card}>  
-              <div className={styles.cardHeader}>
-                <Link to="contract-wise-activities">Contract-wise Activities</Link>
+              <div className={styles.cardHeader} onClick={() => goTo("/activitiesexportreport")}>
+                  Contract-wise Activities
               </div>
             </div>
-
-					
+				
 			
 			{/* Progress Report  */}
 			<div className={styles.card} ref={progressReportRef}>

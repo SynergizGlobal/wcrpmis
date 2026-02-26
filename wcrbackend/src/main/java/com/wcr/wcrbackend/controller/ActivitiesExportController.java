@@ -83,16 +83,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
@@ -111,8 +114,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-
 @RestController
+@RequestMapping("/api/activities-export")
 public class ActivitiesExportController {
 	@InitBinder
 	public void initBinder(WebDataBinder binder) {
@@ -138,36 +141,37 @@ public class ActivitiesExportController {
 
 	@Value("${record.dataexport.nodata}")
 	public String dataExportNoData;
-	
+
 	@Autowired
 	UserService userService;
-	
+
 	@RequestMapping(value = "/activities-export-report", method = { RequestMethod.GET, RequestMethod.POST })
-	public ModelAndView activitiesExportReport(@ModelAttribute StripChart obj, RedirectAttributes attributes,HttpSession session) {
+	public ModelAndView activitiesExportReport(@ModelAttribute StripChart obj, RedirectAttributes attributes,
+			HttpSession session) {
 		ModelAndView model = new ModelAndView(PageConstants.activitiesExportReport);
 		try {
-			
+
 			User uObj = (User) session.getAttribute("user");
 			obj.setUser_type_fk(uObj.getUserTypeFk());
 			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
 			obj.setUser_name(uObj.getUserName());
-			
+
 			List<StripChart> projectsList = service.getProjectsFilterListInActivitiesExportReport(obj);
-			model.addObject("projectsList", projectsList);	
+			model.addObject("projectsList", projectsList);
 
 			List<StripChart> worksList = service.getWorksFilterListInActivitiesExportReport(obj);
-			model.addObject("worksList", worksList);		
+			model.addObject("worksList", worksList);
 
 			List<StripChart> contractList = service.getContractListInActivitiesExportReport(obj);
 			model.addObject("contractList", contractList);
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			logger.error("ActivitiesExportReport : " + e.getMessage());
 		}
 		return model;
 	}
-	
+
 	@RequestMapping(value = "/mcdo-progress-report", method = { RequestMethod.GET, RequestMethod.POST })
 	public ModelAndView mcdoReport(@ModelAttribute StripChart obj, RedirectAttributes attributes) {
 		ModelAndView model = new ModelAndView(PageConstants.mcdoProgressReport);
@@ -177,17 +181,16 @@ public class ActivitiesExportController {
 
 			List<StripChart> worksList = service.getWorksFilterListInActivitiesExportReport(obj);
 			model.addObject("worksList", worksList);
-		
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			logger.error("ActivitiesExportReport : " + e.getMessage());
 		}
 		return model;
-	}	
+	}
 
-	public RPr getRPr(ObjectFactory factory, String fontFamily,
-			String colorVal, String fontSize, STHint sTHint, boolean isBlod,
-			boolean isUnderLine, boolean isItalic, boolean isStrike) {
+	public RPr getRPr(ObjectFactory factory, String fontFamily, String colorVal, String fontSize, STHint sTHint,
+			boolean isBlod, boolean isUnderLine, boolean isItalic, boolean isStrike) {
 		RPr rPr = factory.createRPr();
 		RFonts rf = new RFonts();
 		rf.setHint(sTHint);
@@ -222,14 +225,11 @@ public class ActivitiesExportController {
 		rPr.setSzCs(sz);
 		return rPr;
 	}
-	
-	public P newImage(WordprocessingMLPackage wordMLPackage,
-			ObjectFactory factory, HeaderPart sourcePart, byte[] bytes,
-			String filenameHint, String altText, int id1, int id2,
-			JcEnumeration jcEnumeration) throws Exception {
-		BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage,sourcePart, bytes);
-		Inline inline = imagePart.createImageInline(filenameHint, altText, id1,
-				id2, false);
+
+	public P newImage(WordprocessingMLPackage wordMLPackage, ObjectFactory factory, HeaderPart sourcePart, byte[] bytes,
+			String filenameHint, String altText, int id1, int id2, JcEnumeration jcEnumeration) throws Exception {
+		BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, sourcePart, bytes);
+		Inline inline = imagePart.createImageInline(filenameHint, altText, id1, id2, false);
 		P p = factory.createP();
 		R run = factory.createR();
 		p.getContent().add(run);
@@ -244,97 +244,82 @@ public class ActivitiesExportController {
 		if (jc == null) {
 			jc = new Jc();
 		}
-		if(!StringUtils.isEmpty(jcEnumeration)) {
+		if (!StringUtils.isEmpty(jcEnumeration)) {
 			jc.setVal(jcEnumeration);
 			pPr.setJc(jc);
 		}
-		
+
 		p.setPPr(pPr);
 		return p;
-	}	
-	
-	
-	public Relationship createHeaderPart(
-			WordprocessingMLPackage wordprocessingMLPackage,
-			MainDocumentPart t, ObjectFactory factory,
-			String imagePath, JcEnumeration imageAlignment, String headerTextMiddle, String headerTextRight,RPr titleRPr) throws Exception {
+	}
+
+	public Relationship createHeaderPart(WordprocessingMLPackage wordprocessingMLPackage, MainDocumentPart t,
+			ObjectFactory factory, String imagePath, JcEnumeration imageAlignment, String headerTextMiddle,
+			String headerTextRight, RPr titleRPr) throws Exception {
 		HeaderPart headerPart = new HeaderPart();
 		Relationship rel = t.addTargetPart(headerPart);
 		// After addTargetPart, so image can be added properly
-		headerPart.setJaxbElement(getHdr(wordprocessingMLPackage, factory,
-				headerPart,imagePath,imageAlignment,headerTextMiddle,headerTextRight,titleRPr));
+		headerPart.setJaxbElement(getHdr(wordprocessingMLPackage, factory, headerPart, imagePath, imageAlignment,
+				headerTextMiddle, headerTextRight, titleRPr));
 		return rel;
 	}
-	public Hdr getHdr(WordprocessingMLPackage wordprocessingMLPackage,
-			ObjectFactory factory, HeaderPart sourcePart,
-			String imagePath, JcEnumeration imageAlignment, String headerTextMiddle, String headerTextRight,RPr titleRPr) throws Exception {
+
+	public Hdr getHdr(WordprocessingMLPackage wordprocessingMLPackage, ObjectFactory factory, HeaderPart sourcePart,
+			String imagePath, JcEnumeration imageAlignment, String headerTextMiddle, String headerTextRight,
+			RPr titleRPr) throws Exception {
 		Hdr hdr = factory.createHdr();
-		//String path = CommonConstants.DOCX_LOGO+"/docx-logo.png";
-		//String path = CommonConstants.DOCX_LOGO+"/"+"ircon-report-header.png";
+		// String path = CommonConstants.DOCX_LOGO+"/docx-logo.png";
+		// String path = CommonConstants.DOCX_LOGO+"/"+"ircon-report-header.png";
 		P p = factory.createP();
 		R r = factory.createR();
-		if(!StringUtils.isEmpty(imagePath)) {
+		if (!StringUtils.isEmpty(imagePath)) {
 			File file = new File(imagePath);
 			java.io.InputStream is = new java.io.FileInputStream(file);
-			
-			String filenameHint = null;
-	        String altText = null;
 
-	        int id1 = 0;
-	        int id2 = 1;
-			p = newImage(wordprocessingMLPackage, factory, sourcePart,
-					BufferUtil.getBytesFromInputStream(is), altText,
+			String filenameHint = null;
+			String altText = null;
+
+			int id1 = 0;
+			int id2 = 1;
+			p = newImage(wordprocessingMLPackage, factory, sourcePart, BufferUtil.getBytesFromInputStream(is), altText,
 					filenameHint, id1, id2, imageAlignment);
 		}
-		
+
 		hdr.getContent().add(p);
-		
-		/*RPr boldRPr = getRPr(factory, "Calibri", "000000", "20", STHint.EAST_ASIA,
-				true, false, false, false);
-		
-		
-		if(!StringUtils.isEmpty(headerTextMiddle)) {
-			for (int i = 0; i < 0; i++) {
-				R.Tab rtab = factory.createRTab();
-		        JAXBElement<org.docx4j.wml.R.Tab> rtabWrapped = factory.createRTab(rtab);
-		        r.getContent().add( rtabWrapped);
-			}			
-			p.getContent().add(r);
-		
-			Text txt = factory.createText();
-			txt.setValue(headerTextMiddle);
-			r = factory.createR();
-			r.getContent().add(txt);
-			r.setRPr(boldRPr);
-			p.getContent().add(r);
-		}
-		
-		if(!StringUtils.isEmpty(headerTextRight)) {
-			for (int i = 0; i < 3; i++) {
-				R.Tab rtab = factory.createRTab();
-		        JAXBElement<org.docx4j.wml.R.Tab> rtabWrapped = factory.createRTab(rtab);
-		        r.getContent().add( rtabWrapped);
-			}
-			Text txt = factory.createText();
-			txt.setValue(headerTextRight);
-			r = factory.createR();
-			r.getContent().add(txt);
-			r.setRPr(boldRPr);
-			p.getContent().add(r);
-		}
-		hdr.getContent().add(p);*/	
-		
+
+		/*
+		 * RPr boldRPr = getRPr(factory, "Calibri", "000000", "20", STHint.EAST_ASIA,
+		 * true, false, false, false);
+		 * 
+		 * 
+		 * if(!StringUtils.isEmpty(headerTextMiddle)) { for (int i = 0; i < 0; i++) {
+		 * R.Tab rtab = factory.createRTab(); JAXBElement<org.docx4j.wml.R.Tab>
+		 * rtabWrapped = factory.createRTab(rtab); r.getContent().add( rtabWrapped); }
+		 * p.getContent().add(r);
+		 * 
+		 * Text txt = factory.createText(); txt.setValue(headerTextMiddle); r =
+		 * factory.createR(); r.getContent().add(txt); r.setRPr(boldRPr);
+		 * p.getContent().add(r); }
+		 * 
+		 * if(!StringUtils.isEmpty(headerTextRight)) { for (int i = 0; i < 3; i++) {
+		 * R.Tab rtab = factory.createRTab(); JAXBElement<org.docx4j.wml.R.Tab>
+		 * rtabWrapped = factory.createRTab(rtab); r.getContent().add( rtabWrapped); }
+		 * Text txt = factory.createText(); txt.setValue(headerTextRight); r =
+		 * factory.createR(); r.getContent().add(txt); r.setRPr(boldRPr);
+		 * p.getContent().add(r); } hdr.getContent().add(p);
+		 */
+
 		/*******************************************************************************/
 
 		Tbl table = factory.createTbl();
-		
+
 		TblPr tableProps = new TblPr();
-        CTTblLayoutType tblLayoutType = new CTTblLayoutType();
-        STTblLayoutType stTblLayoutType = STTblLayoutType.FIXED;
-        tblLayoutType.setType(stTblLayoutType);
-        tableProps.setTblLayout(tblLayoutType);
-        table.setTblPr(tableProps);
-        
+		CTTblLayoutType tblLayoutType = new CTTblLayoutType();
+		STTblLayoutType stTblLayoutType = STTblLayoutType.FIXED;
+		tblLayoutType.setType(stTblLayoutType);
+		tableProps.setTblLayout(tblLayoutType);
+		table.setTblPr(tableProps);
+
 		Tr titleRow = factory.createTr();
 		addTableCell(factory, wordprocessingMLPackage, titleRow, "", titleRPr, JcEnumeration.CENTER, true, "ffffff");
 		addTableCell(factory, wordprocessingMLPackage, titleRow, headerTextMiddle, titleRPr, JcEnumeration.CENTER, true,
@@ -345,10 +330,10 @@ public class ActivitiesExportController {
 		setTableAlign(factory, table, JcEnumeration.CENTER);
 
 		hdr.getContent().add(table);
-		
+
 		return hdr;
 	}
-	
+
 	public static void setTableAlign(ObjectFactory factory, Tbl table, JcEnumeration jcEnumeration) {
 		TblPr tablePr = table.getTblPr();
 		if (tablePr == null) {
@@ -367,10 +352,9 @@ public class ActivitiesExportController {
 		tablePr.setTblW(tblwidth);
 
 		table.setTblPr(tablePr);
-	}	
-	
-	public void setParagraphAlign(ObjectFactory factory, P p,
-			JcEnumeration jcEnumeration) {
+	}
+
+	public void setParagraphAlign(ObjectFactory factory, P p, JcEnumeration jcEnumeration) {
 		PPr pPr = p.getPPr();
 		if (pPr == null) {
 			pPr = factory.createPPr();
@@ -382,19 +366,19 @@ public class ActivitiesExportController {
 		jc.setVal(jcEnumeration);
 		pPr.setJc(jc);
 		p.setPPr(pPr);
-	}	
-	
+	}
+
 	public void addTableCell(ObjectFactory factory, WordprocessingMLPackage wordMLPackage, Tr tableRow, String content,
 			RPr rpr, JcEnumeration jcEnumeration, boolean hasBgColor, String backgroudColor) {
 		Tc tableCell = factory.createTc();
 		P p = factory.createP();
 		setParagraphAlign(factory, p, jcEnumeration);
-		//Text t = factory.createText();
-		//t.setValue(content);
+		// Text t = factory.createText();
+		// t.setValue(content);
 		R run = factory.createR();
 		run.setRPr(rpr);
 
-		//run.getContent().add(t);
+		// run.getContent().add(t);
 
 		p.getContent().add(run);
 		if (content != null) {
@@ -423,13 +407,13 @@ public class ActivitiesExportController {
 		valign.setVal(STVerticalJc.CENTER);
 		tcPr.setVAlign(valign);
 
-		//Removing space in cells
+		// Removing space in cells
 		PPr pPr = factory.createPPr();
 		Spacing spacing = new Spacing();
 		spacing.setBefore(new BigInteger("2"));
 		spacing.setAfter(new BigInteger("2"));
-		//spacing.setAfterLines(BigInteger.TEN);
-		//spacing.setBeforeLines(BigInteger.TEN);
+		// spacing.setAfterLines(BigInteger.TEN);
+		// spacing.setBeforeLines(BigInteger.TEN);
 		pPr.setSpacing(spacing);
 
 		Jc justification = factory.createJc();
@@ -462,32 +446,27 @@ public class ActivitiesExportController {
 		tableCell.setTcPr(tcPr);
 
 		tableRow.getContent().add(tableCell);
-	}	
-	
-	public Relationship createHeaderPart(
-			WordprocessingMLPackage wordprocessingMLPackage,
-			MainDocumentPart t, ObjectFactory factory,String headerText) throws Exception {
+	}
+
+	public Relationship createHeaderPart(WordprocessingMLPackage wordprocessingMLPackage, MainDocumentPart t,
+			ObjectFactory factory, String headerText) throws Exception {
 		HeaderPart headerPart = new HeaderPart();
 		Relationship rel = t.addTargetPart(headerPart);
 		// After addTargetPart, so image can be added properly
-		headerPart.setJaxbElement(getHdr(wordprocessingMLPackage, factory,
-				headerPart,headerText));
+		headerPart.setJaxbElement(getHdr(wordprocessingMLPackage, factory, headerPart, headerText));
 		return rel;
 	}
-	
-	
-	public Hdr getHdr(WordprocessingMLPackage wordprocessingMLPackage,
-			ObjectFactory factory, HeaderPart sourcePart,String headerText) throws Exception {
+
+	public Hdr getHdr(WordprocessingMLPackage wordprocessingMLPackage, ObjectFactory factory, HeaderPart sourcePart,
+			String headerText) throws Exception {
 		Hdr hdr = factory.createHdr();
-		
+
 		P p = factory.createP();
-		R r = factory.createR();		
-		
-		RPr boldRPr = getRPr(factory, "Calibri", "000000", "20", STHint.EAST_ASIA,
-				true, false, false, false);
-		
-		
-		if(!StringUtils.isEmpty(headerText)) {			
+		R r = factory.createR();
+
+		RPr boldRPr = getRPr(factory, "Calibri", "000000", "20", STHint.EAST_ASIA, true, false, false, false);
+
+		if (!StringUtils.isEmpty(headerText)) {
 			PPr pPr = p.getPPr();
 			if (pPr == null) {
 				pPr = factory.createPPr();
@@ -507,19 +486,15 @@ public class ActivitiesExportController {
 			r.setRPr(boldRPr);
 			p.getContent().add(r);
 		}
-		
-		
-		
-		hdr.getContent().add(p);	
-		
+
+		hdr.getContent().add(p);
+
 		return hdr;
-	}	
-	public void createHeaderReference(
-			WordprocessingMLPackage wordprocessingMLPackage,
-			MainDocumentPart t, ObjectFactory factory, Relationship relationship)
-			throws InvalidFormatException {
-		List<SectionWrapper> sections = wordprocessingMLPackage
-				.getDocumentModel().getSections();
+	}
+
+	public void createHeaderReference(WordprocessingMLPackage wordprocessingMLPackage, MainDocumentPart t,
+			ObjectFactory factory, Relationship relationship) throws InvalidFormatException {
+		List<SectionWrapper> sections = wordprocessingMLPackage.getDocumentModel().getSections();
 		SectPr sectPr = sections.get(sections.size() - 1).getSectPr();
 		// There is always a section wrapper, but it might not contain a sectPr
 		if (sectPr == null) {
@@ -527,44 +502,43 @@ public class ActivitiesExportController {
 			t.addObject(sectPr);
 			sections.get(sections.size() - 1).setSectPr(sectPr);
 		}
-		/*HeaderReference headerReference = factory.createHeaderReference();
-		headerReference.setId(relationship.getId());
-		headerReference.setType(HdrFtrRef.FIRST);
-		sectPr.getEGHdrFtrReferences().add(headerReference);*/
-		
+		/*
+		 * HeaderReference headerReference = factory.createHeaderReference();
+		 * headerReference.setId(relationship.getId());
+		 * headerReference.setType(HdrFtrRef.FIRST);
+		 * sectPr.getEGHdrFtrReferences().add(headerReference);
+		 */
+
 		HeaderReference headerReference = factory.createHeaderReference();
 		headerReference = factory.createHeaderReference();
 		headerReference.setId(relationship.getId());
-		//headerReference.setType(HdrFtrRef.DEFAULT);
+		// headerReference.setType(HdrFtrRef.DEFAULT);
 		headerReference.setType(HdrFtrRef.FIRST);
 		sectPr.getEGHdrFtrReferences().add(headerReference);
-		
+
 		headerReference = factory.createHeaderReference();
 		headerReference.setId(relationship.getId());
 		headerReference.setType(HdrFtrRef.DEFAULT);
-		//headerReference.setType(HdrFtrRef.FIRST);
+		// headerReference.setType(HdrFtrRef.FIRST);
 		sectPr.getEGHdrFtrReferences().add(headerReference);
-		
+
 		BooleanDefaultTrue value = new BooleanDefaultTrue();
-        value.setVal(Boolean.TRUE);
-        sectPr.setTitlePg(value);        
-	}	
-	
-	
-	public Relationship createFooterPageNumPart(
-			WordprocessingMLPackage wordprocessingMLPackage,
-			MainDocumentPart t, ObjectFactory factory) throws Exception {
+		value.setVal(Boolean.TRUE);
+		sectPr.setTitlePg(value);
+	}
+
+	public Relationship createFooterPageNumPart(WordprocessingMLPackage wordprocessingMLPackage, MainDocumentPart t,
+			ObjectFactory factory) throws Exception {
 		FooterPart footerPart = new FooterPart();
 		footerPart.setPackage(wordprocessingMLPackage);
 		footerPart.setJaxbElement(createFooterWithPageNr(factory));
 		return t.addTargetPart(footerPart);
 	}
-	
+
 	public Ftr createFooterWithPageNr(ObjectFactory factory) {
 		Ftr ftr = factory.createFtr();
 		P paragraph = factory.createP();
-		RPr fontRPr = getRPr(factory, "Calibri", "000000", "20", STHint.EAST_ASIA,
-				false, false, false, false);
+		RPr fontRPr = getRPr(factory, "Calibri", "000000", "20", STHint.EAST_ASIA, false, false, false, false);
 		R run = factory.createR();
 		run.setRPr(fontRPr);
 		paragraph.getContent().add(run);
@@ -575,16 +549,16 @@ public class ActivitiesExportController {
 		addFieldEnd(factory, paragraph);
 		addPageTextField(factory, paragraph, " of ");
 
-		//addPageTextField(factory, paragraph, "Test");
+		// addPageTextField(factory, paragraph, "Test");
 		addFieldBegin(factory, paragraph);
 		addTotalPageNumberField(factory, paragraph);
 		addFieldEnd(factory, paragraph);
-		//addPageTextField(factory, paragraph, "Test");
+		// addPageTextField(factory, paragraph, "Test");
 		setParagraphAlign(factory, paragraph, JcEnumeration.CENTER);
 		ftr.getContent().add(paragraph);
 		return ftr;
 	}
-	
+
 	public void addFieldBegin(ObjectFactory factory, P paragraph) {
 		R run = factory.createR();
 		FldChar fldchar = factory.createFldChar();
@@ -619,8 +593,7 @@ public class ActivitiesExportController {
 		paragraph.getContent().add(run);
 	}
 
-	private void addPageTextField(ObjectFactory factory, P paragraph,
-			String value) {
+	private void addPageTextField(ObjectFactory factory, P paragraph, String value) {
 		R run = factory.createR();
 		Text txt = new Text();
 		txt.setSpace("preserve");
@@ -628,13 +601,10 @@ public class ActivitiesExportController {
 		run.getContent().add(txt);
 		paragraph.getContent().add(run);
 	}
-	
-	public void createFooterReference(
-			WordprocessingMLPackage wordprocessingMLPackage,
-			MainDocumentPart t, ObjectFactory factory, Relationship relationship)
-			throws InvalidFormatException {
-		List<SectionWrapper> sections = wordprocessingMLPackage
-				.getDocumentModel().getSections();
+
+	public void createFooterReference(WordprocessingMLPackage wordprocessingMLPackage, MainDocumentPart t,
+			ObjectFactory factory, Relationship relationship) throws InvalidFormatException {
+		List<SectionWrapper> sections = wordprocessingMLPackage.getDocumentModel().getSections();
 		SectPr sectPr = sections.get(sections.size() - 1).getSectPr();
 		// There is always a section wrapper, but it might not contain a sectPr
 		if (sectPr == null) {
@@ -646,14 +616,13 @@ public class ActivitiesExportController {
 		footerReference.setId(relationship.getId());
 		footerReference.setType(HdrFtrRef.FIRST);
 		sectPr.getEGHdrFtrReferences().add(footerReference);
-		
+
 		footerReference = factory.createFooterReference();
 		footerReference.setId(relationship.getId());
 		footerReference.setType(HdrFtrRef.DEFAULT);
 		sectPr.getEGHdrFtrReferences().add(footerReference);
 	}
-	
-	
+
 //	@RequestMapping(value = "/station-improvements-report", method = {RequestMethod.GET,RequestMethod.POST})
 //	public ResponseEntity<?> stationImprovementsReport(HttpServletResponse response, StripChart obj, HttpSession session, RedirectAttributes attributes) {
 //	    
@@ -715,70 +684,63 @@ public class ActivitiesExportController {
 //	        logger.error("stationImprovementsReport >> " + e.getMessage());
 //	    }        
 //	}	
-	
+
 	@PostMapping("/station-improvements-report")
 	public ResponseEntity<byte[]> stationImprovementsReport(@RequestBody StripChart obj) {
 
-	    try {
-	        SimpleDateFormat sqlDate = new SimpleDateFormat("yyyy-MM-dd");
-	        String currentDate = sqlDate.format(new Date());
+		try {
+			SimpleDateFormat sqlDate = new SimpleDateFormat("yyyy-MM-dd");
+			String currentDate = sqlDate.format(new Date());
 
-	        List<StripChart> stationList = service.generateStationImprovementsReport(obj);
-	        List<StripChart> divisionlist = service.getStationImprovementDivisionList(obj);
+			List<StripChart> stationList = service.generateStationImprovementsReport(obj);
+			List<StripChart> divisionlist = service.getStationImprovementDivisionList(obj);
 
-	        boolean landscape = false;
-	        WordprocessingMLPackage wordMLPackage =
-	                WordprocessingMLPackage.createPackage(PageSizePaper.A4, landscape);
+			boolean landscape = false;
+			WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage(PageSizePaper.A4, landscape);
 
-	        MainDocumentPart mp = wordMLPackage.getMainDocumentPart();
-	        ObjectFactory factory = Context.getWmlObjectFactory();
+			MainDocumentPart mp = wordMLPackage.getMainDocumentPart();
+			ObjectFactory factory = Context.getWmlObjectFactory();
 
-	        DateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm aa");
-	        String reportCreatedDate = df.format(new Date());
+			DateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm aa");
+			String reportCreatedDate = df.format(new Date());
 
-	        String imagePath = CommonConstants2.DOCX_LOGO + "/report_logo_wcrpmis.png";
-	        JcEnumeration imageAlignment = JcEnumeration.CENTER;
+			String imagePath = CommonConstants2.DOCX_LOGO + "/report_logo_wcrpmis.png";
+			JcEnumeration imageAlignment = JcEnumeration.CENTER;
 
-	        String headerTextMiddle = "Station Improvements Progress Report";
-	        String headerTextRight = reportCreatedDate;
+			String headerTextMiddle = "Station Improvements Progress Report";
+			String headerTextRight = reportCreatedDate;
 
-	        RPr titleRpr = getRPr(factory, "Calibri", "000000", "26",
-	                              STHint.EAST_ASIA, true, false, false, false);
+			RPr titleRpr = getRPr(factory, "Calibri", "000000", "26", STHint.EAST_ASIA, true, false, false, false);
 
-	        Relationship relationship = createHeaderPart(
-	                wordMLPackage, mp, factory,
-	                imagePath, imageAlignment,
-	                headerTextMiddle, headerTextRight, titleRpr);
+			Relationship relationship = createHeaderPart(wordMLPackage, mp, factory, imagePath, imageAlignment,
+					headerTextMiddle, headerTextRight, titleRpr);
 
-	        createHeaderReference(wordMLPackage, mp, factory, relationship);
+			createHeaderReference(wordMLPackage, mp, factory, relationship);
 
-	        relationship = createFooterPageNumPart(wordMLPackage, mp, factory);
-	        createFooterReference(wordMLPackage, mp, factory, relationship);
+			relationship = createFooterPageNumPart(wordMLPackage, mp, factory);
+			createFooterReference(wordMLPackage, mp, factory, relationship);
 
-	        DocxTableCreationForContractReport.createTableForStationImprovementsReport(
-	                wordMLPackage, mp, factory,
-	                stationList, reportCreatedDate, divisionlist);
+			DocxTableCreationForContractReport.createTableForStationImprovementsReport(wordMLPackage, mp, factory,
+					stationList, reportCreatedDate, divisionlist);
 
-	        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-	        wordMLPackage.save(bos);
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			wordMLPackage.save(bos);
 
-	        byte[] documentBytes = bos.toByteArray();
+			byte[] documentBytes = bos.toByteArray();
 
-	        String fileName = "Station-Improvements-" + currentDate + ".docx";
+			String fileName = "Station-Improvements-" + currentDate + ".docx";
 
-	        return ResponseEntity.ok()
-	                .header(HttpHeaders.CONTENT_DISPOSITION,
-	                        "attachment; filename=\"" + fileName + "\"")
-	                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-	                .body(documentBytes);
+			return ResponseEntity.ok()
+					.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+					.contentType(MediaType.APPLICATION_OCTET_STREAM).body(documentBytes);
 
-	    } catch (Exception e) {
-	    	e.printStackTrace();
-	    	logger.error("stationImprovementsReport >> " + e.getMessage(), e);
-	        return ResponseEntity.internalServerError().build();
-	    }
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error("stationImprovementsReport >> " + e.getMessage(), e);
+			return ResponseEntity.internalServerError().build();
+		}
 	}
-	
+
 //	@RequestMapping(value = "/tpc-status-report", method = {RequestMethod.GET,RequestMethod.POST})
 //	public void TPCStatusReport(HttpServletResponse response,StripChart obj, HttpSession session,RedirectAttributes attributes) {
 //		
@@ -855,184 +817,163 @@ public class ActivitiesExportController {
 //			logger.error("TPCStatusReport >> " + e.getMessage());
 //		}		
 //    }
-	
-	
-	
+
 	@PostMapping("/tpc-status-report")
 	public ResponseEntity<byte[]> TPCStatusReport(@RequestBody StripChart obj) {
 
-	    try {
-	        SimpleDateFormat sqlDate = new SimpleDateFormat("yyyy-MM-dd");
-	        String currentDate = sqlDate.format(new Date());
+		try {
+			SimpleDateFormat sqlDate = new SimpleDateFormat("yyyy-MM-dd");
+			String currentDate = sqlDate.format(new Date());
 
-	        List<StripChart> list = service.generateTPCStatusReport(obj);
-	        List<StripChart> divisionlist = service.getDivisionList(obj);
-	        List<StripChart> strlist = service.generateTPCStructureList(obj);
-	        List<StripChart> strcumlist = service.generateTPCStructureCumList(obj);
+			List<StripChart> list = service.generateTPCStatusReport(obj);
+			List<StripChart> divisionlist = service.getDivisionList(obj);
+			List<StripChart> strlist = service.generateTPCStructureList(obj);
+			List<StripChart> strcumlist = service.generateTPCStructureCumList(obj);
 
-	        boolean landscape = false;
-	        WordprocessingMLPackage wordMLPackage =
-	                WordprocessingMLPackage.createPackage(PageSizePaper.A4, landscape);
+			boolean landscape = false;
+			WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage(PageSizePaper.A4, landscape);
 
-	        MainDocumentPart mp = wordMLPackage.getMainDocumentPart();
-	        ObjectFactory factory = Context.getWmlObjectFactory();
+			MainDocumentPart mp = wordMLPackage.getMainDocumentPart();
+			ObjectFactory factory = Context.getWmlObjectFactory();
 
-	        DateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm aa");
-	        String reportCreatedDate = df.format(new Date());
+			DateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm aa");
+			String reportCreatedDate = df.format(new Date());
 
-	        String imagePath = CommonConstants2.DOCX_LOGO + "/report_logo_wcrpmis.png";
-	        JcEnumeration imageAlignment = JcEnumeration.CENTER;
+			String imagePath = CommonConstants2.DOCX_LOGO + "/report_logo_wcrpmis.png";
+			JcEnumeration imageAlignment = JcEnumeration.CENTER;
 
-	        String headerTextMiddle = "TPC Progress Report";
-	        String headerTextRight = reportCreatedDate;
+			String headerTextMiddle = "TPC Progress Report";
+			String headerTextRight = reportCreatedDate;
 
-	        RPr titleRpr = getRPr(factory, "Calibri", "000000", "26",
-	                              STHint.EAST_ASIA, true, false, false, false);
+			RPr titleRpr = getRPr(factory, "Calibri", "000000", "26", STHint.EAST_ASIA, true, false, false, false);
 
-	        Relationship relationship = createHeaderPart(
-	                wordMLPackage, mp, factory,
-	                imagePath, imageAlignment,
-	                headerTextMiddle, headerTextRight, titleRpr);
+			Relationship relationship = createHeaderPart(wordMLPackage, mp, factory, imagePath, imageAlignment,
+					headerTextMiddle, headerTextRight, titleRpr);
 
-	        createHeaderReference(wordMLPackage, mp, factory, relationship);
+			createHeaderReference(wordMLPackage, mp, factory, relationship);
 
-	        relationship = createFooterPageNumPart(wordMLPackage, mp, factory);
-	        createFooterReference(wordMLPackage, mp, factory, relationship);
+			relationship = createFooterPageNumPart(wordMLPackage, mp, factory);
+			createFooterReference(wordMLPackage, mp, factory, relationship);
 
-	        DocxTableCreationForContractReport.createTableForTPCStatusReport(
-	                wordMLPackage, mp, factory,
-	                list, divisionlist, strlist, strcumlist, reportCreatedDate);
+			DocxTableCreationForContractReport.createTableForTPCStatusReport(wordMLPackage, mp, factory, list,
+					divisionlist, strlist, strcumlist, reportCreatedDate);
 
-	        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-	        wordMLPackage.save(bos);
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			wordMLPackage.save(bos);
 
-	        byte[] documentBytes = bos.toByteArray();
+			byte[] documentBytes = bos.toByteArray();
 
-	        String fileName = "MUTP 3 TPC FOBs Status-" + currentDate + ".docx";
+			String fileName = "MUTP 3 TPC FOBs Status-" + currentDate + ".docx";
 
-	        return ResponseEntity.ok()
-	                .header(HttpHeaders.CONTENT_DISPOSITION,
-	                        "attachment; filename=\"" + fileName + "\"")
-	                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-	                .body(documentBytes);
-	        
-	        
+			return ResponseEntity.ok()
+					.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+					.contentType(MediaType.APPLICATION_OCTET_STREAM).body(documentBytes);
 
-	    } catch (Exception e) {
-	    	e.printStackTrace();
-	        logger.error("TPCStatusReport FAILED", e);
-	        return ResponseEntity.internalServerError().build();
-	    }
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error("TPCStatusReport FAILED", e);
+			return ResponseEntity.internalServerError().build();
+		}
 	}
-
 
 	@PostMapping("/generate-mcdo-progress-report")
 	public ResponseEntity<byte[]> MCDOProgressReport(@RequestBody StripChart obj, HttpSession session) {
 
-	    try {
+		try {
 
-	        /* -------- VALIDATION (CRITICAL) -------- */
+			/* -------- VALIDATION (CRITICAL) -------- */
 
-	        if (obj.getFrom_date() == null || obj.getTo_date() == null) {
-	            return ResponseEntity.badRequest().body(null);
-	        }
+			if (obj.getFrom_date() == null || obj.getTo_date() == null) {
+				return ResponseEntity.badRequest().body(null);
+			}
 
-	        if (obj.getWork_id_fk() == null) {
-	            return ResponseEntity.badRequest().body(null);
-	        }
+			if (obj.getWork_id_fk() == null) {
+				return ResponseEntity.badRequest().body(null);
+			}
 
-	        /* -------- DATE CONVERSION -------- */
+			/* -------- DATE CONVERSION -------- */
 
-	        // incoming format: dd-MM-yyyy
-	        String[] fromParts = obj.getFrom_date().split("-");
-	        String[] toParts = obj.getTo_date().split("-");
+			// incoming format: dd-MM-yyyy
+			String[] fromParts = obj.getFrom_date().split("-");
+			String[] toParts = obj.getTo_date().split("-");
 
-	        String fDate = fromParts[2] + "-" + fromParts[1] + "-" + fromParts[0];
-	        String tDate = toParts[2] + "-" + toParts[1] + "-" + toParts[0];
+			String fDate = fromParts[2] + "-" + fromParts[1] + "-" + fromParts[0];
+			String tDate = toParts[2] + "-" + toParts[1] + "-" + toParts[0];
 
-	        obj.setFrom_date(fDate);
-	        obj.setTo_date(tDate);
+			obj.setFrom_date(fDate);
+			obj.setTo_date(tDate);
 
-	        List<StripChart> list = null;
-	        List<StripChart> list1 = null;
+			List<StripChart> list = null;
+			List<StripChart> list1 = null;
 
-	        /* -------- BUSINESS LOGIC -------- */
+			/* -------- BUSINESS LOGIC -------- */
 
-	        if ("P04W02".equals(obj.getWork_id_fk())) {
-	            list = service.generateMCDOProgressReport(obj);
-	        }
+			if ("P04W02".equals(obj.getWork_id_fk())) {
+				list = service.generateMCDOProgressReport(obj);
+			}
 
-	        if ("P04W01".equals(obj.getWork_id_fk())) {
-	            list1 = service.generateMCDOProgressReport1(obj);
-	        }
+			if ("P04W01".equals(obj.getWork_id_fk())) {
+				list1 = service.generateMCDOProgressReport1(obj);
+			}
 
-	        if (obj.getWork_id_fk().contains("P04W02") && obj.getWork_id_fk().contains("P04W01")) {
+			if (obj.getWork_id_fk().contains("P04W02") && obj.getWork_id_fk().contains("P04W01")) {
 
-	            obj.setWork_id_fk("P04W02");
-	            list = service.generateMCDOProgressReport(obj);
+				obj.setWork_id_fk("P04W02");
+				list = service.generateMCDOProgressReport(obj);
 
-	            obj.setWork_id_fk("P04W01");
-	            list1 = service.generateMCDOProgressReport1(obj);
-	        }
+				obj.setWork_id_fk("P04W01");
+				list1 = service.generateMCDOProgressReport1(obj);
+			}
 
-	        /* -------- DOCX CREATION -------- */
+			/* -------- DOCX CREATION -------- */
 
-	        boolean landscape = false;
+			boolean landscape = false;
 
-	        WordprocessingMLPackage wordMLPackage =
-	                WordprocessingMLPackage.createPackage(PageSizePaper.A4, landscape);
+			WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage(PageSizePaper.A4, landscape);
 
-	        MainDocumentPart mp = wordMLPackage.getMainDocumentPart();
-	        ObjectFactory factory = Context.getWmlObjectFactory();
+			MainDocumentPart mp = wordMLPackage.getMainDocumentPart();
+			ObjectFactory factory = Context.getWmlObjectFactory();
 
-	        DateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm aa");
-	        String report_created_date = df.format(new Date());
+			DateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm aa");
+			String report_created_date = df.format(new Date());
 
-	        String imagePath = CommonConstants2.DOCX_LOGO + "/report_logo_wcrpmis.png";
+			String imagePath = CommonConstants2.DOCX_LOGO + "/report_logo_wcrpmis.png";
 
-	        RPr titleRpr = getRPr(factory, "Calibri", "000000", "26",
-	                STHint.EAST_ASIA, true, false, false, false);
+			RPr titleRpr = getRPr(factory, "Calibri", "000000", "26", STHint.EAST_ASIA, true, false, false, false);
 
-	        Relationship relationship =
-	                createHeaderPart(wordMLPackage, mp, factory, imagePath,
-	                        JcEnumeration.CENTER, "", "", titleRpr);
+			Relationship relationship = createHeaderPart(wordMLPackage, mp, factory, imagePath, JcEnumeration.CENTER,
+					"", "", titleRpr);
 
-	        createHeaderReference(wordMLPackage, mp, factory, relationship);
+			createHeaderReference(wordMLPackage, mp, factory, relationship);
 
-	        relationship = createFooterPageNumPart(wordMLPackage, mp, factory);
-	        createFooterReference(wordMLPackage, mp, factory, relationship);
+			relationship = createFooterPageNumPart(wordMLPackage, mp, factory);
+			createFooterReference(wordMLPackage, mp, factory, relationship);
 
-	        DocxTableCreationForContractReport.createTableForMCDOProgressReport(
-	                wordMLPackage, mp, factory, list, list1,
-	                report_created_date, fDate, tDate
-	        );
+			DocxTableCreationForContractReport.createTableForMCDOProgressReport(wordMLPackage, mp, factory, list, list1,
+					report_created_date, fDate, tDate);
 
-	        /* -------- STREAM TO BYTE[] -------- */
+			/* -------- STREAM TO BYTE[] -------- */
 
-	        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-	        wordMLPackage.save(bos);
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			wordMLPackage.save(bos);
 
-	        byte[] byteArray = bos.toByteArray();
+			byte[] byteArray = bos.toByteArray();
 
-	        String fileName = "MCDO-Progress-Report.docx";
+			String fileName = "MCDO-Progress-Report.docx";
 
-	        return ResponseEntity.ok()
-	                .header(HttpHeaders.CONTENT_DISPOSITION,
-	                        "attachment; filename=" + fileName)
-	                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-	                .body(byteArray);
+			return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
+					.contentType(MediaType.APPLICATION_OCTET_STREAM).body(byteArray);
 
-	    } catch (Exception e) {
+		} catch (Exception e) {
 
-	        logger.error("MCDOProgressReport >> " + e.getMessage(), e);
+			logger.error("MCDOProgressReport >> " + e.getMessage(), e);
 
-	        return ResponseEntity.internalServerError().body(null);
-	    }
+			return ResponseEntity.internalServerError().body(null);
+		}
 	}
 
-	
-	
-	@RequestMapping(value = "/ajax/getWorksListForMCDOProgressReport", method = {RequestMethod.GET,RequestMethod.POST}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/ajax/getWorksListForMCDOProgressReport", method = { RequestMethod.GET,
+			RequestMethod.POST }, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public List<StripChart> getWorksListForMCDOProgressreporttReportForm(@ModelAttribute StripChart obj) {
 		List<StripChart> objList = null;
@@ -1043,61 +984,86 @@ public class ActivitiesExportController {
 			logger.error("getWorksListForMCDOProgressreporttReportForm : " + e.getMessage());
 		}
 		return objList;
-	}		
-	
-
-	@RequestMapping(value = "/ajax/getProjectListForActivitiesExportReportForm", method = { RequestMethod.GET,
-			RequestMethod.POST }, produces = MediaType.APPLICATION_JSON_VALUE)
-	@ResponseBody
-	public List<StripChart> getProjectListForActivitiesExportReportForm(@ModelAttribute StripChart obj,HttpSession session) {
-		List<StripChart> objList = null;
-		try {
-			User uObj = (User) session.getAttribute("user");
-			obj.setUser_type_fk(uObj.getUserTypeFk());
-			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
-			obj.setUser_name(uObj.getUserName());			
-			objList = service.getProjectsFilterListInActivitiesExportReport(obj);
-		} catch (Exception e) {
-			e.printStackTrace();
-			logger.error("getProjectListForActivitiesExportReportForm : " + e.getMessage());
-		}
-		return objList;
 	}
 
-	@RequestMapping(value = "/ajax/getContractListInActivitiesExportReport", method = { RequestMethod.GET,
-			RequestMethod.POST }, produces = MediaType.APPLICATION_JSON_VALUE)
-	@ResponseBody
-	public List<StripChart> getLocationsListForActivitiesExportReportForm(@ModelAttribute StripChart obj,HttpSession session) {
-		List<StripChart> objList = null;
+	@GetMapping("/projects")
+	public ResponseEntity<?> getProjectList(HttpSession session) {
 		try {
 			User uObj = (User) session.getAttribute("user");
+
+			if (uObj == null) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired");
+			}
+
+			StripChart obj = new StripChart();
 			obj.setUser_type_fk(uObj.getUserTypeFk());
 			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
-			obj.setUser_name(uObj.getUserName());			
-			objList = service.getContractListInActivitiesExportReport(obj);
+			obj.setUser_name(uObj.getUserName());
+
+			List<StripChart> list = service.getProjectsFilterListInActivitiesExportReport(obj);
+
+			return ResponseEntity.ok(list);
+
 		} catch (Exception e) {
-			e.printStackTrace();
-			logger.error("getLocationsListForActivitiesExportReportForm : " + e.getMessage());
+			logger.error("getProjectList : " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching projects");
 		}
-		return objList;
 	}
 
-	@RequestMapping(value = "/generate-activities-export-report", method = {RequestMethod.GET,RequestMethod.POST})
-	public void generateActivitiesExportReport(@ModelAttribute StripChart obj,HttpServletRequest request, HttpServletResponse response,HttpSession session,RedirectAttributes attributes){
-		//ModelAndView model = new ModelAndView("redirect:/activities-progress-report");
-		try{
+
+	@GetMapping("/contracts")
+	public ResponseEntity<?> getContracts(@RequestParam(required = false) String project_id, HttpSession session) {
+
+		try {
 			User uObj = (User) session.getAttribute("user");
+
+			if (uObj == null) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired");
+			}
+
+			StripChart obj = new StripChart();
+			obj.setProject_id(project_id);
 			obj.setUser_type_fk(uObj.getUserTypeFk());
 			obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
-			obj.setUser_id(uObj.getUserId());
-			DateFormat df = new SimpleDateFormat("dd-MMM-YYYY HH:mm"); 
-			String report_created_date = df.format(new Date());
-			
-			SimpleDateFormat formatter = new SimpleDateFormat("d-MMM-YY");
-		
-			//List<StripChart> structuresList = service.getStructuresList(obj);
-			
-			StripChart reportData = service.generateActivitiesExportReport(obj);
+			obj.setUser_name(uObj.getUserName());
+
+			List<StripChart> list = service.getContractListInActivitiesExportReport(obj);
+
+			return ResponseEntity.ok(list);
+
+		} catch (Exception e) {
+			logger.error("getContracts : " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching contracts");
+		}
+	}
+
+@PostMapping("/generate")
+public ResponseEntity<?> generateActivitiesExportReport(
+        @RequestBody StripChart obj,
+        HttpSession session) {
+
+    try {
+
+        User uObj = (User) session.getAttribute("user");
+        if (uObj == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Session expired");
+        }
+
+        obj.setUser_type_fk(uObj.getUserTypeFk());
+        obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+        obj.setUser_id(uObj.getUserId());
+
+        StripChart reportData =
+                service.generateActivitiesExportReport(obj);
+
+        if (reportData == null ||
+            reportData.getReport1List() == null ||
+            reportData.getReport1List().isEmpty()) {
+
+            return ResponseEntity.badRequest()
+                    .body("No data found");
+        }
 			
 			XSSFWorkbook  workBook = new XSSFWorkbook();
 			
@@ -1311,12 +1277,12 @@ public class ActivitiesExportController {
             
             DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
             Date date = new Date();
-            String fileName = "Activities_Export_Report_"+dateFormat.format(date);
+           // String fileName = "Activities_Export_Report_"+dateFormat.format(date);
             
-            try{
-                /*FileOutputStream fos = new FileOutputStream(fileDirectory +fileName+".xls");
+           /* try{
+                FileOutputStream fos = new FileOutputStream(fileDirectory +fileName+".xls");
                 workBook.write(fos);
-                fos.flush();*/
+                fos.flush();
             	
                response.setContentType("application/.csv");
  			   response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -1348,13 +1314,29 @@ public class ActivitiesExportController {
                 e.printStackTrace();
                 logger.error("generateActivitiesExportMain : " + e.getMessage());
                 //attributes.addFlashAttribute("error",dataExportError);
-            }
+            }*/
 	      }
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            workBook.write(bos);
+            workBook.close();
+
+            byte[] excelBytes = bos.toByteArray();
+
+            String fileName = "Activities_Export_Report_" +
+                    new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
+                    + ".xlsx";
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=" + fileName)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(excelBytes);
 		}catch (Exception e) {
 			e.printStackTrace();
 			logger.error("generateActivitiesExportMain : " + e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Error generating report");
 		}
-		//return model;
     }
 
 	private ModelAndView noDataAlertCall(RedirectAttributes attributes) {

@@ -1,3 +1,4 @@
+import ActivitiesExportReport from "./components/Reports/ActivitiesExportReport/ActivitiesExportReport";
 import LandAcquisitionReport from "./components/Reports/LandAcquisitionReport/LandAcquisitionReport";
 import ContractReport from "./components/Reports/ContractReport/ContractReport";
 import InsuranceContractualLetters from "./components/Reports/InsuranceContractualLetters/InsuranceContractualLetters";
@@ -368,6 +369,7 @@ function App() {
 						
 						<Route path="reports" element={<Reports />} />
             <Route path="/reports/contracts/:reportNo" element={<ContractReport />} />
+			            <Route path="activitiesexportreport" element={<ActivitiesExportReport />} />
 						<Route path="issues" element={<Issues />} />
 						<Route path="pendingissuesreport" element={<PendingIssuesReport />} />
 						<Route path="issuesdetailsreport" element={<IssuesDetailsReport />} />
@@ -396,5 +398,3 @@ function App() {
 	</PageTitleProvider>;
 }
 export default App;
-
-
