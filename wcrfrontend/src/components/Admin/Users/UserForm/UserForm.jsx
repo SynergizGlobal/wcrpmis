@@ -1022,7 +1022,7 @@ export default function UserForm() {
     return permissionsToSend;
   };
 
-  // Form submission
+  // Form submission - FIXED VERSION
   const onSubmit = async (data) => {
     try {
       // Validate form including image
@@ -1051,10 +1051,18 @@ export default function UserForm() {
       
       console.log('Submitting form data:', data);
       
-      // Add basic user info
+      // Add basic user info - FIXED: Skip fileName if no file selected in edit mode
       Object.entries(data).forEach(([key, value]) => {
-        if (key === 'fileName' && value && value[0]) {
-          formData.append('fileName', value[0]);
+        // Skip fileName completely if no file is selected (for edit mode)
+        if (key === 'fileName') {
+          // Only append fileName if there's actually a file
+          if (value && value[0] && value[0] instanceof File) {
+            console.log("Appending new file:", value[0].name);
+            formData.append('fileName', value[0]);
+          } else {
+            console.log("Skipping fileName - no new file selected");
+            // Don't append anything for fileName
+          }
         } 
         else if (key === 'contract_id' && Array.isArray(value)) {
           formData.append('contract_id', value.map(v => v.value).join(','));
@@ -1069,18 +1077,27 @@ export default function UserForm() {
           formData.append('rr_work', value.map(v => v.value).join(','));
         }
         else if (key === 'executionMonitoringRows' && Array.isArray(value)) {
-          // Format contract_ids and structures like JSP
-          value.forEach((row, index) => {
+          // FIXED: Properly handle multiple rows for contract_ids and structures
+          const contractIds = [];
+          const structures = [];
+          
+          value.forEach((row) => {
             if (row.contract_id?.value) {
-              // Convert commas to ~$~ like JSP does
-              const contractValue = row.contract_id.value.split(",").join("~$~");
-              formData.append('contract_ids', contractValue);
+              contractIds.push(row.contract_id.value);
+            } else {
+              contractIds.push('');
             }
+            
             if (row.structures && Array.isArray(row.structures)) {
-              const structureValues = row.structures.map(s => s.value).join(',');
-              formData.append('structures', structureValues);
+              structures.push(row.structures.map(s => s.value).join(','));
+            } else {
+              structures.push('');
             }
           });
+          
+          // Append as arrays
+          formData.append('contract_ids', contractIds);
+          formData.append('structures', structures);
         }
         else if (typeof value === 'object' && value !== null) {
           // For Select fields (react-select objects)
@@ -1088,15 +1105,34 @@ export default function UserForm() {
             formData.append(key, value.value);
           }
         }
-        else if (value !== null && value !== undefined) {
+        else if (value !== null && value !== undefined && key !== 'fileName') {
+          // Skip fileName here too
           formData.append(key, value);
         }
       });
+
+      // IMPORTANT: Ensure user_id is always sent for update
+      if (isEdit) {
+        const userIdValue = data.user_id || userId;
+        if (userIdValue) {
+          // Check if user_id was already added
+          if (!formData.has('user_id')) {
+            formData.append('user_id', userIdValue);
+            console.log("Added user_id:", userIdValue);
+          }
+        }
+      }
 
       // Add permissions_check
       permissionsToSend.forEach(permission => {
         formData.append('permissions_check', permission);
       });
+
+      // Log FormData contents for debugging
+      console.log("FormData contents:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
 
       // Send to appropriate endpoint
       const endpoint = isEdit 
@@ -1111,9 +1147,14 @@ export default function UserForm() {
 
       setLoading(false);
 
-      if (response.data.success) {
+      // FIXED: Handle response correctly
+      if (response.data.success === "User updated successfully" || 
+          response.data.success === "User added successfully" ||
+          response.data.success) {
         alert(isEdit ? "✅ User updated successfully!" : "✅ User added successfully!");
         navigate("/admin/users");
+      } else if (response.data.error) {
+        alert(response.data.error);
       } else {
         alert(response.data.message || "Error saving user");
       }
@@ -1312,7 +1353,7 @@ export default function UserForm() {
                   type="text" 
                   placeholder="PMIS Key" 
                   onBlur={handlePmisKeyBlur}
-                  readOnly={isEdit || true} 
+                  readOnly={isEdit} // FIXED: Changed from "isEdit || true" to just "isEdit"
                 />
                 {pmisKeyError && (
                   <span className={pmisKeyError.includes("Available") ? styles.pmisKeySuccess : styles.pmisKeyError}>
@@ -1648,7 +1689,6 @@ export default function UserForm() {
                                   type="button"
                                   className="btn btn-outline-danger"
                                   onClick={() => handleRemoveRow(index)}
-                                  // DELETE BUTTON IS NOW ENABLED FOR ALL ROWS INCLUDING FIRST ROW
                                 >
                                   <MdOutlineDeleteSweep size="26" />
                                 </button>
