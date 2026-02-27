@@ -245,4 +245,10 @@ public class ContractService implements IContractService {
 //		}
 //		return projectDTOs;
 //	}
+	
+	@Override
+	public String updateContract(Contract contract)throws Exception{
+		return contractRepo.updateContract(contract);
+
+	}
 }

@@ -43,5 +43,7 @@ import com.wcr.wcrbackend.dms.dto.ContractDTO;
 	public List<Contract> contractInsuranceList(Contract contract) throws Exception;
 	public List<Contract> contractMilestoneList(Contract contract) throws Exception;
 	public List<ContractDTO> getContracts(String userId, String userRole);
+	public String updateContract(Contract contract)throws Exception;
+
 	
 }

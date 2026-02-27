@@ -79,6 +79,9 @@ public interface IContractRepo {
 	  public List<ContractDTO> findContractsByUserId(String userId);
 
 	   public List<ContractDTO> findContractsForOtherUsers(String userId);
+	   
+		public String updateContract(Contract contract)throws Exception;
+
 
 }
 

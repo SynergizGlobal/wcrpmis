@@ -4,14 +4,11 @@ package com.wcr.wcrbackend.controller;
 import java.io.FileNotFoundException;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -37,18 +34,15 @@ import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,12 +51,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import com.wcr.wcrbackend.DTO.BankGuarantee;
 import com.wcr.wcrbackend.DTO.Contract;
-import com.wcr.wcrbackend.DTO.Insurence;
 import com.wcr.wcrbackend.common.DateParser;
 import com.wcr.wcrbackend.dms.dto.ContractDTO;
 import com.wcr.wcrbackend.entity.User;
@@ -71,7 +60,6 @@ import com.wcr.wcrbackend.service.IContractService;
 import com.wcr.wcrbackend.service.IUserService;
 import com.wcr.wcrbackend.service.SafetyService;
 
-import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -90,9 +78,6 @@ public class ContractController {
 	
 	@Autowired
 	IContractService contractService;
-	
-//	@Autowired
-//	WorkService workService;
 
 	@Autowired
 	SafetyService safetyService;
@@ -120,6 +105,66 @@ public class ContractController {
 	
 	@Value("${record.dataexport.nodata}")
 	public String dataExportNoData;
+	
+	
+	
+	@RequestMapping(value = "/update-contract", method = {RequestMethod.GET,RequestMethod.POST})
+	public Map<String, Object> updateWork(@RequestPart("payload") String contractJson, HttpSession session){
+		
+		Map<String, Object> res = new HashMap<>();
+		try{
+	        // Convert JSON to Contract object
+	        ObjectMapper objectMapper = new ObjectMapper();
+	        Contract contract = objectMapper.readValue(contractJson, Contract.class);
+			
+			String user_Id = (String) session.getAttribute("userId");
+			String userName = (String) session.getAttribute("userName");
+			String userDesignation = (String) session.getAttribute("designation");
+			
+			User uObj = (User) session.getAttribute("user");
+			contract.setUser_type_fk(uObj.getUserTypeFk());
+			contract.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+			
+			contract.setCreated_by_user_id_fk(user_Id);
+			contract.setUser_id(user_Id);
+			contract.setUser_name(userName);
+			contract.setDesignation(userDesignation);
+			contract.setUser_id(user_Id);
+			contract.setDoc(DateParser.parse(contract.getDoc()));
+			contract.setCa_date(DateParser.parse(contract.getCa_date()));
+			contract.setDate_of_start(DateParser.parse(contract.getDate_of_start()));			
+			contract.setLoa_date(DateParser.parse(contract.getLoa_date()));
+			contract.setActual_completion_date(DateParser.parse(contract.getActual_completion_date()));		
+			contract.setContract_closure_date(DateParser.parse(contract.getContract_closure_date()));
+			contract.setCompletion_certificate_release(DateParser.parse(contract.getCompletion_certificate_release()));		
+			contract.setFinal_takeover(DateParser.parse(contract.getFinal_takeover()));
+			contract.setFinal_bill_release(DateParser.parse(contract.getFinal_bill_release()));
+			contract.setDefect_liability_period(DateParser.parse(contract.getDefect_liability_period()));
+			contract.setRetention_money_release(DateParser.parse(contract.getRetention_money_release()));
+			contract.setPbg_release(DateParser.parse(contract.getPbg_release()));
+			contract.setBg_date(DateParser.parse(contract.getBg_date()));
+			contract.setRelease_date(DateParser.parse(contract.getRelease_date()));
+			contract.setTarget_doc(DateParser.parse(contract.getTarget_doc()));
+			contract.setActual_date_of_commissioning(DateParser.parse(contract.getActual_date_of_commissioning()));
+			contract.setExisting_contract_closure_date(DateParser.parse(contract.getExisting_contract_closure_date()));
+			contract.setPlanned_date_of_award(DateParser.parse(contract.getPlanned_date_of_award()));
+			contract.setPlanned_date_of_completion(DateParser.parse(contract.getPlanned_date_of_completion()));
+			
+			String contractid =  contractService.updateContract(contract);
+			if(!StringUtils.isEmpty(contractid)) {
+				res.put("success", "Contract "+contractid+" Updated Succesfully.");
+			}else {
+				res.put("error","Updating Contract is failed. Try again.");
+
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
+			res.put("error","Updating Contract is failed. Try again.");
+
+			logger.error("Contract : " + e.getMessage());
+		}
+		return res;
+	}
 
 	
 	
@@ -500,6 +545,7 @@ public class ContractController {
                 response.put("contract_Statustype",
                         contractService.getContractStatusType(obj));
             }
+            response.put("bankGuaranteeType", contractService.bankGuarantee());
 
             response.put("gotoTab", obj.getTab_name());
 

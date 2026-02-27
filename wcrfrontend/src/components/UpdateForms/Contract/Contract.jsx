@@ -55,12 +55,12 @@ export default function Contract() {
   useEffect(() => {
     fetchFilterOptions();
     fetchContracts();
-  }, []);
+  }, [location]);
 
   // Apply filters when they change
   useEffect(() => {
     applyFilters();
-  }, [filters, contracts, searchQuery]);
+  }, [filters, contracts, searchQuery,location]);
 
   const fetchContracts = async () => {
     setLoadingContracts(true);
