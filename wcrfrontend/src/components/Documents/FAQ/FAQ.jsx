@@ -44,6 +44,7 @@ const FAQ = () => {
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.card}>
+
         <div className={styles.header}>
           User Manual
         </div>
@@ -69,13 +70,16 @@ const FAQ = () => {
         <div className={styles.emptyState}>
           No folders available
         </div>
+
       </div>
 
       {showModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
+
             <div className={styles.modalHeader}>
               <span>Faq File Upload</span>
+
               <span
                 className={styles.closeBtn}
                 onClick={() => {
@@ -88,33 +92,53 @@ const FAQ = () => {
             </div>
 
             <div className={styles.modalBody}>
+
               <div className={styles.formRow}>
+
                 <div className={styles.formGroup}>
                   <label>Title</label>
+
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
+
                   {errors.title && (
-                    <div className={styles.requiredText}>Required</div>
+                    <div className={styles.requiredText}>
+                      Required
+                    </div>
                   )}
                 </div>
+
 
                 <div className={styles.formGroup}>
                   <label>Category</label>
-                  <input
-                    type="text"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  />
+
+                  <div className={styles.selectWrapper}>
+                    <select
+                      value={category}
+                      onChange={(e) =>
+                        setCategory(e.target.value)
+                      }
+                    >
+                      <option value="">
+                        Select
+                      </option>
+                    </select>
+                  </div>
+
                   {errors.category && (
-                    <div className={styles.requiredText}>Required</div>
+                    <div className={styles.requiredText}>
+                      Required
+                    </div>
                   )}
                 </div>
+
               </div>
 
               <div className={styles.fileRow}>
+
                 <button
                   type="button"
                   className={styles.uploadFileBtn}
@@ -124,7 +148,9 @@ const FAQ = () => {
                 </button>
 
                 <span className={styles.fileLine}></span>
+
               </div>
+
 
               {selectedFile && (
                 <div className={styles.fileName}>
@@ -132,9 +158,12 @@ const FAQ = () => {
                 </div>
               )}
 
+
               {errors.file && (
                 <div className={styles.requiredText}>Required</div>
+                 
               )}
+
 
               <input
                 type="file"
@@ -144,6 +173,7 @@ const FAQ = () => {
               />
 
               <div className={styles.modalActions}>
+
                 <button
                   type="button"
                   className={styles.submitBtn}
@@ -151,6 +181,7 @@ const FAQ = () => {
                 >
                   UPLOAD
                 </button>
+
                 <button
                   type="button"
                   className={styles.cancelBtn}
@@ -161,11 +192,15 @@ const FAQ = () => {
                 >
                   CANCEL
                 </button>
+
               </div>
+
             </div>
+
           </div>
         </div>
       )}
+
     </div>
   );
 };

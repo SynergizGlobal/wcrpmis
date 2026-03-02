@@ -1,6 +1,7 @@
 import ActivitiesExportReport from "./components/Reports/ActivitiesExportReport/ActivitiesExportReport";
 import LandAcquisitionReport from "./components/Reports/LandAcquisitionReport/LandAcquisitionReport";
 import ContractReport from "./components/Reports/ContractReport/ContractReport";
+import BGContractualLetters from "./components/Reports/BGContractualLetters/BGContractualLetters";
 import InsuranceContractualLetters from "./components/Reports/InsuranceContractualLetters/InsuranceContractualLetters";
 import DateofCompletionLetters from "./components/Reports/DateofCompletionLetters/DateofCompletionLetters";
 import CodesAndManuals from "./components/Documents/CodesAndManuals/CodesAndManuals";
@@ -376,7 +377,7 @@ function App() {
 						<Route path="landacquisitionreport" element={<LandAcquisitionReport />} />
 												
 						<Route path="insurance-contractual-letters" element={<InsuranceContractualLetters />} />
-						
+						<Route path="BG-Contractual-Letters" element={<BGContractualLetters />} />						
 						<Route path="doc-contractual-letters" element={<DateofCompletionLetters />} />
 						<Route path="department" element={<Department />} />
 						<Route path="projectType" element={<ProjectType />} />

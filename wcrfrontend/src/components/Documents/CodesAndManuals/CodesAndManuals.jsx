@@ -71,7 +71,7 @@ const CodesAndManuals = () => {
           No folders available
         </div>
       </div>
-
+    
       {showModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
@@ -90,8 +90,10 @@ const CodesAndManuals = () => {
             </div>
 
             <div className={styles.modalBody}>
-              <div className="form-row">
-                <div className="form-field">
+
+              <div className={styles.formRow}>
+
+                <div className={styles.formGroup}>
                   <label>Title</label>
                   <input
                     type="text"
@@ -103,17 +105,23 @@ const CodesAndManuals = () => {
                   )}
                 </div>
 
-                <div className="form-field">
+                <div className={styles.formGroup}>
                   <label>Category</label>
-                  <input
-                    type="text"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  />
+
+                  <div className={styles.selectWrapper}>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                    >
+                      <option value="">Select</option>
+                    </select>
+                  </div>
+
                   {errors.category && (
                     <div className={styles.requiredText}>Required</div>
                   )}
                 </div>
+
               </div>
 
               <div className={styles.fileRow}>
@@ -125,8 +133,7 @@ const CodesAndManuals = () => {
                   Upload File
                 </button>
 
-                {/* Small decorative line */}
-                <span className={styles.Line}></span>
+                <span className={styles.fileLine}></span>
               </div>
 
               {selectedFile && (
@@ -154,6 +161,7 @@ const CodesAndManuals = () => {
                 >
                   UPLOAD
                 </button>
+			
                 <button
                   type="button"
                   className={styles.cancelBtn}
@@ -165,11 +173,14 @@ const CodesAndManuals = () => {
                   CANCEL
                 </button>
               </div>
+
             </div>
+           
 
           </div>
         </div>
       )}
+
     </div>
   );
 };

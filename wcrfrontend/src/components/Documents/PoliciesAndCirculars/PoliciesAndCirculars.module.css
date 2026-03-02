@@ -1,10 +1,15 @@
+.pageWrapper {
+  min-height: 100vh;
+  background: #f2f2f2;
+}
+
 .card {
   background: #ffffff;
   min-height: calc(100vh - 24px);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
   display: flex;
   flex-direction: column;
 }
+
 
 /* Header */
 .header {
@@ -15,6 +20,7 @@
   font-size: 22px;
   font-weight: bold;
 }
+
 
 /* Top Bar */
 .topBar {
@@ -56,11 +62,10 @@
 .emptyState {
   margin-top: 26px;
   text-align: center;
-  font-size: 16px;
 }
 
-/* ============ MODAL ============ */
 
+/* MODAL */
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -68,34 +73,34 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
 }
 
 .modal {
   width: 700px;
   background: #fff;
-  border-radius: 2px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
 }
+
 
 .modalHeader {
   background: #3f4a7f;
-  color: #fff;
+  color: white;
   padding: 12px 16px;
   display: flex;
   justify-content: space-between;
-  font-size: 18px;
 }
+
 
 .closeBtn {
   cursor: pointer;
 }
 
+
 .modalBody {
   padding: 30px 40px 40px;
 }
 
-/* Form Layout */
+
+/* FORM */
 .formRow {
   display: flex;
   gap: 40px;
@@ -108,25 +113,51 @@
   flex-direction: column;
 }
 
-/* ✅ Darker Label Text ONLY */
 .formGroup label {
   font-size: 16px;
-  color: #000000;
+  color: black;
   margin-bottom: 6px;
 }
 
-/* ✅ Darker Input Text ONLY (underline unchanged) */
+
+/* INPUT */
 .formGroup input {
   border: none;
-  border-bottom: 1px solid #9a9a9a; /* original line color kept */
+  border-bottom: 1px solid #9a9a9a;
   padding: 6px 4px;
   outline: none;
-  font-size: 14px;
-  color: #000; /* darker text */
   background: transparent;
 }
 
-/* Upload Section */
+
+/* SELECT DROPDOWN */
+.selectWrapper {
+  position: relative;
+}
+
+.selectWrapper select {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #9a9a9a;
+  padding: 6px 4px;
+  outline: none;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+/* arrow */
+.selectWrapper::after {
+  content: "▾";
+  position: absolute;
+  right: 0;
+  bottom: 6px;
+  font-size: 12px;
+  color: #3f4a7f;
+}
+
+
+/* Upload */
 .fileRow {
   display: flex;
   align-items: flex-end;
@@ -135,29 +166,27 @@
 
 .uploadFileBtn {
   background: #3f4a7f;
-  color: #fff;
+  color: white;
   border: none;
   border-radius: 20px;
   padding: 8px 22px;
-  cursor: pointer;
 }
 
 .fileLine {
   flex: 1;
   height: 1px;
   background: #9a9a9a;
-  margin-bottom: 8px;
 }
 
 .fileName {
   margin-top: 10px;
-  font-size: 13px;
-  color: #333;
 }
+
 
 .hiddenFileInput {
   display: none;
 }
+
 
 /* Buttons */
 .modalActions {
@@ -169,21 +198,19 @@
 
 .submitBtn {
   background: #3f4a7f;
-  color: #fff;
+  color: white;
   border: none;
   border-radius: 20px;
   padding: 10px 40px;
-  cursor: pointer;
 }
 
 .cancelBtn {
-  background: #ffffff;
-  color: #000;
+  background: white;
   border: 1px solid #ccc;
   border-radius: 20px;
   padding: 10px 40px;
-  cursor: pointer;
 }
+
 
 /* Error */
 .requiredText {

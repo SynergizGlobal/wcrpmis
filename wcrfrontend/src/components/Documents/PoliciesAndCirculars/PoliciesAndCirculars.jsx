@@ -8,6 +8,7 @@ const PoliciesAndCirculars = () => {
   const [dateOfIssue, setDateOfIssue] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [errors, setErrors] = useState({});
+
   const fileInputRef = useRef(null);
 
   const handleFileClick = () => {
@@ -22,6 +23,7 @@ const PoliciesAndCirculars = () => {
 
   const handleSubmit = () => {
     const newErrors = {};
+
     if (!title.trim()) newErrors.title = true;
     if (!category.trim()) newErrors.category = true;
     if (!selectedFile) newErrors.file = true;
@@ -43,6 +45,7 @@ const PoliciesAndCirculars = () => {
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.card}>
+
         <div className={styles.header}>
           Policies & Circulars
         </div>
@@ -68,13 +71,17 @@ const PoliciesAndCirculars = () => {
         <div className={styles.emptyState}>
           No folders available
         </div>
+
       </div>
+
 
       {showModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
+
             <div className={styles.modalHeader}>
               <span>Policies & Circulars File Upload</span>
+
               <span
                 className={styles.closeBtn}
                 onClick={() => {
@@ -86,37 +93,59 @@ const PoliciesAndCirculars = () => {
               </span>
             </div>
 
+
             <div className={styles.modalBody}>
-              
+
               {/* Title & Category */}
               <div className={styles.formRow}>
+
                 <div className={styles.formGroup}>
                   <label>Title</label>
+
                   <input
                     type="text"
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    onChange={(e) =>
+                      setTitle(e.target.value)
+                    }
                   />
+
                   {errors.title && (
-                    <div className={styles.requiredText}>Required</div>
+                    <div className={styles.requiredText}>
+                      Required
+                    </div>
                   )}
                 </div>
 
+
+                {/* CATEGORY DROPDOWN */}
                 <div className={styles.formGroup}>
                   <label>Category</label>
-                  <input
-                    type="text"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  />
+
+                  <div className={styles.selectWrapper}>
+                    <select
+                      value={category}
+                      onChange={(e) =>
+                        setCategory(e.target.value)
+                      }
+                    >
+                      <option value="">Select</option>
+                    </select>
+                  </div>
+
                   {errors.category && (
-                    <div className={styles.requiredText}>Required</div>
+                    <div className={styles.requiredText}>
+                      Required
+                    </div>
                   )}
                 </div>
+
               </div>
 
-              {/* Upload File & Date of Issue */}
+
+              {/* Upload File & Date of Issue  */}
               <div className={styles.formRow}>
+
                 <div className={styles.formGroup}>
                   <label>Upload File</label>
 
@@ -128,32 +157,40 @@ const PoliciesAndCirculars = () => {
                     >
                       Upload File
                     </button>
+
                     <span className={styles.fileLine}></span>
                   </div>
 
                   {selectedFile && (
                     <div className={styles.fileName}>
-                      Selected file: <strong>{selectedFile.name}</strong>
+					Selected file: <strong>{" "}{selectedFile.name}</strong>
                     </div>
                   )}
 
                   {errors.file && (
-                    <div className={styles.requiredText}>Required</div>
+                   <div className={styles.requiredText}>Required</div>
                   )}
                 </div>
 
+
                 <div className={styles.formGroup}>
                   <label>Date of Issue</label>
+
                   <input
                     type="date"
                     value={dateOfIssue}
                     onChange={(e) => setDateOfIssue(e.target.value)}
                   />
+
                   {errors.date && (
-                    <div className={styles.requiredText}>Required</div>
+                    <div className={styles.requiredText}>
+                      Required
+                    </div>
                   )}
                 </div>
+
               </div>
+
 
               <input
                 type="file"
@@ -162,8 +199,10 @@ const PoliciesAndCirculars = () => {
                 onChange={handleFileChange}
               />
 
+
               {/* Buttons */}
               <div className={styles.modalActions}>
+
                 <button
                   type="button"
                   className={styles.submitBtn}
@@ -171,6 +210,7 @@ const PoliciesAndCirculars = () => {
                 >
                   UPLOAD
                 </button>
+
 
                 <button
                   type="button"
@@ -182,12 +222,15 @@ const PoliciesAndCirculars = () => {
                 >
                   CANCEL
                 </button>
+
               </div>
 
             </div>
+
           </div>
         </div>
       )}
+
     </div>
   );
 };
