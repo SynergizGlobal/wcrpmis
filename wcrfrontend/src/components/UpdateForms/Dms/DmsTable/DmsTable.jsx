@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
-import { useTable, usePagination, useGlobalFilter } from "react-table";
+import { useTable, usePagination, useGlobalFilter, useSortBy } from "react-table";
 import styles from './DmsTable.module.css';
 
-export default function DmsTable({ columns = [], mockData = [], loading }) {
+export default function DmsTable({ columns = [], mockData = [], loading, onRowClick }) {
+
   const data = useMemo(() => mockData || [], [mockData]);
   const cols = useMemo(
     () => columns.map(c => ({ Header: c, accessor: c })),
@@ -12,6 +13,7 @@ export default function DmsTable({ columns = [], mockData = [], loading }) {
   const {
     getTableProps,
     getTableBodyProps,
+    props,
     headerGroups,
     page,
     prepareRow,
@@ -27,6 +29,7 @@ export default function DmsTable({ columns = [], mockData = [], loading }) {
   } = useTable(
     { columns: cols, data, initialState: { pageSize: 10 } },
     useGlobalFilter,
+    useSortBy,
     usePagination
   );
 
@@ -95,8 +98,22 @@ export default function DmsTable({ columns = [], mockData = [], loading }) {
                 {hg.headers.map((col) => {
                   const { key, ...rest } = col.getHeaderProps();
                   return (
-                    <th key={key} {...rest}>
-                      {col.render("Header")}
+                    <th
+                      key={key}
+                      {...col.getHeaderProps(col.getSortByToggleProps())}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className="d-flex align-center justify-content-center">
+                        {col.render("Header")}
+                        <span style={{ marginLeft: 6, display: "inline-flex", flexDirection: "column", lineHeight: "8px", fontSize: "10px" }}>
+                          <span style={{ color: col.isSorted && !col.isSortedDesc ? "#000" : "#ccc" }}>
+                            ▲
+                          </span>
+                          <span style={{ color: col.isSorted && col.isSortedDesc ? "#000" : "#ccc" }}>
+                            ▼
+                          </span>
+                        </span>
+                      </div>
                     </th>
                   );
                 })}
@@ -120,7 +137,12 @@ export default function DmsTable({ columns = [], mockData = [], loading }) {
               const { key, ...restRow } = row.getRowProps();
 
               return (
-                <tr key={key} {...restRow}>
+                <tr
+                  key={key}
+                  {...restRow}
+                  onClick={() => onRowClick && onRowClick(row.original)}
+                  style={{ cursor: onRowClick ? "pointer" : "default" }}
+                >
                   {row.cells.map((cell) => {
                     const { key, ...restCell } = cell.getCellProps();
                     return (

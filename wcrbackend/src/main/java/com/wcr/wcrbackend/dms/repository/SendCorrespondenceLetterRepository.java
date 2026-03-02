@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.wcr.wcrbackend.dms.entity.CorrespondenceLetter;
 import com.wcr.wcrbackend.dms.entity.SendCorrespondenceLetter;
 
 import java.util.List;
@@ -16,4 +17,5 @@ public interface SendCorrespondenceLetterRepository extends JpaRepository<SendCo
     @Query("SELECT s FROM SendCorrespondenceLetter s WHERE s.correspondenceLetter.correspondenceId = :correspondenceId")
     List<SendCorrespondenceLetter> findAllByCorrespondenceId(@Param("correspondenceId") Long correspondenceId);
 
+    void deleteByCorrespondenceLetter(CorrespondenceLetter letter);
 }

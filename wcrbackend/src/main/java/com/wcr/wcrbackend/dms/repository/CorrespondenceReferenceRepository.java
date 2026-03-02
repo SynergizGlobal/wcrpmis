@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.wcr.wcrbackend.dms.entity.CorrespondenceLetter;
 import com.wcr.wcrbackend.dms.entity.CorrespondenceReference;
 import com.wcr.wcrbackend.dms.entity.CorrespondenceReferenceId;
 import com.wcr.wcrbackend.dms.entity.ReferenceLetter;
@@ -16,5 +17,7 @@ public interface CorrespondenceReferenceRepository extends JpaRepository<Corresp
 	@Query("SELECT cr.referenceLetter FROM CorrespondenceReference cr " +
             "WHERE cr.correspondenceLetter.correspondenceId = :correspondenceId")
     List<ReferenceLetter> findReferenceLettersByCorrespondenceId(@Param("correspondenceId") Long correspondenceId);
+
+    void deleteByCorrespondenceLetter(CorrespondenceLetter letter);
 
 }

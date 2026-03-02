@@ -23,19 +23,21 @@ export default function Correspondence() {
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [detailsData, setDetailsData] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [referenceLetters, setReferenceLetters] = useState([]);
+  const [statuses, setStatuses] = useState([]);
 
   const [form, setForm] = useState({
     category: "",
-    project: "",
-    contract: "",
-    letterNo: "",
+    projectName: "",
+    contractName: "",
+    letterNumber: "",
     letterDate: "",
     to: "",
     subject: "",
-    referenceLetters: "",
+    // referenceLetters: "",
     keyInformation: "",
     requiredResponse: "",
-    letterDueDate: "",
+    dueDate: "",
     currentStatus: "",
     department: "",
   });
@@ -52,6 +54,10 @@ export default function Correspondence() {
 
   api.get("/api/departments/get")
       .then(r => setDepartments(r.data || []));
+
+  api.get("/api/statuses/get")
+  .then(r => setStatuses(r.data || []));
+
   }, []);
 
   const projectOptions = projects.map(p => ({
@@ -65,20 +71,34 @@ export default function Correspondence() {
   }));
 
   const departmentOptions = departments.map(d => ({
-    value: d.name,
+    value: d.id,
     label: d.name
   }));
 
 
-  const fetchCorrespondence = async () => {
+  const fetchCorrespondence = async (isDraft = false) => {
   try {
     setLoading(true);
+
+    let filters = {};
+
+     if (isDraft) {
+      // Only drafts
+        filters = {
+          "-1": ["draft", "Save as Draft"]
+        };
+      } else {
+        // Only sent letters
+        filters = {
+          "-1": ["send", "Send"]
+        };
+      }
     
      const firstRes = await api.post("/api/correspondence/filter-data", {
       draw: 1,
       start: 0,
       length: 10,
-      columnFilters: {}
+      columnFilters: filters
     });
 
     const total = firstRes.data?.recordsTotal || 10;
@@ -88,7 +108,7 @@ export default function Correspondence() {
       draw: 2,
       start: 0,
       length: total,
-      columnFilters: {}
+      columnFilters: filters
     });
 
     const rows = res.data?.data || [];
@@ -122,7 +142,13 @@ export default function Correspondence() {
       Type: r.type || "",
     }));
 
-    setTableData(mapped);
+      mapped.sort((a, b) => {
+        if (a.Type === "Incoming" && b.Type === "Outgoing") return -1;
+        if (a.Type === "Outgoing" && b.Type === "Incoming") return 1;
+        return 0;
+      });
+
+      setTableData(mapped);
 
   } catch (error) {
     console.error("Fetch error:", error);
@@ -152,9 +178,25 @@ const openLetterDetails = async (correspondenceId) => {
   }
 };
 
-  useEffect(() => {
-    fetchCorrespondence();
-  }, []);
+const searchReferenceLetters = async (inputValue) => {
+  try {
+    const res = await api.get("/api/correspondence/getReferenceLetters", {
+      params: { query: inputValue || "" }
+    });
+
+    return (res.data || []).map((item) => ({
+      value: item,
+      label: item
+    }));
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+};
+
+useEffect(() => {
+  fetchCorrespondence(showDrafts);
+}, [showDrafts]);
 
   const handleChange = (e) => {
     setForm(prev => ({
@@ -174,12 +216,19 @@ const openLetterDetails = async (correspondenceId) => {
   try {
     const fd = new FormData();
 
-    fd.append("dto", JSON.stringify({
+    const dto = {
       ...form,
+      department: form.department ? Number(form.department) : null,
+      currentStatus: form.currentStatus ? Number(form.currentStatus) : null,
       to: toUser?.value,
-      ccRecipients: ccUsers.map(x => x.value),
-      action: "send"
-    }));
+      cc: ccUsers?.map(x => x.value) || [],
+      referenceLetters: referenceLetters?.map(x => x.value) || [],
+      projectName: form.projectName,
+      contractName: form.contractName,
+      action: "Send"
+    };
+
+    fd.append("dto", JSON.stringify(dto));
 
     if (file) {
       fd.append("document", file);
@@ -190,42 +239,56 @@ const openLetterDetails = async (correspondenceId) => {
     fetchCorrespondence();
     setShowUpload(false);
 
-  } catch (e) {
-    console.error(e);
+  } catch (error) {
+    console.error(error);
+
+    const message =
+      error.response?.data || "Failed to save draft";
+
+    alert(message);
   }
 };
 
-
   const handleDraft = async () => {
-    try {
-      const formData = new FormData();
+  try {
+    const fd = new FormData();
 
-      Object.keys(form).forEach(key => {
-        formData.append(key, form[key]);
-      });
+    const dto = {
+      ...form,
+      department: form.department ? Number(form.department) : null,
+      currentStatus: form.currentStatus ? Number(form.currentStatus) : null,
+      to: toUser?.value || "",
+      cc: ccUsers?.map(x => x.value) || [],
+      referenceLetters: referenceLetters?.map(x => x.value) || [],
+      projectName: form.projectName,
+      contractName: form.contractName,
+      action: "Save as Draft"
+    };
 
-      formData.append("status", "DRAFT");
+    console.log("TO value:", toUser);
+    console.log("DTO to:", toUser?.value);
 
-      if (file) {
-        formData.append("file", file);
-      }
+    fd.append("dto", JSON.stringify(dto));
 
-      await api.post(
-        "/api/correspondence/uploadLetter",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" }
-        }
-      );
-
-      alert("Draft saved");
-      setShowUpload(false);
-
-    } catch (error) {
-      console.error("Draft error:", error);
-      alert("Failed to save draft");
+    if (file) {
+      fd.append("document", file);
     }
-  };
+
+    await api.post("/api/correspondence/uploadLetter", fd);
+
+    alert("Draft saved");
+    setShowUpload(false);
+    fetchCorrespondence();
+
+  } catch (error) {
+    console.error(error);
+
+    const message =
+      error.response?.data || "Failed to save draft";
+
+    alert(message);
+  }
+};
 
   const searchUsers = async (inputValue) => {
   try {
@@ -234,7 +297,7 @@ const openLetterDetails = async (correspondenceId) => {
     });
 
     return (res.data || []).map((u) => ({
-      value: u.userId,
+      value: u.userName,
       label: `${u.userName} (${u.emailId})`,
     }));
 
@@ -244,11 +307,79 @@ const openLetterDetails = async (correspondenceId) => {
   }
 };
 
+const handleEditDraft = async (id) => {
+  const res = await api.get(`/api/correspondence/view/${id}`);
+  const data = res.data;
+
+  setReferenceLetters(
+    (data.refLetters || []).map(r => ({
+      value: r,
+      label: r
+    }))
+  );
+
+  setForm({
+    correspondenceId: id,
+    category: data.category || "",
+    projectName: data.projectName || "",
+    contractName: data.contractName || "",
+    letterNumber: data.letterNumber || "",
+    letterDate: data.letterDate || "",
+    subject: data.subject || "",
+    keyInformation: data.keyInformation || "",
+    requiredResponse: data.requiredResponse || "",
+    dueDate: data.dueDate || "",
+    currentStatus: data.currentStatus || "",
+    department: data.department || ""
+  });
+
+  setShowUpload(true);
+};
+
+const resetForm = () => {
+  setForm({
+    category: "",
+    projectName: "",
+    contractName: "",
+    letterNumber: "",
+    letterDate: "",
+    subject: "",
+    keyInformation: "",
+    requiredResponse: "",
+    dueDate: "",
+    currentStatus: "",
+    department: ""
+  });
+};
+
   return (
     <>
       <div className={styles.actionBar}>
-        <button className="btn-2 btn-primary" onClick={() => setShowUpload(true)}>Upload Letter</button>
-        <button className="btn-2 btn-secondary" onClick={() => setShowDrafts(true)}>Drafts</button>
+        <button
+          className="btn-2 btn-primary"
+          onClick={() => {
+            resetForm();
+            setShowUpload(true);
+          }}
+        >
+          Upload Letter
+        </button>
+
+        {!showDrafts ? (
+          <button
+            className="btn-2 btn-secondary"
+            onClick={() => setShowDrafts(true)}
+          >
+            Drafts
+          </button>
+        ) : (
+          <button
+            className="btn-2 btn-secondary"
+            onClick={() => setShowDrafts(false)}
+          >
+            Correspondence
+          </button>
+        )}
       </div>
 
       {!showDrafts && (
@@ -264,7 +395,12 @@ const openLetterDetails = async (correspondenceId) => {
       )}
 
       
-      {showDrafts && <Drafts onBack={() => setShowDrafts(false)} />}
+      {showDrafts && (
+        <Drafts
+          onBack={() => setShowDrafts(false)}
+          onEdit={handleEditDraft}
+        />
+      )}
 
       
       {showUpload && (
@@ -287,6 +423,11 @@ const openLetterDetails = async (correspondenceId) => {
                       { value: "Legal", label: "Legal" },
                       { value: "Administrative", label: "Administrative" }
                     ]}
+                    value={
+                      form.category
+                        ? { value: form.category, label: form.category }
+                        : null
+                    }
                     placeholder="Select Category"
                     onChange={(opt) => handleSelectChange("category", opt)}
                   />
@@ -301,9 +442,12 @@ const openLetterDetails = async (correspondenceId) => {
 
                 <Select
                   options={projectOptions}
+                  value={
+                    form.projectName ? { value: form.projectName, label: form.projectName} : null
+                  }
                   placeholder="Search Project..."
                   isClearable
-                  onChange={(opt) => handleSelectChange("project", opt)}
+                  onChange={(opt) => handleSelectChange("projectName", opt)}
                 />
               </div>
               
@@ -315,20 +459,23 @@ const openLetterDetails = async (correspondenceId) => {
                 </select> */}
                 <Select
                   options={contractOptions}
+                  value={
+                    form.contractName ? { value: form.contractName, label: form.contractName} : null
+                  }
                   placeholder="Search Contract..."
                   isClearable
-                  onChange={(opt) => handleSelectChange("contract", opt)}
+                  onChange={(opt) => handleSelectChange("contractName", opt)}
                 />
               </div>
 
               <div className="form-field">
                 <label>Letter Number *</label>
-                <input name="letterNo" onChange={handleChange} placeholder="Enter letter number" />
+                <input name="letterNumber" value={form.letterNumber} onChange={handleChange} placeholder="Enter letter number" />
               </div>
 
               <div className="form-field">
                 <label>Letter Date *</label>
-                <input type="date" name="letterDate" onChange={handleChange} />
+                <input type="date" value={form.letterDate} name="letterDate" onChange={handleChange} />
               </div>
 
               <div className="form-field">
@@ -336,7 +483,14 @@ const openLetterDetails = async (correspondenceId) => {
                 <AsyncSelect
                   placeholder="Search recipient..."
                   loadOptions={searchUsers}
-                  onChange={setToUser}
+                  value={toUser}
+                  onChange={(selected) => {
+                    setToUser(selected);
+                    setForm(prev => ({
+                      ...prev,
+                      to: selected ? selected.value : ""
+                    }));
+                  }}
                   isClearable
                   cacheOptions
                   defaultOptions={true} 
@@ -358,24 +512,35 @@ const openLetterDetails = async (correspondenceId) => {
               </div>
 
               <div className="form-field">
-                <label>Reference Letters: </label>
-                <textarea name="subject" onChange={handleChange} />
+                <label>Reference Letters:</label>
+                <AsyncSelect
+                  isMulti
+                  placeholder="Search reference letters..."
+                  defaultOptions
+                  cacheOptions
+                  loadOptions={searchReferenceLetters}
+                  value={referenceLetters}
+                  onChange={(selected) => {
+                    setReferenceLetters(selected || []);
+                  }}
+                  closeMenuOnSelect={false}
+                />
               </div>
 
 
               <div className="form-field">
                 <label>Subject *</label>
-                <textarea name="subject" onChange={handleChange} />
+                <textarea name="subject" value={form.subject} onChange={handleChange} />
               </div>
 
               <div className="form-field">
                 <label>Key Information *</label>
-                <textarea name="keyInformation" onChange={handleChange} />
+                <textarea name="keyInformation" value={form.keyInformation} onChange={handleChange} />
               </div>
 
               <div className="form-field">
                 <label>Required Response *</label>
-                <select name="requiredResponse" onChange={handleChange}>
+                <select name="requiredResponse" value={form.requiredResponse} onChange={handleChange}>
                   <option>Select Required Response</option>
                   <option value="Yes">Yes</option>
                   <option value="No">No</option>
@@ -384,17 +549,30 @@ const openLetterDetails = async (correspondenceId) => {
 
               <div className="form-field">
                 <label>Due Date *</label>
-                <input type="date" name="letterDueDate" onChange={handleChange} />
+                <input type="date" name="dueDate" value={form.dueDate} onChange={handleChange} />
               </div>
 
               <div className="form-field">
                 <label>Status *</label>
-                <select name="currentStatus" onChange={handleChange}>
-                  <option>Select Status</option>
-                  <option value="approved">Approved</option>
-                  <option value="closed">Closed</option>
-                  
-                </select>
+                <Select
+                  options={statuses.map(s => ({
+                    value: s.id,
+                    label: s.name
+                  }))}
+                  value={
+                      statuses
+                        .map(s => ({ value: s.id, label: s.name }))
+                        .find(option => option.value === form.currentStatus) || null
+                    }
+                  placeholder="Select Status"
+                  isClearable
+                  onChange={(opt) =>
+                    setForm(prev => ({
+                      ...prev,
+                      currentStatus: opt ? opt.value : ""
+                    }))
+                  }
+                />
               </div>
 
               <div className="form-field">
@@ -408,6 +586,11 @@ const openLetterDetails = async (correspondenceId) => {
 
                 <Select
                   options={departmentOptions}
+                  value={
+                    departmentOptions.find(
+                      option => option.value === form.department
+                    ) || null
+                  }
                   placeholder="Search Department..."
                   isClearable
                   onChange={(opt) => handleSelectChange("department", opt)}
@@ -421,6 +604,7 @@ const openLetterDetails = async (correspondenceId) => {
                 <input
                     type="file"
                     onChange={(e) => setFile(e.target.files[0])}
+                    
                   />
               </div>
 

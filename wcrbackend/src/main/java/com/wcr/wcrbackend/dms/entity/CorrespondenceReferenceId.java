@@ -29,6 +29,9 @@ public class CorrespondenceReferenceId implements Serializable {
     @Column(name = "correspondence_id")
     private Long correspondenceId;
 
+    // @Column(name = "reference_letter_id")
+    // private Long referenceLetterId;
+
     @Column(name = "reference_letter_id")
-    private Long referenceLetterId;
+    private Long refId;   
 }

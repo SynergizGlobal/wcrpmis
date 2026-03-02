@@ -1,13 +1,21 @@
 package com.wcr.wcrbackend.dms.entity;
 
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import org.hibernate.annotations.CreationTimestamp;
-import java.time.LocalDateTime;
 
 //@IdClass(CorrespondenceReferenceId.class)
 //@Entity
@@ -37,12 +45,12 @@ public class CorrespondenceReference {
     private CorrespondenceReferenceId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("correspondenceId")   // MUST MATCH ID FIELD NAME
+    @MapsId("correspondenceId")   
     @JoinColumn(name = "correspondence_letter_id", nullable = false)
     private CorrespondenceLetter correspondenceLetter;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("referenceLetterId")  // MUST MATCH ID FIELD NAME
+    @MapsId("refId")
     @JoinColumn(name = "reference_letter_id", nullable = false)
     private ReferenceLetter referenceLetter;
 
