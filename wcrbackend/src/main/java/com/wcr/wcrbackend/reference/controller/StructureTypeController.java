@@ -1,6 +1,7 @@
 package com.wcr.wcrbackend.reference.controller;
 
 import java.util.HashMap;
+
 import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
@@ -44,33 +45,33 @@ public class StructureTypeController {
         binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
     }
 
-
-    @RequestMapping(
-        value = "/structure-type",
-        method = { RequestMethod.GET }
-    )
-    public Map<String, Object> getStructureTypeDetails(HttpSession session) {
-
+    
+    @GetMapping("/structure-type")
+    public ResponseEntity<Map<String, Object>> getStructureTypeDetails(HttpSession session) {
+        
         Map<String, Object> result = new HashMap<>();
-
+        
         try {
             TrainingType obj = new TrainingType();
-
+            
             result.put("structureTypes", service.getStructureTypesList());
             result.put("details", service.getStructureTypeDetails(obj));
             result.put("status", "success");
-
+            
+            return ResponseEntity.ok(result);
+            
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("structure-type : " + e.getMessage());
-
+            
             result.put("status", "error");
             result.put("message", "Failed to fetch Structure Types");
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
         }
-
-        return result;
     }
-
+    
+    
     
     @RequestMapping(
     	    value = "/add-structure-type",
