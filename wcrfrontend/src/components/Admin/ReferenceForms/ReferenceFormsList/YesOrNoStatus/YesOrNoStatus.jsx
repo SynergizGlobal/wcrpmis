@@ -25,7 +25,7 @@ export default function YesOrNoStatus() {
 
   const loadYesOrNo = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/yes-or-no-status`);
+      const res = await fetch(`${API_BASE_URL}/api/reference/yes-or-no-status`);
       const data = await res.json();
 
       if (data.status === "success") {
@@ -81,7 +81,7 @@ export default function YesOrNoStatus() {
       if (mode === "add") {
         params.append("yesorno", yesOrNo.trim());
 
-        await fetch(`${API_BASE_URL}/add-yes-or-no-status`, {
+        await fetch(`${API_BASE_URL}/api/reference/add-yes-or-no-status`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded"
@@ -93,7 +93,7 @@ export default function YesOrNoStatus() {
 		  params.append("value_old", oldValue);
 		  params.append("value_new", yesOrNo.trim());
 
-		  await fetch(`${API_BASE_URL}/update-yes-or-no-status`, {
+		  await fetch(`${API_BASE_URL}/api/reference/update-yes-or-no-status`, {
 		    method: "POST",
 		    headers: {
 		      "Content-Type": "application/x-www-form-urlencoded"
@@ -125,7 +125,7 @@ export default function YesOrNoStatus() {
     const params = new URLSearchParams();
     params.append("yesorno", row.yesorno);
 
-    await fetch(`${API_BASE_URL}/delete-yes-or-no-status`, {
+    await fetch(`${API_BASE_URL}/api/reference/delete-yes-or-no-status`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"

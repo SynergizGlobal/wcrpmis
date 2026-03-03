@@ -44,7 +44,7 @@ export default function ExecutionStatus() {
 
   const loadExecutionStatus = async () => {
     try {
-      const res = await api.get(`${API_BASE_URL}/execution-status`);
+      const res = await api.get(`${API_BASE_URL}/api/reference/execution-status`);
 
       const details = res.data.executionStatusDetails;
 
@@ -90,7 +90,7 @@ export default function ExecutionStatus() {
       if (mode === "add") {
         params.append("execution_status", value.trim());
 
-        await fetch(`${API_BASE_URL}/add-execution-status`, {
+        await fetch(`${API_BASE_URL}/api/reference/add-execution-status`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded"
@@ -102,7 +102,7 @@ export default function ExecutionStatus() {
         params.append("value_old", oldValue);
         params.append("value_new", value.trim());
 
-        await fetch(`${API_BASE_URL}/update-execution-status`, {
+        await fetch(`${API_BASE_URL}/api/reference/update-execution-status`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded"
@@ -129,7 +129,7 @@ export default function ExecutionStatus() {
       const params = new URLSearchParams();
       params.append("execution_status", item);
 
-      await fetch(`${API_BASE_URL}/delete-execution-status`, {
+      await fetch(`${API_BASE_URL}/api/reference/delete-execution-status`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
