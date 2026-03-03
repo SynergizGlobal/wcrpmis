@@ -12,6 +12,9 @@ export default function DrawingType() {
 	const [selectedRow, setSelectedRow] = useState(null);
 	const [columns, setColumns] = useState([]);
 
+	/* ================= HELPER ================= */
+	const getTotalCount = (row) => Object.values(row.counts).reduce((a, b) => a + b, 0);
+
 	/* ================= FETCH ================= */
 	const fetchDrawingTypes = async () => {
 		try {
@@ -77,7 +80,7 @@ export default function DrawingType() {
 		const term = search.toLowerCase();
 		return (
 			(item.drawingType || "").toLowerCase().includes(term) ||
-			String(item.designCount || "").includes(term)
+			String(item.counts || "").includes(term)
 		);
 	});
 
@@ -93,7 +96,7 @@ export default function DrawingType() {
 	const handleEditClick = row => {
 		setMode("edit");
 		setValue(row.drawingType);
-		setSelectedRow(row); // ✅ FIXED
+		setSelectedRow(row);
 		setShowModal(true);
 	};
 
@@ -135,7 +138,7 @@ export default function DrawingType() {
 
 	/* ================= DELETE ================= */
 	const handleDelete = async row => {
-		if (row.designCount > 0) {
+		if (getTotalCount(row) > 0) {
 			window.alert("Cannot delete. Drawing Type is in use.");
 			return;
 		}
@@ -202,27 +205,28 @@ export default function DrawingType() {
 												{row.counts[c] ? `(${row.counts[c]})` : ""}
 											</td>
 										))}
-						<td className={styles.actionCol}>
+										<td className={styles.actionCol}>
 											<button
 												className={styles.editBtn}
 												onClick={() => handleEditClick(row)}
 											>
 												<FaEdit />
 											</button>
-											{row.designCount === 0 && <button
-												className={styles.deleteBtn}
-												onClick={() => handleDelete(row)}
-											>
-												<FaTrash />
-											</button>
-											}
+											{getTotalCount(row) === 0 && (
+												<button
+													className={styles.deleteBtn}
+													onClick={() => handleDelete(row)}
+												>
+													<FaTrash />
+												</button>
+											)}
 										</td>
 									</tr>
 								))}
 
 								{filteredData.length === 0 && (
 									<tr>
-										<td colSpan={3} className="center-align">
+										<td colSpan={columns.length + 2} className="center-align">
 											No records found
 										</td>
 									</tr>
