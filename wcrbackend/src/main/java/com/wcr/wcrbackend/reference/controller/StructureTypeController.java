@@ -33,6 +33,7 @@ import com.wcr.wcrbackend.reference.model.TrainingType;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
+@RequestMapping("/api")
 public class StructureTypeController {
 
     Logger logger = Logger.getLogger(StructureTypeController.class);

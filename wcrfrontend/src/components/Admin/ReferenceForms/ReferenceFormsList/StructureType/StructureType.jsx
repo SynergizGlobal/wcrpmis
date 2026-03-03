@@ -47,7 +47,7 @@ export default function StructureType() {
 
   const loadStructureTypes = async () => {
     try {
-      const res = await api.get(`${API_BASE_URL}/structure-type`);
+      const res = await api.get(`${API_BASE_URL}/api/structure-type`);
 
       const details = res.data.details;
       const masterList = details.dList1 || [];
@@ -95,7 +95,7 @@ export default function StructureType() {
       if (mode === "add") {
         params.append("structure_type", value.trim());
 
-        await fetch(`${API_BASE_URL}/add-structure-type`, {
+        await fetch(`${API_BASE_URL}/api/add-structure-type`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded"
@@ -107,7 +107,7 @@ export default function StructureType() {
 		params.append("value_old", oldValue);
 		params.append("value_new", value.trim());
 
-        await fetch(`${API_BASE_URL}/update-structure-type`, {
+        await fetch(`${API_BASE_URL}/api/update-structure-type`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded"
@@ -133,7 +133,7 @@ export default function StructureType() {
       const params = new URLSearchParams();
       params.append("structure_type", item);
 
-      await fetch(`${API_BASE_URL}/delete-structure-type`, {
+      await fetch(`${API_BASE_URL}/api/delete-structure-type`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
