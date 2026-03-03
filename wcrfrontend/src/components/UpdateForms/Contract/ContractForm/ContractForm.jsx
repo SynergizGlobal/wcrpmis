@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { Outlet } from 'react-router-dom';
 import styles from './ContractForm.module.css';
-import { NavLink } from "react-router-dom";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -40,6 +39,13 @@ export default function ContractForm() {
 	const [contractDetails, setContractDetails] = useState(null);
 	const [departmentExecutivesMap, setDepartmentExecutivesMap] = useState({});
 
+	const TypeOfReview = ['Prior', 'Post'];
+
+	const TypeOfReviewOpts = TypeOfReview.map(type => ({
+		label: type,
+		value: type
+	}));
+
 	const {
 		register,
 		control,
@@ -75,7 +81,15 @@ export default function ContractForm() {
 			bgDetailsList: [{ bg_type_fks: "", issuing_banks: "", bg_numbers: "", bg_values: "", bg_unit: "", bg_dates: "", bg_valid_uptos: "", release_dates: "" }],
 			insuranceRequired: [{ insurance_type_fks: "", issuing_agencys: "", agency_addresss: "", insurance_numbers: "", insurance_values: "", insurance_unit: "", insurence_valid_uptos: "", insuranceStatus: "" }],
 			milestoneRequired: [{ milestone_ids: "K-1", milestone_names: "", milestone_dates: "", actual_dates: "", revisions: "", mile_remarks: "" }],
-			revisionRequired: [{ revision_numbers: "R1", revised_amounts: "", revision_unit: "", revision_amounts_statuss: "", revised_docs: "", revision_statuss: "", approvalbybankstatus: "" }],
+			revisionRequired: [{
+				revision_numbers: "R1",
+				revised_amounts: "",
+				revised_amount_unitss: "",
+				revision_amounts_statuss: false,
+				revised_docs: "",
+				revision_statuss: false,
+				approval_by_bank: false
+			}],
 			contractorsKeyRequried: [{ contractKeyPersonnelNames: "", contractKeyPersonnelDesignations: "", contractKeyPersonnelMobileNos: "", contractKeyPersonnelEmailIds: "" }],
 			documentsTable: [{ contract_file_types: "", contractDocumentNames: "", contractDocumentFiles: "" }],
 		}
@@ -295,7 +309,7 @@ export default function ContractForm() {
 			issuing_banks: bg.issuing_bank || bg.issuingbank || "",
 			bg_numbers: bg.bg_number || bg.bgnumber || "",
 			bg_values: bg.bg_value || bg.bgvalue || "",
-			bg_unit: bg.bg_unit || bg.bgunit || "",
+			bg_unit: bg.bg_value_units || bg.bgunit || "",
 			bg_dates: formatDateForInput(bg.bg_date || bg.bgdate),
 			bg_valid_uptos: formatDateForInput(bg.bg_valid_upto || bg.bgvalidupto),
 			release_dates: formatDateForInput(bg.release_date || bg.releasedate)
@@ -322,7 +336,7 @@ export default function ContractForm() {
 			agency_addresss: ins.agency_address || ins.agencyaddress || "",
 			insurance_numbers: ins.insurance_number || ins.insurancenumber || "",
 			insurance_values: ins.insurance_value || ins.insurancevalue || "",
-			insurance_unit: ins.insurance_unit || ins.insuranceunit || "",
+			insurance_unit: ins.insurance_value_units || ins.insuranceunit || "",
 			insurence_valid_uptos: formatDateForInput(ins.insurence_valid_upto || ins.insurencevalidupto),
 			insuranceStatus: ins.insurance_status === "Yes" || ins.insurancestatus === "Yes"
 		}));
@@ -352,25 +366,54 @@ export default function ContractForm() {
 
 	const buildRevisionArray = (revisions) => {
 		console.log("Building revision required from:", revisions);
+
 		if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
 			return [{
 				revision_numbers: "R1",
 				revised_amounts: "",
-				revision_unit: "",
-				revision_amounts_statuss: "",
+				revised_amount_unitss: "",
+				revision_amounts_statuss: false,
 				revised_docs: "",
-				revision_statuss: "",
-				approvalbybankstatus: ""
+				revision_statuss: false,
+				approval_by_bank: false
 			}];
 		}
+
 		return revisions.map((rev, index) => ({
-			revision_numbers: rev.revision_number || rev.revisionnumber || `R${index + 1}`,
-			revised_amounts: rev.revised_amount || rev.revisedamount || "",
-			revision_unit: rev.revised_amount_unit || rev.revisedamountunit || "",
-			revised_docs: formatDateForInput(rev.revised_doc || rev.reviseddoc),
-			revision_statuss: rev.revision_status === "Yes" || rev.revisionstatus === "Yes",
-			revision_amounts_statuss: rev.revision_amounts_status === "Yes" || rev.revisionamountsstatus === "Yes",
-			approvalbybankstatus: rev.approval_by_bank === "Yes" || rev.approvalbybank === "Yes"
+			revision_numbers:
+				rev.revision_number ||
+				rev.revisionnumber ||
+				`R${index + 1}`,
+
+			revised_amounts:
+				rev.revised_amount ||
+				rev.revisedamount ||
+				"",
+
+			// ✅ IMPORTANT FIX
+			revised_amount_unitss:
+				rev.revised_amount_units ||
+				rev.revisedamountunit ||
+				"",
+
+			revised_docs:
+				formatDateForInput(
+					rev.revised_doc || rev.reviseddoc
+				),
+
+			// Keep booleans for UI
+			revision_statuss:
+				rev.revision_status === "Yes" ||
+				rev.revisionstatus === "Yes",
+
+			revision_amounts_statuss:
+				rev.revision_amounts_status === "Yes" ||
+				rev.revisionamountsstatus === "Yes",
+
+			// ✅ IMPORTANT FIX
+			approval_by_bank:
+				rev.approval_by_bank === "Yes" ||
+				rev.approvalbybank === "Yes"
 		}));
 	};
 
@@ -636,7 +679,7 @@ export default function ContractForm() {
 					// Insurance Type
 					const insuranceTypes = response.data.insurance_type || [];
 					const insuranceTypeOpts = insuranceTypes.map(type => ({
-						value:  type.insurance_type,
+						value: type.insurance_type,
 						label: type.insurance_type
 					}));
 					setInsuranceTypeOptions(insuranceTypeOpts);
@@ -735,10 +778,10 @@ export default function ContractForm() {
 
 		try {
 			const toNumberOrNull = (value) => {
-			   if (value === "" || value === undefined || value === null) return null;
-			   return Number(value);
+				if (value === "" || value === undefined || value === null) return null;
+				return Number(value);
 			};
-			
+
 			const formData = new FormData();
 
 			const payload = {
@@ -775,12 +818,14 @@ export default function ContractForm() {
 
 				awarded_cost: toNumberOrNull(data?.awarded_cost),
 				awarded_cost_units: toNumberOrNull(data?.awarded_cost_units),
+				target_doc:data?.target_doc,
 
 				estimated_cost: toNumberOrNull(data?.estimated_cost),
 				estimated_cost_units: toNumberOrNull(data?.estimated_cost_units),
 
 				planned_date_of_award: data?.planned_date_of_award,
 				planned_date_of_completion: data?.planned_date_of_completion,
+				contract_notice_inviting_tender: data?.contract_notice_inviting_tender,
 
 				tender_opening_date: data?.tender_opening_date,
 				technical_eval_submission: data?.technical_eval_submission,
@@ -876,65 +921,78 @@ export default function ContractForm() {
 			// Add contract_id for update (if in edit mode)
 			if (isEdit && contractId) {
 				payload.contract_id = contractId;
+
+
 				// Only in edit
-								(data.bgDetailsList || []).forEach((bg) => {
-									if (!bg.bg_type_fks) return;
+				payload.bg_required = data.bg_required || "";
 
-									payload.bg_type_fks.push(bg.bg_type_fks);
-									payload.issuing_banks.push(bg.issuing_banks);
-									payload.bg_numbers.push(bg.bg_numbers);
-									payload.bg_values.push(bg.bg_values);
-									payload.bg_valid_uptos.push(bg.bg_valid_uptos);
-									payload.bg_dates.push(bg.bg_dates);
-									payload.release_dates.push(bg.release_dates);
-									payload.bg_value_unitss.push(bg.bg_unit);
-								});
+				(data.bgDetailsList || []).forEach((bg) => {
+					if (!bg.bg_type_fks) return;
 
-								//Only in edit
-								(data.insuranceRequired || []).forEach((ins) => {
-									if (!ins.insurance_type_fks) return;
+					payload.bg_type_fks.push(bg.bg_type_fks);
+					payload.issuing_banks.push(bg.issuing_banks);
+					payload.bg_numbers.push(bg.bg_numbers);
+					payload.bg_values.push(bg.bg_values);
+					payload.bg_valid_uptos.push(bg.bg_valid_uptos);
+					payload.bg_dates.push(bg.bg_dates);
+					payload.release_dates.push(bg.release_dates);
+					payload.bg_value_unitss.push(bg.bg_unit);
+				});
 
-									payload.insurance_type_fks.push(ins.insurance_type_fks);
-									payload.issuing_agencys.push(ins.issuing_agencys);
-									payload.agency_addresss.push(ins.agency_addresss);
-									payload.insurance_numbers.push(ins.insurance_numbers);
-									payload.insurance_values.push(ins.insurance_values);
-									payload.insurence_valid_uptos.push(ins.insurence_valid_uptos);
-									payload.insuranceStatus.push(ins.insuranceStatus ? "Yes" : "No");
-									payload.insurance_value_unitss.push(ins.insurance_unit);
-								});
+				payload.insurance_required = data.insurance_required || "";
 
-								(data.milestoneRequired || []).forEach((mile) => {
-									if (!mile.milestone_ids) return;
+				//Only in edit
+				(data.insuranceRequired || []).forEach((ins) => {
+					if (!ins.insurance_type_fks) return;
 
-									payload.milestone_ids.push(mile.milestone_ids);
-									payload.milestone_names.push(mile.milestone_names);
-									payload.milestone_dates.push(mile.milestone_dates);
-									payload.actual_dates.push(mile.actual_dates);
-									payload.revisions.push(mile.revisions);
-									payload.mile_remarks.push(mile.mile_remarks);
-								});
+					payload.insurance_type_fks.push(ins.insurance_type_fks);
+					payload.issuing_agencys.push(ins.issuing_agencys);
+					payload.agency_addresss.push(ins.agency_addresss);
+					payload.insurance_numbers.push(ins.insurance_numbers);
+					payload.insurance_values.push(ins.insurance_values);
+					payload.insurence_valid_uptos.push(ins.insurence_valid_uptos);
+					payload.insuranceStatus.push(ins.insuranceStatus ? "Yes" : "No");
+					payload.insurance_value_unitss.push(ins.insurance_unit);
+				});
 
-								(data.revisionRequired || []).forEach((rev) => {
-									if (!rev.revision_numbers) return;
+				payload.milestone_requried = data.milestone_requried || "";
 
-									payload.revision_numbers.push(rev.revision_numbers);
-									payload.revised_amounts.push(rev.revised_amounts);
-									payload.revised_docs.push(rev.revised_docs);
-									payload.revision_statuss.push(rev.revision_statuss ? "Yes" : "No");
-									payload.revised_amount_unitss.push(rev.revision_unit);
-									payload.revision_amounts_statuss.push(rev.revision_amounts_statuss ? "Yes" : "No");
-									payload.approval_by_bank.push(rev.approvalbybankstatus ? "Yes" : "No");
-								});
+				(data.milestoneRequired || []).forEach((mile) => {
+					if (!mile.milestone_ids) return;
 
-								(data.contractorsKeyRequried || []).forEach((person) => {
-									if (!person.contractKeyPersonnelNames) return;
+					payload.milestone_ids.push(mile.milestone_ids);
+					payload.milestone_names.push(mile.milestone_names);
+					payload.milestone_dates.push(mile.milestone_dates);
+					payload.actual_dates.push(mile.actual_dates);
+					payload.revisions.push(mile.revisions);
+					payload.mile_remarks.push(mile.mile_remarks);
+				});
 
-									payload.contractKeyPersonnelNames.push(person.contractKeyPersonnelNames);
-									payload.contractKeyPersonnelDesignations.push(person.contractKeyPersonnelDesignations);
-									payload.contractKeyPersonnelMobileNos.push(person.contractKeyPersonnelMobileNos);
-									payload.contractKeyPersonnelEmailIds.push(person.contractKeyPersonnelEmailIds);
-								});
+
+				payload.revision_requried = data.revision_requried || "";
+
+				(data.revisionRequired || []).forEach((rev) => {
+					if (!rev.revision_numbers) return;
+
+					payload.revision_numbers.push(rev.revision_numbers);
+					payload.revised_amounts.push(rev.revised_amounts || null);
+					payload.revised_docs.push(rev.revised_docs || null);
+					payload.revision_statuss.push(rev.revision_statuss ? "Yes" : "No");
+					payload.revised_amount_unitss.push(rev.revised_amount_unitss || null);
+					payload.revision_amounts_statuss.push(rev.revision_amounts_statuss ? "Yes" : "No");
+					payload.approval_by_bank.push(rev.approval_by_bank ? "Yes" : "No");
+				});
+
+				payload.contractors_key_requried = data.contractors_key_requried || "";
+
+				(data.contractorsKeyRequried || []).forEach((person) => {
+					if (!person.contractKeyPersonnelNames) return;
+
+					payload.contractKeyPersonnelNames.push(person.contractKeyPersonnelNames);
+					payload.contractKeyPersonnelDesignations.push(person.contractKeyPersonnelDesignations);
+					payload.contractKeyPersonnelMobileNos.push(person.contractKeyPersonnelMobileNos);
+					payload.contractKeyPersonnelEmailIds.push(person.contractKeyPersonnelEmailIds);
+				});
 			}
 
 			(data.executives || []).forEach(row => {
@@ -1319,10 +1377,21 @@ export default function ContractForm() {
 										</div>
 										<div className="form-field">
 											<label>Type of Review</label>
-											<input
-												type="text"
-												{...register("type_of_review")}
-												placeholder="Enter Value"
+											<Controller
+												name="type_of_review"
+												control={control}
+												render={({ field }) => (
+													<Select
+														{...field}
+														classNamePrefix="react-select"
+														options={TypeOfReviewOpts}
+														placeholder="Select Type"
+														isSearchable
+														isClearable
+														value={TypeOfReviewOpts.find(opt => opt.value === field.value) || null}
+														onChange={(opt) => field.onChange(opt?.value || "")}
+													/>
+												)}
 											/>
 										</div>
 									</>
@@ -1529,7 +1598,7 @@ export default function ContractForm() {
 												)}
 											/>
 											{errors.contract_type_fk && (
-												<p className="error-text">{errors.contract_type_fk.message}</p>
+												<p className="red">{errors.contract_type_fk.message}</p>
 											)}
 										</div>
 
@@ -1554,7 +1623,7 @@ export default function ContractForm() {
 												)}
 											/>
 											{errors.contractor_id_fk && (
-												<p className="error-text">{errors.contractor_id_fk.message}</p>
+												<p className="red">{errors.contractor_id_fk.message}</p>
 											)}
 										</div>
 
@@ -1575,7 +1644,7 @@ export default function ContractForm() {
 												{watch("contract_ifas_code")?.length || 0}/50
 											</div>
 											{errors.contract_ifas_code && (
-												<p className="error-text">{errors.contract_ifas_code.message}</p>
+												<p className="red">{errors.contract_ifas_code.message}</p>
 											)}
 										</div>
 									</div>
@@ -1604,7 +1673,7 @@ export default function ContractForm() {
 												placeholder="Enter LOA Letter No"
 											/>
 											{errors.loa_letter_number && (
-												<p className="error-text">{errors.loa_letter_number.message}</p>
+												<p className="red">{errors.loa_letter_number.message}</p>
 											)}
 										</div>
 										<div className="form-field">
@@ -1614,7 +1683,7 @@ export default function ContractForm() {
 												type="date"
 											/>
 											{errors.loa_date && (
-												<p className="error-text">{errors.loa_date.message}</p>
+												<p className="red">{errors.loa_date.message}</p>
 											)}
 										</div>
 									</div>
@@ -1639,7 +1708,7 @@ export default function ContractForm() {
 												type="date"
 											/>
 											{errors.date_of_start && (
-												<p className="error-text">{errors.date_of_start.message}</p>
+												<p className="red">{errors.date_of_start.message}</p>
 											)}
 										</div>
 										<div className="form-field">
@@ -1649,7 +1718,7 @@ export default function ContractForm() {
 												type="date"
 											/>
 											{errors.doc && (
-												<p className="error-text">{errors.doc.message}</p>
+												<p className="red">{errors.doc.message}</p>
 											)}
 										</div>
 										<div className="form-field rupee-field">
@@ -1686,7 +1755,7 @@ export default function ContractForm() {
 												/>
 											</div>
 											{errors.awarded_cost && (
-												<p className="error-text">{errors.awarded_cost.message}</p>
+												<p className="red">{errors.awarded_cost.message}</p>
 											)}
 										</div>
 
@@ -1716,7 +1785,7 @@ export default function ContractForm() {
 										)}
 									/>
 									{errors.contract_status_fk && (
-										<p className="error-text">{errors.contract_status_fk.message}</p>
+										<p className="red">{errors.contract_status_fk.message}</p>
 									)}
 								</div>
 								<div className="form-field rupee-field">
@@ -2403,7 +2472,7 @@ export default function ContractForm() {
 																			style={{ minWidth: "120px" }}
 																		/>
 																		<Controller
-																			name={`revisionRequired.${index}.revision_unit`}
+																			name={`revisionRequired.${index}.revised_amount_unitss`}
 																			control={control}
 																			render={({ field }) => (
 																				<Select
@@ -2442,7 +2511,7 @@ export default function ContractForm() {
 																	<input {...register(`revisionRequired.${index}.revision_statuss`)} type="checkbox" />
 																</td>
 																<td>
-																	<input {...register(`revisionRequired.${index}.approvalbybankstatus`)} type="checkbox" />
+																	<input {...register(`revisionRequired.${index}.approval_by_bank`)} type="checkbox" />
 																</td>
 																<td className="text-center d-flex align-center justify-content-center">
 																	<button
@@ -2643,10 +2712,9 @@ export default function ContractForm() {
 																<div className="mb-2">
 																	<div className="d-flex align-items-center">
 																		<a
-																			href={`${API_BASE_URL}/contract-files/${existingFileName}`}
+																			href={`${API_BASE_URL}/CONTRACT_FILES/${existingFileName}`}
 																			className="btn btn-sm btn-outline-primary me-2"
 																			download
-																			target="_blank"
 																			rel="noopener noreferrer"
 																		>
 																			<i className="fa fa-download me-1"></i>
