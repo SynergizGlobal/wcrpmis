@@ -3787,19 +3787,35 @@ public class ContractRepository implements IContractRepo {
 										stmt.setString(k++,(contract.getRevised_amounts().length > 0)?contract.getRevised_amounts()[i]:null);
 										stmt.setString(k++,DateParser.parse((contract.getRevised_docs().length > 0)?contract.getRevised_docs()[i]:null));								
 										/*stmt.setString(k++,(contract.getRevision_remarks().length > 0)?contract.getRevision_remarks()[i]:null);*/
-										stmt.setString(k++,(contract.getRevision_statuss().length > 0)?contract.getRevision_statuss()[i]:null);
-										stmt.setString(k++,contract.getContract_id());
-										stmt.setString(k++,(contract.getRevised_amount_unitss().length > 0)?contract.getRevised_amount_unitss()[i]:null);
-										stmt.setString(k++,(contract.getRevision_amounts_statuss().length > 0)?contract.getRevision_amounts_statuss()[i]:null);
-										stmt.setString(k++,(contract.getApprovalbybankstatus().length > 0)?contract.getApprovalbybankstatus()[i]:null);
-										stmt.setString(k++,(contract.getApprovalByBankDocumentFileNames()!=null)?fileName_new:null);
+										stmt.setString(k++,
+												(contract.getRevision_statuss().length > 0)
+														? contract.getRevision_statuss()[i]
+														: null);
+										stmt.setString(k++, contract.getContract_id());
+										stmt.setString(k++,
+												(contract.getRevised_amount_unitss().length > 0)
+														? contract.getRevised_amount_unitss()[i]
+														: null);
+										stmt.setString(k++,
+												(contract.getRevision_amounts_statuss().length > 0)
+														? contract.getRevision_amounts_statuss()[i]
+														: null);
+										if (contract.getApproval_by_bank() != null
+												&& contract.getApproval_by_bank().length > i) {
+
+											stmt.setString(k++, contract.getApproval_by_bank()[i]);
+
+										} else {
+											stmt.setString(k++, null);
+										}
+										stmt.setString(k++,
+												(contract.getApprovalByBankDocumentFileNames() != null) ? fileName_new
+														: null);
 										stmt.addBatch();
 									}
 
-								
-								
+								}
 							}
-						}
 						c = stmt.executeBatch();
 						
 						DBConnectionHandler.closeJDBCResoucrs(null, stmt, null);
@@ -3960,6 +3976,8 @@ public class ContractRepository implements IContractRepo {
 
 						        // -------- SAVE FILE IF NEW UPLOAD --------
 						        if (hasNewFile) {
+						        	System.out.println("Saving file to: " + saveDirectory);
+						        	System.out.println("File name: " + fileNameNew);
 						            FileUploads.singleFileSaving(multipartFile, saveDirectory, fileNameNew);
 						        }
 
