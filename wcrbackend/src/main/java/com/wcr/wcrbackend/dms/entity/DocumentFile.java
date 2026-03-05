@@ -15,9 +15,14 @@ public class DocumentFile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String fileType;
-    private String filePath;
+    @Column(name = "file_name")
     private String fileName;
+
+    @Column(name = "file_type")
+    private String fileType;
+
+    @Column(name = "file_path")
+    private String filePath;
     
     @ManyToOne
     @JoinColumn(name = "document_id")

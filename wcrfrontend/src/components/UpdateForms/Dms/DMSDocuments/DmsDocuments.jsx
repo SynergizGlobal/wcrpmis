@@ -1,7 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DmsTable from "../DmsTable/DmsTable";
 import Drafts from "../Correspondence/Drafts";
 import styles from "./DmsDocuments.module.css";
+import api from "../../../../api/axiosInstance";
+import AsyncSelect from "react-select/async";
+import Select from "react-select";
+import { API_BASE_URL } from "../../../../config";
 
 const MAX_DEPTH = 10;
 
@@ -14,6 +18,30 @@ export default function DmsDocuments() {
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [fileName, setFileName] = useState("");
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedPath, setSelectedPath] = useState([]);
+  const [newFolderName, setNewFolderName] = useState("");
+
+    const [projects, setProjects] = useState([]);
+    const [contracts, setContracts] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [statuses, setStatuses] = useState([]);
+
+  // single upload section
+
+    const [docForm, setDocForm] = useState({
+      fileName: "",
+      fileNumber: "",
+      revisionNo: "R01",
+      revisionDate: "",
+      projectName: "",
+      contractName: "",
+      department: "",
+      status: ""
+    });
+
+    const [documentFile, setDocumentFile] = useState(null);
 
   /* ---------- Folder Tree State ---------- */
   const [folders, setFolders] = useState([
@@ -30,14 +58,81 @@ export default function DmsDocuments() {
     }
   ]);
 
-  const [selectedPath, setSelectedPath] = useState([]);
-  const [newFolderName, setNewFolderName] = useState("");
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
 
-  /* ---------- Helpers ---------- */
-  const getDepth = (path) => path.length;
+      const res = await api.get("/api/documents/list"); 
 
-  const buildPathString = () =>
-    selectedPath.map(f => f.name).join("/") + "/";
+      const rows = res.data || [];
+
+      const mapped = rows.map((d) => ({
+        "File Type": d.fileType || "",
+        "File Number": d.fileNumber || "",
+        "File Name": d.fileName || "",
+        "Revision No": d.revisionNumber || "",
+        Status: d.status || "",
+        "Project Name": d.projectName || "",
+        "Contract Name": d.contractName || "",
+        Path: d.path || "",
+        "Created By": d.createdBy || "",
+        "Date Uploaded": d.dateUploaded || "",
+        "Revision Date": d.revisionDate || "",
+        Department: d.department || "",
+        "View / Download": (
+          <span
+            style={{ color: "#0d6efd", cursor: "pointer" }}
+            onClick={() =>
+              window.open(`/api/documents/download/${d.id}`, "_blank")
+            }
+          >
+            Download
+          </span>
+        )
+      }));
+
+      setDocuments(mapped);
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+   const buildPathString = () =>
+    selectedPath.map(f => f.name).join("/") + (selectedPath.length ? "/" : "");
+
+  const handleSaveDocument = async () => {
+      try {
+        const fd = new FormData();
+
+        const dto = {
+          ...docForm,
+          path: buildPathString(),
+        };
+
+        fd.append("dto", JSON.stringify(dto));
+
+        if (documentFile) {
+          fd.append("file", documentFile);
+        }
+
+        await api.post("/api/documents/upload", fd);
+
+        alert("Document uploaded successfully");
+        setShowUpload(false);
+        fetchDocuments();
+
+      } catch (err) {
+        console.error(err);
+        alert("Upload failed");
+      }
+    };
 
   const addFolder = (nodes, path, name, level = 1) => {
     return nodes.map(node => {
@@ -60,6 +155,8 @@ export default function DmsDocuments() {
       return node;
     });
   };
+
+  const getDepth = (path) => path.length;
 
   const handleAddFolder = () => {
     if (!newFolderName || selectedPath.length === 0) return;
@@ -175,6 +272,42 @@ export default function DmsDocuments() {
       return `${base}${folder}${file}`;
     };
 
+      useEffect(() => {
+        api.get("/projects/get-project-name")
+          .then(r => setProjects(r.data || []));
+
+        api.get("/contract/get-contract-name")
+          .then(r => setContracts(r.data || []));
+
+        api.get("/api/departments/get")
+          .then(r => setDepartments(r.data || []));
+
+        api.get("/api/statuses/get")
+          .then(r => setStatuses(r.data || []));
+
+       }, []);
+
+        const projectOptions = projects.map(p => ({
+          value: p.name,
+          label: p.name
+        }));
+
+        const contractOptions = contracts.map(c => ({
+          value: c.name,
+          label: c.name
+        }));
+
+         const departmentOptions = departments.map(d => ({
+          value: d.id,
+          label: d.name
+        }));
+    
+        const handleSelectChange = (name, option) => {
+          setDocForm(prev => ({
+            ...prev,
+            [name]: option ? option.value : ""
+          }));
+        };
 
 
   return (
@@ -188,29 +321,14 @@ export default function DmsDocuments() {
       {/* DOCUMENT TABLE */}
       {!showDrafts && (
         <DmsTable
+          loading={loading}
           columns={[
             "File Type","File Number","File Name","Revision No",
             "Status","Project Name","Contract Name","Path",
             "Created By","Date Uploaded","Revision Date",
             "Department","View / Download"
           ]}
-          mockData={[
-            {
-              "File Type": "PDF",
-              "File Number": "MPR/006",
-              "File Name": "MPR - Dec'25",
-              "Revision No": "R01",
-              Status: "Closed",
-              "Project Name": "MUTP IIIA",
-              "Contract Name": "224 Construction of Important Bridges",
-              Path: "Reports/MPR/2025/",
-              "Created By": "PMIS_CO_001",
-              "Date Uploaded": "2026-01-30",
-              "Revision Date": "2025-12-29",
-              Department: "Engineering",
-              "View / Download": "Download"
-            }
-          ]}
+          mockData={documents}
         />
       )}
 
@@ -251,31 +369,66 @@ export default function DmsDocuments() {
                     <div className="form-row">
                       <div className="form-field">
                         <label>File Name *</label>
-                        <input placeholder="File Name" />
+                        <input
+                          value={docForm.fileName}
+                          onChange={e =>
+                            setDocForm({ ...docForm, fileName: e.target.value })
+                          }
+                        />
                       </div>
                       <div className="form-field">
                         <label>File Number *</label>
-                        <input placeholder="File Number" />
+                        <input
+                          value={docForm.fileNumber}
+                          onChange={e =>
+                            setDocForm({ ...docForm, fileNumber: e.target.value })
+                          }
+                        />
                       </div>
                       <div className="form-field">
                         <label>Revision No *</label>
-                        <input placeholder="Revision No" defaultValue="R01" />                       
+                        {/* <input placeholder="Revision No" defaultValue="R01" /> */}
+                        <input
+                          value={docForm.revisionNo}
+                          onChange={e =>
+                            setDocForm({ ...docForm, revisionNo: e.target.value })
+                          }
+                        />
                       </div>
                       <div className="form-field">
                         <label>Revision Date *</label>
-                        <input type="date" />
+                        <input
+                          type="date"
+                          value={docForm.revisionDate}
+                          onChange={e =>
+                            setDocForm({ ...docForm, revisionDate: e.target.value })
+                          }
+                        />
                       </div>
                       <div className="form-field">
-                        <label>Project</label>
-                        <select>
-                          <option>Select Project</option>
-                        </select>
+                        <label>Project Name *</label>
+                        <Select
+                          options={projectOptions}
+                          value={
+                            docForm.projectName ? { value: docForm.projectName, label: docForm.projectName} : null
+                          }
+                          placeholder="Search Project..."
+                          isClearable
+                          onChange={(opt) => handleSelectChange("projectName", opt)}
+                        />
                       </div>
+                      
                       <div className="form-field">
-                        <label>Contract</label>
-                        <select>
-                          <option>Select Contract</option>
-                        </select>
+                        <label>Contract Name *</label>
+                        <Select
+                          options={contractOptions}
+                          value={
+                            docForm.contractName ? { value: docForm.contractName, label: docForm.contractName} : null
+                          }
+                          placeholder="Search Contract..."
+                          isClearable
+                          onChange={(opt) => handleSelectChange("contractName", opt)}
+                        />
                       </div>
                     </div>
                   
@@ -313,9 +466,9 @@ export default function DmsDocuments() {
                       <div className="form-row">
                         <div className="form-field">
                           <input
-                            placeholder="File Name"
-                            value={fileName}
-                            onChange={(e) => setFileName(e.target.value)}
+                            placeholder="New Folder Name"
+                            value={newFolderName}
+                            onChange={(e) => setNewFolderName(e.target.value)}
                           />
                         </div>
                           <button className="btn btn-2 btn-primary" onClick={handleAddFolder}>+ Add Folder</button>
@@ -335,19 +488,46 @@ export default function DmsDocuments() {
                     <div className="form-row">
                       <div className="form-field">
                         <label>Department</label>
-                        <select>
-                          <option>Select Department</option>
-                        </select>
+                        <Select
+                          options={departmentOptions}
+                          value={
+                            departmentOptions.find(
+                              option => option.value === docForm.department
+                            ) || null
+                          }
+                          placeholder="Search Department..."
+                          isClearable
+                          onChange={(opt) => handleSelectChange("department", opt)}
+                        />
                       </div>
                       <div className="form-field">
                         <label>Status</label>
-                        <select>
-                          <option>Select Status</option>
-                        </select>
+                        <Select
+                          options={statuses.map(s => ({
+                            value: s.id,
+                            label: s.name
+                          }))}
+                          value={
+                              statuses
+                                .map(s => ({ value: s.id, label: s.name }))
+                                .find(option => option.value === docForm.currentStatus) || null
+                            }
+                          placeholder="Select Status"
+                          isClearable
+                          onChange={(opt) =>
+                            setDocForm(prev => ({
+                              ...prev,
+                              currentStatus: opt ? opt.value : ""
+                            }))
+                          }
+                        />
                       </div>
                       <div className="form-field">
                         <label>Document File</label>
-                        <input type="file" />
+                        <input
+                          type="file"
+                          onChange={(e) => setDocumentFile(e.target.files[0])}
+                        />
                       </div>
                     </div>
                     

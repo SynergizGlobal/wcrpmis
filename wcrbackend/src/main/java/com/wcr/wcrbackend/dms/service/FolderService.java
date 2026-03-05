@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.wcr.wcrbackend.dms.dto.FolderDTO;
 
+import com.wcr.wcrbackend.dms.entity.Folder;
+
 
 
 public interface FolderService {
@@ -17,7 +19,9 @@ public interface FolderService {
     
     public FolderDTO updateFolder(Long id, FolderDTO folderDTO);
     
-  
+    List<Folder> getFolderTree();
+
+    void saveFolder(Folder folder);
     
     public void deleteFolder(Long folderId);
     

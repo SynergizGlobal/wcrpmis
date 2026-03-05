@@ -2,7 +2,6 @@ package com.wcr.wcrbackend.dms.dto;
 
 import java.time.LocalDate;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +20,7 @@ public class DocumentDTO {
     private String projectName;
     private String contractName;
     private String folder;
+    private Long folderId;
     private String subFolder;
     private String department;
     private String currentStatus;

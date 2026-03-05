@@ -20,6 +20,9 @@ import com.wcr.wcrbackend.dms.dto.FolderDTO;
 import com.wcr.wcrbackend.dms.dto.FolderGridDTO;
 import com.wcr.wcrbackend.dms.service.FolderService;
 import com.wcr.wcrbackend.entity.User;
+import com.wcr.wcrbackend.dms.entity.Folder;
+
+import lombok.RequiredArgsConstructor;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -53,10 +56,16 @@ public class FolderController {
 		return ResponseEntity.ok(folderService.getFolderById(id));
 	}
 
+	// @PostMapping("/create")
+	// public ResponseEntity<FolderDTO> createFolder(@RequestBody FolderDTO folderDTO) {
+	// 	return ResponseEntity.ok(folderService.createFolder(folderDTO));
+	// }
+
 	@PostMapping("/create")
-	public ResponseEntity<FolderDTO> createFolder(@RequestBody FolderDTO folderDTO) {
-		return ResponseEntity.ok(folderService.createFolder(folderDTO));
-	}
+    public ResponseEntity<String> createFolder(@RequestBody Folder folder) {
+        folderService.saveFolder(folder);
+        return ResponseEntity.ok("Folder created successfully");
+    }
 
 	@PutMapping("/update-folder/{id}")
 	public ResponseEntity<FolderDTO> updateFolder(@PathVariable Long id, @RequestBody FolderDTO folderDTO) {
@@ -82,5 +91,10 @@ public class FolderController {
 		if (folderDto != null)
 			list.add(folderDto);
 		return ResponseEntity.ok(list);
+	}
+
+	@GetMapping("/tree")
+	public List<Folder> getFolderTree() {
+		return folderService.getFolderTree();
 	}
 }

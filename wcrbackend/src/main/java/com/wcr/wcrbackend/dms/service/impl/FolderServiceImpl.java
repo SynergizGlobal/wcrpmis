@@ -142,5 +142,14 @@ public class FolderServiceImpl implements FolderService {
 
         return new FolderDTO(folder.getId(), folder.getName(), subFolders);
     }
-}
 
+    @Override
+    public List<Folder> getFolderTree() {
+        return folderRepository.findAll();
+    }
+
+    @Override
+    public void saveFolder(Folder folder) {
+        folderRepository.save(folder);
+    }
+}

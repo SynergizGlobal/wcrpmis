@@ -23,6 +23,7 @@ public class DocumentGridDTO {
     private String contractName;
     private String folder;
     private String subFolder;
+    private String path;
     private String department;
     private String status;
     private String createdAt;

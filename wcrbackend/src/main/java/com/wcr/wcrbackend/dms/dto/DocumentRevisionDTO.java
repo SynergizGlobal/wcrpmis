@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -16,4 +17,5 @@ public class DocumentRevisionDTO {
 	private String RevisionNo;
 	private String filePath;
 	private String fileType;
+	private String updatedBy;
 }
