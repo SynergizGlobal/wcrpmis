@@ -2468,37 +2468,71 @@ public class ContractRepository implements IContractRepo {
 			return obj;
 		}
 
+//		private String getContractIdByWorkId(String project_id_fk, String department_code, Connection con) throws Exception {
+//			PreparedStatement stmt = null;
+//			ResultSet rs = null;
+//			String contract_id = null;
+//			try{
+//				String maxIdQry = "SELECT top 1 CONCAT(SUBSTRING(contract_id, 1, LEN(contract_id)-4),'"+department_code+"'," + 
+//						"IIF(" + 
+//						"SUBSTRING(CAST(MAX(SUBSTRING(contract_id, CHARINDEX('"+department_code+"',contract_id)+LEN('"+department_code+"'), LEN(contract_id)))+1 AS VARCHAR),0,3)>CHARINDEX('"+department_code+"',contract_id)+LEN('"+department_code+"'),SUBSTRING(CAST(MAX(SUBSTRING(contract_id, CHARINDEX('"+department_code+"',contract_id)+LEN('"+department_code+"'), LEN(contract_id)))+1 AS VARCHAR),0,3),CONCAT('0',SUBSTRING(CAST(MAX(SUBSTRING(contract_id, CHARINDEX('"+department_code+"',contract_id)+LEN('"+department_code+"'), LEN(contract_id)))+1 AS VARCHAR),0,3)))" + 
+//						"" + 
+//						") AS maxId FROM contract WHERE contract_id LIKE ? group by contract_id ORDER BY maxId desc ";
+//				stmt = con.prepareStatement(maxIdQry);
+//				stmt.setString(1, project_id_fk+department_code+"%");
+//				rs = stmt.executeQuery();  
+//				if(rs.next()) {
+//					contract_id = rs.getString("maxId");
+//					if(StringUtils.isEmpty(contract_id)) {
+//						contract_id =  project_id_fk+department_code+"01";
+//					}
+//				}
+//				else
+//				{
+//					contract_id =  project_id_fk+department_code+"01";
+//				}
+//			}catch(Exception e){ 		
+//				e.printStackTrace();
+//				throw new Exception(e);
+//			}
+//			finally {
+//				DBConnectionHandler.closeJDBCResoucrs(null, stmt, rs);
+//			}
+//			return contract_id;
+//		}
+		
+		
 		private String getContractIdByWorkId(String project_id_fk, String department_code, Connection con) throws Exception {
-			PreparedStatement stmt = null;
-			ResultSet rs = null;
-			String contract_id = null;
-			try{
-				String maxIdQry = "SELECT top 1 CONCAT(SUBSTRING(contract_id, 1, LEN(contract_id)-4),'"+department_code+"'," + 
-						"IIF(" + 
-						"SUBSTRING(CAST(MAX(SUBSTRING(contract_id, CHARINDEX('"+department_code+"',contract_id)+LEN('"+department_code+"'), LEN(contract_id)))+1 AS VARCHAR),0,3)>CHARINDEX('"+department_code+"',contract_id)+LEN('"+department_code+"'),SUBSTRING(CAST(MAX(SUBSTRING(contract_id, CHARINDEX('"+department_code+"',contract_id)+LEN('"+department_code+"'), LEN(contract_id)))+1 AS VARCHAR),0,3),CONCAT('0',SUBSTRING(CAST(MAX(SUBSTRING(contract_id, CHARINDEX('"+department_code+"',contract_id)+LEN('"+department_code+"'), LEN(contract_id)))+1 AS VARCHAR),0,3)))" + 
-						"" + 
-						") AS maxId FROM contract WHERE contract_id LIKE ? group by contract_id ORDER BY maxId desc ";
-				stmt = con.prepareStatement(maxIdQry);
-				stmt.setString(1, project_id_fk+department_code+"%");
-				rs = stmt.executeQuery();  
-				if(rs.next()) {
-					contract_id = rs.getString("maxId");
-					if(StringUtils.isEmpty(contract_id)) {
-						contract_id =  project_id_fk+department_code+"01";
-					}
-				}
-				else
-				{
-					contract_id =  project_id_fk+department_code+"01";
-				}
-			}catch(Exception e){ 		
-				e.printStackTrace();
-				throw new Exception(e);
-			}
-			finally {
-				DBConnectionHandler.closeJDBCResoucrs(null, stmt, rs);
-			}
-			return contract_id;
+			 
+		    PreparedStatement stmt = null;
+		    ResultSet rs = null;
+		    String contract_id = null;
+		 
+		    try {
+		 
+		        String sql = "SELECT RIGHT('00' + CAST(ISNULL(MAX(CAST(RIGHT(contract_id,2) AS INT)),0) + 1 AS VARCHAR),2) AS nextId "
+		                   + "FROM contract WHERE contract_id LIKE ?";
+		 
+		        stmt = con.prepareStatement(sql);
+		        stmt.setString(1, project_id_fk + department_code + "%");
+		 
+		        rs = stmt.executeQuery();
+		 
+		        if (rs.next()) {
+		 
+		            String nextId = rs.getString("nextId");
+		 
+		            contract_id = project_id_fk + department_code + nextId;
+		        }
+		 
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		        throw new Exception(e);
+		    } finally {
+		        DBConnectionHandler.closeJDBCResoucrs(null, stmt, rs);
+		    }
+		 
+		    return contract_id;
 		}
 
 		@Override
