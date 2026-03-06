@@ -33,7 +33,11 @@
   position: relative;
   text-align: center;
 }
-
+.cardIcon {
+  margin-right: 8px;
+  flex-shrink: 0;       
+  color: currentColor;  
+}
 
 .cardHeader {
   display: flex;

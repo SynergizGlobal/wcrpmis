@@ -49,10 +49,10 @@ const ContractReport = () => {
   };
 
   // UI visibility conditions
-  const showDateDiv    = reportNo === '8';
+  const showDateDiv     = reportNo === '8';
   const showContractDiv = reportNo === '2';
-  const showHodDiv     = ![8].includes(parseInt(reportNo));
-  const showCSdiv      = [1, 7].includes(parseInt(reportNo));
+  const showHodDiv      = ![8].includes(parseInt(reportNo));
+  const showCSdiv       = [1, 7].includes(parseInt(reportNo));
 
   useEffect(() => {
     setReportTitle(reportTitles[reportNo] || "Contract Reports");
@@ -77,11 +77,11 @@ const ContractReport = () => {
             const temp2 = temp[i].split('=');
             const key   = temp2[0];
             const value = temp2[1];
-            if (key === 'hod_designation')    filters.hod_designations  = value.split(',');
-            else if (key === 'contractor_id_fk') filters.contractor_id_fk = value;
-            else if (key === 'status')           filters.status           = value;
-            else if (key === 'contract_status_fk') filters.contract_status_fk = value;
-            else if (key === 'contract_id')      filters.contract_id      = value;
+            if (key === 'hod_designation')         filters.hod_designations    = value.split(',');
+            else if (key === 'contractor_id_fk')   filters.contractor_id_fk    = value;
+            else if (key === 'status')             filters.status              = value;
+            else if (key === 'contract_status_fk') filters.contract_status_fk  = value;
+            else if (key === 'contract_id')        filters.contract_id         = value;
           }
         }
         setFormData(prev => ({ ...prev, ...filters }));
@@ -210,7 +210,7 @@ const ContractReport = () => {
         if (response.data && response.data.length > 0) {
           let dataOptions = response.data.map(item => ({ value: item.contract_status_fk, label: item.contract_status_fk }));
           const name = currentReportTitle || reportTitle;
-          if (['DOC Report','BG Report','Insurance Report','DOC, BG & Insurance Report'].includes(name)) {
+          if (['DOC Report', 'BG Report', 'Insurance Report', 'DOC, BG & Insurance Report'].includes(name)) {
             dataOptions = dataOptions.filter(opt => opt.value !== 'Closed');
           }
           options = dataOptions;
@@ -342,21 +342,34 @@ const ContractReport = () => {
   const formatDate = (date) => {
     if (!date) return '';
     const d = new Date(date);
-    return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+    return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
   };
 
   // ─── Generate report ─────────────────────────────────────────────────────────
 
   const generateReport = async () => {
+    // FIX: Validate required fields for report 2
     if (reportNo === '2' && !formData.contract_id) {
       setErrors({ contract_id: 'Please select contract' });
       return;
     }
+    // FIX: Validate date range for report 8
+    if (reportNo === '8') {
+      const newErrors = {};
+      if (!formData.date)   newErrors.date   = 'Please select from date';
+      if (!formData.todate) newErrors.todate = 'Please select to date';
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
+      // FIX: Report 2 endpoint now correctly appends contract_id as path variable
       const endpoints = {
         1: '/contract-report/generate-contract-report',
-        2: '/contract-report/generate-contract-detail-report',
+        2: `/contract-report/generate-contract-detail-report/${formData.contract_id}`,
         3: '/contract-report/generate-contract-doc-report',
         4: '/contract-report/generate-contract-bg-report',
         5: '/contract-report/generate-contract-insurance-report',
@@ -365,6 +378,7 @@ const ContractReport = () => {
         8: '/contract-report/generate-bg-insurance-report',
         9: '/contract-report/generate-contract-completion-report'
       };
+
       const formDataToSend = new FormData();
       formDataToSend.append('project_id_fk', formData.project_id_fk || '');
       formDataToSend.append('hod_designations',
@@ -374,20 +388,33 @@ const ContractReport = () => {
       formDataToSend.append('status', formData.status || '');
       formDataToSend.append('contract_status_fk', formData.contract_status_fk || '');
       formDataToSend.append('contract_id', formData.contract_id || '');
-      formDataToSend.append('date', formData.date ? formatDate(formData.date) : '');
+      // FIX: date is formatted as dd-MM-yyyy to match backend DateParser expectation
+      formDataToSend.append('date',   formData.date   ? formatDate(formData.date)   : '');
       formDataToSend.append('todate', formData.todate ? formatDate(formData.todate) : '');
       formDataToSend.append('report_no', reportNo);
 
       const response = await api.post(endpoints[reportNo], formDataToSend, {
-        headers: { Accept: 'application/msword' },
+      //  headers: { Accept: 'application/msword' },
         responseType: 'blob'
       });
+
+      // FIX: Check if the blob is actually an error JSON before treating as a file
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/json')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try { alert(JSON.parse(reader.result).message || 'Error generating report'); }
+          catch { alert('Error generating report. Please try again.'); }
+        };
+        reader.readAsText(response.data);
+        return;
+      }
 
       const url  = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href  = url;
       const contentDisposition = response.headers['content-disposition'];
-      let filename = `${reportTitle.replace(/\s+/g,'_')}_${Date.now()}.doc`;
+      let filename = `${reportTitle.replace(/\s+/g, '_')}_${Date.now()}.doc`;
       if (contentDisposition) {
         const m = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
         if (m && m[1]) filename = m[1].replace(/['"]/g, '');
@@ -397,6 +424,7 @@ const ContractReport = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+
     } catch (error) {
       console.error('Error generating report:', error);
       if (error.response) {
@@ -410,7 +438,9 @@ const ContractReport = () => {
         } else if (error.response.status === 404) { alert('Requested page not found. [404]'); }
           else if (error.response.status === 500) { alert('Internal Server Error [500].'); }
           else { alert('Error generating report. Please try again.'); }
-      } else { alert('Not connect.\n Verify Network.'); }
+      } else {
+        alert('Cannot connect. Please verify your network.');
+      }
     } finally {
       setLoading(false);
     }
@@ -466,7 +496,7 @@ const ContractReport = () => {
                 />
               </div>
 
-              {/* 2. Contract — report 2 only (moved to row 1) */}
+              {/* 2. Contract — report 2 only */}
               {showContractDiv && (
                 <div className={styles.formGroup} id="contractDiv">
                   <label className={styles.searchableLabel}>
@@ -584,6 +614,7 @@ const ContractReport = () => {
                       onChange={(date) => {
                         setFormData(prev => ({ ...prev, date }));
                         addToFiltersMap('date', date ? formatDate(date) : '');
+                        if (date) setErrors(prev => ({ ...prev, date: '' }));
                       }}
                       dateFormat="dd-MM-yyyy"
                       className={styles.dateInput}
@@ -601,6 +632,7 @@ const ContractReport = () => {
                       onChange={(date) => {
                         setFormData(prev => ({ ...prev, todate: date }));
                         addToFiltersMap('todate', date ? formatDate(date) : '');
+                        if (date) setErrors(prev => ({ ...prev, todate: '' }));
                       }}
                       dateFormat="dd-MM-yyyy"
                       className={styles.dateInput}

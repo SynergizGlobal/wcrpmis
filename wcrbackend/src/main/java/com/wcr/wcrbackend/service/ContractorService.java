@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.wcr.wcrbackend.entity.Contractor;
 import com.wcr.wcrbackend.repo.ContractorRepository;
 
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -69,5 +70,18 @@ public class ContractorService {
         existing.setRemarks(c.getRemarks());
 
         return repo.save(existing);
+    }
+ 
+ 
+    public List<Contractor> getContractorsList(Contractor obj) throws Exception {
+        try {
+            String searchStr = (obj != null && !StringUtils.isEmpty(obj.getSearchStr()))
+                               ? obj.getSearchStr() 
+                               : null;
+            return repo.searchContractors(searchStr);
+
+        } catch (Exception e) {
+            throw new Exception(e);
+        }
     }
 }
