@@ -3,7 +3,6 @@ package com.wcr.wcrbackend.dms.repository;
 
 import java.util.List;
 
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,4 +29,5 @@ public interface DocumentRevisionRepository extends JpaRepository<DocumentRevisi
                    + " order by r.revision_no DESC", nativeQuery = true)
     List<DocumentRevisionDTO> findAllByFileNumberAndFileName(@Param("fileNumber") String fileNumber,
                                                               @Param("fileName") String fileName);
+                                                     
 }
