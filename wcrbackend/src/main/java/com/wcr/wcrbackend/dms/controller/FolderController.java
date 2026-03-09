@@ -1,7 +1,6 @@
 package com.wcr.wcrbackend.dms.controller;
 
 import java.util.ArrayList;
-
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -18,13 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wcr.wcrbackend.dms.common.CommonUtil;
 import com.wcr.wcrbackend.dms.dto.FolderDTO;
 import com.wcr.wcrbackend.dms.dto.FolderGridDTO;
+import com.wcr.wcrbackend.dms.entity.Folder;
 import com.wcr.wcrbackend.dms.service.FolderService;
 import com.wcr.wcrbackend.entity.User;
-import com.wcr.wcrbackend.dms.entity.Folder;
-
-import lombok.RequiredArgsConstructor;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.transaction.Transactional;
 
 @RestController
 @RequestMapping("/api/folders")
@@ -56,16 +54,16 @@ public class FolderController {
 		return ResponseEntity.ok(folderService.getFolderById(id));
 	}
 
-	// @PostMapping("/create")
-	// public ResponseEntity<FolderDTO> createFolder(@RequestBody FolderDTO folderDTO) {
-	// 	return ResponseEntity.ok(folderService.createFolder(folderDTO));
-	// }
-
 	@PostMapping("/create")
-    public ResponseEntity<String> createFolder(@RequestBody Folder folder) {
-        folderService.saveFolder(folder);
-        return ResponseEntity.ok("Folder created successfully");
-    }
+	public ResponseEntity<FolderDTO> createFolder(@RequestBody FolderDTO folderDTO) {
+		return ResponseEntity.ok(folderService.createFolder(folderDTO));
+	}
+
+	// @PostMapping("/create")
+    // public ResponseEntity<String> createFolder(@RequestBody Folder folder) {
+    //     folderService.saveFolder(folder);
+    //     return ResponseEntity.ok("Folder created successfully");
+    // }
 
 	@PutMapping("/update-folder/{id}")
 	public ResponseEntity<FolderDTO> updateFolder(@PathVariable Long id, @RequestBody FolderDTO folderDTO) {
@@ -94,7 +92,14 @@ public class FolderController {
 	}
 
 	@GetMapping("/tree")
+	@Transactional
 	public List<Folder> getFolderTree() {
 		return folderService.getFolderTree();
 	}
+
+	@GetMapping("/search")
+	public List<Folder> searchFolders(@RequestParam String q) {
+		return folderService.searchFolders(q);
+	}
+	
 }

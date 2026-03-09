@@ -1,5 +1,6 @@
 package com.wcr.wcrbackend.dms.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
@@ -26,7 +27,7 @@ public class SubFolder {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "folder_id")
-    @JsonIgnore
+    @JsonBackReference
     private Folder folder;
 
     // Constructors

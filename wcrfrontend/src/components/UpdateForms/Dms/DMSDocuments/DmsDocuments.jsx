@@ -22,6 +22,7 @@ export default function DmsDocuments() {
   const [loading, setLoading] = useState(false);
   const [selectedPath, setSelectedPath] = useState([]);
   const [newFolderName, setNewFolderName] = useState("");
+  const [openMenu, setOpenMenu] = useState(null);
 
     const [projects, setProjects] = useState([]);
     const [contracts, setContracts] = useState([]);
@@ -38,25 +39,18 @@ export default function DmsDocuments() {
       projectName: "",
       contractName: "",
       department: "",
-      status: ""
+      currentStatus: ""
     });
 
     const [documentFile, setDocumentFile] = useState(null);
 
   /* ---------- Folder Tree State ---------- */
-  const [folders, setFolders] = useState([
-    {
-      id: "1",
-      name: "Reports",
-      children: [
-        {
-          id: "2",
-          name: "MPR",
-          children: []
-        }
-      ]
+  const [folders, setFolders] = useState([]);
+
+    const toggleMenu = (e, id) => {
+      e.stopPropagation();
+      setOpenMenu(prev => (prev === id ? null : id));
     }
-  ]);
 
   const fetchDocuments = async () => {
     try {
@@ -79,16 +73,31 @@ export default function DmsDocuments() {
         "Date Uploaded": d.dateUploaded || "",
         "Revision Date": d.revisionDate || "",
         Department: d.department || "",
-        "View / Download": (
+        Actions: (
+        <div className={styles.actionMenu}>
           <span
-            style={{ color: "#0d6efd", cursor: "pointer" }}
-            onClick={() =>
-              window.open(`/api/documents/download/${d.id}`, "_blank")
-            }
+            className={styles.menuIcon}
+            onClick={(e) => toggleMenu(e, d.id)}
           >
-            Download
+            ⋮
           </span>
-        )
+
+          {openMenu === d.id && (
+            <div className={styles.menuDropdown}>
+              <div onClick={() => alert("Send")}>Send</div>
+              <div onClick={() => alert("Update")}>Update</div>
+              <div onClick={() => alert("View old versions")}>View old versions</div>
+              <div onClick={() => alert("Not required")}>Not required</div>
+              <div onClick={() =>
+                window.open(`/api/documents/download/${d.id}`, "_blank")
+              }>
+                Download
+              </div>
+              <div onClick={() => window.print()}>Print</div>
+            </div>
+          )}
+        </div>
+      )
       }));
 
       setDocuments(mapped);
@@ -100,8 +109,56 @@ export default function DmsDocuments() {
     }
   };
 
+  // const buildTree = (list) => {
+
+  //   const map = {};
+  //   const roots = [];
+
+  //   list.forEach(f => {
+  //     map[f.id] = { ...f, children: [] };
+  //   });
+
+  //   list.forEach(f => {
+
+  //     if (f.parent && f.parent.id) {
+  //       map[f.parent.id].children.push(map[f.id]);
+  //     } else {
+  //       roots.push(map[f.id]);
+  //     }
+
+  //   });
+
+  //   return roots;
+  // };
+
+  const convertTree = (list) => {
+  return (list || []).map(f => ({
+    id: f.id,
+    name: f.name,
+    children: (f.subFolders || []).map(sf => ({
+      id: sf.id,
+      name: sf.name,
+      children: []
+    }))
+  }));
+};
+
+const fetchFolders = async () => {
+  try {
+    const res = await api.get("/api/folders/tree");
+
+    const data = convertTree(res.data || []);
+
+    setFolders(data);
+
+  } catch (err) {
+    console.error("Folders fetch error", err);
+  }
+};
+
   useEffect(() => {
     fetchDocuments();
+    fetchFolders();
   }, []);
 
    const buildPathString = () =>
@@ -110,10 +167,13 @@ export default function DmsDocuments() {
   const handleSaveDocument = async () => {
       try {
         const fd = new FormData();
+        const last = selectedPath[selectedPath.length - 1];
 
         const dto = {
           ...docForm,
-          path: buildPathString(),
+          // path: buildPathString(),
+          folderId: selectedPath.length > 1 ? selectedPath[0].id : last?.id,
+          subFolderId: selectedPath.length > 1 ? last?.id : null
         };
 
         fd.append("dto", JSON.stringify(dto));
@@ -142,7 +202,7 @@ export default function DmsDocuments() {
           return {
             ...node,
             children: [
-              ...node.children,
+              ...(node.children || []),
               { id: Date.now().toString(), name, children: [] }
             ]
           };
@@ -159,18 +219,36 @@ export default function DmsDocuments() {
   const getDepth = (path) => path.length;
 
   const handleAddFolder = () => {
-    if (!newFolderName || selectedPath.length === 0) return;
 
-    if (getDepth(selectedPath) >= MAX_DEPTH) {
-      alert("Maximum folder depth (10) reached");
-      return;
-    }
+  if (!newFolderName) return;
 
-    setFolders(prev =>
-      addFolder(prev, selectedPath, newFolderName)
-    );
+  // CREATE PARENT FOLDER
+  if (selectedPath.length === 0) {
+
+    setFolders(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        name: newFolderName,
+        children: []
+      }
+    ]);
+
     setNewFolderName("");
-  };
+    return;
+  }
+
+  if (getDepth(selectedPath) >= MAX_DEPTH) {
+    alert("Maximum folder depth (10) reached");
+    return;
+  }
+
+  setFolders(prev =>
+    addFolder(prev, selectedPath, newFolderName)
+  );
+
+  setNewFolderName("");
+};
 
   /* ---------- Recursive Folder UI ---------- */
   const renderFolders = (nodes, path = []) =>
@@ -182,7 +260,7 @@ export default function DmsDocuments() {
       return (
         <div key={folder.id} className={styles.folderNode}>
           <div className={styles.folderRow}>
-            {folder.children.length > 0 && (
+            {folder.children?.length > 0 && (
               <span
                 className={styles.arrow}
                 onClick={(e) => {
@@ -199,7 +277,7 @@ export default function DmsDocuments() {
                 value={renameValue}
                 onChange={e => setRenameValue(e.target.value)}
                 onBlur={() => {
-                  setFolders(prev => renameFolder(prev, folder.id, renameValue));
+                  handleRename(folder.id, renameValue);
                   setRenamingId(null);
                 }}
                 autoFocus
@@ -226,6 +304,7 @@ export default function DmsDocuments() {
         </div>
       );
     });
+
 
     const toggleFolder = (id) => {
       setExpandedFolders(prev => {
@@ -256,11 +335,21 @@ export default function DmsDocuments() {
         .filter(Boolean);
     };
 
-    const renameFolder = (nodes, id, name) =>
-    nodes.map(n => {
-      if (n.id === id) return { ...n, name };
-      return { ...n, children: renameFolder(n.children || [], id, name) };
-    });
+    const handleRename = async (id, name) => {
+
+      try {
+
+        await api.put(`/api/folders/rename/${id}`, null, {
+          params: { name }
+        });
+
+        fetchFolders();
+
+      } catch (err) {
+        console.error(err);
+      }
+
+    };
 
     const livePreviewPath = () => {
       if (!selectedPath.length) return "";
@@ -315,7 +404,7 @@ export default function DmsDocuments() {
       {/* ACTION BAR */}
       <div className={styles.actionBar}>
         <button className="btn btn-primary" onClick={() => setShowUpload(true)}>Upload</button>
-        <button className="btn btn-secondary" onClick={() => setShowDrafts(true)}>Drafts</button>
+        {/* <button className="btn btn-secondary" onClick={() => setShowDrafts(true)}>Drafts</button> */}
       </div>
 
       {/* DOCUMENT TABLE */}
@@ -326,7 +415,7 @@ export default function DmsDocuments() {
             "File Type","File Number","File Name","Revision No",
             "Status","Project Name","Contract Name","Path",
             "Created By","Date Uploaded","Revision Date",
-            "Department","View / Download"
+            "Department","Actions"
           ]}
           mockData={documents}
         />
@@ -559,7 +648,7 @@ export default function DmsDocuments() {
 
             {/* FOOTER */}
             <div className={styles.footer}>
-              <button className="btn btn-primary">Save</button>
+              <button className="btn btn-primary" onClick={handleSaveDocument}>Save</button>
               <button className="btn btn-white" onClick={() => setShowUpload(false)}>Cancel</button>
             </div>
           </div>

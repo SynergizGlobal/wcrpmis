@@ -1,8 +1,11 @@
-package com.wcr.wcrbackend.dms.entity;
+package com.wcr.wcrbackend.dms.entity; 
 
 import java.util.ArrayList;
-
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -17,6 +20,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Table(name = "folders")
 public class Folder {
 
@@ -27,7 +31,9 @@ public class Folder {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
+    
+    @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonManagedReference
     private List<SubFolder> subFolders = new ArrayList<>();
 
     // Constructors
@@ -58,18 +64,6 @@ public class Folder {
     public void setSubFolders(List<SubFolder> subFolders) { 
     	this.subFolders = subFolders; 
     }
-
-    @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Folder parent;
-
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
-    private List<Folder> children;
-
-    public Folder getParent() {
-        return parent;
-    }
-
     
  }
 

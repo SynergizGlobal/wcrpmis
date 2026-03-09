@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class FolderServiceImpl implements FolderService {
 
     private final FolderRepository folderRepository;
@@ -145,11 +145,16 @@ public class FolderServiceImpl implements FolderService {
 
     @Override
     public List<Folder> getFolderTree() {
-        return folderRepository.findAll();
+        return folderRepository.findAllWithSubFolders();
     }
 
     @Override
     public void saveFolder(Folder folder) {
         folderRepository.save(folder);
+    }
+
+    @Override
+    public List<Folder> searchFolders(String name) {
+        return folderRepository.findByNameContainingIgnoreCase(name);
     }
 }

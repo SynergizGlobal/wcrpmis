@@ -22,6 +22,7 @@ public class DocumentDTO {
     private String folder;
     private Long folderId;
     private String subFolder;
+    private Long subFolderId;
     private String department;
     private String currentStatus;
     private String reasonForUpdate;

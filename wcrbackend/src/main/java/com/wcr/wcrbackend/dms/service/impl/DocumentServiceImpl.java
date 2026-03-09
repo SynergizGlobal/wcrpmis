@@ -1,18 +1,12 @@
 package com.wcr.wcrbackend.dms.service.impl;
 
-import com.wcr.wcrbackend.dms.dto.DocumentDTO;
-import com.wcr.wcrbackend.dms.dto.DocumentGridDTO;
-import com.wcr.wcrbackend.dms.entity.Document;
-import com.wcr.wcrbackend.dms.entity.DocumentFile;
-import com.wcr.wcrbackend.dms.entity.DocumentRevision;
-import com.wcr.wcrbackend.dms.repository.DocumentFileRepository;
-import com.wcr.wcrbackend.dms.repository.DocumentRepository;
-import com.wcr.wcrbackend.dms.repository.DocumentRevisionRepository;
-import com.wcr.wcrbackend.dms.service.DocumentService;
-
-import com.wcr.wcrbackend.dms.entity.Folder;
-
-import lombok.RequiredArgsConstructor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,13 +18,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.time.format.DateTimeFormatter;
+import com.wcr.wcrbackend.dms.dto.DocumentDTO;
+import com.wcr.wcrbackend.dms.dto.DocumentGridDTO;
+import com.wcr.wcrbackend.dms.entity.Document;
+import com.wcr.wcrbackend.dms.entity.DocumentFile;
+import com.wcr.wcrbackend.dms.entity.DocumentRevision;
+import com.wcr.wcrbackend.dms.entity.Folder;
+import com.wcr.wcrbackend.dms.entity.SubFolder;
+import com.wcr.wcrbackend.dms.repository.DocumentFileRepository;
+import com.wcr.wcrbackend.dms.repository.DocumentRepository;
+import com.wcr.wcrbackend.dms.repository.DocumentRevisionRepository;
+import com.wcr.wcrbackend.dms.repository.FolderRepository;
+import com.wcr.wcrbackend.dms.repository.SubFolderRepository;
+import com.wcr.wcrbackend.dms.service.DocumentService;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +43,8 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentFileRepository documentFileRepository;
     private final DocumentRevisionRepository documentRevisionRepository;
+    private final FolderRepository folderRepository;
+    private final SubFolderRepository subFolderRepository;
 
     private final String uploadDir = "uploads/";
 
@@ -74,7 +78,7 @@ public class DocumentServiceImpl implements DocumentService {
             dto.setProjectName(d.getProjectName());
             dto.setContractName(d.getContractName());
 
-            dto.setPath(buildFolderPath(d.getFolder()));
+            dto.setPath(buildFolderPath(d.getFolder(), d.getSubFolder()));
 
             dto.setDepartment(
                 d.getDepartment() != null ? d.getDepartment().getName() : ""
@@ -124,8 +128,28 @@ public class DocumentServiceImpl implements DocumentService {
         document.setCreatedBy("SYSTEM");
         document.setCreatedAt(LocalDateTime.now());
 
+        // document = documentRepository.save(document);
+
+        if (dto.getFolderId() != null) {
+
+            Folder folder = folderRepository.findById(dto.getFolderId())
+                    .orElseThrow(() -> new RuntimeException("Folder not found"));
+
+            document.setFolder(folder);
+        }
+
+        if (dto.getSubFolderId() != null) {
+
+            SubFolder subFolder = subFolderRepository.findById(dto.getSubFolderId())
+                    .orElseThrow(() -> new RuntimeException("SubFolder not found"));
+
+            document.setSubFolder(subFolder);
+        }
+
         document = documentRepository.save(document);
 
+        String storedFileName = null;
+        
         if (file != null && !file.isEmpty()) {
 
             Path uploadPath = Paths.get(uploadDir);
@@ -134,14 +158,16 @@ public class DocumentServiceImpl implements DocumentService {
                 Files.createDirectories(uploadPath);
             }
 
-            String fileName = file.getOriginalFilename();
-            Path filePath = uploadPath.resolve(fileName);
+            storedFileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+
+            // String fileName = file.getOriginalFilename();
+            Path filePath = uploadPath.resolve(storedFileName);
 
             Files.copy(file.getInputStream(), filePath);
 
             DocumentFile docFile = new DocumentFile();
 
-            docFile.setFileName(fileName);
+            docFile.setFileName(storedFileName);
             docFile.setFileType(file.getContentType());
             docFile.setFilePath(filePath.toString());
             docFile.setDocument(document);
@@ -151,6 +177,8 @@ public class DocumentServiceImpl implements DocumentService {
 
         DocumentRevision revision = new DocumentRevision();
 
+        revision.setFileName(dto.getFileName());
+        revision.setFileNumber(dto.getFileNumber());
         revision.setRevisionNo(dto.getRevisionNo());
         revision.setRevisionDate(dto.getRevisionDate());
         revision.setDocument(document);
@@ -174,17 +202,14 @@ public class DocumentServiceImpl implements DocumentService {
                 .body(resource);
     }
 
-    private String buildFolderPath(Folder folder) {
+    private String buildFolderPath(Folder folder, SubFolder subFolder) {
 
-    if (folder == null) return "";
+        if(folder == null) return "";
 
-    StringBuilder path = new StringBuilder();
+        if(subFolder != null) {
+            return folder.getName() + " / " + subFolder.getName() + " / ";
+        }
 
-    while (folder != null) {
-        path.insert(0, folder.getName() + "/");
-        folder = folder.getParent();
+        return folder.getName() + " / ";
     }
-
-    return path.toString();
-}
 }

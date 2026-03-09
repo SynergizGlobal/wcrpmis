@@ -1,4 +1,4 @@
-package com.wcr.wcrbackend.dms.repository;
+ package com.wcr.wcrbackend.dms.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -69,5 +69,17 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 		@Param("projects") List<String> projects,
 		@Param("contracts") List<String> contracts
 	);
+
+	// @Query("""
+	// 	SELECT DISTINCT f
+	// 	FROM Folder f
+	// 	LEFT JOIN FETCH f.children
+	// 	WHERE f.parent IS NULL
+	// """)
+	// List<Folder> findRootFoldersWithChildren();
+
+	// List<Folder> findByParentIsNull();
+
+	List<Folder> findByNameContainingIgnoreCase(String name);
 
 }

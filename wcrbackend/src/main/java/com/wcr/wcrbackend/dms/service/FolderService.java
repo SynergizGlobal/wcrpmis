@@ -3,7 +3,6 @@ package com.wcr.wcrbackend.dms.service;
 import java.util.List;
 
 import com.wcr.wcrbackend.dms.dto.FolderDTO;
-
 import com.wcr.wcrbackend.dms.entity.Folder;
 
 
@@ -32,4 +31,6 @@ public interface FolderService {
 	public List<FolderDTO> getAllFoldersByProjectsAndContracts(List<String> project, List<String> contract, String userId);
 
 	public List<FolderDTO> getAllFoldersByProjectsAndContracts(List<String> projects, List<String> contracts);
+
+    List<Folder> searchFolders(String name);
 }

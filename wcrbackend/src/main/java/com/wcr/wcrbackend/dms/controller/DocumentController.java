@@ -20,6 +20,7 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final ObjectMapper objectMapper; 
 
     @GetMapping("/list")
     public ResponseEntity<List<DocumentGridDTO>> getAllDocuments() {
@@ -33,8 +34,8 @@ public class DocumentController {
             @RequestParam(value = "file", required = false) MultipartFile file
     ) throws Exception {
 
-        ObjectMapper mapper = new ObjectMapper();
-        DocumentDTO dto = mapper.readValue(dtoJson, DocumentDTO.class);
+        // ObjectMapper mapper = new ObjectMapper();
+        DocumentDTO dto = objectMapper.readValue(dtoJson, DocumentDTO.class);
 
         // @RequestPart("dto") DocumentDTO dto,
         documentService.saveDocument(dto, file);
