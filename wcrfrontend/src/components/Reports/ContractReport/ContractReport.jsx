@@ -48,7 +48,6 @@ const ContractReport = () => {
     9: "Contract Completion Report"
   };
 
-  // UI visibility conditions
   const showDateDiv     = reportNo === '8';
   const showContractDiv = reportNo === '2';
   const showHodDiv      = ![8].includes(parseInt(reportNo));
@@ -64,7 +63,6 @@ const ContractReport = () => {
   const initializeReport = async () => {
     setLoading(true);
     const currentReportTitle = reportTitles[reportNo] || "Contract Reports";
-
     await loadProjects();
 
     const savedFilters = localStorage.getItem(`contarctReportFilters${reportNo}`);
@@ -77,11 +75,11 @@ const ContractReport = () => {
             const temp2 = temp[i].split('=');
             const key   = temp2[0];
             const value = temp2[1];
-            if (key === 'hod_designation')         filters.hod_designations    = value.split(',');
-            else if (key === 'contractor_id_fk')   filters.contractor_id_fk    = value;
-            else if (key === 'status')             filters.status              = value;
-            else if (key === 'contract_status_fk') filters.contract_status_fk  = value;
-            else if (key === 'contract_id')        filters.contract_id         = value;
+            if (key === 'hod_designation')         filters.hod_designations   = value.split(',');
+            else if (key === 'contractor_id_fk')   filters.contractor_id_fk   = value;
+            else if (key === 'status')             filters.status             = value;
+            else if (key === 'contract_status_fk') filters.contract_status_fk = value;
+            else if (key === 'contract_id')        filters.contract_id        = value;
           }
         }
         setFormData(prev => ({ ...prev, ...filters }));
@@ -128,19 +126,25 @@ const ContractReport = () => {
   const prepareRequestBody = (customData = null) => {
     const d = customData || formData;
     const body = {};
-
     if (d.project_id_fk)      body.project_id_fk      = d.project_id_fk;
     if (d.contractor_id_fk)   body.contractor_id_fk   = d.contractor_id_fk;
     if (d.contract_status_fk) body.contract_status_fk = d.contract_status_fk;
     if (d.contract_id)        body.contract_id        = d.contract_id;
     if (d.status)             body.status             = d.status;
-
-    // Backend SQL: u.designation IN (?,?) — needs designation strings
     if (Array.isArray(d.hod_designations) && d.hod_designations.length > 0) {
       body.hod_designations = d.hod_designations;
     }
-
     return body;
+  };
+
+  // ─── formatDate: always produces dd-MM-yyyy ──────────────────────────────────
+  const formatDate = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const dd   = String(d.getDate()).padStart(2, '0');
+    const mm   = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`; // e.g. "27-03-2026"
   };
 
   // ─── Individual loaders ──────────────────────────────────────────────────────
@@ -150,7 +154,6 @@ const ContractReport = () => {
       const response = await api.post('/contract-report/ajax/getHODListInContractReport', requestBody);
       let options = [];
       if (response.data && response.data.length > 0) {
-        // Deduplicate by designation — backend filters on designation string
         const seen = new Set();
         response.data.forEach(hod => {
           if (!seen.has(hod.designation)) {
@@ -273,35 +276,22 @@ const ContractReport = () => {
     setFormData(updatedFormData);
     setErrors(prev => ({ ...prev, [name]: '' }));
     addToFiltersMap(name, value);
-
     setLoading(true);
     setLoadingField(name);
-
     try {
       const requestBody = prepareRequestBody(updatedFormData);
-      console.log('Request Body after', name, ':', requestBody);
-
-      // Mirror JSP getResetFiltersList() — each dropdown only reloads if its own value is empty
       const promises = [];
-
-      if (!updatedFormData.hod_designations || updatedFormData.hod_designations.length === 0) {
+      if (!updatedFormData.hod_designations || updatedFormData.hod_designations.length === 0)
         promises.push(loadHODsWithBody(requestBody));
-      }
-      if (!updatedFormData.contractor_id_fk) {
+      if (!updatedFormData.contractor_id_fk)
         promises.push(loadContractorsWithBody(requestBody));
-      }
-      if (!updatedFormData.contract_id) {
+      if (!updatedFormData.contract_id)
         promises.push(loadContractsWithBody(requestBody));
-      }
-      if (!updatedFormData.status) {
+      if (!updatedFormData.status)
         promises.push(loadStatusOptionsWithBody(requestBody));
-      }
-
       await Promise.all(promises);
-
-      if (!updatedFormData.contract_status_fk) {
+      if (!updatedFormData.contract_status_fk)
         await loadContractStatusOptionsWithBody(requestBody, reportTitle);
-      }
     } catch (error) {
       console.error('Error reloading dropdowns:', error);
     } finally {
@@ -339,34 +329,22 @@ const ContractReport = () => {
     ]).finally(() => setLoading(false));
   };
 
-  const formatDate = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
-  };
-
   // ─── Generate report ─────────────────────────────────────────────────────────
 
   const generateReport = async () => {
-    // FIX: Validate required fields for report 2
     if (reportNo === '2' && !formData.contract_id) {
       setErrors({ contract_id: 'Please select contract' });
       return;
     }
-    // FIX: Validate date range for report 8
     if (reportNo === '8') {
       const newErrors = {};
       if (!formData.date)   newErrors.date   = 'Please select from date';
       if (!formData.todate) newErrors.todate = 'Please select to date';
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
-      }
+      if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
     }
 
     setLoading(true);
     try {
-      // FIX: Report 2 endpoint now correctly appends contract_id as path variable
       const endpoints = {
         1: '/contract-report/generate-contract-report',
         2: `/contract-report/generate-contract-detail-report/${formData.contract_id}`,
@@ -379,26 +357,46 @@ const ContractReport = () => {
         9: '/contract-report/generate-contract-completion-report'
       };
 
-      const formDataToSend = new FormData();
-      formDataToSend.append('project_id_fk', formData.project_id_fk || '');
-      formDataToSend.append('hod_designations',
-        Array.isArray(formData.hod_designations) && formData.hod_designations.length > 0
-          ? formData.hod_designations.join(',') : '');
-      formDataToSend.append('contractor_id_fk', formData.contractor_id_fk || '');
-      formDataToSend.append('status', formData.status || '');
-      formDataToSend.append('contract_status_fk', formData.contract_status_fk || '');
-      formDataToSend.append('contract_id', formData.contract_id || '');
-      // FIX: date is formatted as dd-MM-yyyy to match backend DateParser expectation
-      formDataToSend.append('date',   formData.date   ? formatDate(formData.date)   : '');
-      formDataToSend.append('todate', formData.todate ? formatDate(formData.todate) : '');
-      formDataToSend.append('report_no', reportNo);
+      const isExcel = reportNo === '7' || reportNo === '8';
 
-      const response = await api.post(endpoints[reportNo], formDataToSend, {
-      //  headers: { Accept: 'application/msword' },
-        responseType: 'blob'
-      });
+      // ── Report 8 sends JSON so dates arrive exactly as typed ──────────────
+      // ── All other reports send FormData (existing behaviour) ──────────────
+      let requestPayload;
+      let requestConfig = { responseType: 'blob' };
 
-      // FIX: Check if the blob is actually an error JSON before treating as a file
+      if (reportNo === '8') {
+        // Send as JSON — Spring binds fields directly onto Contract object
+        requestPayload = {
+          project_id_fk:      formData.project_id_fk      || null,
+          contractor_id_fk:   formData.contractor_id_fk   || null,
+          contract_status_fk: formData.contract_status_fk || null,
+          status:             formData.status             || null,
+          // date formatted as dd-MM-yyyy  e.g. "27-03-2026"
+          date:   formData.date   ? formatDate(formData.date)   : null,
+          todate: formData.todate ? formatDate(formData.todate) : null,
+        };
+        requestConfig.headers = { 'Content-Type': 'application/json' };
+        console.log('Report 8 JSON payload:', requestPayload);
+      } else {
+        // FormData for all other reports
+        const fd = new FormData();
+        fd.append('project_id_fk',      formData.project_id_fk      || '');
+        fd.append('hod_designations',
+          Array.isArray(formData.hod_designations) && formData.hod_designations.length > 0
+            ? formData.hod_designations.join(',') : '');
+        fd.append('contractor_id_fk',   formData.contractor_id_fk   || '');
+        fd.append('status',             formData.status             || '');
+        fd.append('contract_status_fk', formData.contract_status_fk || '');
+        fd.append('contract_id',        formData.contract_id        || '');
+        fd.append('date',               formData.date   ? formatDate(formData.date)   : '');
+        fd.append('todate',             formData.todate ? formatDate(formData.todate) : '');
+        fd.append('report_no', reportNo);
+        requestPayload = fd;
+      }
+
+      const response = await api.post(endpoints[reportNo], requestPayload, requestConfig);
+
+      // Check if blob is actually an error JSON
       const contentType = response.headers['content-type'] || '';
       if (contentType.includes('application/json')) {
         const reader = new FileReader();
@@ -410,11 +408,13 @@ const ContractReport = () => {
         return;
       }
 
+      // Download the file
       const url  = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href  = url;
       const contentDisposition = response.headers['content-disposition'];
-      let filename = `${reportTitle.replace(/\s+/g, '_')}_${Date.now()}.doc`;
+      const defaultExt = isExcel ? '.xlsx' : '.docx';
+      let filename = `${reportTitle.replace(/\s+/g, '_')}_${Date.now()}${defaultExt}`;
       if (contentDisposition) {
         const m = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
         if (m && m[1]) filename = m[1].replace(/['"]/g, '');
@@ -478,7 +478,7 @@ const ContractReport = () => {
 
           <form id="contractReportForm" onSubmit={(e) => e.preventDefault()}>
 
-            {/* ── Row 1: Project | Contract* | Contractor | Contract Status | Status of Work ── */}
+            {/* ── Row 1 ── */}
             <div className={styles.formGrid}>
 
               {/* 1. Project */}
@@ -515,9 +515,7 @@ const ContractReport = () => {
                     classNamePrefix="react-select"
                     isDisabled={loading}
                   />
-                  {errors.contract_id && (
-                    <span className={styles.errorMsg}>{errors.contract_id}</span>
-                  )}
+                  {errors.contract_id && <span className={styles.errorMsg}>{errors.contract_id}</span>}
                 </div>
               )}
 
@@ -534,9 +532,7 @@ const ContractReport = () => {
                   classNamePrefix="react-select"
                   isDisabled={loading}
                 />
-                {errors.contractor_id_fk && (
-                  <span className={styles.errorMsg}>{errors.contractor_id_fk}</span>
-                )}
+                {errors.contractor_id_fk && <span className={styles.errorMsg}>{errors.contractor_id_fk}</span>}
               </div>
 
               {/* 4. Contract Status — reports 1 & 7 only */}
@@ -553,9 +549,7 @@ const ContractReport = () => {
                     classNamePrefix="react-select"
                     isDisabled={loading}
                   />
-                  {errors.status && (
-                    <span className={styles.errorMsg}>{errors.status}</span>
-                  )}
+                  {errors.status && <span className={styles.errorMsg}>{errors.status}</span>}
                 </div>
               )}
 
@@ -572,15 +566,13 @@ const ContractReport = () => {
                   classNamePrefix="react-select"
                   isDisabled={loading}
                 />
-                {errors.contract_status_fk && (
-                  <span className={styles.errorMsg}>{errors.contract_status_fk}</span>
-                )}
+                {errors.contract_status_fk && <span className={styles.errorMsg}>{errors.contract_status_fk}</span>}
               </div>
 
             </div>
             {/* ── End Row 1 ── */}
 
-            {/* ── Row 2: HOD | Date fields (conditional) ── */}
+            {/* ── Row 2 ── */}
             <div className={styles.formGrid}>
 
               {/* 6. HOD — all reports except report 8 */}
@@ -598,9 +590,7 @@ const ContractReport = () => {
                     classNamePrefix="react-select"
                     isDisabled={loading && loadingField !== 'hod_designations'}
                   />
-                  {errors.hod_designations && (
-                    <span className={styles.errorMsg}>{errors.hod_designations}</span>
-                  )}
+                  {errors.hod_designations && <span className={styles.errorMsg}>{errors.hod_designations}</span>}
                 </div>
               )}
 
