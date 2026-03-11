@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wcr.wcrbackend.dms.common.CommonUtil;
+import com.wcr.wcrbackend.dms.dto.FolderDTO;
 import com.wcr.wcrbackend.dms.dto.FolderGridDTO;
 import com.wcr.wcrbackend.dms.dto.SubFolderDTO;
 import com.wcr.wcrbackend.dms.entity.SubFolder;
+import com.wcr.wcrbackend.dms.service.FolderService;
 import com.wcr.wcrbackend.dms.service.SubFolderService;
 import com.wcr.wcrbackend.entity.User;
 
@@ -27,10 +29,16 @@ import lombok.RequiredArgsConstructor;
 public class SubFolderController {
 
     private final SubFolderService subFolderService;
+    private final FolderService folderService;
+
+    // @GetMapping("/{folderId}")
+    // public ResponseEntity<List<SubFolder>> getSubFoldersByFolderId(@PathVariable("folderId") Long folderId) {
+    //     return ResponseEntity.ok(subFolderService.getSubFoldersByFolderId(folderId));
+    // }
 
     @GetMapping("/{folderId}")
-    public ResponseEntity<List<SubFolder>> getSubFoldersByFolderId(@PathVariable("folderId") Long folderId) {
-        return ResponseEntity.ok(subFolderService.getSubFoldersByFolderId(folderId));
+    public List<FolderDTO> getSubFolders(@PathVariable Long folderId){
+        return folderService.getChildFolders(folderId);
     }
 
     @PostMapping("/create/{folderId}")

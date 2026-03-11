@@ -82,4 +82,10 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 
 	List<Folder> findByNameContainingIgnoreCase(String name);
 
+	List<Folder> findByParentId(Long parentId);
+
+	List<Folder> findByParentIdIsNull();
+
+	Optional<Folder> findById(Long id);
+
 }

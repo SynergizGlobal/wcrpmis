@@ -17,8 +17,6 @@ public interface FolderService {
     public FolderDTO createFolder(FolderDTO folderDTO);
     
     public FolderDTO updateFolder(Long id, FolderDTO folderDTO);
-    
-    List<Folder> getFolderTree();
 
     void saveFolder(Folder folder);
     
@@ -33,4 +31,8 @@ public interface FolderService {
 	public List<FolderDTO> getAllFoldersByProjectsAndContracts(List<String> projects, List<String> contracts);
 
     List<Folder> searchFolders(String name);
+
+    public List<Folder> getFolderTree();
+
+    public List<FolderDTO> getChildFolders(Long parentId);
 }

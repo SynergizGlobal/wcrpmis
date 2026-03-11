@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DmsTable from "../DmsTable/DmsTable";
-import Drafts from "../Correspondence/Drafts";
+import Drafts from "../DMSDocuments/Drafts";
 import styles from "./DmsDocuments.module.css";
 import api from "../../../../api/axiosInstance";
 import AsyncSelect from "react-select/async";
@@ -23,6 +23,10 @@ export default function DmsDocuments() {
   const [selectedPath, setSelectedPath] = useState([]);
   const [newFolderName, setNewFolderName] = useState("");
   const [openMenu, setOpenMenu] = useState(null);
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [showSendPopup, setShowSendPopup] = useState(false);
+  const [showUpdatePopup, setShowUpdatePopup] = useState(false);
+  const [showVersionsPopup, setShowVersionsPopup] = useState(false);
 
     const [projects, setProjects] = useState([]);
     const [contracts, setContracts] = useState([]);
@@ -42,6 +46,14 @@ export default function DmsDocuments() {
       currentStatus: ""
     });
 
+    const [sendForm, setSendForm] = useState({
+      sendTo: "",
+      sendSubject: "",
+      sendReason: "",
+      responseExpected: "Yes",
+      targetResponseDate: ""
+    });
+
     const [documentFile, setDocumentFile] = useState(null);
 
   /* ---------- Folder Tree State ---------- */
@@ -52,6 +64,100 @@ export default function DmsDocuments() {
       setOpenMenu(prev => (prev === id ? null : id));
     }
 
+    const handleSend = (doc) => {
+      setSelectedDoc(doc);
+      setSendForm({
+        sendTo: "",
+        sendSubject: doc["File Name"] || "",
+        sendReason: "",
+        responseExpected: "Yes",
+        targetResponseDate: ""
+      });
+      setShowSendPopup(true);
+      setOpenMenu(null);
+    };
+
+    const handleUpdate = (doc) => {
+      setSelectedDoc(doc);
+      setShowUpdatePopup(true);
+      setOpenMenu(null);
+    };
+
+    const handleVersions = (doc) => {
+      setSelectedDoc(doc);
+      setShowVersionsPopup(true);
+      setOpenMenu(null);
+    };
+
+    const handleNotRequired = async (doc) => {
+      if (!window.confirm("Mark this document as Not Required?")) return;
+
+      try {
+        await api.put(`/api/documents/not-required/${doc.id}`);
+        fetchDocuments();
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    const handleSaveDraft = async () => {
+      try {
+
+        const payload = {
+          id: "",
+          docId: selectedDoc.id,
+          sendTo: sendForm.sendTo,
+          sendToUserId: "",
+          sendCc: "",
+          sendCcUserId: "",
+          sendSubject: sendForm.sendSubject,
+          sendReason: sendForm.sendReason,
+          responseExpected: sendForm.responseExpected,
+          targetResponseDate: sendForm.targetResponseDate,
+          attachmentName: selectedDoc["File Name"],
+          status: "Draft"
+        };
+
+        await api.post("/api/documents/send-document", payload);
+
+        alert("Draft saved successfully");
+
+        setShowSendPopup(false);
+
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    const handleSendDocument = async () => {
+      try {
+
+        const payload = {
+          id: "",
+          docId: selectedDoc.id,
+          sendTo: sendForm.sendTo,
+          sendToUserId: "",
+          sendCc: "",
+          sendCcUserId: "",
+          sendSubject: sendForm.sendSubject,
+          sendReason: sendForm.sendReason,
+          responseExpected: sendForm.responseExpected,
+          targetResponseDate: sendForm.targetResponseDate,
+          attachmentName: selectedDoc["File Name"],
+          status: "Send"
+        };
+
+        await api.post("/api/documents/send-document", payload);
+
+        alert("Document sent successfully");
+
+        setShowSendPopup(false);
+
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
   const fetchDocuments = async () => {
     try {
       setLoading(true);
@@ -61,6 +167,7 @@ export default function DmsDocuments() {
       const rows = res.data || [];
 
       const mapped = rows.map((d) => ({
+        id: d.id,
         "File Type": d.fileType || "",
         "File Number": d.fileNumber || "",
         "File Name": d.fileName || "",
@@ -73,31 +180,31 @@ export default function DmsDocuments() {
         "Date Uploaded": d.dateUploaded || "",
         "Revision Date": d.revisionDate || "",
         Department: d.department || "",
-        Actions: (
-        <div className={styles.actionMenu}>
-          <span
-            className={styles.menuIcon}
-            onClick={(e) => toggleMenu(e, d.id)}
-          >
-            ⋮
-          </span>
+      //   Actions: (
+      //   <div className={styles.actionMenu}>
+      //     <span
+      //       className={styles.menuIcon}
+      //       onClick={(e) => toggleMenu(e, d.id)}
+      //     >
+      //       ⋮
+      //     </span>
 
-          {openMenu === d.id && (
-            <div className={styles.menuDropdown}>
-              <div onClick={() => alert("Send")}>Send</div>
-              <div onClick={() => alert("Update")}>Update</div>
-              <div onClick={() => alert("View old versions")}>View old versions</div>
-              <div onClick={() => alert("Not required")}>Not required</div>
-              <div onClick={() =>
-                window.open(`/api/documents/download/${d.id}`, "_blank")
-              }>
-                Download
-              </div>
-              <div onClick={() => window.print()}>Print</div>
-            </div>
-          )}
-        </div>
-      )
+      //     {openMenu === d.id && (
+      //       <div className={styles.menuDropdown}>
+      //         <div onClick={() => handleSend(d)}>Send</div>
+      //         <div onClick={() => handleUpdate(d)}>Update</div>
+      //         <div onClick={() => handleVersions(d)}>View old versions</div>
+      //         <div onClick={() => handleNotRequired(d)}>Not required</div>
+      //         <div onClick={() =>
+      //           window.open(`/api/documents/download/${d.id}`, "_blank")
+      //         }>
+      //           Download
+      //         </div>
+      //         <div onClick={() => window.print()}>Print</div>
+      //       </div>
+      //     )}
+      //   </div>
+      // )
       }));
 
       setDocuments(mapped);
@@ -108,6 +215,12 @@ export default function DmsDocuments() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const closeMenu = () => setOpenMenu(null);
+    document.addEventListener("click", closeMenu);
+    return () => document.removeEventListener("click", closeMenu);
+  }, []);
 
   // const buildTree = (list) => {
 
@@ -132,16 +245,24 @@ export default function DmsDocuments() {
   // };
 
   const convertTree = (list) => {
-  return (list || []).map(f => ({
-    id: f.id,
-    name: f.name,
-    children: (f.subFolders || []).map(sf => ({
-      id: sf.id,
-      name: sf.name,
-      children: []
-    }))
-  }));
-};
+
+    const map = {};
+    const roots = [];
+
+    list.forEach(f => {
+      map[f.id] = { ...f, children: [] };
+    });
+
+    list.forEach(f => {
+      if (f.parentId) {
+        map[f.parentId]?.children.push(map[f.id]);
+      } else {
+        roots.push(map[f.id]);
+      }
+    });
+
+    return roots;
+  };
 
 const fetchFolders = async () => {
   try {
@@ -172,8 +293,7 @@ const fetchFolders = async () => {
         const dto = {
           ...docForm,
           // path: buildPathString(),
-          folderId: selectedPath.length > 1 ? selectedPath[0].id : last?.id,
-          subFolderId: selectedPath.length > 1 ? last?.id : null
+          folderId: last?.id
         };
 
         fd.append("dto", JSON.stringify(dto));
@@ -218,37 +338,30 @@ const fetchFolders = async () => {
 
   const getDepth = (path) => path.length;
 
-  const handleAddFolder = () => {
+  const handleAddFolder = async () => {
 
-  if (!newFolderName) return;
+    if (!newFolderName) return;
 
-  // CREATE PARENT FOLDER
-  if (selectedPath.length === 0) {
+    try {
 
-    setFolders(prev => [
-      ...prev,
-      {
-        id: Date.now(),
+      const parent = selectedPath[selectedPath.length - 1];
+
+      const payload = {
         name: newFolderName,
-        children: []
-      }
-    ]);
+        parentId: parent ? parent.id : null
+      };
 
-    setNewFolderName("");
-    return;
-  }
+      await api.post("/api/folders/create", payload);
 
-  if (getDepth(selectedPath) >= MAX_DEPTH) {
-    alert("Maximum folder depth (10) reached");
-    return;
-  }
+      setNewFolderName("");
 
-  setFolders(prev =>
-    addFolder(prev, selectedPath, newFolderName)
-  );
+      await fetchFolders(); // reload tree
 
-  setNewFolderName("");
-};
+    } catch (err) {
+      console.error("Folder creation failed", err);
+      alert("Failed to create folder");
+    }
+  };
 
   /* ---------- Recursive Folder UI ---------- */
   const renderFolders = (nodes, path = []) =>
@@ -403,8 +516,31 @@ const fetchFolders = async () => {
     <>
       {/* ACTION BAR */}
       <div className={styles.actionBar}>
-        <button className="btn btn-primary" onClick={() => setShowUpload(true)}>Upload</button>
-        {/* <button className="btn btn-secondary" onClick={() => setShowDrafts(true)}>Drafts</button> */}
+
+        {!showDrafts && (
+          <>
+            <button className="btn btn-primary" onClick={() => setShowUpload(true)}>
+              Upload
+            </button>
+
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowDrafts(true)}
+            >
+              Drafts
+            </button>
+          </>
+        )}
+
+        {showDrafts && (
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowDrafts(false)}
+          >
+            Documents
+          </button>
+        )}
+
       </div>
 
       {/* DOCUMENT TABLE */}
@@ -418,6 +554,31 @@ const fetchFolders = async () => {
             "Department","Actions"
           ]}
           mockData={documents}
+          renderActions={(row) => (
+            <div className={styles.actionMenu}>
+              <span
+                className={styles.menuIcon}
+                onClick={(e) => toggleMenu(e, row.id)}
+              >
+                ⋮
+              </span>
+
+              {openMenu === row.id && (
+                <div className={styles.menuDropdown}>
+                  <div onClick={() => handleSend(row)}>Send</div>
+                  <div onClick={() => handleUpdate(row)}>Update</div>
+                  <div onClick={() => handleVersions(row)}>View old versions</div>
+                  <div onClick={() => handleNotRequired(row)}>Not required</div>
+                  <div onClick={() =>
+                    window.open(`/api/documents/download/${row.id}`, "_blank")
+                  }>
+                    Download
+                  </div>
+                  <div onClick={() => window.print()}>Print</div>
+                </div>
+              )}
+            </div>
+          )}
         />
       )}
 
@@ -654,6 +815,167 @@ const fetchFolders = async () => {
           </div>
         </div>
       )}
+
+      {showSendPopup && (
+        <div className={styles.overlay}>
+        <div className={styles.modal}>
+          <div className={styles.header}>
+            <h3>Send Document</h3>
+            <span onClick={() => setShowSendPopup(false)}>×</span>
+          </div>
+        <div className={styles.body}>
+          <div className="form-row">
+
+            <div className="form-field">
+              <label>To</label>
+              <input
+                type="email"
+                value={sendForm.sendTo}
+                onChange={(e) =>
+                  setSendForm({ ...sendForm, sendTo: e.target.value })
+                }
+                placeholder="Enter recipient email"
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Subject</label>
+              <input
+                type="text"
+                value={sendForm.sendSubject}
+                onChange={(e) =>
+                  setSendForm({ ...sendForm, sendSubject: e.target.value })
+                }
+                placeholder="Enter email subject"
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Reason for Sending</label>
+              <textarea
+                value={sendForm.sendReason}
+                onChange={(e) =>
+                  setSendForm({ ...sendForm, sendReason: e.target.value })
+                }
+                placeholder="Enter reason for sending the document"
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Response Expected</label>
+              <select
+                value={sendForm.responseExpected}
+                onChange={(e) =>
+                  setSendForm({ ...sendForm, responseExpected: e.target.value })
+                }
+              >
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>Target Response Date</label>
+              <input
+                type="date"
+                value={sendForm.targetResponseDate}
+                onChange={(e) =>
+                  setSendForm({ ...sendForm, targetResponseDate: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Attachments</label>
+
+              <div className={styles.attachmentsList}>
+                {selectedDoc && (
+                  <div className={styles.attachmentItem}>
+                    <a href={`/api/documents/download/${selectedDoc.id}`} target="_blank">
+                      📎 {selectedDoc["File Name"]}
+                    </a>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <div className={styles.footer}>
+        <button className="btn btn-primary" onClick={handleSendDocument}>Send</button>
+        <button className="btn btn-white" onClick={handleSaveDraft}>Save Draft</button>
+        <button className="btn btn-red" onClick={()=>setShowSendPopup(false)}>Cancel</button>
+        </div>
+
+        </div>
+        </div>
+        )}
+
+      {showUpdatePopup && (
+        <div className={styles.overlay}>
+        <div className={styles.modal}>
+
+        <h3>Update Document</h3>
+
+        <div className="form-field">
+        <label>File Name</label>
+        <input defaultValue={selectedDoc?.["File Name"]}/>
+        </div>
+
+        <div className="form-field">
+        <label>Revision No</label>
+        <input placeholder="R02"/>
+        </div>
+
+        <div className="form-field">
+        <label>Upload New Version</label>
+        <input type="file"/>
+        </div>
+
+        <div className={styles.footer}>
+        <button>Save</button>
+        <button onClick={()=>setShowUpdatePopup(false)}>Cancel</button>
+        </div>
+
+        </div>
+        </div>
+        )}
+
+        {showVersionsPopup && (
+          <div className={styles.overlay}>
+          <div className={styles.modal}>
+
+          <h3>Older Versions</h3>
+
+          <table className="table">
+          <thead>
+          <tr>
+          <th>File Name</th>
+          <th>File Number</th>
+          <th>Revision</th>
+          <th>Download</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          <tr>
+          <td>{selectedDoc?.["File Name"]}</td>
+          <td>{selectedDoc?.["File Number"]}</td>
+          <td>{selectedDoc?.["Revision No"]}</td>
+          <td>
+          <a href={`/api/documents/download/${selectedDoc?.id}`}>Download</a>
+          </td>
+          </tr>
+          </tbody>
+          </table>
+
+          <button onClick={()=>setShowVersionsPopup(false)}>Close</button>
+
+          </div>
+          </div>
+          )}
     </>
   );
 }

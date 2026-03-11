@@ -101,5 +101,10 @@ public class FolderController {
 	public List<Folder> searchFolders(@RequestParam String q) {
 		return folderService.searchFolders(q);
 	}
+
+	@GetMapping("/children/{parentId}")
+	public ResponseEntity<List<FolderDTO>> getChildFolders(@PathVariable Long parentId) {
+		return ResponseEntity.ok(folderService.getChildFolders(parentId));
+	}
 	
 }

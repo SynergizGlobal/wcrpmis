@@ -56,13 +56,16 @@ public class FolderServiceImpl implements FolderService {
 
     @Override
     public FolderDTO createFolder(FolderDTO folderDTO) {
-        Folder folder = new Folder(folderDTO.getName());
+        Folder folder = new Folder();
 
-        if (folderDTO.getSubFolders() != null) {
-            folderDTO.getSubFolders().forEach(sf ->
-                folder.getSubFolders().add(new SubFolder(sf.getName(), folder))
-            );
-        }
+        folder.setName(folderDTO.getName());
+        folder.setParentId(folderDTO.getParentId());
+
+        // if (folderDTO.getSubFolders() != null) {
+        //     folderDTO.getSubFolders().forEach(sf ->
+        //         folder.getSubFolders().add(new SubFolder(sf.getName(), folder))
+        //     );
+        // }
 
         Folder saved = folderRepository.save(folder);
         return toDTO(saved);
@@ -157,4 +160,14 @@ public class FolderServiceImpl implements FolderService {
     public List<Folder> searchFolders(String name) {
         return folderRepository.findByNameContainingIgnoreCase(name);
     }
+
+    public List<Folder> getRootFolders() {
+        return folderRepository.findByParentIdIsNull();
+    }
+
+    public List<FolderDTO> getChildFolders(Long parentId) {
+        List<Folder> folders = folderRepository.findByParentId(parentId);
+        return folders.stream().map(this::toDTO).toList();
+    }
+
 }

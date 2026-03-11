@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useTable, usePagination, useGlobalFilter, useSortBy } from "react-table";
 import styles from './DmsTable.module.css';
 
-export default function DmsTable({ columns = [], mockData = [], loading, onRowClick }) {
+export default function DmsTable({ columns = [], mockData = [], loading, onRowClick, renderActions }) {
 
   const data = useMemo(() => mockData || [], [mockData]);
   const cols = useMemo(
@@ -145,6 +145,13 @@ export default function DmsTable({ columns = [], mockData = [], loading, onRowCl
                 >
                   {row.cells.map((cell) => {
                     const { key, ...restCell } = cell.getCellProps();
+                    if (cell.column.id === "Actions" && renderActions) {
+                      return (
+                        <td key={key} {...restCell}>
+                          {renderActions(row.original)}
+                        </td>
+                      );
+                    }
                     return (
                       <td key={key} {...restCell}>
                         {cell.render("Cell")}

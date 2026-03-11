@@ -36,11 +36,15 @@ public class Folder {
     @JsonManagedReference
     private List<SubFolder> subFolders = new ArrayList<>();
 
+    @Column(name = "parent_id")
+    private Long parentId;
+
     // Constructors
     public Folder() {}
 
-    public Folder(String name) {
+    public Folder(String name, Long parentId) {
         this.name = name;
+        this.parentId = parentId;
     }
 
     // Getters & Setters
@@ -63,6 +67,12 @@ public class Folder {
     }
     public void setSubFolders(List<SubFolder> subFolders) { 
     	this.subFolders = subFolders; 
+    }
+    public Long getParentId() { 
+    	return parentId; 
+    }
+    public void setParentId(Long parentId) { 
+    	this.parentId = parentId; 
     }
     
  }

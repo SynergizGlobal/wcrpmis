@@ -6,6 +6,7 @@ public class FolderDTO {
     private Long id;
     private String name;
     private List<SubFolderDTO> subFolders;
+    private Long parentId;
 
     public FolderDTO() {}
 
@@ -41,6 +42,12 @@ public class FolderDTO {
     }
     public void setSubFolders(List<SubFolderDTO> subFolders) { 
     	this.subFolders = subFolders; 
+    }
+    public Long getParentId() { 
+    	return parentId; 
+    }
+    public void setParentId(Long parentId) { 
+    	this.parentId = parentId; 
     }
 }
 
