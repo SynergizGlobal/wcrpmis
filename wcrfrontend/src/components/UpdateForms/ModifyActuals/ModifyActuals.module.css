@@ -46,3 +46,29 @@
     align-items: center;
   }
 }
+.tableToolbar{
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+	width:100%;
+	margin-bottom:12px;
+}
+
+.showEntriesCount{
+	display:flex;
+	align-items:center;
+	gap:6px;
+}
+
+.searchBox{
+	display:flex;
+	align-items:center;
+	gap:8px;
+}
+
+.searchBox input{
+	width:220px;
+	padding:6px 8px;
+	border:1px solid #ccc;
+	border-radius:4px;
+}

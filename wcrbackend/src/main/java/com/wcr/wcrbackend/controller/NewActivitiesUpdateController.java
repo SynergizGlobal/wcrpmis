@@ -125,36 +125,35 @@ public class NewActivitiesUpdateController {
 		return res;
 	}
 	
-	
-	
-	@RequestMapping(value="/modify-actuals",method=RequestMethod.GET)
-	public ModelAndView ModifyActuals(@ModelAttribute  StripChart obj,HttpSession session) throws IOException {
-		ModelAndView model = new ModelAndView(PageConstants.modifyActuals);
+	@RequestMapping(value = "/modify-actuals", method = RequestMethod.POST)
+	public Map<String, Object> ModifyActuals(@ModelAttribute StripChart obj, HttpSession session) throws IOException {
+//		ModelAndView model = new ModelAndView(PageConstants.modifyActuals);
+
+		Map<String, Object> res = new HashMap<>();
 		try {
-			
+
 			User uObj = (User) session.getAttribute("user");
-			if(!StringUtils.isEmpty(uObj)) {
+			if (!StringUtils.isEmpty(uObj)) {
 				obj.setUser_type_fk(uObj.getUserTypeFk());
 				obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
 				obj.setUser_id(uObj.getUserId());
 				obj.setDepartment_fk(uObj.getDepartmentFk());
 			}
-			
-			List<StripChart> projectsList = newActivitiesUpdateService.getNewActivitiesUpdateProjectsList(obj);
-			model.addObject("projectsList", projectsList);
-			
+
+//			List<StripChart> projectsList = newActivitiesUpdateService.getNewActivitiesUpdateProjectsList(obj);
+//			res.put("projectsList", projectsList);
+
 			List<StripChart> contractsList = newActivitiesUpdateService.getNewActivitiesUpdateContractsList(obj);
-			model.addObject("contractsList", contractsList);
-			
-			List<StripChart> taskCodesList = newActivitiesUpdateService.getTaskCodesList(obj);
-			model.addObject("taskCodesList", taskCodesList);
-			
-			
+			res.put("contractsList", contractsList);
+
+//			List<StripChart> taskCodesList = newActivitiesUpdateService.getTaskCodesList(obj);
+//			res.put("taskCodesList", taskCodesList);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			logger.error("AcivitiesBulkUpload : " + e.getMessage());
 		}
-		return model;
+		return res;
 	}	
 	
 	@RequestMapping(value="/new-activities-update/{activity_id}",method= {RequestMethod.GET,RequestMethod.POST})
@@ -698,7 +697,7 @@ public class NewActivitiesUpdateController {
 	
 	@RequestMapping(value = "/ajax/getNewActivitiesfiltersList", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public List<StripChart> getNewActivitiesfiltersList(@RequestBody StripChart obj,HttpSession session){
+	public List<StripChart> getNewActivitiesfiltersList(@ModelAttribute StripChart obj,HttpSession session){
 		List<StripChart> fileterData = null;
 		try{
 			User uObj = (User) session.getAttribute("user");
@@ -747,10 +746,12 @@ public class NewActivitiesUpdateController {
 	
 	@RequestMapping(value = "/update-modify-actuals-bulk", method = {RequestMethod.GET,RequestMethod.POST})
 	@ResponseBody
-	public ModelAndView updateModifyActualsBulk(@ModelAttribute StripChart obj,RedirectAttributes attributes,HttpSession session){
-		ModelAndView model = new ModelAndView();
+	public String updateModifyActualsBulk(@RequestBody StripChart obj,RedirectAttributes attributes,HttpSession session){
+//		ModelAndView model = new ModelAndView();
+		String response = null;
 		try{
-			model.setViewName("redirect:/modify-actuals");
+			
+//			model.setViewName("redirect:/modify-actuals");
 			
 			User uObj = (User) session.getAttribute("user");
 			if(!StringUtils.isEmpty(uObj)) {
@@ -770,16 +771,21 @@ public class NewActivitiesUpdateController {
 
 			boolean flag =  newActivitiesUpdateService.updateModifyActualsBulk(obj);
 			if(flag) {
-				attributes.addFlashAttribute("success", "Updated Succesfully.");
+//				attributes.addFlashAttribute("success", "Updated Succesfully.");
+				response = "Updated Succesfully.";
 			}
 			else {
-				attributes.addFlashAttribute("error","Updating Acivities are failed. Try again.");
+//				attributes.addFlashAttribute("error","Updating Acivities are failed. Try again.");
+				response = "Updating Acivities are failed. Try again.";
+				
 			}
 		}catch (Exception e) {
 			attributes.addFlashAttribute("error","Updating Acivities are failed. Try again.");
 			logger.error("updateModifyActualsBulk : " + e.getMessage());
 		}
-		return model;
+//		return model;
+		
+		return response;
 	}	
 	
 	
