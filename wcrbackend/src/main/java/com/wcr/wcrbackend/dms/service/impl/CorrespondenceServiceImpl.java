@@ -1,33 +1,5 @@
 package com.wcr.wcrbackend.dms.service.impl;
 
-//import com.synergizglobal.dms.common.CommonUtil;
-//
-//import com.synergizglobal.dms.constant.Constant;
-//import com.synergizglobal.dms.dto.CorrespondenceDraftGridDTO;
-//import com.synergizglobal.dms.dto.CorrespondenceGridDTO;
-//import com.synergizglobal.dms.dto.CorrespondenceLetterProjection;
-//import com.synergizglobal.dms.dto.CorrespondenceLetterViewDto;
-//import com.synergizglobal.dms.dto.CorrespondenceLetterViewProjection;
-//import com.synergizglobal.dms.dto.CorrespondenceUploadLetter;
-//import com.synergizglobal.dms.dto.DraftDataTableRequest;
-//import com.synergizglobal.dms.dto.DraftDataTableResponse;
-//import com.synergizglobal.dms.dto.FileViewDto;
-//import com.synergizglobal.dms.entity.dms.CorrespondenceFile;
-//import com.synergizglobal.dms.entity.dms.CorrespondenceLetter;
-//import com.synergizglobal.dms.entity.dms.CorrespondenceReference;
-//import com.synergizglobal.dms.entity.dms.Department;
-//import com.synergizglobal.dms.entity.dms.ReferenceLetter;
-//import com.synergizglobal.dms.entity.dms.SendCorrespondenceLetter;
-//import com.synergizglobal.dms.entity.dms.Status;
-//import com.synergizglobal.dms.entity.pmis.User;
-//import com.synergizglobal.dms.repository.dms.CorrespondenceLetterRepository;
-//import com.synergizglobal.dms.repository.dms.CorrespondenceReferenceRepository;
-//import com.synergizglobal.dms.repository.dms.DepartmentRepository;
-//import com.synergizglobal.dms.repository.dms.ReferenceLetterRepository;
-//import com.synergizglobal.dms.repository.dms.SendCorrespondenceLetterRepository;
-//import com.synergizglobal.dms.repository.dms.StatusRepository;
-//import com.synergizglobal.dms.repository.pmis.UserRepository;
-//import com.synergizglobal.dms.service.dms.ICorrespondenceService;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -118,12 +90,37 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 	public CorrespondenceLetter saveLetter(CorrespondenceUploadLetter dto, String baseUrl, String loggedUserId,
 			String loggedUserName, String userRole) throws Exception {
 
-		Optional<CorrespondenceLetter> existingLetter = correspondenceRepo.findByLetterNumber(dto.getLetterNumber());
-		if (existingLetter.isPresent() && dto.getCorrespondenceId() != null) {
-			System.out.print("Allowed to update!!");
-		} else if(existingLetter.isPresent()) {
-			throw new IllegalArgumentException("Letter number " + dto.getLetterNumber() + " already exists");
+		
+		System.out.println("===== LETTER VALIDATION =====");
+		System.out.println("CorrespondenceId = " + dto.getCorrespondenceId());
+		System.out.println("LetterNumber     = " + dto.getLetterNumber());
+
+//		Optional<CorrespondenceLetter> existingLetter = correspondenceRepo.findByLetterNumber(dto.getLetterNumber());
+//		if (existingLetter.isPresent() && dto.getCorrespondenceId() != null) {
+//			System.out.print("Allowed to update!!");
+//		} else if(existingLetter.isPresent()) {
+//			throw new IllegalArgumentException("Letter number " + dto.getLetterNumber() + " already exists");
+//		}
+		Optional<CorrespondenceLetter> existingLetter =
+		        correspondenceRepo.findByLetterNumber(dto.getLetterNumber());
+
+		if (dto.getCorrespondenceId() == null) {
+		    // -------- CREATE --------
+		    if (existingLetter.isPresent()) {
+		        throw new IllegalArgumentException(
+		            "Letter number " + dto.getLetterNumber() + " already exists");
+		    }
+		} else {
+		    // -------- UPDATE --------
+		    if (existingLetter.isPresent() &&
+		        !existingLetter.get().getCorrespondenceId()
+		            .equals(dto.getCorrespondenceId())) {
+
+		        throw new IllegalArgumentException(
+		            "Letter number " + dto.getLetterNumber() + " already exists");
+		    }
 		}
+		
 //		CorrespondenceLetter entity = null;
 //		if (dto.getCorrespondenceId() != null) {
 //			entity = existingLetter.get();
@@ -142,19 +139,19 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 		  CorrespondenceLetter entity;
 
 		    if (dto.getCorrespondenceId() != null) {
-		        entity = existingLetter.orElseThrow(
-		                () -> new RuntimeException("Correspondence not found"));
+		    	
+		     entity = correspondenceRepo.findByCorrespondenceId(dto.getCorrespondenceId())
+		    	            .orElseThrow(() -> new RuntimeException("Correspondence not found"));
 
-				correspondenceReferenceRepository.deleteByCorrespondenceLetter(entity);
-				sendCorrespondenceLetterRepository.deleteByCorrespondenceLetter(entity);
+		    	    correspondenceReferenceRepository.deleteByCorrespondenceLetter(entity);
+		    	    sendCorrespondenceLetterRepository.deleteByCorrespondenceLetter(entity);
 
-		        // -------- Remove deleted files (NULL SAFE) --------
-		        if (dto.getRemovedExistingFiles() != null && !dto.getRemovedExistingFiles().isEmpty()) {
-		            for (String fileId : dto.getRemovedExistingFiles()) {
-		                entity.getFiles().removeIf(f ->
-		                        String.valueOf(f.getId()).equals(fileId));
-		            }
-		        }
+		    	    if (dto.getRemovedExistingFiles() != null && !dto.getRemovedExistingFiles().isEmpty()) {
+		    	        for (String fileId : dto.getRemovedExistingFiles()) {
+		    	            entity.getFiles().removeIf(f -> String.valueOf(f.getId()).equals(fileId));
+		    	        }
+		    	    }
+
 			entity.getCorrespondenceReferences().clear();
 			entity.getSendCorLetters().clear();
 			correspondenceRepo.saveAndFlush(entity);
@@ -321,8 +318,13 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 			List<SendCorrespondenceLetter> sendCorLetters = savedEntity.getSendCorLetters();
 			log.info("sendCorLetters: " + sendCorLetters);
 			correspondenceRepo.saveAndFlush(entity);
-			emailService.sendCorrespondenceEmail(savedEntity, baseUrl,loggedUserName );
-
+			try {
+			    emailService.sendCorrespondenceEmail(
+			        savedEntity, baseUrl, loggedUserName
+			    );
+			} catch (Exception e) {
+			    log.error("Email failed, but letter is already saved", e);
+			}
 		} else if (Constant.SAVE_AS_DRAFT.equalsIgnoreCase(dto.getAction())) {
 			// draft handling
 		} else {

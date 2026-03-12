@@ -219,17 +219,17 @@ export default function Reports() {
                     </Link>
                   </div>
                   <div className={styles.menuItem}>
-                    <Link to="/bg-contractual-letters" onClick={() => setOpenContracts(false)}>
+                    <Link to="/reports/bg-contractual-letters" onClick={() => setOpenContracts(false)}>
                       BG Contractual Letters
                     </Link>
                   </div>
                   <div className={styles.menuItem}>
-                    <Link to="/insurance-contractual-letters" onClick={() => setOpenContracts(false)}>
+                    <Link to="/reports/insurance-contractual-letters" onClick={() => setOpenContracts(false)}>
                       Insurance Contractual Letters
                     </Link>
                   </div>
                   <div className={styles.menuItem}>
-                    <Link to="/doc-contractual-letters" onClick={() => setOpenContracts(false)}>
+                    <Link to="/reports/doc-contractual-letters" onClick={() => setOpenContracts(false)}>
                       Date of Completion Letters
                     </Link>
                   </div>

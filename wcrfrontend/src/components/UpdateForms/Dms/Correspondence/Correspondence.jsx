@@ -75,7 +75,20 @@ export default function Correspondence() {
     label: d.name
   }));
 
-
+  const formatDate = (v) => {
+    if (!v) return "";
+    if (Array.isArray(v)) {
+      // [2024, 3, 11] → "11-03-2024"
+      const [year, month, day] = v;
+      return `${String(day).padStart(2, "0")}-${String(month).padStart(2, "0")}-${year}`;
+    }
+    // "2024-03-11" or ISO string
+    const d = new Date(v);
+    if (isNaN(d)) return v;
+    return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+  };
+  
+  
   const fetchCorrespondence = async (isDraft = false) => {
   try {
     setLoading(true);
@@ -114,7 +127,7 @@ export default function Correspondence() {
     const rows = res.data?.data || [];
 
     const mapped = rows.map((r) => ({
-      // correspondenceId: r.correspondenceId,
+    
       "Reference Number": r.referenceNumber || "",
       Category: r.category || "",
       "Letter No": (
@@ -133,7 +146,7 @@ export default function Correspondence() {
       To: r.to || "",
       Subject: r.subject || "",
       "Required Response": r.requiredResponse || "",
-      "Due Date": r.dueDate || "",
+      "Due Date": formatDate(r.dueDate) || "",
       Project: r.projectName || "",
       Contract: r.contractName || "",
       Status: r.currentStatus || "",
@@ -382,7 +395,8 @@ const resetForm = () => {
         )}
       </div>
 
-      {!showDrafts && (
+      {!showDrafts && ( 
+		<div className={styles.tableWrapper}>
         <DmsTable
           loading={loading}
           columns={[
@@ -392,6 +406,7 @@ const resetForm = () => {
           ]}
           mockData={tableData}
         />
+		</div>
       )}
 
       
@@ -650,25 +665,22 @@ const resetForm = () => {
 
                 <div className="form-field">
                   <label>Letter Date</label>
-                  <input value={detailsData.letterDate || ""} readOnly />
+                  <input value={formatDate(detailsData.letterDate) || ""} readOnly />
                 </div>
 
                 <div className="form-field">
                   <label>From</label>
-                  <input value={detailsData.from || ""} readOnly />
+                  <input value={detailsData.sender || ""} readOnly />
                 </div>
 
                 <div className="form-field">
                   <label>To</label>
-                  <input value={detailsData.to || ""} readOnly />
+                  <input value={detailsData.copiedTo  || ""} readOnly />
                 </div>
 
                 <div className="form-field">
                   <label>CC</label>
-                  <input
-                    value={(detailsData.ccRecipients || []).join(", ")}
-                    readOnly
-                  />
+                  <input value={detailsData.ccRecipient || ""} readOnly />
                 </div>
 
                 <div className="form-field full">
@@ -694,7 +706,7 @@ const resetForm = () => {
 
                 <div className="form-field">
                   <label>Due Date</label>
-                  <input value={detailsData.dueDate || ""} readOnly />
+                  <input value={formatDate(detailsData.dueDate) || ""} readOnly />
                 </div>
 
                 <div className="form-field">

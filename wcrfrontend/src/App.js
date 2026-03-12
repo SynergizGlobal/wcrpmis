@@ -376,9 +376,9 @@ function App() {
 						<Route path="issuesdetailsreport" element={<IssuesDetailsReport />} />
 						<Route path="landacquisitionreport" element={<LandAcquisitionReport />} />
 												
-						<Route path="insurance-contractual-letters" element={<InsuranceContractualLetters />} />
-						<Route path="BG-Contractual-Letters" element={<BGContractualLetters />} />						
-						<Route path="doc-contractual-letters" element={<DateofCompletionLetters />} />
+						<Route path="/reports/insurance-contractual-letters" element={<InsuranceContractualLetters />} />
+						<Route path="/reports/BG-Contractual-Letters" element={<BGContractualLetters />} />						
+						<Route path="/reports/doc-contractual-letters" element={<DateofCompletionLetters />} />
 						<Route path="department" element={<Department />} />
 						<Route path="projectType" element={<ProjectType />} />
 	          <Route path="railway" element={<Railway />} />

@@ -357,7 +357,7 @@ const ContractReport = () => {
         9: '/contract-report/generate-contract-completion-report'
       };
 
-      const isExcel = reportNo === '7' || reportNo === '8';
+      const isExcel = reportNo === '7' || reportNo === '8' || reportNo === '9';
 
       // ── Report 8 sends JSON so dates arrive exactly as typed ──────────────
       // ── All other reports send FormData (existing behaviour) ──────────────

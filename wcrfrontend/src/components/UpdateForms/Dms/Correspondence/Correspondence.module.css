@@ -75,4 +75,32 @@
 .draft { background: #f90; }
 .cancel { background: #999; }
 
+/* Target all td and th inside the table */
+.tableWrapper th,
+.tableWrapper td {
+  white-space: nowrap;
+  min-width: 90px;
+  padding: 8px 12px;
+}
 
+/* Give specific columns more space */
+.tableWrapper th:nth-child(9),  /* Subject */
+.tableWrapper td:nth-child(9) {
+  min-width: 140px;
+  white-space: normal;  /* Allow subject to wrap */
+}
+
+.tableWrapper th:nth-child(10),  /* Reference Number */
+.tableWrapper td:nth-child(10) {
+  min-width: 140px;
+}
+
+.tableWrapper th:nth-child(7),  /* Subject */
+.tableWrapper td:nth-child(7) {
+  min-width: 50px;
+  white-space: normal;  /* Allow subject to wrap */
+}
+.tableWrapper th:nth-child(12),  /* Reference Number */
+.tableWrapper td:nth-child(12) {
+  min-width: 50px;
+}
