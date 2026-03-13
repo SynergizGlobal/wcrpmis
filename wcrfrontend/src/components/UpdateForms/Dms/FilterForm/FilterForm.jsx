@@ -4,233 +4,127 @@ import UploadModal from './UploadModal';
 import DeleteModal from './DeleteModal';
 import AddDepartmentModal from './AddDepartmentModal';
 import AddStatusModal from './addStatusmodal';
-import AddFolderModal from './addFoldermodal';
 import axiosInstance from '../../../../api/axiosInstance';
 
 import { FaUpload, FaTrash } from "react-icons/fa";
-import { MdEditNote } from "react-icons/md";
 
 // =========================
-// EDIT FOLDER MODAL
-// Fields are driven by the FOLDER_EDIT_FIELDS array (same pattern as
-// LandAcquisitionProcessForm's `columns` prop — your teammate's "! command").
-// To add/remove/reorder fields, just edit FOLDER_EDIT_FIELDS below.
+// FOLDER TREE NODE
 // =========================
-
-function EditFolderModal({ folder, onClose, onConfirm }) {
-  const [folderName, setFolderName] = useState(folder?.name ?? '');
-  const [subFolderInput, setSubFolderInput] = useState('');
-
-  // Pre-populate existing sub-folders from API data
-  const existingSubFolders = folder?.subFolders || folder?.subfolders || folder?.children || [];
-  const [subFolders, setSubFolders] = useState(
-    existingSubFolders.map(sf => sf.name || sf)
-  );
-
-  const handleAddSubFolder = () => {
-    const trimmed = subFolderInput.trim();
-    if (!trimmed) return;
-    if (subFolders.includes(trimmed)) {
-      alert('Sub-folder already added');
-      return;
-    }
-    setSubFolders(prev => [...prev, trimmed]);
-    setSubFolderInput('');
-  };
-
-  const handleRemoveSubFolder = (name) => {
-    setSubFolders(prev => prev.filter(s => s !== name));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!folderName.trim()) {
-      alert('Folder name is required');
-      return;
-    }
-    onConfirm(folder.id || folder._id, { name: folderName, subFolders });
-  };
+function FolderTreeNode({ folder, path, depth, expandedFolders, toggleFolder, selectedPath, setSelectedPath, renamingId, setRenamingId, renameValue, setRenameValue, handleRename }) {
+  const currentPath = [...path, folder];
+  const isExpanded = expandedFolders.has(folder.id);
+  const isSelected = selectedPath.at(-1)?.id === folder.id;
+  const hasChildren = folder.children?.length > 0;
+  const [hovered, setHovered] = React.useState(false);
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
+    <div style={{ marginLeft: depth > 0 ? '20px' : '0' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '7px 10px',
+          borderRadius: '7px',
+          cursor: 'pointer',
+          background: isSelected
+            ? 'linear-gradient(90deg, #eef1fd 0%, #f3f5ff 100%)'
+            : hovered ? '#f7f8fe' : 'transparent',
+          border: isSelected ? '1px solid #c7cff5' : '1px solid transparent',
+          transition: 'all 0.15s ease',
+          marginBottom: '2px',
+        }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={() => setSelectedPath(currentPath)}
+        onDoubleClick={() => { setRenamingId(folder.id); setRenameValue(folder.name); }}
+      >
+        {/* Expand Arrow */}
+        <span
+          style={{
+            width: '18px',
+            height: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: hasChildren ? '#6b7280' : 'transparent',
+            fontSize: '9px',
+            flexShrink: 0,
+            transition: 'transform 0.2s ease',
+            transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+          }}
+          onClick={e => { e.stopPropagation(); if (hasChildren) toggleFolder(folder.id); }}
+        >
+          {hasChildren ? '▶' : ''}
+        </span>
 
-        <div className={styles.modalHeader}>
-          <h3>Edit Folder</h3>
-          <button className={styles.modalClose} onClick={onClose}>×</button>
-        </div>
+        {/* Folder Icon */}
+        <span style={{ fontSize: '15px', flexShrink: 0, lineHeight: 1 }}>
+          {isExpanded ? '📂' : '📁'}
+        </span>
 
-        <div className={styles.modalBody}>
-          <form onSubmit={handleSubmit}>
-
-            {/* Folder Name */}
-            <div className={styles.formGroup}>
-              <label>Folder Name:</label>
-              <input
-                type="text"
-                className={styles.textInput}
-                value={folderName}
-                onChange={e => setFolderName(e.target.value)}
-                placeholder="Enter folder name"
-              />
-            </div>
-
-            {/* Sub-folders */}
-            <div className={styles.formGroup}>
-              <label>Sub-folders:</label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
-                  type="text"
-                  className={styles.textInput}
-                  value={subFolderInput}
-                  onChange={e => setSubFolderInput(e.target.value)}
-                  placeholder="Enter sub-folder name"
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubFolder(); } }}
-                  style={{ flex: 1, margin: 0 }}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddSubFolder}
-                  className={styles.modalButtonPrimary}
-                  style={{ whiteSpace: 'nowrap', padding: '8px 18px' }}
-                >
-                  Add
-                </button>
-              </div>
-
-              {/* Sub-folder chips */}
-              {subFolders.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
-                  {subFolders.map(sf => (
-                    <span key={sf} style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      backgroundColor: '#e8edf7',
-                      color: '#3a4a6b',
-                      borderRadius: '12px',
-                      padding: '3px 10px',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      border: '1px solid #c5d0e8',
-                    }}>
-                      {sf}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSubFolder(sf)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: '#dc2626',
-                          fontWeight: 'bold',
-                          fontSize: '14px',
-                          lineHeight: 1,
-                          padding: 0,
-                        }}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.modalButtonSecondary}
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className={styles.modalButtonPrimary}
-              >
-                Save Changes
-              </button>
-            </div>
-          </form>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-
-// =========================
-// FOLDER ROW — clean chip display with expand/collapse
-// =========================
-const PREVIEW_COUNT = 3;
-
-function FolderRow({ folder, onEdit, onDelete, styles }) {
-  const [expanded, setExpanded] = React.useState(false);
-  const subFolderList = folder.subFolders || folder.subfolders || folder.children || [];
-  const visible = expanded ? subFolderList : subFolderList.slice(0, PREVIEW_COUNT);
-  const hasMore = subFolderList.length > PREVIEW_COUNT;
-
-  return (
-    <tr>
-      <td style={{ fontWeight: 500, verticalAlign: 'top', paddingTop: '12px', whiteSpace: 'nowrap' }}>
-        {folder.name}
-      </td>
-      <td style={{ verticalAlign: 'top', padding: '8px 10px' }}>
-        {subFolderList.length === 0 ? (
-          <span style={{ color: '#aaa', fontStyle: 'italic', fontSize: '12px' }}>No sub-folders</span>
+        {/* Name or Rename Input */}
+        {renamingId === folder.id ? (
+          <input
+            value={renameValue}
+            onChange={e => setRenameValue(e.target.value)}
+            onBlur={() => { handleRename(folder.id, renameValue); setRenamingId(null); }}
+            onKeyDown={e => { if (e.key === 'Enter') { handleRename(folder.id, renameValue); setRenamingId(null); } }}
+            autoFocus
+            style={{
+              flex: 1, border: '1px solid #6366f1', borderRadius: '4px',
+              padding: '2px 6px', fontSize: '13px', outline: 'none',
+              boxShadow: '0 0 0 3px rgba(99,102,241,0.15)',
+            }}
+            onClick={e => e.stopPropagation()}
+          />
         ) : (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-            {visible.map((sf, i) => (
-              <span key={i} style={{
-                display: 'inline-block',
-                backgroundColor: '#e8edf7',
-                color: '#3a4a6b',
-                borderRadius: '12px',
-                padding: '3px 10px',
-                fontSize: '12px',
-                fontWeight: 500,
-                border: '1px solid #c5d0e8',
-                whiteSpace: 'nowrap',
-              }}>
-                {sf.name || sf}
-              </span>
-            ))}
-            {hasMore && (
-              <button
-                type="button"
-                onClick={() => setExpanded(prev => !prev)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#4f6ef7',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  padding: '3px 6px',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {expanded
-                  ? '▲ Show less'
-                  : `+${subFolderList.length - PREVIEW_COUNT} more`}
-              </button>
-            )}
-          </div>
+          <span style={{
+            flex: 1, fontSize: '13.5px',
+            fontWeight: isSelected ? 600 : 400,
+            color: isSelected ? '#3730a3' : '#374151',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            letterSpacing: '0.01em',
+          }}>
+            {folder.name}
+          </span>
         )}
-      </td>
-      <td style={{ verticalAlign: 'top', paddingTop: '8px' }}>
-        <div className={styles.actionBtns}>
-          <button className="btn btn-2 btn-primary" onClick={onEdit}>
-            <MdEditNote size="16" />
-          </button>
-          <button className="btn btn-2 btn-red" onClick={onDelete}>
-            <FaTrash size="16" />
-          </button>
+
+        {/* Child count badge */}
+        {hasChildren && (
+          <span style={{
+            fontSize: '10px', fontWeight: 600, color: '#6366f1',
+            background: '#eef0fd', borderRadius: '10px', padding: '1px 7px', flexShrink: 0,
+          }}>
+            {folder.children.length}
+          </span>
+        )}
+      </div>
+
+      {/* Children */}
+      {isExpanded && hasChildren && (
+        <div style={{ borderLeft: '2px solid #e5e7f0', marginLeft: '22px', paddingLeft: '4px' }}>
+          {folder.children.map(child => (
+            <FolderTreeNode
+              key={child.id}
+              folder={child}
+              path={currentPath}
+              depth={depth + 1}
+              expandedFolders={expandedFolders}
+              toggleFolder={toggleFolder}
+              selectedPath={selectedPath}
+              setSelectedPath={setSelectedPath}
+              renamingId={renamingId}
+              setRenamingId={setRenamingId}
+              renameValue={renameValue}
+              setRenameValue={setRenameValue}
+              handleRename={handleRename}
+            />
+          ))}
         </div>
-      </td>
-    </tr>
+      )}
+    </div>
   );
 }
 
@@ -240,16 +134,9 @@ function FolderRow({ folder, onEdit, onDelete, styles }) {
 
 export default function FilterForm() {
 
-  const [searchValues, setSearchValues] = useState({
-    department: '',
-    status: '',
-    folder: ''
-  });
-
+  const [searchValues, setSearchValues] = useState({ department: '', status: '' });
   const [departments, setDepartments] = useState([]);
   const [statuses, setStatuses] = useState([]);
-  const [folders, setFolders] = useState([]);
-
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState(null);
 
@@ -257,16 +144,20 @@ export default function FilterForm() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddDepartmentModal, setShowAddDepartmentModal] = useState(false);
   const [showAddStatusModal, setShowAddStatusModal] = useState(false);
-  const [showAddFolderModal, setShowAddFolderModal] = useState(false);
-
-  // NEW: edit folder modal state
-  const [showEditFolderModal, setShowEditFolderModal] = useState(false);
-  const [folderToEdit, setFolderToEdit] = useState(null);
 
   const [modalType, setModalType] = useState('');
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [selectedItemName, setSelectedItemName] = useState('');
 
+  // Folder tree state
+  const [folders, setFolders] = useState([]);
+  const [expandedFolders, setExpandedFolders] = useState(new Set());
+  const [folderSearch, setFolderSearch] = useState('');
+  const [selectedPath, setSelectedPath] = useState([]);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [renamingId, setRenamingId] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [addingFolder, setAddingFolder] = useState(false);
 
   useEffect(() => {
     fetchDepartments();
@@ -281,205 +172,108 @@ export default function FilterForm() {
   };
 
   const fetchDepartments = async () => {
-    try {
-      const res = await axiosInstance.get('/api/departments/get');
-      setDepartments(extractData(res));
-    } catch (err) {
-      console.error(err);
-    }
+    try { const res = await axiosInstance.get('/api/departments/get'); setDepartments(extractData(res)); }
+    catch (err) { console.error(err); }
   };
 
   const fetchStatuses = async () => {
-    try {
-      const res = await axiosInstance.get('/api/statuses/get');
-      setStatuses(extractData(res));
-    } catch (err) {
-      console.error(err);
-    }
+    try { const res = await axiosInstance.get('/api/statuses/get'); setStatuses(extractData(res)); }
+    catch (err) { console.error(err); }
+  };
+
+  const convertTree = (list) => {
+    const map = {};
+    const roots = [];
+    list.forEach(f => { map[f.id] = { ...f, children: [] }; });
+    list.forEach(f => {
+      if (f.parentId) map[f.parentId]?.children.push(map[f.id]);
+      else roots.push(map[f.id]);
+    });
+    return roots;
   };
 
   const fetchFolders = async () => {
     try {
-      const res = await axiosInstance.get('/api/folders/get');
-      const folderList = extractData(res);
-
-      // Fetch subfolders for each folder from /api/subfolders/{folderId}
-      const foldersWithSubs = await Promise.all(
-        folderList.map(async (folder) => {
-          const folderId = folder.id || folder._id;
-          try {
-            const subRes = await axiosInstance.get(`/api/subfolders/${folderId}`);
-            const subs = Array.isArray(subRes.data) ? subRes.data
-                       : Array.isArray(subRes.data?.data) ? subRes.data.data
-                       : [];
-            return { ...folder, subFolders: subs };
-          } catch {
-            return { ...folder, subFolders: [] };
-          }
-        })
-      );
-
-      setFolders(foldersWithSubs);
-    } catch (err) {
-      console.error(err);
-    }
+      const res = await axiosInstance.get('/api/folders/tree');
+      setFolders(convertTree(res.data || []));
+    } catch (err) { console.error('Folders fetch error', err); }
   };
 
-  const handleSearchChange = (field, value) => {
-    setSearchValues(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const toggleFolder = (id) => {
+    setExpandedFolders(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   };
 
-  // =========================
-  // ADD DEPARTMENT
-  // =========================
-  const handleAddDepartment = async (name) => {
+  const filterFolders = (nodes, query) => {
+    if (!query) return nodes;
+    const q = query.toLowerCase();
+    return nodes.map(node => {
+      const children = filterFolders(node.children || [], query);
+      const match = node.name.toLowerCase().includes(q);
+      if (match || children.length) {
+        expandedFolders.add(node.id);
+        return { ...node, children };
+      }
+      return null;
+    }).filter(Boolean);
+  };
+
+  const handleRename = async (id, name) => {
     try {
-      await axiosInstance.post('/api/departments', { name });
-      fetchDepartments();
-      setShowAddDepartmentModal(false);
-    } catch (err) {
-      alert(err.response?.data || 'Failed to add department');
-    }
+      await axiosInstance.put(`/api/folders/rename/${id}`, null, { params: { name } });
+      fetchFolders();
+    } catch (err) { console.error(err); }
   };
 
-  // =========================
-  // ADD STATUS
-  // =========================
-  const handleAddStatus = async (name) => {
+  const handleAddFolder = async () => {
+    if (!newFolderName.trim()) return;
+    setAddingFolder(true);
     try {
-      await axiosInstance.post('/api/statuses/create', { name });
-      fetchStatuses();
-      setShowAddStatusModal(false);
-    } catch (err) {
-      alert(err.response?.data || 'Failed to add status');
-    }
-  };
-
-  // =========================
-  // ADD FOLDER
-  // =========================
-  const handleAddFolder = async (folderName, parentFolderId, subFolders = []) => {
-    const exists = folders.some(
-      f => f.name?.toLowerCase() === folderName.toLowerCase()
-    );
-
-    if (exists) {
-      alert('Folder with this name already exists');
-      return;
-    }
-
-    try {
-      const res = await axiosInstance.post('/api/folders/create', {
-        name: folderName,
-        parentFolderId: parentFolderId || null
+      const parent = selectedPath[selectedPath.length - 1];
+      await axiosInstance.post('/api/folders/create', {
+        name: newFolderName,
+        parentId: parent ? parent.id : null
       });
-
-      const newFolderId =
-        res.data?.id || res.data?._id ||
-        res.data?.data?.id || res.data?.data?._id;
-
-      if (subFolders.length > 0 && newFolderId) {
-        await Promise.all(
-          subFolders.map(sfName =>
-            axiosInstance.post('/api/folders/create', {
-              name: sfName,
-              parentFolderId: newFolderId
-            })
-          )
-        );
-      }
-
-      fetchFolders();
-      setShowAddFolderModal(false);
+      setNewFolderName('');
+      await fetchFolders();
     } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data ||
-        'Folder creation failed';
-      alert(msg);
+      console.error('Folder creation failed', err);
+      alert('Failed to create folder');
+    } finally {
+      setAddingFolder(false);
     }
   };
 
-  // =========================
-  // EDIT FOLDER
-  // =========================
-  const handleEditFolderClick = (folder) => {
-    setFolderToEdit(folder);
-    setShowEditFolderModal(true);
+  const handleSearchChange = (field, value) => setSearchValues(prev => ({ ...prev, [field]: value }));
+
+  const handleAddDepartment = async (name) => {
+    try { await axiosInstance.post('/api/departments', { name }); fetchDepartments(); setShowAddDepartmentModal(false); }
+    catch (err) { alert(err.response?.data || 'Failed to add department'); }
   };
 
-  const handleEditFolderConfirm = async (id, updatedData) => {
-    try {
-      // 1. Update the folder name via existing folder update endpoint
-      await axiosInstance.put(`/api/folders/update-folder/${id}`, { name: updatedData.name });
-
-      // 2. Find truly new sub-folders (not already in DB) and POST each to /api/subfolders/create/{folderId}
-      const existingSubFolders = folderToEdit?.subFolders || [];
-      const existingNames = existingSubFolders.map(sf => (sf.name || sf).toLowerCase());
-      const newSubFolders = (updatedData.subFolders || []).filter(
-        sfName => !existingNames.includes(sfName.toLowerCase())
-      );
-
-      if (newSubFolders.length > 0) {
-        await Promise.all(
-          newSubFolders.map(sfName =>
-            axiosInstance.post(`/api/subfolders/create/${id}`, { name: sfName })
-          )
-        );
-      }
-
-      fetchFolders();
-      setShowEditFolderModal(false);
-      setFolderToEdit(null);
-    } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data ||
-        'Folder update failed';
-      alert(msg);
-    }
+  const handleAddStatus = async (name) => {
+    try { await axiosInstance.post('/api/statuses/create', { name }); fetchStatuses(); setShowAddStatusModal(false); }
+    catch (err) { alert(err.response?.data || 'Failed to add status'); }
   };
 
-  // =========================
-  // DELETE
-  // =========================
   const handleDeleteConfirm = async () => {
     try {
-      if (modalType === 'department') {
-        await axiosInstance.delete(`/api/departments/${selectedItemId}`);
-        fetchDepartments();
-      }
-      if (modalType === 'status') {
-        await axiosInstance.delete(`/api/statuses/${selectedItemId}`);
-        fetchStatuses();
-      }
-      if (modalType === 'folder') {
-        await axiosInstance.delete(`/api/folders/delete-folder/${selectedItemId}`);
-        fetchFolders();
-      }
+      if (modalType === 'department') { await axiosInstance.delete(`/api/departments/${selectedItemId}`); fetchDepartments(); }
+      if (modalType === 'status') { await axiosInstance.delete(`/api/statuses/${selectedItemId}`); fetchStatuses(); }
       setShowDeleteModal(false);
-    } catch (err) {
-      alert(err.response?.data || 'Delete failed');
-    }
+    } catch (err) { alert(err.response?.data || 'Delete failed'); }
   };
 
-  // =========================
-  // UPLOAD
-  // =========================
   const handleUploadConfirm = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      await axiosInstance.post('/api/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await axiosInstance.post('/api/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setShowUploadModal(false);
-    } catch (err) {
-      alert(err.response?.data || 'Upload failed');
-    }
+    } catch (err) { alert(err.response?.data || 'Upload failed'); }
   };
 
   const handleUploadClick = (type, id) => {
@@ -490,33 +284,21 @@ export default function FilterForm() {
   };
 
   const handleDeleteClick = (type, id, name) => {
-    setModalType(type);
-    setSelectedItemId(id);
-    setSelectedItemName(name);
-    setShowDeleteModal(true);
+    setModalType(type); setSelectedItemId(id); setSelectedItemName(name); setShowDeleteModal(true);
   };
 
-  // =========================
-  // FILTERS
-  // =========================
   const filteredDepartments = departments.filter(d =>
     d.name?.toLowerCase().includes(searchValues.department.toLowerCase())
   );
-
   const filteredStatuses = statuses.filter(s =>
     s.name?.toLowerCase().includes(searchValues.status.toLowerCase())
   );
 
-  const filteredFolders = folders.filter(f =>
-    f.name?.toLowerCase().includes(searchValues.folder.toLowerCase())
-  );
-
-  // =========================
-  // UPLOAD MODAL NAME LOOKUP
-  // =========================
   const uploadModalName = modalType === 'department'
     ? departments.find(d => (d.id || d._id) === selectedDepartment)?.name
     : statuses.find(s => (s.id || s._id) === selectedStatus)?.name;
+
+  const visibleFolders = filterFolders(folders, folderSearch);
 
   return (
     <div className={styles.container}>
@@ -526,31 +308,16 @@ export default function FilterForm() {
         <div className={styles.card}>
           <div className={styles.sectionContainer}>
             <h2 className={styles.sectionTitle}>Department</h2>
-
             <div className={styles.addSection}>
-              <button className={styles.addButton}
-                onClick={() => setShowAddDepartmentModal(true)}>
-                Add Department
-              </button>
-
+              <button className={styles.addButton} onClick={() => setShowAddDepartmentModal(true)}>Add Department</button>
               <div className={styles.searchBox}>
-                <input
-                  className={styles.searchInput}
-                  placeholder="Search"
-                  value={searchValues.department}
-                  onChange={e => handleSearchChange('department', e.target.value)}
-                />
+                <input className={styles.searchInput} placeholder="Search" value={searchValues.department}
+                  onChange={e => handleSearchChange('department', e.target.value)} />
               </div>
             </div>
-
             <div className="dataTable">
               <table className={styles.tableWrapper}>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Name</th><th>Action</th></tr></thead>
                 <tbody>
                   {filteredDepartments.map(d => {
                     const id = d.id || d._id;
@@ -559,15 +326,8 @@ export default function FilterForm() {
                         <td>{d.name}</td>
                         <td>
                           <div className={styles.actionBtns}>
-                            <button className="btn btn-2 btn-primary" onClick={() => handleUploadClick('department', id)}>
-                              <FaUpload size="16" />
-                            </button>
-                            <button
-                              className="btn btn-2 btn-red"
-                              onClick={() => handleDeleteClick('department', id, d.name)}
-                            >
-                              <FaTrash size="16" />
-                            </button>
+                            <button className="btn btn-2 btn-primary" onClick={() => handleUploadClick('department', id)}><FaUpload size="16" /></button>
+                            <button className="btn btn-2 btn-red" onClick={() => handleDeleteClick('department', id, d.name)}><FaTrash size="16" /></button>
                           </div>
                         </td>
                       </tr>
@@ -583,31 +343,16 @@ export default function FilterForm() {
         <div className={styles.card}>
           <div className={styles.sectionContainer}>
             <h2 className={styles.sectionTitle}>Status</h2>
-
             <div className={styles.addSection}>
-              <button className={styles.addButton}
-                onClick={() => setShowAddStatusModal(true)}>
-                Add Status
-              </button>
-
+              <button className={styles.addButton} onClick={() => setShowAddStatusModal(true)}>Add Status</button>
               <div className={styles.searchBox}>
-                <input
-                  className={styles.searchInput}
-                  placeholder="Search"
-                  value={searchValues.status}
-                  onChange={e => handleSearchChange('status', e.target.value)}
-                />
+                <input className={styles.searchInput} placeholder="Search" value={searchValues.status}
+                  onChange={e => handleSearchChange('status', e.target.value)} />
               </div>
             </div>
-
             <div className="dataTable">
               <table className={styles.tableWrapper}>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Name</th><th>Action</th></tr></thead>
                 <tbody>
                   {filteredStatuses.map(s => {
                     const id = s.id || s._id;
@@ -616,15 +361,8 @@ export default function FilterForm() {
                         <td>{s.name}</td>
                         <td>
                           <div className={styles.actionBtns}>
-                            <button className="btn btn-2 btn-primary" onClick={() => handleUploadClick('status', id)}>
-                              <FaUpload size="16" />
-                            </button>
-                            <button
-                              className="btn btn-2 btn-red"
-                              onClick={() => handleDeleteClick('status', id, s.name)}
-                            >
-                              <FaTrash size="16" />
-                            </button>
+                            <button className="btn btn-2 btn-primary" onClick={() => handleUploadClick('status', id)}><FaUpload size="16" /></button>
+                            <button className="btn btn-2 btn-red" onClick={() => handleDeleteClick('status', id, s.name)}><FaTrash size="16" /></button>
                           </div>
                         </td>
                       </tr>
@@ -636,101 +374,158 @@ export default function FilterForm() {
           </div>
         </div>
 
-        {/* FOLDERS */}
+        {/* =====================
+            FOLDERS — Professional Tree UI
+        ===================== */}
         <div className={styles.card}>
           <div className={styles.sectionContainer}>
             <h2 className={styles.sectionTitle}>Folders</h2>
 
-            <button className={styles.addButton}
-              onClick={() => setShowAddFolderModal(true)}>
-              Add Folder
-            </button>
-            <br />
-
-            <div className="dataTable">
-              <table className={styles.tableWrapper}>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Sub-folders</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredFolders.map(f => {
-                    const id = f.id || f._id;
-                    return (
-                      <FolderRow
-                        key={id}
-                        folder={f}
-                        onEdit={() => handleEditFolderClick(f)}
-                        onDelete={() => handleDeleteClick('folder', id, f.name)}
-                        styles={styles}
-                      />
-                    );
-                  })}
-                </tbody>
-              </table>
+            {/* Search Bar */}
+            <div style={{ position: 'relative', marginBottom: '12px' }}>
+              <span style={{
+                position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
+                color: '#9ca3af', fontSize: '13px', pointerEvents: 'none',
+              }}>🔍</span>
+              <input
+                placeholder="Search folders..."
+                value={folderSearch}
+                onChange={e => setFolderSearch(e.target.value)}
+                style={{
+                  width: '100%', padding: '9px 12px 9px 34px', borderRadius: '8px',
+                  border: '1.5px solid #e5e7eb', fontSize: '13.5px', color: '#374151',
+                  background: '#fafafa', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s',
+                }}
+                onFocus={e => e.target.style.borderColor = '#6366f1'}
+                onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+              />
             </div>
+
+            {/* Breadcrumb */}
+            {selectedPath.length > 0 && (
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px',
+                padding: '6px 10px', background: '#f0f1fd', borderRadius: '7px',
+                marginBottom: '10px', border: '1px solid #dde1f9',
+              }}>
+                <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: 700, marginRight: '2px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Path:</span>
+                {selectedPath.map((p, i) => (
+                  <React.Fragment key={p.id}>
+                    <span
+                      style={{
+                        fontSize: '12px', color: '#4338ca', cursor: 'pointer', fontWeight: 500,
+                        padding: '2px 6px', borderRadius: '4px', background: 'white', border: '1px solid #c7d2fe',
+                      }}
+                      onClick={() => setSelectedPath(selectedPath.slice(0, i + 1))}
+                    >{p.name}</span>
+                    {i < selectedPath.length - 1 && <span style={{ color: '#9ca3af', fontSize: '11px' }}>›</span>}
+                  </React.Fragment>
+                ))}
+                <button onClick={() => setSelectedPath([])} style={{
+                  marginLeft: 'auto', background: 'none', border: 'none',
+                  color: '#9ca3af', fontSize: '16px', cursor: 'pointer', lineHeight: 1, padding: '0 2px',
+                }} title="Clear selection">×</button>
+              </div>
+            )}
+
+            {/* Folder Tree */}
+            <div style={{
+              background: '#ffffff', border: '1.5px solid #e8eaf0', borderRadius: '10px',
+              padding: '8px', maxHeight: '300px', overflowY: 'auto', marginBottom: '12px',
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)',
+            }}>
+              {visibleFolders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 16px', color: '#9ca3af', fontSize: '13px' }}>
+                  <div style={{ fontSize: '28px', marginBottom: '8px' }}>📂</div>
+                  {folderSearch ? 'No folders match your search' : 'No folders yet. Add one below.'}
+                </div>
+              ) : (
+                visibleFolders.map(folder => (
+                  <FolderTreeNode
+                    key={folder.id}
+                    folder={folder}
+                    path={[]}
+                    depth={0}
+                    expandedFolders={expandedFolders}
+                    toggleFolder={toggleFolder}
+                    selectedPath={selectedPath}
+                    setSelectedPath={setSelectedPath}
+                    renamingId={renamingId}
+                    setRenamingId={setRenamingId}
+                    renameValue={renameValue}
+                    setRenameValue={setRenameValue}
+                    handleRename={handleRename}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* Add Folder Row */}
+            <div style={{
+              display: 'flex', gap: '8px', alignItems: 'center',
+              padding: '10px 12px',
+              background: 'linear-gradient(135deg, #f8f9ff 0%, #f3f4fd 100%)',
+              borderRadius: '9px', border: '1.5px dashed #c7cff5',
+            }}>
+              <span style={{ fontSize: '15px', flexShrink: 0 }}>📁</span>
+              <input
+                placeholder={selectedPath.length
+                  ? `Sub-folder inside "${selectedPath.at(-1).name}"...`
+                  : 'New root folder name...'}
+                value={newFolderName}
+                onChange={e => setNewFolderName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAddFolder(); }}
+                style={{
+                  flex: 1, border: '1.5px solid #e0e4f4', borderRadius: '7px',
+                  padding: '8px 12px', fontSize: '13px', background: 'white', color: '#374151',
+                  outline: 'none', transition: 'border-color 0.2s',
+                }}
+                onFocus={e => e.target.style.borderColor = '#6366f1'}
+                onBlur={e => e.target.style.borderColor = '#e0e4f4'}
+              />
+              <button
+                onClick={handleAddFolder}
+                disabled={addingFolder || !newFolderName.trim()}
+                style={{
+                  padding: '8px 16px',
+                  background: newFolderName.trim()
+                    ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+                    : '#e5e7eb',
+                  color: newFolderName.trim() ? 'white' : '#9ca3af',
+                  border: 'none', borderRadius: '7px', fontSize: '13px', fontWeight: 600,
+                  cursor: newFolderName.trim() ? 'pointer' : 'not-allowed',
+                  whiteSpace: 'nowrap', transition: 'all 0.2s',
+                  boxShadow: newFolderName.trim() ? '0 2px 8px rgba(99,102,241,0.3)' : 'none',
+                }}
+              >
+                {addingFolder ? 'Adding...' : '+ Add Folder'}
+              </button>
+            </div>
+
+            {/* Hint */}
+            <p style={{ fontSize: '11.5px', color: '#9ca3af', marginTop: '7px', marginBottom: 0 }}>
+               Select a folder first to add a sub-folder inside it. Double-click any folder to rename.
+            </p>
+
           </div>
         </div>
 
       </div>
 
-      {/* =========================
-          MODALS
-      ========================= */}
-
+      {/* MODALS */}
       {showUploadModal && (
-        <UploadModal
-          type={modalType}
-          name={uploadModalName}
-          onClose={() => setShowUploadModal(false)}
-          onConfirm={handleUploadConfirm}
-        />
+        <UploadModal type={modalType} name={uploadModalName}
+          onClose={() => setShowUploadModal(false)} onConfirm={handleUploadConfirm} />
       )}
-
       {showDeleteModal && (
-        <DeleteModal
-          type={modalType}
-          name={selectedItemName}
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleDeleteConfirm}
-        />
+        <DeleteModal type={modalType} name={selectedItemName}
+          onClose={() => setShowDeleteModal(false)} onConfirm={handleDeleteConfirm} />
       )}
-
       {showAddDepartmentModal && (
-        <AddDepartmentModal
-          onClose={() => setShowAddDepartmentModal(false)}
-          onConfirm={handleAddDepartment}
-        />
+        <AddDepartmentModal onClose={() => setShowAddDepartmentModal(false)} onConfirm={handleAddDepartment} />
       )}
-
       {showAddStatusModal && (
-        <AddStatusModal
-          onClose={() => setShowAddStatusModal(false)}
-          onConfirm={handleAddStatus}
-        />
-      )}
-
-      {showAddFolderModal && (
-        <AddFolderModal
-          folders={folders}
-          onClose={() => setShowAddFolderModal(false)}
-          onConfirm={handleAddFolder}
-        />
-      )}
-
-      {/* NEW: Edit Folder Modal */}
-      {showEditFolderModal && folderToEdit && (
-        <EditFolderModal
-          folder={folderToEdit}
-          onClose={() => {
-            setShowEditFolderModal(false);
-            setFolderToEdit(null);
-          }}
-          onConfirm={handleEditFolderConfirm}
-        />
+        <AddStatusModal onClose={() => setShowAddStatusModal(false)} onConfirm={handleAddStatus} />
       )}
     </div>
   );
