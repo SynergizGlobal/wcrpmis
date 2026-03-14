@@ -1,5 +1,7 @@
 package com.wcr.wcrbackend.dms.repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,5 +13,9 @@ public interface SendDocumentRepository extends JpaRepository<SendDocument, Long
     Page<SendDocument> findByCreatedByAndStatus(String createdBy, String status, Pageable pageable);
 
 	long countByCreatedByAndStatus(String createdBy, String status);
+
+    List<SendDocument> findByCreatedByAndStatus(String createdBy, String status);
+
+    List<SendDocument> findByStatus(String status);
 
 }

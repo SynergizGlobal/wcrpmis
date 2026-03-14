@@ -20,8 +20,12 @@ import com.wcr.wcrbackend.dms.dto.DocumentDTO;
 import com.wcr.wcrbackend.dms.dto.DocumentGridDTO;
 import com.wcr.wcrbackend.dms.dto.SendDocumentDTO;
 import com.wcr.wcrbackend.dms.entity.DocumentRevision;
+import com.wcr.wcrbackend.dms.entity.SendDocument;
+import com.wcr.wcrbackend.dms.repository.DocumentRepository;
+import com.wcr.wcrbackend.dms.repository.SendDocumentRepository;
 import com.wcr.wcrbackend.dms.service.DocumentService;
 import com.wcr.wcrbackend.dms.service.SendDocumentService;
+
 import com.wcr.wcrbackend.entity.User;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,6 +40,7 @@ public class DocumentController {
     private final DocumentService documentService;
     private final ObjectMapper objectMapper; 
     private final SendDocumentService sendDocumentService;
+    private final SendDocumentRepository sendDocumentRepository;
 
     @GetMapping("/list")
     public ResponseEntity<List<DocumentGridDTO>> getAllDocuments() {
@@ -101,6 +106,21 @@ public class DocumentController {
         documentService.saveOrSendDocument(dto, user.getUserId(), baseUrl);
 
         return ResponseEntity.ok("Success");
+    }
+
+    @GetMapping("/drafts")
+    public List<SendDocument> getDrafts(HttpSession session) {
+
+        User user = (User) session.getAttribute("user");
+
+        if (user == null) {
+            return List.of();
+        }
+
+        return sendDocumentRepository.findByCreatedByAndStatus(
+                user.getUserName(),
+                "Draft"
+        );
     }
 
     @PutMapping("/not-required/{id}")

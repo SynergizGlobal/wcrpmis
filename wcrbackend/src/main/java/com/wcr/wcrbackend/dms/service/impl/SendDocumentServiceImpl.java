@@ -14,7 +14,10 @@ import com.wcr.wcrbackend.dms.entity.SendDocument;
 import com.wcr.wcrbackend.dms.repository.SendDocumentRepository;
 import com.wcr.wcrbackend.dms.service.SendDocumentService;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class SendDocumentServiceImpl implements SendDocumentService {
 	
 	@Autowired

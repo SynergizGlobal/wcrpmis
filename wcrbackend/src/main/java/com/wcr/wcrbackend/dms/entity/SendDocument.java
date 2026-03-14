@@ -34,7 +34,7 @@ public class SendDocument {
 	@Column(name = "send_to", nullable = false)
 	private String sendTo;
 
-	@Column(name = "to_user_id", nullable = false)
+	@Column(name = "to_user_id")
 	private String sendToUserId;
 
 	@Column(name = "send_cc")

@@ -33,6 +33,7 @@ export default function DmsDocuments() {
     const [departments, setDepartments] = useState([]);
     const [statuses, setStatuses] = useState([]);
 
+    const [toUser, setToUser] = useState(null);
   // single upload section
 
     const [docForm, setDocForm] = useState({
@@ -47,7 +48,9 @@ export default function DmsDocuments() {
     });
 
     const [sendForm, setSendForm] = useState({
-      sendTo: "",
+      toUser: null,
+      // sendTo: "",
+      // sendToUserId: "",
       sendSubject: "",
       sendReason: "",
       responseExpected: "Yes",
@@ -65,9 +68,10 @@ export default function DmsDocuments() {
     }
 
     const handleSend = (doc) => {
+      console.log("SELECTED USER:", sendForm.toUser);
       setSelectedDoc(doc);
       setSendForm({
-        sendTo: "",
+        toUser: null,
         sendSubject: doc["File Name"] || "",
         sendReason: "",
         responseExpected: "Yes",
@@ -106,10 +110,8 @@ export default function DmsDocuments() {
         const payload = {
           id: "",
           docId: selectedDoc.id,
-          sendTo: sendForm.sendTo,
-          sendToUserId: "",
-          sendCc: "",
-          sendCcUserId: "",
+          sendTo: sendForm.toUser?.email || "",
+          sendToUserId: sendForm.toUser?.value || "",
           sendSubject: sendForm.sendSubject,
           sendReason: sendForm.sendReason,
           responseExpected: sendForm.responseExpected,
@@ -126,19 +128,27 @@ export default function DmsDocuments() {
 
       } catch (err) {
         console.error(err);
+
+        const msg = err?.response?.data?.message || err?.response?.data || "Failed to save draft";
+        
+        alert(msg);
       }
     };
 
     const handleSendDocument = async () => {
+
+      if(!sendForm.toUser) {
+        alert("Recipient is required");
+        return;
+      }
+      console.log("SELECTED USER:", sendForm.toUser);
       try {
 
         const payload = {
           id: "",
           docId: selectedDoc.id,
-          sendTo: sendForm.sendTo,
-          sendToUserId: "",
-          sendCc: "",
-          sendCcUserId: "",
+          sendTo: sendForm.toUser?.email || "",
+          sendToUserId: sendForm.toUser?.value || "",
           sendSubject: sendForm.sendSubject,
           sendReason: sendForm.sendReason,
           responseExpected: sendForm.responseExpected,
@@ -146,6 +156,8 @@ export default function DmsDocuments() {
           attachmentName: selectedDoc["File Name"],
           status: "Send"
         };
+
+        console.log("SEND PAYLOAD:", payload);
 
         await api.post("/api/documents/send-document", payload);
 
@@ -311,6 +323,9 @@ const fetchFolders = async () => {
       } catch (err) {
         console.error(err);
         alert("Upload failed");
+         const msg = err?.response?.data?.message || err?.response?.data || "Failed to send document";
+        
+        alert(msg);
       }
     };
 
@@ -509,6 +524,25 @@ const fetchFolders = async () => {
             ...prev,
             [name]: option ? option.value : ""
           }));
+        };
+
+        const searchUsers = async (inputValue) => {
+          try {
+
+            const res = await api.get(`/users/search?query=${inputValue}`);
+
+            console.log("USER API RESPONSE:", res.data);
+
+            return (res.data || []).map(user => ({
+              label: `${user.userName} (${user.emailId})`,
+              value: user.userId,
+              email: user.emailId
+            }));
+
+          } catch (err) {
+            console.error(err);
+            return [];
+          }
         };
 
 
@@ -828,13 +862,25 @@ const fetchFolders = async () => {
 
             <div className="form-field">
               <label>To</label>
-              <input
-                type="email"
-                value={sendForm.sendTo}
-                onChange={(e) =>
-                  setSendForm({ ...sendForm, sendTo: e.target.value })
-                }
-                placeholder="Enter recipient email"
+              <AsyncSelect
+                placeholder="Search recipient..."
+                loadOptions={searchUsers}
+                value={sendForm.toUser}
+                onChange={(selected) => {
+
+                  console.log("USER SELECTED:", selected);
+
+                  setToUser(selected);
+
+                  setSendForm(prev => ({
+                    ...prev,
+                    toUser: selected
+                  }));
+
+                }}
+                isClearable
+                cacheOptions
+                defaultOptions
               />
             </div>
 

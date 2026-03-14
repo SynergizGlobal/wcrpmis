@@ -8,30 +8,34 @@ export default function Drafts({ onBack }) {
 
   const fetchDrafts = async () => {
     try {
-      const res = await api.post("/api/documents/drafts",{
-        draw:1,
-        start:0,
-        length:10
-      });
 
-      const rows = res.data.data || [];
+      const res = await api.get("/api/documents/drafts");
+
+      const rows = Array.isArray(res.data) ? res.data : [];
+
+      rows = Array.isArray(rows) ? rows : [];
+
+      console.log("ROWS:", rows);
 
       const mapped = rows.map(d => ({
-        "Send To": d.sendTo,
-        "Subject": d.sendSubject,
-        "Reason": d.sendReason,
-        "Response Expected": d.responseExpected,
-        "Target Date": d.targetResponseDate,
-        "Attachment": d.attachmentName,
-        "Created": new Date(d.createdAt).toLocaleString()
+        sendTo: d.sendTo || "",
+        subject: d.sendSubject || "",
+        reason: d.sendReason || "",
+        responseExpected: d.responseExpected || "",
+        targetDate: d.targetResponseDate || "",
+        attachment: d.attachmentName || "",
+        created: d.createdAt || d.createdDate || ""
       }));
+
+      console.log("MAPPED:", mapped);
+
+      console.log("API DATA:", res.data);
 
       setDrafts(mapped);
 
     } catch(err){
       console.error(err);
     }
-
   };
 
   useEffect(()=>{
@@ -48,13 +52,13 @@ export default function Drafts({ onBack }) {
 
       <DmsTable
         columns={[
-          "Send To",
-          "Subject",
-          "Reason",
-          "Response Expected",
-          "Target Date",
-          "Attachment",
-          "Created"
+          "sendTo",
+          "subject",
+          "reason",
+          "responseExpected",
+          "targetDate",
+          "attachment",
+          "created"
         ]}
         mockData={drafts}
       />

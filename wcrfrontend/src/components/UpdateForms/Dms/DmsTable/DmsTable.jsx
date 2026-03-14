@@ -6,7 +6,7 @@ export default function DmsTable({ columns = [], mockData = [], loading, onRowCl
 
   const data = useMemo(() => mockData || [], [mockData]);
   const cols = useMemo(
-    () => columns.map(c => ({ Header: c, accessor: c })),
+    () => columns.map(c => ({ Header: c, accessor: c, id: c })),
     [columns]
   );
 
@@ -94,7 +94,8 @@ export default function DmsTable({ columns = [], mockData = [], loading, onRowCl
           {headerGroups.map((hg) => {
             const { key, ...rest } = hg.getHeaderGroupProps();
             return (
-              <tr key={key} {...rest}>
+              // <tr key={key} {...rest}>
+              <tr {...hg.getHeaderGroupProps()}>
                 {hg.headers.map((col) => {
                   const { key, ...rest } = col.getHeaderProps();
                   return (

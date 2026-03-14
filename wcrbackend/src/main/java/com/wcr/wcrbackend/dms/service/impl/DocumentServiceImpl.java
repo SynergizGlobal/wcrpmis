@@ -78,9 +78,10 @@ public class DocumentServiceImpl implements DocumentService {
     private final SubFolderRepository subFolderRepository;
     private final DepartmentRepository departmentRepository;
     private final StatusRepository statusRepository;
-	private SendDocumentRepository sendDocumentRepository;
+	// private SendDocumentRepository sendDocumentRepository;
     private final UserDao userRepository;
     private DocumentService documentService;
+    private final SendDocumentRepository sendDocumentRepository;
 
     @Value("${file.upload-dir}")
 	private String basePath;
@@ -698,10 +699,19 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-	public String saveOrSendDocument(SendDocumentDTO dto, String userId, String baseUrl) {
-		SendDocument sendDocument = mapDTOToSendDocument(dto, userId);
-		sendDocument = sendDocumentRepository.save(sendDocument);
-		if (dto.getStatus().equals("Send")) { // send email
+    public String saveOrSendDocument(SendDocumentDTO dto, String userId, String baseUrl) {
+        if ("Send".equals(dto.getStatus()) && (dto.getSendToUserId() == null || dto.getSendToUserId().isBlank())) {
+            throw new RuntimeException("Recipient is required to send document");
+        }
+
+		System.out.println("DTO SendToUserId= " + dto.getSendToUserId());
+		System.out.println("DTO SendTo= " + dto.getSendTo());
+
+        SendDocument sendDocument = mapDTOToSendDocument(dto, userId);
+
+        sendDocument = sendDocumentRepository.save(sendDocument);
+
+        if (dto.getStatus().equals("Send")) {// send email
 			String host = emailHost; // e.g., smtp.gmail.com
 			final String username = emailUserName;
 			final String password = emailPassword; // or actual password (less secure)
@@ -726,7 +736,10 @@ public class DocumentServiceImpl implements DocumentService {
 				message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(dto.getSendTo()));
 
 				// ✅ Set CC recipients
-				message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(dto.getSendCc()));
+				// message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(dto.getSendCc()));
+                if(dto.getSendCc() != null && !dto.getSendCc().isBlank()) {
+                    message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(dto.getSendCc()));
+                }
 				message.setSubject(dto.getSendSubject());
 				User userTo = userRepository.findByEmailId(sendDocument.getSendTo()).get();
 				User sendBy = userRepository.findById(sendDocument.getCreatedBy()).get();
