@@ -11,7 +11,7 @@ import { FaUpload, FaTrash } from "react-icons/fa";
 // =========================
 // FOLDER TREE NODE
 // =========================
-function FolderTreeNode({ folder, path, depth, expandedFolders, toggleFolder, selectedPath, setSelectedPath, renamingId, setRenamingId, renameValue, setRenameValue, handleRename }) {
+function FolderTreeNode({ folder, path, depth, expandedFolders, toggleFolder, selectedPath, setSelectedPath, renamingId, setRenamingId, renameValue, setRenameValue, handleRename, onDelete }) {
   const currentPath = [...path, folder];
   const isExpanded = expandedFolders.has(folder.id);
   const isSelected = selectedPath.at(-1)?.id === folder.id;
@@ -100,6 +100,33 @@ function FolderTreeNode({ folder, path, depth, expandedFolders, toggleFolder, se
             {folder.children.length}
           </span>
         )}
+
+        {/* Delete button — visible on hover */}
+        {hovered && (
+          <button
+            onClick={e => { e.stopPropagation(); onDelete(folder.id, folder.name); }}
+            title="Delete folder"
+            style={{
+              flexShrink: 0,
+              background: 'none',
+              border: '1px solid #fca5a5',
+              borderRadius: '5px',
+              color: '#ef4444',
+              cursor: 'pointer',
+              padding: '3px 6px',
+              fontSize: '11px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px',
+              transition: 'all 0.15s ease',
+              lineHeight: 1,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+          >
+            🗑 Delete
+          </button>
+        )}
       </div>
 
       {/* Children */}
@@ -120,6 +147,7 @@ function FolderTreeNode({ folder, path, depth, expandedFolders, toggleFolder, se
               renameValue={renameValue}
               setRenameValue={setRenameValue}
               handleRename={handleRename}
+              onDelete={onDelete}
             />
           ))}
         </div>
@@ -263,6 +291,7 @@ export default function FilterForm() {
     try {
       if (modalType === 'department') { await axiosInstance.delete(`/api/departments/${selectedItemId}`); fetchDepartments(); }
       if (modalType === 'status') { await axiosInstance.delete(`/api/statuses/${selectedItemId}`); fetchStatuses(); }
+      if (modalType === 'folder') { await axiosInstance.delete(`/api/folders/delete-folder/${selectedItemId}`); fetchFolders(); }
       setShowDeleteModal(false);
     } catch (err) { alert(err.response?.data || 'Delete failed'); }
   };
@@ -455,6 +484,7 @@ export default function FilterForm() {
                     renameValue={renameValue}
                     setRenameValue={setRenameValue}
                     handleRename={handleRename}
+                    onDelete={(id, name) => handleDeleteClick('folder', id, name)}
                   />
                 ))
               )}
