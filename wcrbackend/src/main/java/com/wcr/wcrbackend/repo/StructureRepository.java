@@ -124,10 +124,11 @@ public class StructureRepository implements IStructureRepository {
     
     @Override
     public List<String> getAllStructureTypes() {
-        String sql = "SELECT DISTINCT structure_type_fk FROM structure ORDER BY structure_type_fk";
+
+        String sql = "SELECT structure_type FROM structure_type ORDER BY structure_type";
+
         return jdbcTemplate.queryForList(sql, String.class);
     }
-    
     
     @Override
     public void insertStructure(String structure, String name, String projectId, String type,
