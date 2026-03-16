@@ -441,7 +441,8 @@ export default function ProjectForm() {
 	
 	
 	const handleSampleKMZDownload = () => {
-		const fileUrl = "/files/Template-upload/Chainage_wise_Coordinates_Template.xlsx";
+
+		const fileUrl = `${API_BASE_URL}/files/Template-upload/Chainage_wise_Coordinates_Template.xlsx`;
 		const fileName = "Chainage_wise_Coordinates_Template.xlsx";
 
 		const link = document.createElement("a");
@@ -450,6 +451,7 @@ export default function ProjectForm() {
 		document.body.appendChild(link);
 		link.click();
 		link.remove();
+
 	};
 
 
