@@ -416,7 +416,7 @@ export default function FilterForm() {
               <span style={{
                 position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
                 color: '#9ca3af', fontSize: '13px', pointerEvents: 'none',
-              }}>🔍</span>
+              }}></span>
               <input
                 placeholder="Search folders..."
                 value={folderSearch}
@@ -450,7 +450,7 @@ export default function FilterForm() {
               }}>
                 <span style={{ width: '32px' }} />
                 <span style={{ flex: 1 }}>FOLDER NAME</span>
-                <span style={{ width: '80px', textAlign: 'center' }}>SUB-FOLDERS</span>
+                <span style={{ width: '80px', textAlign: 'center' }}></span>
                 <span style={{ width: '80px', textAlign: 'center' }}>ACTION</span>
               </div>
 
