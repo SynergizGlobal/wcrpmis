@@ -19,17 +19,24 @@ export default function Folders() {
 
   const [loading, setLoading] = useState(false);
 
-  /* ================= LOAD FOLDERS ================= */
-  const loadFolders = async () => {
+  /* ================= LOAD FOLDERS — only when both dropdowns selected ================= */
+  const loadFolders = async (selectedProject, selectedContract) => {
     setLoading(true);
     try {
-      const res = await api.get("/api/folders/get", {
-        withCredentials: true,
-      });
+      const res = await api.post(
+        "/api/folders/grid",
+        {
+          projects: [selectedProject],
+          contracts: [selectedContract],
+        },
+        { withCredentials: true }
+      );
 
       const data = Array.isArray(res.data) ? res.data : [];
       setAllFolders(data);
       setDisplayData(data);
+      setView("folders");
+      setBreadcrumb([]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -37,55 +44,46 @@ export default function Folders() {
     }
   };
 
+  /* ================= FILTER — fire only when both project & contract are chosen ================= */
   useEffect(() => {
-    loadFolders();
-  }, []);
-
-  /* ================= FILTER ================= */
-  useEffect(() => {
-    let filtered = allFolders;
-
-    if (project) {
-      filtered = filtered.filter(f => f.projectName === project);
+    // reset everything if either filter is cleared
+    if (!project || !contract) {
+      setAllFolders([]);
+      setDisplayData([]);
+      setView("folders");
+      setBreadcrumb([]);
+      return;
     }
 
-    if (contract) {
-      filtered = filtered.filter(f => f.contractName === contract);
-    }
-
-    setDisplayData(filtered);
-    setView("folders");
-    setBreadcrumb([]);
-  }, [project, contract, allFolders]);
+    loadFolders(project, contract);
+  }, [project, contract]);
 
   /* ================= LOAD FILES ================= */
   const loadFiles = async (subFolderId, subFolderName) => {
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const res = await api.get(
-      `/api/subfolders/grid/${subFolderId}`,   // ✅ FIXED URL
-      {
-        projects: project ? [project] : [],
-        contracts: contract ? [contract] : [],
-      },
-      { withCredentials: true }
-    );
+    try {
+      const res = await api.post(
+        `/api/subfolders/grid/${subFolderId}`,
+        {
+          projects: project ? [project] : [],
+          contracts: contract ? [contract] : [],
+        },
+        { withCredentials: true }
+      );
 
-    console.log("Files response:", res.data);
+      const files = Array.isArray(res.data) ? res.data : [];
 
-    const files = Array.isArray(res.data) ? res.data : [];
+      setDisplayData(files);
+      setView("files");
+      setBreadcrumb(prev => [...prev, { name: subFolderName }]);
 
-    setDisplayData(files);
-    setView("files");
-    setBreadcrumb(prev => [...prev, { name: subFolderName }]);
-
-  } catch (err) {
-    console.error("File load error:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (err) {
+      console.error("File load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* ================= CLICK ================= */
   const handleClick = (item) => {
@@ -105,11 +103,14 @@ export default function Folders() {
     if (view === "files") {
       setView("subfolders");
       setBreadcrumb(prev => prev.slice(0, -1));
-      loadFolders(); // reload fresh
+      // restore sub-folders of parent folder
+      const folderName = breadcrumb[0]?.name;
+      const parentFolder = allFolders.find(f => f.name === folderName);
+      setDisplayData(parentFolder?.subFolders || []);
     } else {
       setView("folders");
       setBreadcrumb([]);
-      loadFolders();
+      setDisplayData(allFolders);
     }
   };
 
@@ -139,12 +140,25 @@ export default function Folders() {
         ))}
       </div>
 
+      {/* Show prompt when filters not selected */}
+      {!project && !contract && !loading && (
+        <div style={{ padding: '32px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
+          Please select a <strong>Project</strong> and <strong>Contract</strong> to view folders.
+        </div>
+      )}
+
+      {project && !contract && !loading && (
+        <div style={{ padding: '32px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
+          Now select a <strong>Contract</strong> to load folders.
+        </div>
+      )}
+
       {loading && <div>Loading...</div>}
 
       <div className={styles.grid}>
         {displayData.map((item, i) => (
           <div
-            key={i}
+            key={item.id || i}
             className={styles.card}
             onClick={() => handleClick(item)}
           >
@@ -165,4 +179,3 @@ export default function Folders() {
     </div>
   );
 }
-
