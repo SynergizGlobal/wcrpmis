@@ -21,6 +21,7 @@ public class DocumentDTO {
     private String contractName;
     private String folder;
     private Long folderId;
+    private String path;
     private String subFolder;
     private Long subFolderId;
     private String department;

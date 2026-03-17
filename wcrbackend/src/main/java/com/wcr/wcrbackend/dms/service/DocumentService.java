@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wcr.wcrbackend.dms.dto.DocumentDTO;
 import com.wcr.wcrbackend.dms.dto.DocumentGridDTO;
 import com.wcr.wcrbackend.dms.dto.MetaDataDto;
+import com.wcr.wcrbackend.dms.dto.NotRequiredDTO;
 import com.wcr.wcrbackend.dms.dto.SendDocumentDTO;
 import com.wcr.wcrbackend.dms.entity.DocumentRevision;
 
@@ -30,7 +31,7 @@ public interface DocumentService {
 
     void sendDocument(SendDocumentDTO dto);
 
-    void markNotRequired(Long id);
+    public void markNotRequired(NotRequiredDTO notRequiredDto, String userId);
 
      public DocumentDTO uploadFileWithMetaData( DocumentDTO documentDto,
 	    		List<MultipartFile> files, String userId) ;

@@ -124,4 +124,6 @@ public class Document {
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
+	private String path;
+
 }

@@ -88,6 +88,7 @@
   border-radius: 8px;
   padding: 12px;
   margin: 16px 0;
+  width: 100%;
 }
 
 .folderTree {
@@ -191,6 +192,7 @@
 .menuIcon {
   cursor: pointer;
   font-size: 18px;
+  padding: 5px 15px;
 }
 
 .menuDropdown {
@@ -211,4 +213,10 @@
 .menuDropdown div:hover {
   background: #f5f5f5;
 }
-
+.activeFolder {
+  background: #dbeafe;
+}
+.versionsTable{
+  width: 50%;
+  text-align: center;
+}

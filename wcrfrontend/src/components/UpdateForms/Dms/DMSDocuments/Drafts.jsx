@@ -1,67 +1,77 @@
 import React, { useEffect, useState } from "react";
-import api from "../../../../api/axiosInstance";
 import DmsTable from "../DmsTable/DmsTable";
+import api from "../../../../api/axiosInstance";
 
-export default function Drafts({ onBack }) {
+export default function Drafts({ onDraftClick  }) {
 
   const [drafts, setDrafts] = useState([]);
 
   const fetchDrafts = async () => {
     try {
-
       const res = await api.get("/api/documents/drafts");
 
-      const rows = Array.isArray(res.data) ? res.data : [];
+      let rows = res.data;
 
-      rows = Array.isArray(rows) ? rows : [];
+      if (typeof rows === "string") {
+        rows = JSON.parse(rows);
+      }
 
-      console.log("ROWS:", rows);
+      if (!Array.isArray(rows)) {
+        rows = [];
+      }
 
-      const mapped = rows.map(d => ({
+      const mapped = rows.map((d) => {
+
+        console.log("RAW DRAFT:", d);
+
+      let targetDate = "";
+
+      if (Array.isArray(d.targetResponseDate)) {
+        const [y, m, day] = d.targetResponseDate;
+        targetDate = `${y}-${String(m).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+      } else if (typeof d.targetResponseDate === "string") {
+        targetDate = d.targetResponseDate;
+      }
+
+      return {
+        id: d.id,
+        docId: d.docId,
         sendTo: d.sendTo || "",
         subject: d.sendSubject || "",
         reason: d.sendReason || "",
         responseExpected: d.responseExpected || "",
-        targetDate: d.targetResponseDate || "",
+        targetDate: targetDate,
         attachment: d.attachmentName || "",
-        created: d.createdAt || d.createdDate || ""
-      }));
+        created: d.createdAt || ""
+      };
+    });
 
-      console.log("MAPPED:", mapped);
-
-      console.log("API DATA:", res.data);
+      console.log("DRAFT API DATA:", mapped);
 
       setDrafts(mapped);
 
-    } catch(err){
+    } catch (err) {
       console.error(err);
     }
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchDrafts();
-  },[]);
+  }, []);
 
   return (
-    <>
-      {/* <div style={{marginBottom:"10px"}}>
-        <button className="btn btn-secondary" onClick={onBack}>
-          Documents
-        </button>
-      </div> */}
-
-      <DmsTable
-        columns={[
-          "sendTo",
-          "subject",
-          "reason",
-          "responseExpected",
-          "targetDate",
-          "attachment",
-          "created"
-        ]}
-        mockData={drafts}
-      />
-    </>
+    <DmsTable
+      columns={[
+        "sendTo",
+        "subject",
+        "reason",
+        "responseExpected",
+        "targetDate",
+        "attachment",
+        "created"
+      ]}
+      mockData={drafts}
+      onRowClick={(row) => onDraftClick(row)}
+    />
   );
 }

@@ -23,4 +23,6 @@ public class SendDocumentDTO {
 	private Long docId;
 	private String status;
 	private Long id;
+	private String createdAt;
+	private Long documentId;
 }

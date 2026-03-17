@@ -18,4 +18,6 @@ public interface SendDocumentRepository extends JpaRepository<SendDocument, Long
 
     List<SendDocument> findByStatus(String status);
 
+    List<SendDocument> findByStatusIgnoreCase(String status);
+
 }

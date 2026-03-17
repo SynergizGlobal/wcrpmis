@@ -3,7 +3,6 @@ package com.wcr.wcrbackend.dms.repository;
  
 import java.util.Optional;
 
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,4 +14,5 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
    
 	boolean existsByName(String name);
 	Optional<Status> findByName(String currentStatus);
+	Optional<Status> findByNameIgnoreCase(String name);
 }

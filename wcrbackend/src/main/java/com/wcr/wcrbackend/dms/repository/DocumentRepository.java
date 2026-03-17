@@ -530,6 +530,9 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 	Optional<Document> findByFileNumber(String fileNumber);
 
 	Optional<Document> findByFileNameAndFileNumber(String fileName, String fileNumber);
+
+	@Query("SELECT d FROM Document d WHERE d.notRequired IS NULL OR d.notRequired = false")
+	List<Document> findActiveDocuments();
 	
 	@EntityGraph(attributePaths = "documentFiles")
 	Optional<Document> findByFileName(String fileName);

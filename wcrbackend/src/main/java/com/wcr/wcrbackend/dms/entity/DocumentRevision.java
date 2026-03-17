@@ -60,6 +60,9 @@ public class DocumentRevision {
     @JoinColumn(name = "sub_folder_id")
     private SubFolder subFolder;
 
+    @Column(name = "path")
+    private String path;
+
     @ManyToOne
     @JoinColumn(name = "department_id")
     private Department department;

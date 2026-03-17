@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DmsTable from "../DmsTable/DmsTable";
-import Drafts from "../DMSDocuments/Drafts";
+import Drafts from "./Drafts";
 import styles from "./DmsDocuments.module.css";
 import api from "../../../../api/axiosInstance";
 import AsyncSelect from "react-select/async";
@@ -27,6 +27,7 @@ export default function DmsDocuments() {
   const [showSendPopup, setShowSendPopup] = useState(false);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
   const [showVersionsPopup, setShowVersionsPopup] = useState(false);
+  const [pendingFolderId, setPendingFolderId] = useState(null);
 
     const [projects, setProjects] = useState([]);
     const [contracts, setContracts] = useState([]);
@@ -68,11 +69,16 @@ export default function DmsDocuments() {
     }
 
     const handleSend = (doc) => {
-      console.log("SELECTED USER:", sendForm.toUser);
+      console.log("CLICKED DOC:", doc);
+      if (!doc?.id) {
+        alert("Document ID missing. Cannot send.");
+        console.error("INVALID DOC:", doc);
+        return;
+      }
       setSelectedDoc(doc);
       setSendForm({
         toUser: null,
-        sendSubject: doc["File Name"] || "",
+        sendSubject: doc.subject || "",
         sendReason: "",
         responseExpected: "Yes",
         targetResponseDate: ""
@@ -81,10 +87,82 @@ export default function DmsDocuments() {
       setOpenMenu(null);
     };
 
+    const findFolderPathByNames = (nodes, names, index = 0, path = []) => {
+
+    for (const node of nodes) {
+
+      if (node.name === names[index]) {
+
+        const newPath = [...path, node];
+
+        if (index === names.length - 1) {
+          return newPath;
+        }
+
+        if (node.children?.length) {
+
+          const result = findFolderPathByNames(
+            node.children,
+            names,
+            index + 1,
+            newPath
+          );
+
+          if (result) return result;
+
+        }
+
+      }
+
+    }
+
+    return null;
+
+  };
+
     const handleUpdate = (doc) => {
+
+      console.log("DOCUMENT OBJECT:", doc);
+      console.log("DOCUMENT PATH:", doc.Path);
+
       setSelectedDoc(doc);
+
+      setDocForm({
+        fileName: doc["File Name"] || "",
+        fileNumber: doc["File Number"] || "",
+        revisionNo: doc["Revision No"] || "",
+        revisionDate: doc["Revision Date"]?.split("T")[0] || "",
+        projectName: doc["Project Name"] || "",
+        contractName: doc["Contract Name"] || "",
+        department: doc["Department"] || "",
+        currentStatus: doc["Status"] || "",
+        updateReason: ""
+      });
+
+      if (doc.Path) {
+
+        const names = doc.Path
+          .split("/")
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        console.log("PATH NAMES:", names);
+
+        const path = findFolderPathByNames(folders, names);
+
+        console.log("FOUND PATH:", path);
+
+        if (path) {
+
+          setSelectedPath(path);
+
+          setExpandedFolders(new Set(path.map(f => f.id)));
+
+        }
+
+      }
+
       setShowUpdatePopup(true);
-      setOpenMenu(null);
     };
 
     const handleVersions = (doc) => {
@@ -97,7 +175,13 @@ export default function DmsDocuments() {
       if (!window.confirm("Mark this document as Not Required?")) return;
 
       try {
-        await api.put(`/api/documents/not-required/${doc.id}`);
+        const payload = {
+          documentId: doc.id,
+          path: doc.Path
+        };
+
+        await api.post("/api/documents/not-required", payload);
+
         fetchDocuments();
       } catch (err) {
         console.error(err);
@@ -141,11 +225,16 @@ export default function DmsDocuments() {
         alert("Recipient is required");
         return;
       }
+      if (!selectedDoc?.id) {
+        alert("Document ID missing");
+        console.error("FINAL SELECTED DOC:", selectedDoc);
+        return;
+      }
       console.log("SELECTED USER:", sendForm.toUser);
       try {
 
         const payload = {
-          id: "",
+          id: selectedDoc.id, 
           docId: selectedDoc.id,
           sendTo: sendForm.toUser?.email || "",
           sendToUserId: sendForm.toUser?.value || "",
@@ -156,8 +245,6 @@ export default function DmsDocuments() {
           attachmentName: selectedDoc["File Name"],
           status: "Send"
         };
-
-        console.log("SEND PAYLOAD:", payload);
 
         await api.post("/api/documents/send-document", payload);
 
@@ -180,6 +267,7 @@ export default function DmsDocuments() {
 
       const mapped = rows.map((d) => ({
         id: d.id,
+        folderId: d.folderId,
         "File Type": d.fileType || "",
         "File Number": d.fileNumber || "",
         "File Name": d.fileName || "",
@@ -289,10 +377,38 @@ const fetchFolders = async () => {
   }
 };
 
+
+
   useEffect(() => {
     fetchDocuments();
     fetchFolders();
   }, []);
+
+  useEffect(() => {
+
+    if (!pendingFolderId || folders.length === 0) return;
+
+    console.log("FOLDER ID:", pendingFolderId);
+
+    const path = findFolderPath(folders, pendingFolderId);
+
+    console.log("FOUND PATH:", path);
+
+    if (path) {
+
+      setSelectedPath(path);
+
+      setExpandedFolders(prev => {
+        const next = new Set(prev);
+        path.forEach(p => next.add(p.id));
+        return next;
+      });
+
+    }
+
+    setPendingFolderId(null);
+
+  }, [pendingFolderId, folders]);
 
    const buildPathString = () =>
     selectedPath.map(f => f.name).join("/") + (selectedPath.length ? "/" : "");
@@ -328,6 +444,10 @@ const fetchFolders = async () => {
         alert(msg);
       }
     };
+
+    
+
+
 
   const addFolder = (nodes, path, name, level = 1) => {
     return nodes.map(node => {
@@ -383,7 +503,8 @@ const fetchFolders = async () => {
     nodes.map(folder => {
       const currentPath = [...path, folder];
       const isExpanded = expandedFolders.has(folder.id);
-      const isSelected = selectedPath.at(-1)?.id === folder.id;
+      const isSelected = String(selectedPath[selectedPath.length - 1]?.id) === String(folder.id);
+
 
       return (
         <div key={folder.id} className={styles.folderNode}>
@@ -545,6 +666,85 @@ const fetchFolders = async () => {
           }
         };
 
+        const handleDraftClick = (draft) => {
+
+          console.log("DRAFT CLICKED:", draft);
+
+          setSelectedDoc({
+            id: draft.id,
+            docId: draft.docId,
+            "File Name": draft.attachment,
+          });
+
+          setSendForm({
+            toUser: draft.sendTo,
+            sendSubject: draft.subject,
+            sendReason: draft.reason,
+            responseExpected: draft.responseExpected,
+            targetResponseDate: draft.targetDate
+          });
+
+          setShowDrafts(false);
+          setShowSendPopup(true);
+        };
+
+        const handleUpdateDocument = async () => {
+
+          try{
+
+          const fd = new FormData();
+
+          const lastFolder = selectedPath[selectedPath.length - 1];
+
+            const dto = {
+              revisionNo: docForm.revisionNo,
+              revisionDate: docForm.revisionDate,
+              reasonForUpdate: docForm.updateReason,
+              folderId: lastFolder?.id || null
+            };
+
+          fd.append("dto",JSON.stringify(dto));
+
+          if(documentFile){
+          fd.append("file",documentFile);
+          }
+
+          await api.put(`/api/documents/update/${selectedDoc.id}`, fd);
+
+          alert("Document updated successfully");
+
+          setShowUpdatePopup(false);
+
+          fetchDocuments();
+
+          }catch(err){
+          console.error(err);
+          alert("Update failed");
+          }
+
+          };
+
+          const findFolderPath = (nodes, targetId, path = []) => {
+
+            for (const node of nodes) {
+
+              const newPath = [...path, node];
+
+              if (String(node.id) === String(targetId)) {
+                return newPath;
+              }
+
+              if (node.children?.length) {
+                const result = findFolderPath(node.children, targetId, newPath);
+                if (result) return result;
+              }
+
+            }
+
+            return null;
+          };
+
+          
 
   return (
     <>
@@ -578,7 +778,9 @@ const fetchFolders = async () => {
       </div>
 
       {/* DOCUMENT TABLE */}
-      {!showDrafts && (
+      {showDrafts ? (
+        <Drafts key="drafts" onDraftClick={handleDraftClick} />
+      ) : (
         <DmsTable
           loading={loading}
           columns={[
@@ -615,9 +817,6 @@ const fetchFolders = async () => {
           )}
         />
       )}
-
-      {/* DRAFTS */}
-      {showDrafts && <Drafts onBack={() => setShowDrafts(false)} />}
 
       {/* ================= UPLOAD MODAL ================= */}
       {showUpload && (
@@ -741,6 +940,9 @@ const fetchFolders = async () => {
                           {p.name} /
                         </span>
                       ))}
+                    </div>
+                    <div style={{marginBottom:"10px",fontWeight:"500"}}>
+                      Selected Folder: {selectedPath.map(p=>p.name).join(" / ") || "None"}
                     </div>
                     <div className={styles.folderTree}>
                       {renderFolders(filterFolders(folders, folderSearch))}
@@ -963,26 +1165,194 @@ const fetchFolders = async () => {
         <div className={styles.overlay}>
         <div className={styles.modal}>
 
+        <div className={styles.header}>
         <h3>Update Document</h3>
+        <span onClick={()=>setShowUpdatePopup(false)}>×</span>
+        </div>
+
+        <div className={styles.body}>
+
+        <div className="form-row">
 
         <div className="form-field">
         <label>File Name</label>
-        <input defaultValue={selectedDoc?.["File Name"]}/>
+        <input
+        value={selectedDoc?.["File Name"] || ""}
+        disabled
+        />
+        </div>
+
+        <div className="form-field">
+        <label>File Number</label>
+        <input
+        value={selectedDoc?.["File Number"] || ""}
+        disabled
+        />
         </div>
 
         <div className="form-field">
         <label>Revision No</label>
-        <input placeholder="R02"/>
+        <input
+        value={docForm.revisionNo}
+        onChange={(e)=>setDocForm({
+        ...docForm,
+        revisionNo:e.target.value
+        })}
+        />
+        </div>
+
+        <div className="form-field">
+        <label>Revision Date</label>
+        <input
+        type="date"
+        value={docForm.revisionDate}
+        onChange={(e)=>setDocForm({
+        ...docForm,
+        revisionDate:e.target.value
+        })}
+        />
+        </div>
+
+        <div className="form-field">
+        <label>Project Name</label>
+        <Select
+        options={projectOptions}
+        value={
+        docForm.projectName
+        ? {value:docForm.projectName,label:docForm.projectName}
+        : null
+        }
+        onChange={(opt)=>handleSelectChange("projectName",opt)}
+        />
+        </div>
+
+        <div className="form-field">
+        <label>Contract Name</label>
+        <Select
+        options={contractOptions}
+        value={
+        docForm.contractName
+        ? {value:docForm.contractName,label:docForm.contractName}
+        : null
+        }
+        onChange={(opt)=>handleSelectChange("contractName",opt)}
+        />
+        </div>
+
+        <div className="form-field">
+        <label>Department</label>
+        <Select
+        options={departmentOptions}
+        value={
+          departmentOptions.find(
+          o=>o.label === docForm.department
+          ) || null
+          }
+        onChange={(opt)=>handleSelectChange("department",opt)}
+        />
+        </div>
+
+        <div className="form-field">
+        <label>Status</label>
+        <Select
+        options={statuses.map(s=>({
+        value:s.id,
+        label:s.name
+        }))}
+        value={
+        statuses
+        .map(s=>({value:s.id,label:s.name}))
+        .find(o=>o.value===docForm.currentStatus) || null
+        }
+        onChange={(opt)=>
+        setDocForm({
+        ...docForm,
+        currentStatus:opt?.value || ""
+        })
+        }
+        />
+        </div>
+
+        <div className="form-field">
+        <label>Reason for Update</label>
+        <textarea
+        value={docForm.updateReason || ""}
+        onChange={(e)=>setDocForm({
+        ...docForm,
+        updateReason:e.target.value
+        })}
+        />
         </div>
 
         <div className="form-field">
         <label>Upload New Version</label>
-        <input type="file"/>
+        <input
+        type="file"
+        onChange={(e)=>setDocumentFile(e.target.files[0])}
+        />
+        </div>
+
+      </div>
+      
+      <div className="form-row">
+        <div className={styles.folderSection}>
+          <h4>Select Folder</h4>
+
+          <input
+            className={styles.search}
+            placeholder="Search folders..."
+            value={folderSearch}
+            onChange={(e)=>setFolderSearch(e.target.value)}
+          />
+
+          <div className={styles.breadcrumb}>
+            {selectedPath.map((p,i)=>(
+              <span key={p.id}>
+                {p.name} /
+              </span>
+            ))}
+          </div>
+
+          <div className={styles.folderTree}>
+            {renderFolders(filterFolders(folders,folderSearch))}
+          </div>
+
+        </div>
+      </div>
+
+      <div className="form-row">
+        <div className="form-field">
+          <label>Current Document</label>
+
+          {selectedDoc && (
+          <a
+          href={`/api/documents/download/${selectedDoc.id}`}
+          target="_blank"
+          >
+          📎 {selectedDoc["File Name"]}
+          </a>
+          )}
+
+        </div>
+
+        </div>
+
         </div>
 
         <div className={styles.footer}>
-        <button>Save</button>
-        <button onClick={()=>setShowUpdatePopup(false)}>Cancel</button>
+        <button
+        className="btn btn-primary"
+        onClick={handleUpdateDocument}
+        >
+        Save
+        </button>
+
+        <button
+        className="btn btn-red"
+        onClick={()=>setShowUpdatePopup(false)}
+        >
+        Cancel
+        </button>
         </div>
 
         </div>
@@ -991,33 +1361,38 @@ const fetchFolders = async () => {
 
         {showVersionsPopup && (
           <div className={styles.overlay}>
-          <div className={styles.modal}>
+            <div className={styles.modal}>
+              <div className={styles.header}>
+                <h3>Older Versions</h3>
+              </div>
+              <div className={styles.body}>
+                <div className="dataTable">
+                  <table className={styles.versionsTable}>
+                    <thead>
+                      <tr>
+                        <th>File Name</th>
+                        <th>File Number</th>
+                        <th>Revision</th>
+                        <th>Download</th>
+                      </tr>
+                    </thead>
 
-          <h3>Older Versions</h3>
-
-          <table className="table">
-          <thead>
-          <tr>
-          <th>File Name</th>
-          <th>File Number</th>
-          <th>Revision</th>
-          <th>Download</th>
-          </tr>
-          </thead>
-
-          <tbody>
-          <tr>
-          <td>{selectedDoc?.["File Name"]}</td>
-          <td>{selectedDoc?.["File Number"]}</td>
-          <td>{selectedDoc?.["Revision No"]}</td>
-          <td>
-          <a href={`/api/documents/download/${selectedDoc?.id}`}>Download</a>
-          </td>
-          </tr>
-          </tbody>
-          </table>
-
-          <button onClick={()=>setShowVersionsPopup(false)}>Close</button>
+                    <tbody>
+                      <tr>
+                        <td>{selectedDoc?.["File Name"]}</td>
+                        <td>{selectedDoc?.["File Number"]}</td>
+                        <td>{selectedDoc?.["Revision No"]}</td>
+                        <td>
+                        <a href={`/api/documents/download/${selectedDoc?.id}`}>Download</a>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+                <div className={styles.footer}>
+                  <button className="btn btn-2 btn-white" onClick={()=>setShowVersionsPopup(false)}>Close</button>
+                </div>
 
           </div>
           </div>

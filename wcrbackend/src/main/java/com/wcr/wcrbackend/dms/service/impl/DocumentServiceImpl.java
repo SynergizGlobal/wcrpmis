@@ -34,6 +34,7 @@ import com.wcr.wcrbackend.dms.constant.Constant;
 import com.wcr.wcrbackend.dms.dto.DocumentDTO;
 import com.wcr.wcrbackend.dms.dto.DocumentGridDTO;
 import com.wcr.wcrbackend.dms.dto.MetaDataDto;
+import com.wcr.wcrbackend.dms.dto.NotRequiredDTO;
 import com.wcr.wcrbackend.dms.dto.SendDocumentDTO;
 import com.wcr.wcrbackend.dms.entity.Department;
 import com.wcr.wcrbackend.dms.entity.Document;
@@ -104,7 +105,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public List<DocumentGridDTO> getAllDocuments() {
 
-        List<Document> docs = documentRepository.findAll();
+        List<Document> docs = documentRepository.findActiveDocuments();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -127,7 +128,7 @@ public class DocumentServiceImpl implements DocumentService {
             dto.setProjectName(d.getProjectName());
             dto.setContractName(d.getContractName());
 
-            dto.setPath(buildFolderPath(d.getFolder()));
+            dto.setPath(d.getPath() != null ? d.getPath() : "");
 
             dto.setDepartment(
                 d.getDepartment() != null ? d.getDepartment().getName() : ""
@@ -174,6 +175,10 @@ public class DocumentServiceImpl implements DocumentService {
         document.setProjectName(dto.getProjectName());
         document.setContractName(dto.getContractName());
 
+        document.setPath(
+            dto.getPath() != null ? dto.getPath().trim() : ""
+        );
+
         if (dto.getDepartment() != null) {
             Department department = departmentRepository
                     .findById(Long.parseLong(dto.getDepartment()))
@@ -199,14 +204,6 @@ public class DocumentServiceImpl implements DocumentService {
 
             Folder folder = folderRepository.findById(dto.getFolderId())
                     .orElseThrow(() -> new RuntimeException("Folder not found"));
-
-            document.setFolder(folder);
-        }
-
-        if (dto.getFolderId() != null) {
-
-            Folder folder = folderRepository.findById(dto.getFolderId())
-                .orElseThrow(() -> new RuntimeException("Folder not found"));
 
             document.setFolder(folder);
         }
@@ -271,13 +268,12 @@ public class DocumentServiceImpl implements DocumentService {
 
         if (folder == null) return "";
 
-        StringBuilder path = new StringBuilder();
-
+        List<String> parts = new ArrayList<>();
         Folder current = folder;
 
         while (current != null) {
 
-            path.insert(0, current.getName() + " / ");
+            parts.add(0, current.getName().trim()); 
 
             if (current.getParentId() != null) {
                 current = folderRepository.findById(current.getParentId()).orElse(null);
@@ -286,164 +282,172 @@ public class DocumentServiceImpl implements DocumentService {
             }
         }
 
-        return path.toString();
+        return String.join("/", parts); 
     }
 
     @Override
-	@Transactional
-	public DocumentDTO uploadFileWithMetaData(DocumentDTO documentDto, List<MultipartFile> files, String userId) {
-		Folder folder = folderRepository.findByName(documentDto.getFolder()).get();
-		SubFolder subFolder = subFolderRepository.findByName(documentDto.getSubFolder()).get();
-		Department department = departmentRepository.findByName(documentDto.getDepartment()).get();
-		Status status = statusRepository.findByName(documentDto.getCurrentStatus()).get();
-		User user = userRepository.findById(userId).get();
-		
-		Optional<Document> documentInDBOptional = documentRepository.findByFileName(documentDto.getFileName());
-		// 1. If file name is same but file number is different
-		if (documentInDBOptional.isPresent()) {
-			Document document = documentInDBOptional.get();
-			if (!document.getFileNumber().equals(documentDto.getFileNumber())) {
-				return DocumentDTO.builder().fileName(document.getFileName()).fileNumber(document.getFileNumber())
-						.revisionNo(document.getRevisionNo()).revisionDate(document.getRevisionDate())
-						.folder(folder.getName()).subFolder(subFolder.getName()).department(department.getName())
-						.currentStatus(status.getName())
-						.errorMessage("File name already exists with File number: " + document.getFileNumber()
-								+ ". Change the File name or File number to accept.")
-						.projectName(document.getProjectName()).contractName(document.getContractName()).build();
-			}
-		}
+@Transactional
+public DocumentDTO uploadFileWithMetaData(DocumentDTO documentDto, List<MultipartFile> files, String userId) {
 
-		documentInDBOptional = documentRepository.findByFileNumber(documentDto.getFileNumber());
-		// 2. If file number is same but file name is different
-		if (documentInDBOptional.isPresent()) {
-			Document document = documentInDBOptional.get();
-			if (!document.getFileName().equals(documentDto.getFileName())) {
-				return DocumentDTO.builder().fileName(document.getFileName()).fileNumber(document.getFileNumber())
-						.revisionNo(document.getRevisionNo()).revisionDate(document.getRevisionDate())
-						.folder(folder.getName()).subFolder(subFolder.getName()).department(department.getName())
-						.currentStatus(status.getName())
-						.errorMessage("File number already exists for File name: " + document.getFileName()
-								+ ". Change the File name or File number to accept.")
-						.projectName(document.getProjectName()).contractName(document.getContractName()).build();
-			}
-		}
+    String path = documentDto.getPath();
 
-		// If file exists with same FileName & FileNumber UI should be reported
-		documentInDBOptional = documentRepository.findByFileNameAndFileNumber(documentDto.getFileName(),
-				documentDto.getFileNumber());
+    Department department = departmentRepository.findByName(documentDto.getDepartment()).get();
+    Status status = statusRepository.findByName(documentDto.getCurrentStatus()).get();
+    User user = userRepository.findById(userId).get();
 
-		// 3. If Revisionnumber is smaller than report to user
-		if (documentInDBOptional.isPresent()) {
-			Document document = documentInDBOptional.get();
-			String uiRevisionNo = documentDto.getRevisionNo();
-			String dbRevisionNo = document.getRevisionNo();
-			if (isSmaller(uiRevisionNo, dbRevisionNo)) {
-				return DocumentDTO.builder().fileName(document.getFileName()).fileNumber(document.getFileNumber())
-						.revisionNo(document.getRevisionNo()).revisionDate(document.getRevisionDate())
-						.folder(folder.getName()).subFolder(subFolder.getName()).department(department.getName())
-						.currentStatus(status.getName())
-						.errorMessage("File Name: " + documentDto.getFileName() + ", File Number: "
-								+ documentDto.getFileNumber()
-								+ " already has file with same Revision number. The Revision number has to be more than "
-								+ dbRevisionNo)
-						.projectName(document.getProjectName()).contractName(document.getContractName()).build();
+    Optional<Document> documentInDBOptional = documentRepository.findByFileName(documentDto.getFileName());
 
-			}
-		}
+    
+    if (documentInDBOptional.isPresent()) {
 
-		//
-		if (documentInDBOptional.isPresent()) {
-			// update the revision and file number and archive file
-			Document documentInDB = documentInDBOptional.get();
+        Document document = documentInDBOptional.get();
 
-			List<DocumentFile> archivedDocumentFiles;
-			try {
-				archivedDocumentFiles = moveFilesToArchiveFolder(documentInDB.getDocumentFiles(), subFolder);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				return DocumentDTO.builder().errorMessage("Error archiving files to the filesystem").build();
-			}
+        if (!document.getFileNumber().equals(documentDto.getFileNumber())) {
 
-			List<DocumentFile> newDocumentFiles;
-			try {
-				newDocumentFiles = saveNewFilesToSubFolder(subFolder, files);
-			} catch (IOException e) {
-				return DocumentDTO.builder().errorMessage("Error saving files to the filesystem").build();
-			}
-			List<SendDocument> sendDocuments = documentInDB.getSendDocument();
-			Document document = Document.builder().fileName(documentDto.getFileName())
-					.fileNumber(documentDto.getFileNumber()).revisionNo(documentDto.getRevisionNo())
-					.revisionDate(documentDto.getRevisionDate()).folder(folder).subFolder(subFolder)
-					.department(department).fileDBNumber(UUID.randomUUID().toString()).documentFiles(newDocumentFiles)
-					.currentStatus(status).projectName(documentDto.getProjectName())
-					.contractName(documentDto.getContractName()).reasonForUpdate(documentDto.getReasonForUpdate())
-					.createdBy(userId)
-					.createdByUser(user.getUserName()).build();
-			List<SendDocument> newSendDocuments = new ArrayList<>();
-			for(SendDocument sendDocument : sendDocuments) {
-				SendDocument newSendDocument  = SendDocument.builder()
-						.attachmentName(sendDocument.getAttachmentName())
-						.createdBy(sendDocument.getCreatedBy())
-						.createdAt(sendDocument.getCreatedAt())
-						.document(document)
-						.responseExpected(sendDocument.getResponseExpected())
-						.sendReason(sendDocument.getSendReason())
-						.sendSubject(sendDocument.getSendSubject())
-						.sendTo(sendDocument.getSendTo())
-						.sendToUserId(sendDocument.getSendToUserId())
-						.status(sendDocument.getStatus())
-						.targetResponseDate(sendDocument.getTargetResponseDate())
-						.updatedAt(sendDocument.getUpdatedAt())
-						.build();
-				newSendDocuments.add(newSendDocument);
-			}
-			document.setSendDocument(newSendDocuments);
-			// Save the new Document first
-			Document savedNewDocument = documentRepository.save(document);
-			documentRepository.flush();
+            return DocumentDTO.builder()
+                    .fileName(document.getFileName())
+                    .fileNumber(document.getFileNumber())
+                    .revisionNo(document.getRevisionNo())
+                    .revisionDate(document.getRevisionDate())
+                    .path(document.getPath())
+                    .department(department.getName())
+                    .currentStatus(status.getName())
+                    .errorMessage("File name already exists with File number: "
+                            + document.getFileNumber())
+                    .projectName(document.getProjectName())
+                    .contractName(document.getContractName())
+                    .build();
+        }
+    }
 
-			// Save DocumentFiles and link to savedDocument
-			// List<DocumentFile> savedNewDocumentFiles = new ArrayList<>();
-			for (DocumentFile documentFile : newDocumentFiles) {
-				// documentFile.setDocument(savedDocument);
-				documentFile.setDocument(savedNewDocument);
-				documentFileRepository.save(documentFile);
-				documentFileRepository.flush();
-				// savedArchivedDocumentFiles.add(documentFile);
-			}
-			Optional<Document> latestFromDB = documentRepository.findById(documentInDB.getId());
+    documentInDBOptional = documentRepository.findByFileNumber(documentDto.getFileNumber());
 
-			// Create DocumentRevision linked to old document (still persistent here)
-			DocumentRevision documentRevision = DocumentRevision.builder().fileName(documentInDB.getFileName())
-					.fileNumber(documentInDB.getFileNumber()).revisionNo(documentInDB.getRevisionNo())
-					.revisionDate(documentInDB.getRevisionDate()).folder(folder).subFolder(subFolder)
-					.department(department).currentStatus(status).documentFiles(archivedDocumentFiles)
-					.fileDBNumber(documentInDB.getFileDBNumber()).createdBy(documentInDB.getCreatedBy())
-					// .document(latestFromDB.get()) // still valid at this point
-					.projectName(documentInDB.getProjectName()).contractName(documentInDB.getContractName())
-					.reasonForUpdate(documentInDB.getReasonForUpdate())
-					.createdByUser(documentInDB.getCreatedByUser()).build();
+    
+    if (documentInDBOptional.isPresent()) {
 
-			documentRevisionRepository.save(documentRevision);
-			documentRevisionRepository.flush();
-			// ✅ Now it's safe to delete the old document
-			List<DocumentFile> savedArchivedDocumentFiles = new ArrayList<>();
-			for (DocumentFile documentFile : archivedDocumentFiles) {
-				// documentFile.setDocument(savedDocument);
-				documentFile.setDocumentRevision(documentRevision);
-				documentFileRepository.save(documentFile);
-				documentFileRepository.flush();
-				savedArchivedDocumentFiles.add(documentFile);
-			}
+        Document document = documentInDBOptional.get();
 
-			documentRepository.delete(latestFromDB.get());
+        if (!document.getFileName().equals(documentDto.getFileName())) {
 
-			return mapTODto(savedNewDocument, folder, subFolder, department, status);
+            return DocumentDTO.builder()
+                    .fileName(document.getFileName())
+                    .fileNumber(document.getFileNumber())
+                    .revisionNo(document.getRevisionNo())
+                    .revisionDate(document.getRevisionDate())
+                    .path(document.getPath())
+                    .department(department.getName())
+                    .currentStatus(status.getName())
+                    .errorMessage("File number already exists for File name: "
+                            + document.getFileName())
+                    .projectName(document.getProjectName())
+                    .contractName(document.getContractName())
+                    .build();
+        }
+    }
 
-		}
+    documentInDBOptional = documentRepository
+            .findByFileNameAndFileNumber(documentDto.getFileName(), documentDto.getFileNumber());
 
-		return saveNewDocument(documentDto, files, folder, subFolder, department, status, userId);
-	}
+    // 3️⃣ Revision validation
+    if (documentInDBOptional.isPresent()) {
+
+        Document document = documentInDBOptional.get();
+
+        if (isSmaller(documentDto.getRevisionNo(), document.getRevisionNo())) {
+
+            return DocumentDTO.builder()
+                    .fileName(document.getFileName())
+                    .fileNumber(document.getFileNumber())
+                    .revisionNo(document.getRevisionNo())
+                    .revisionDate(document.getRevisionDate())
+                    .path(document.getPath())
+                    .department(department.getName())
+                    .currentStatus(status.getName())
+                    .errorMessage("Revision number must be greater than "
+                            + document.getRevisionNo())
+                    .projectName(document.getProjectName())
+                    .contractName(document.getContractName())
+                    .build();
+        }
+    }
+
+    // 🔄 UPDATE EXISTING DOCUMENT
+    if (documentInDBOptional.isPresent()) {
+
+        Document documentInDB = documentInDBOptional.get();
+
+        List<DocumentFile> archivedFiles;
+
+        try {
+            archivedFiles = moveFilesToArchiveFolder(documentInDB.getDocumentFiles(), path);
+        } catch (IOException e) {
+            return DocumentDTO.builder()
+                    .errorMessage("Error archiving files")
+                    .build();
+        }
+
+        List<DocumentFile> newFiles;
+
+        try {
+            newFiles = saveNewFilesToPath(path, files);
+        } catch (IOException e) {
+            return DocumentDTO.builder()
+                    .errorMessage("Error saving files")
+                    .build();
+        }
+
+        Document document = Document.builder()
+                .fileName(documentDto.getFileName())
+                .fileNumber(documentDto.getFileNumber())
+                .revisionNo(documentDto.getRevisionNo())
+                .revisionDate(documentDto.getRevisionDate())
+                .path(path)
+                .department(department)
+                .documentFiles(newFiles)
+                .currentStatus(status)
+                .fileDBNumber(UUID.randomUUID().toString())
+                .projectName(documentDto.getProjectName())
+                .contractName(documentDto.getContractName())
+                .reasonForUpdate(documentDto.getReasonForUpdate())
+                .createdBy(userId)
+                .createdByUser(user.getUserName())
+                .build();
+
+        Document savedDocument = documentRepository.save(document);
+
+        for (DocumentFile f : newFiles) {
+            f.setDocument(savedDocument);
+            documentFileRepository.save(f);
+        }
+
+        // revision record
+        DocumentRevision revision = DocumentRevision.builder()
+                .fileName(documentInDB.getFileName())
+                .fileNumber(documentInDB.getFileNumber())
+                .revisionNo(documentInDB.getRevisionNo())
+                .revisionDate(documentInDB.getRevisionDate())
+                .path(documentInDB.getPath())
+                .department(department)
+                .currentStatus(status)
+                .documentFiles(archivedFiles)
+                .fileDBNumber(documentInDB.getFileDBNumber())
+                .createdBy(documentInDB.getCreatedBy())
+                .createdByUser(documentInDB.getCreatedByUser())
+                .projectName(documentInDB.getProjectName())
+                .contractName(documentInDB.getContractName())
+                .reasonForUpdate(documentInDB.getReasonForUpdate())
+                .build();
+
+        documentRevisionRepository.save(revision);
+
+        documentRepository.delete(documentInDB);
+
+        return mapTODto(savedDocument, department, status);
+    }
+
+    // 🆕 NEW DOCUMENT
+    return saveNewDocument(documentDto, files, path, department, status, userId);
+}
 
     private boolean isSmaller(String uiRevisionNo, String dbRevisionNo) {
 		String numberPart = uiRevisionNo.substring(1); // "01"
@@ -463,75 +467,105 @@ public class DocumentServiceImpl implements DocumentService {
 		return false;
 	}
 
-    private List<DocumentFile> moveFilesToArchiveFolder(List<DocumentFile> files, SubFolder subFolder)
-			throws IOException {
-		List<DocumentFile> savedFiles = new ArrayList<>();
+    private List<DocumentFile> moveFilesToArchiveFolder(List<DocumentFile> files, String path)
+            throws IOException {
 
-		// Create full path for subfolder
-		String archiveFolderPath = basePath + "\\" + subFolder.getFolder().getName() + "\\" + subFolder.getName()
-				+ "\\archive\\";
+        List<DocumentFile> savedFiles = new ArrayList<>();
 
-		String subFolderPath = basePath + "\\" + subFolder.getFolder().getName() + "\\" + subFolder.getName() + "\\";
-		// Ensure the directory exists
-		File directory = new File(archiveFolderPath);
-		if (!directory.exists()) {
-			directory.mkdirs(); // create folder if not exists
-		}
+        String cleanPath = normalizePath(path);
 
-		for (DocumentFile file : files) {
-			try {
-				String targetFileName = file.getFileName().split("\\.")[0] + System.currentTimeMillis() + "."
-						+ file.getFileName().split("\\.")[1];
-				Path sourcePath = Paths.get(file.getFilePath());
-				Path targetPath = Paths.get(archiveFolderPath + targetFileName);
-				DocumentFile documentFile = new DocumentFile();
-				documentFile.setFilePath(archiveFolderPath + targetFileName);
-				documentFile.setFileName(targetFileName);
-				documentFile.setFileType(targetFileName.split("\\.")[1]);
-				savedFiles.add(documentFile);
-				Files.move(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+        String archiveFolderPath = basePath + "\\" + cleanPath + "\\archive\\";
 
-			} catch (IOException e) {
-				throw e;
-				// Optional: log or throw a custom exception
-			}
-		}
+        File directory = new File(archiveFolderPath);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
 
-		return savedFiles;
-	}
+        for (DocumentFile file : files) {
 
-    private DocumentDTO mapTODto(Document document, Folder folder, SubFolder subFolder, Department department,
-			Status status) {
-		return DocumentDTO.builder().fileName(document.getFileName()).fileNumber(document.getFileNumber())
-				.revisionNo(document.getRevisionNo()).revisionDate(document.getRevisionDate()).folder(folder.getName())
-				.subFolder(subFolder.getName()).department(department.getName()).currentStatus(status.getName())
-				.projectName(document.getProjectName()).contractName(document.getContractName())
-				.reasonForUpdate(document.getReasonForUpdate()).build();
-	}
+            String original = file.getFileName();
 
-	private DocumentDTO saveNewDocument(DocumentDTO documentDto, List<MultipartFile> files, Folder folder,
-			SubFolder subFolder, Department department, Status status, String userId) {
-		List<DocumentFile> newDocumentFiles;
-		User user = userRepository.findById(userId).get();
-		try {
-			newDocumentFiles = saveNewFilesToSubFolder(subFolder, files);
-		} catch (IOException e) {
-			return DocumentDTO.builder().errorMessage("Error saving files to the filesystem").build();
-		}
+            String name = original.substring(0, original.lastIndexOf("."));
+            String ext = original.substring(original.lastIndexOf(".") + 1);
 
-		Document document = Document.builder().fileName(documentDto.getFileName())
-				.fileNumber(documentDto.getFileNumber()).revisionNo("R01").revisionDate(documentDto.getRevisionDate())
-				.folder(folder).subFolder(subFolder).department(department).currentStatus(status)
-				.fileDBNumber(UUID.randomUUID().toString()).projectName(documentDto.getProjectName())
-				.contractName(documentDto.getContractName()).reasonForUpdate(documentDto.getReasonForUpdate())
-				.createdBy(userId).createdByUser(user.getUserName()).build();
-		Document savedDocument = documentRepository.save(document);
-		for (DocumentFile documentFile : newDocumentFiles) {
-			documentFile.setDocument(savedDocument);
-			documentFileRepository.save(documentFile);
-		}
-		return mapTODto(savedDocument, folder, subFolder, department, status);
-	}
+            String newFileName = name + "_" + System.currentTimeMillis() + "." + ext;
+
+            Path sourcePath = Paths.get(file.getFilePath());
+            Path targetPath = Paths.get(archiveFolderPath + newFileName);
+
+            Files.move(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+            DocumentFile newFile = new DocumentFile();
+            newFile.setFileName(newFileName);
+            newFile.setFilePath(targetPath.toString());
+            newFile.setFileType(ext);
+
+            savedFiles.add(newFile);
+        }
+
+        return savedFiles;
+    }
+
+    private DocumentDTO mapTODto(Document document, Department department, Status status) {
+
+        return DocumentDTO.builder()
+                .fileName(document.getFileName())
+                .fileNumber(document.getFileNumber())
+                .revisionNo(document.getRevisionNo())
+                .revisionDate(document.getRevisionDate())
+                .path(document.getPath())
+                .department(department.getName())
+                .currentStatus(status.getName())
+                .projectName(document.getProjectName())
+                .contractName(document.getContractName())
+                .reasonForUpdate(document.getReasonForUpdate())
+                .build();
+    }
+
+	private DocumentDTO saveNewDocument(
+            DocumentDTO documentDto,
+            List<MultipartFile> files,
+            String path,
+            Department department,
+            Status status,
+            String userId) {
+
+        List<DocumentFile> newDocumentFiles;
+        User user = userRepository.findById(userId).get();
+
+        try {
+            newDocumentFiles = saveNewFilesToPath(path, files); 
+        } catch (IOException e) {
+            return DocumentDTO.builder()
+                    .errorMessage("Error saving files to filesystem")
+                    .build();
+        }
+
+        Document document = Document.builder()
+                .fileName(documentDto.getFileName())
+                .fileNumber(documentDto.getFileNumber())
+                .revisionNo("R01")
+                .revisionDate(documentDto.getRevisionDate())
+                .path(path)  
+                .department(department)
+                .currentStatus(status)
+                .fileDBNumber(UUID.randomUUID().toString())
+                .projectName(documentDto.getProjectName())
+                .contractName(documentDto.getContractName())
+                .reasonForUpdate(documentDto.getReasonForUpdate())
+                .createdBy(userId)
+                .createdByUser(user.getUserName())
+                .build();
+
+        Document savedDocument = documentRepository.save(document);
+
+        for (DocumentFile file : newDocumentFiles) {
+            file.setDocument(savedDocument);
+            documentFileRepository.save(file);
+        }
+
+        return mapTODto(savedDocument, department, status);
+    }
 
     private List<DocumentFile> saveNewFilesToSubFolder(SubFolder subFolder, List<MultipartFile> files)
 			throws IOException {
@@ -579,6 +613,61 @@ public class DocumentServiceImpl implements DocumentService {
 		return savedFiles;
 	}
 
+    private List<DocumentFile> saveNewFilesToPath(String path, List<MultipartFile> files)
+            throws IOException {
+
+        List<DocumentFile> savedFiles = new ArrayList<>();
+        
+        path = path.trim()
+                .replace(" / ", File.separator)
+                .replace("/", File.separator)
+                .replace("\\\\", "\\");
+
+        String fullPath = basePath + File.separator + path + File.separator;
+
+        File directory = new File(fullPath);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        for (MultipartFile file : files) {
+
+            if (!file.isEmpty()) {
+
+                String original = file.getOriginalFilename();
+
+                String name = original.substring(0, original.lastIndexOf("."));
+                String ext = original.substring(original.lastIndexOf(".") + 1);
+
+                String newFileName = name + "_" + System.currentTimeMillis() + "." + ext;
+
+                Path filePath = Paths.get(fullPath + newFileName);
+
+                Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                DocumentFile docFile = new DocumentFile();
+                docFile.setFileName(newFileName);
+                docFile.setFilePath(filePath.toString());
+                docFile.setFileType(ext);
+
+                savedFiles.add(docFile);
+            }
+        }
+
+        return savedFiles;
+    }
+
+    private String normalizePath(String path) {
+
+        if (path == null) return "";
+
+        return path
+                .trim()
+                .replaceAll("\\s*/\\s*", "\\\\")  
+                .replaceAll("\\\\+", "\\\\")    
+                .replaceAll("\\s+$", "");       
+    }
+
 	public static String getExtension(File file) {
 		String name = file.getName();
 		int lastIndex = name.lastIndexOf(".");
@@ -593,10 +682,19 @@ public class DocumentServiceImpl implements DocumentService {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Document not found"));
 
-        document.setFileName(dto.getFileName());
-        document.setFileNumber(dto.getFileNumber());
+        if (dto.getFileName() != null) {
+			document.setFileName(dto.getFileName());
+		}
+
+		if (dto.getFileNumber() != null) {
+			document.setFileNumber(dto.getFileNumber());
+		}
+		if (dto.getRevisionNo() != null){
         document.setRevisionNo(dto.getRevisionNo());
+		}
+		if (dto.getRevisionDate() != null) {
         document.setRevisionDate(dto.getRevisionDate());
+		}
 
         document.setProjectName(dto.getProjectName());
         document.setContractName(dto.getContractName());
@@ -655,8 +753,8 @@ public class DocumentServiceImpl implements DocumentService {
 
         DocumentRevision revision = new DocumentRevision();
 
-        revision.setFileName(dto.getFileName());
-        revision.setFileNumber(dto.getFileNumber());
+        revision.setFileName(document.getFileName());
+		revision.setFileNumber(document.getFileNumber());
         revision.setRevisionNo(dto.getRevisionNo());
         revision.setRevisionDate(dto.getRevisionDate());
         revision.setDocument(document);
@@ -685,18 +783,32 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-    public void markNotRequired(Long id) {
-            Document document = documentRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Document not found"));
-    
-            Status notRequiredStatus = statusRepository.findByName("Not Required")
-                    .orElseThrow(() -> new RuntimeException("Status 'Not Required' not found"));
-    
-            document.setCurrentStatus(notRequiredStatus);
-            document.setUpdatedAt(LocalDateTime.now());
-    
-            documentRepository.save(document);
-    }
+	public void markNotRequired(NotRequiredDTO dto, String userId) {
+
+		Document document = documentRepository.findById(dto.getDocumentId())
+				.orElseThrow(() -> new RuntimeException("Document not found"));
+
+		List<DocumentFile> archivedFiles = new ArrayList<>();
+
+		try {
+			archivedFiles = this.moveFilesToArchiveFolder(document.getDocumentFiles(), dto.getPath());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		document.getDocumentFiles().clear();
+
+		for (DocumentFile archivedFile : archivedFiles) {
+			archivedFile.setDocument(document);
+			documentFileRepository.save(archivedFile);
+			document.getDocumentFiles().add(archivedFile);
+		}
+
+		document.setNotRequired(true);
+		document.setNotRequiredBy(userId);
+
+		documentRepository.save(document);
+	}
 
     @Override
     public String saveOrSendDocument(SendDocumentDTO dto, String userId, String baseUrl) {
@@ -789,13 +901,38 @@ public class DocumentServiceImpl implements DocumentService {
 	}
 
 	private SendDocument mapDTOToSendDocument(SendDocumentDTO dto, String userId) {
-		Document document = documentRepository.getById(dto.getDocId());
-		return SendDocument.builder().id(dto.getId()).attachmentName(dto.getAttachmentName()).document(document)
-				.sendTo(dto.getSendTo()).sendToUserId(dto.getSendToUserId()).sendCc(dto.getSendCc())
-				.sendCcUserId(dto.getSendCcUserId()).sendSubject(dto.getSendSubject()).sendReason(dto.getSendReason())
-				.responseExpected(dto.getResponseExpected()).targetResponseDate(dto.getTargetResponseDate())
-				.status(dto.getStatus()).createdBy(userId).build();
-	}
+
+        SendDocument sendDocument;
+
+        if (dto.getId() != null) {
+            sendDocument = sendDocumentRepository.findById(dto.getId())
+                    .orElseThrow(() -> new RuntimeException("Draft not found"));
+        } else {
+            sendDocument = new SendDocument();
+        }
+
+        if (dto.getDocId() == null) {
+            throw new RuntimeException("Document ID is missing.");
+        }
+
+        Document document = documentRepository.findById(dto.getDocId())
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        sendDocument.setDocument(document);
+        sendDocument.setAttachmentName(dto.getAttachmentName());
+        sendDocument.setSendTo(dto.getSendTo());
+        sendDocument.setSendToUserId(dto.getSendToUserId());
+        sendDocument.setSendCc(dto.getSendCc());
+        sendDocument.setSendCcUserId(dto.getSendCcUserId());
+        sendDocument.setSendSubject(dto.getSendSubject());
+        sendDocument.setSendReason(dto.getSendReason());
+        sendDocument.setResponseExpected(dto.getResponseExpected());
+        sendDocument.setTargetResponseDate(dto.getTargetResponseDate());
+        sendDocument.setStatus(dto.getStatus());
+        sendDocument.setCreatedBy(userId);
+
+        return sendDocument;
+    }
 
     @Override
 	public List<Map<String, MetaDataDto>> validateMetadata(List<List<String>> rows, String userId, String userRoleName)

@@ -4,11 +4,23 @@ import styles from './DmsTable.module.css';
 
 export default function DmsTable({ columns = [], mockData = [], loading, onRowClick, renderActions }) {
 
-  const data = useMemo(() => mockData || [], [mockData]);
-  const cols = useMemo(
-    () => columns.map(c => ({ Header: c, accessor: c, id: c })),
-    [columns]
-  );
+  const data = useMemo(() => Array.isArray(mockData) ? mockData : [], [mockData]);
+  const cols = useMemo(() => {
+  return columns.map((col) => {
+    if (typeof col === "string") {
+      return {
+        Header: col,
+        accessor: col,
+        id: col
+      };
+    }
+    return {
+      ...col,
+      id: col.id || col.accessor
+    };
+  });
+}, [columns]);
+
 
   const {
     getTableProps,

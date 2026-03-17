@@ -13,4 +13,5 @@ public class NotRequiredDTO {
 private Long documentId;
 private String folder;
 private String subFolder;
+private String path;
 }
