@@ -7,6 +7,13 @@ let getCache = {};
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
   withCredentials: true,
+  transformResponse: [(data) => {
+  try {
+    return JSON.parse(data);
+  } catch {
+    return data;
+  }
+}]
 });
 
 // -----------------------------------------

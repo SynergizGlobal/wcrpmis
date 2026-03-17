@@ -18,14 +18,14 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wcr.wcrbackend.dms.dto.DocumentDTO;
 import com.wcr.wcrbackend.dms.dto.DocumentGridDTO;
+import com.wcr.wcrbackend.dms.dto.DraftSendDocumentDTO;
+import com.wcr.wcrbackend.dms.dto.NotRequiredDTO;
 import com.wcr.wcrbackend.dms.dto.SendDocumentDTO;
 import com.wcr.wcrbackend.dms.entity.DocumentRevision;
 import com.wcr.wcrbackend.dms.entity.SendDocument;
-import com.wcr.wcrbackend.dms.repository.DocumentRepository;
 import com.wcr.wcrbackend.dms.repository.SendDocumentRepository;
 import com.wcr.wcrbackend.dms.service.DocumentService;
 import com.wcr.wcrbackend.dms.service.SendDocumentService;
-
 import com.wcr.wcrbackend.entity.User;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -108,28 +108,58 @@ public class DocumentController {
         return ResponseEntity.ok("Success");
     }
 
+    // @GetMapping("/drafts")
+    // public List<SendDocument> getDrafts(HttpSession session) {
+
+    //     User user = (User) session.getAttribute("user");
+
+    //     if (user == null) {
+    //         return List.of();
+    //     }
+
+    //     return sendDocumentRepository.findByCreatedByAndStatus(
+    //             user.getUserName(),
+    //             "Draft"
+    //     );
+    // }
+
     @GetMapping("/drafts")
-    public List<SendDocument> getDrafts(HttpSession session) {
+    public ResponseEntity<List<DraftSendDocumentDTO>> getDrafts() {
 
-        User user = (User) session.getAttribute("user");
+        List<SendDocument> drafts =
+                sendDocumentRepository.findByStatusIgnoreCase("draft");
 
-        if (user == null) {
-            return List.of();
-        }
+        List<DraftSendDocumentDTO> dtoList = drafts.stream().map(d -> {
 
-        return sendDocumentRepository.findByCreatedByAndStatus(
-                user.getUserName(),
-                "Draft"
-        );
+            DraftSendDocumentDTO dto = new DraftSendDocumentDTO();
+
+            dto.setId(d.getId());
+            
+            if (d.getDocument() != null) {
+                dto.setDocId(d.getDocument().getId());
+            }
+
+            dto.setSendTo(d.getSendTo());
+            dto.setSendSubject(d.getSendSubject());
+            dto.setSendReason(d.getSendReason());
+            dto.setResponseExpected(d.getResponseExpected());
+            dto.setTargetResponseDate(d.getTargetResponseDate());
+            dto.setAttachmentName(d.getAttachmentName());
+            dto.setCreatedAt(d.getUpdatedAt());
+
+            return dto;
+
+        }).toList();
+
+        return ResponseEntity.ok(dtoList);
     }
 
-    @PutMapping("/not-required/{id}")
-    public ResponseEntity<String> markNotRequired(@PathVariable Long id) {
-
-        documentService.markNotRequired(id);
-
-        return ResponseEntity.ok("Document marked as not required");
-    }
+    @PostMapping("/not-required")
+	public ResponseEntity<Long> markNotRequired(@RequestBody NotRequiredDTO dto, HttpSession session) {
+		User user = (User) session.getAttribute("user");
+		documentService.markNotRequired(dto, user.getUserId());
+		return ResponseEntity.ok(dto.getDocumentId());
+	}
 
     @GetMapping("/versions/{fileNumber}")
     public ResponseEntity<List<DocumentRevision>> getVersions(@PathVariable String fileNumber) {
