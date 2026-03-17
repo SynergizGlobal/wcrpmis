@@ -23,6 +23,7 @@ import com.wcr.wcrbackend.dms.dto.NotRequiredDTO;
 import com.wcr.wcrbackend.dms.dto.SendDocumentDTO;
 import com.wcr.wcrbackend.dms.entity.DocumentRevision;
 import com.wcr.wcrbackend.dms.entity.SendDocument;
+import com.wcr.wcrbackend.dms.repository.DocumentRepository;
 import com.wcr.wcrbackend.dms.repository.SendDocumentRepository;
 import com.wcr.wcrbackend.dms.service.DocumentService;
 import com.wcr.wcrbackend.dms.service.SendDocumentService;
@@ -134,7 +135,7 @@ public class DocumentController {
             DraftSendDocumentDTO dto = new DraftSendDocumentDTO();
 
             dto.setId(d.getId());
-            
+
             if (d.getDocument() != null) {
                 dto.setDocId(d.getDocument().getId());
             }
