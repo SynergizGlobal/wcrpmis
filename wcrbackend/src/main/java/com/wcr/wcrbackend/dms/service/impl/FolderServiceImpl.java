@@ -30,9 +30,10 @@ public class FolderServiceImpl implements FolderService {
     @Override
     @Transactional(readOnly = true)
     public List<FolderDTO> getAllFolders() {
-        return folderRepository.findAllWithSubFolders()
+        // Only return root folders (parentId is null)
+        return folderRepository.findByParentIdIsNull()
                 .stream()
-                .map(this::toDTO)
+                .map(this::toDTOWithSubFolders)
                 .collect(Collectors.toList());
     }
 
@@ -41,14 +42,14 @@ public class FolderServiceImpl implements FolderService {
     public FolderDTO getFolderById(Long id) {
         Folder folder = folderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Folder not found"));
-        return toDTO(folder);
+        return toDTOWithSubFolders(folder);
     }
 
     @Override
     @Transactional(readOnly = true)
     public FolderDTO getFolderByName(String name) {
         return folderRepository.findByNameWithSubFolders(name)
-                .map(this::toDTO)
+                .map(this::toDTOWithSubFolders)
                 .orElse(null);
     }
 
@@ -57,16 +58,8 @@ public class FolderServiceImpl implements FolderService {
     @Override
     public FolderDTO createFolder(FolderDTO folderDTO) {
         Folder folder = new Folder();
-
         folder.setName(folderDTO.getName());
         folder.setParentId(folderDTO.getParentId());
-
-        // if (folderDTO.getSubFolders() != null) {
-        //     folderDTO.getSubFolders().forEach(sf ->
-        //         folder.getSubFolders().add(new SubFolder(sf.getName(), folder))
-        //     );
-        // }
-
         Folder saved = folderRepository.save(folder);
         return toDTO(saved);
     }
@@ -79,7 +72,6 @@ public class FolderServiceImpl implements FolderService {
         folder.setName(folderDTO.getName());
 
         if (folderDTO.getSubFolders() != null) {
-
             Map<Long, SubFolder> existing =
                     folder.getSubFolders().stream()
                             .collect(Collectors.toMap(SubFolder::getId, sf -> sf));
@@ -95,7 +87,7 @@ public class FolderServiceImpl implements FolderService {
             }
         }
 
-        return toDTO(folderRepository.save(folder));
+        return toDTOWithSubFolders(folderRepository.save(folder));
     }
 
     @Override
@@ -108,8 +100,6 @@ public class FolderServiceImpl implements FolderService {
         subFolderRepository.deleteById(subFolderId);
     }
 
-    
-
     @Override
     @Transactional(readOnly = true)
     public List<FolderDTO> getAllFoldersByProjectsAndContracts(
@@ -118,7 +108,7 @@ public class FolderServiceImpl implements FolderService {
         return folderRepository
                 .getAllFoldersByProjectsAndContracts(project, contract, userId)
                 .stream()
-                .map(f -> new FolderDTO(f.getId(), f.getName()))
+                .map(this::toDTO)
                 .toList();
     }
 
@@ -128,15 +118,17 @@ public class FolderServiceImpl implements FolderService {
             List<String> projects, List<String> contracts) {
 
         return folderRepository
-                .getAllFoldersByProjectsAndContracts(projects, contracts)
+                .getAllFoldersByProjectsAndContractsWithSubFolders(projects, contracts)
                 .stream()
-                .map(f -> new FolderDTO(f.getId(), f.getName()))
+                .map(this::toDTOWithSubFolders)
                 .toList();
     }
 
-    
-
     private FolderDTO toDTO(Folder folder) {
+        return new FolderDTO(folder.getId(), folder.getName());
+    }
+
+    private FolderDTO toDTOWithSubFolders(Folder folder) {
         List<SubFolderDTO> subFolders = folder.getSubFolders() == null
                 ? List.of()
                 : folder.getSubFolders().stream()
@@ -148,7 +140,7 @@ public class FolderServiceImpl implements FolderService {
 
     @Override
     public List<Folder> getFolderTree() {
-        return folderRepository.findAllWithSubFolders();
+        return folderRepository.findByParentIdIsNull();
     }
 
     @Override
@@ -161,13 +153,9 @@ public class FolderServiceImpl implements FolderService {
         return folderRepository.findByNameContainingIgnoreCase(name);
     }
 
-    public List<Folder> getRootFolders() {
-        return folderRepository.findByParentIdIsNull();
-    }
-
+    @Override
     public List<FolderDTO> getChildFolders(Long parentId) {
         List<Folder> folders = folderRepository.findByParentId(parentId);
         return folders.stream().map(this::toDTO).toList();
     }
-
 }
