@@ -280,25 +280,31 @@ public class CorrespondenceServiceImpl implements ICorrespondenceService {
 			entity.setSendCorLetters(sendCors);
 		// ---------- Handle References -----------
 		List<String> refNumbers = new ArrayList<>();
+		
+		System.out.println("Refernece Number............"+dto.getReferenceLetters());
+		
 		if (dto.getReferenceLetters() != null && !dto.getReferenceLetters().isEmpty()) {
 			refNumbers = dto.getReferenceLetters().stream().flatMap(ref -> Arrays.stream(ref.split(";")))
-					.map(String::trim).filter(s -> !s.isEmpty() && s.length() <= 100).toList();
+					.map(String::trim).filter(s -> !s.isEmpty() && s.length() <= 100).distinct().toList();
 		}
 
 		List<CorrespondenceReference> referenceList = new ArrayList<>();
 		for (String refNum : refNumbers) {
-			ReferenceLetter ref = new ReferenceLetter();
-			ref.setRefLetters(refNum);
-			ReferenceLetter savedRef = referenceRepo.save(ref);
 
+		    ReferenceLetter ref = referenceRepo
+		            .findByRefLetters(refNum)
+		            .orElseGet(() -> {
+		                ReferenceLetter newRef = new ReferenceLetter();
+		                newRef.setRefLetters(refNum);
+		                return referenceRepo.save(newRef);
+		            });
 			CorrespondenceReferenceId id = new CorrespondenceReferenceId();
 			id.setCorrespondenceId(savedEntity.getCorrespondenceId());
-			id.setRefId(savedRef.getRefId());
+			id.setRefId(ref.getRefId());
 
 			CorrespondenceReference corrRef = new CorrespondenceReference();
-			id.setRefId(savedRef.getRefId());
 			corrRef.setId(id); 
-			corrRef.setReferenceLetter(savedRef);
+			corrRef.setReferenceLetter(ref);
 			corrRef.setCorrespondenceLetter(savedEntity);
 			referenceList.add(corrRef);
 		}

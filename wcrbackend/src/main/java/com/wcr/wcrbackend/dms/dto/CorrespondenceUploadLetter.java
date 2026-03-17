@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -31,6 +32,6 @@ public class CorrespondenceUploadLetter {
 	private LocalDate letterDate;
 	private String projectName;
 	private String contractName;
-	private List<String> removedExistingFiles;
+	private List<String> removedExistingFiles = new ArrayList<>();
 	private Integer existingFilesCount;
 }
