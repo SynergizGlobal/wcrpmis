@@ -238,7 +238,6 @@ export default function Folders() {
           value={contract} 
           onChange={e => setContract(e.target.value)}
           className={styles.select}
-          disabled={!project}
         >
           <option value="">Select Contract</option>
           {contracts.map((c, index) => (

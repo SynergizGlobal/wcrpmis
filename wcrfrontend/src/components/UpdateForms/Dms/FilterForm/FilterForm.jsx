@@ -8,65 +8,60 @@ import axiosInstance from '../../../../api/axiosInstance';
 
 import { FaUpload, FaTrash } from "react-icons/fa";
 
-// =========================
-// FOLDER ROW — dropdown-style, one level shown at a time
-// =========================
-function FolderRow({ folder, depth, expandedFolders, toggleFolder, selectedPath, setSelectedPath, renamingId, setRenamingId, renameValue, setRenameValue, handleRename, onDelete }) {
+function FolderTreeNode({ folder, path, depth, expandedFolders, toggleFolder, selectedPath, setSelectedPath, renamingId, setRenamingId, renameValue, setRenameValue, handleRename }) {
+  const currentPath = [...path, folder];
   const isExpanded = expandedFolders.has(folder.id);
   const isSelected = selectedPath.at(-1)?.id === folder.id;
   const hasChildren = folder.children?.length > 0;
   const [hovered, setHovered] = React.useState(false);
 
-  const handleRowClick = () => {
-    // Build path up to this folder by walking selectedPath or just set it directly
-    setSelectedPath(prev => {
-      // If this folder is already selected, deselect
-      if (prev.at(-1)?.id === folder.id) return prev.slice(0, -1);
-      // Otherwise navigate to it — keep parent path if nested
-      const parentIdx = prev.findIndex(p => p.id === folder.id);
-      if (parentIdx !== -1) return prev.slice(0, parentIdx + 1);
-      return [...prev.filter(p => p.id !== folder.id), folder];
-    });
-  };
-
   return (
-    <>
-      {/* Row */}
+    <div style={{ marginLeft: depth > 0 ? '20px' : '0' }}>
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0',
-          paddingLeft: `${depth * 20 + 4}px`,
-          borderBottom: '1px solid #f1f3f9',
-          background: isSelected ? 'linear-gradient(90deg,#eef1fd,#f3f5ff)' : hovered ? '#f7f8fe' : 'white',
-          transition: 'background 0.12s',
-          minHeight: '42px',
+          gap: '6px',
+          padding: '7px 10px',
+          borderRadius: '7px',
+          cursor: 'pointer',
+          background: isSelected
+            ? 'linear-gradient(90deg, #eef1fd 0%, #f3f5ff 100%)'
+            : hovered ? '#f7f8fe' : 'transparent',
+          border: isSelected ? '1px solid #c7cff5' : '1px solid transparent',
+          transition: 'all 0.15s ease',
+          marginBottom: '2px',
         }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        onClick={() => setSelectedPath(currentPath)}
+        onDoubleClick={() => { setRenamingId(folder.id); setRenameValue(folder.name); }}
       >
-        {/* Expand toggle */}
-        <button
-          onClick={e => { e.stopPropagation(); if (hasChildren) toggleFolder(folder.id); }}
+        {/* Expand Arrow */}
+        <span
           style={{
-            width: '32px', height: '42px', flexShrink: 0,
-            background: 'none', border: 'none', cursor: hasChildren ? 'pointer' : 'default',
-            color: hasChildren ? '#6366f1' : 'transparent',
-            fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'transform 0.2s',
+            width: '18px',
+            height: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: hasChildren ? '#6b7280' : 'transparent',
+            fontSize: '9px',
+            flexShrink: 0,
+            transition: 'transform 0.2s ease',
             transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
           }}
+          onClick={e => { e.stopPropagation(); if (hasChildren) toggleFolder(folder.id); }}
         >
           {hasChildren ? '▶' : ''}
-        </button>
+        </span>
 
-        {/* Folder icon */}
-        <span style={{ fontSize: '15px', marginRight: '8px', flexShrink: 0 }}>
+        {/* Folder Icon */}
+        <span style={{ fontSize: '15px', flexShrink: 0, lineHeight: 1 }}>
           {isExpanded ? '📂' : '📁'}
         </span>
 
-        {/* Name or rename input */}
+        {/* Name or Rename Input */}
         {renamingId === folder.id ? (
           <input
             value={renameValue}
@@ -74,85 +69,61 @@ function FolderRow({ folder, depth, expandedFolders, toggleFolder, selectedPath,
             onBlur={() => { handleRename(folder.id, renameValue); setRenamingId(null); }}
             onKeyDown={e => { if (e.key === 'Enter') { handleRename(folder.id, renameValue); setRenamingId(null); } }}
             autoFocus
-            onClick={e => e.stopPropagation()}
             style={{
               flex: 1, border: '1px solid #6366f1', borderRadius: '4px',
-              padding: '3px 8px', fontSize: '13px', outline: 'none',
-              boxShadow: '0 0 0 3px rgba(99,102,241,0.12)',
+              padding: '2px 6px', fontSize: '13px', outline: 'none',
+              boxShadow: '0 0 0 3px rgba(99,102,241,0.15)',
             }}
+            onClick={e => e.stopPropagation()}
           />
         ) : (
-          <span
-            onClick={handleRowClick}
-            onDoubleClick={() => { setRenamingId(folder.id); setRenameValue(folder.name); }}
-            style={{
-              flex: 1, fontSize: '13.5px', cursor: 'pointer',
-              fontWeight: isSelected ? 600 : 400,
-              color: isSelected ? '#3730a3' : '#1f2937',
-              letterSpacing: '0.01em',
-              userSelect: 'none',
-            }}
-          >
+          <span style={{
+            flex: 1, fontSize: '13.5px',
+            fontWeight: isSelected ? 600 : 400,
+            color: isSelected ? '#3730a3' : '#374151',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            letterSpacing: '0.01em',
+          }}>
             {folder.name}
           </span>
         )}
 
-        {/* Sub-folder count badge */}
+        {/* Child count badge */}
         {hasChildren && (
           <span style={{
             fontSize: '10px', fontWeight: 600, color: '#6366f1',
-            background: '#eef0fd', borderRadius: '10px',
-            padding: '2px 8px', marginRight: '8px', flexShrink: 0,
+            background: '#eef0fd', borderRadius: '10px', padding: '1px 7px', flexShrink: 0,
           }}>
-            {folder.children.length} sub
+            {folder.children.length}
           </span>
-        )}
-
-        {/* Hover actions */}
-        {hovered && (
-          <div style={{ display: 'flex', gap: '4px', marginRight: '8px', flexShrink: 0 }}>
-            <button
-              onClick={e => { e.stopPropagation(); onDelete(folder.id, folder.name); }}
-              title="Delete folder"
-              style={{
-                background: 'none', border: '1px solid #fca5a5', borderRadius: '5px',
-                color: '#ef4444', cursor: 'pointer', padding: '3px 8px',
-                fontSize: '11px', fontWeight: 500, lineHeight: 1,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-            >
-              🗑 Delete
-            </button>
-          </div>
         )}
       </div>
 
-      {/* Sub-folders — only shown when expanded */}
-      {isExpanded && hasChildren && folder.children.map(child => (
-        <FolderRow
-          key={child.id}
-          folder={child}
-          depth={depth + 1}
-          expandedFolders={expandedFolders}
-          toggleFolder={toggleFolder}
-          selectedPath={selectedPath}
-          setSelectedPath={setSelectedPath}
-          renamingId={renamingId}
-          setRenamingId={setRenamingId}
-          renameValue={renameValue}
-          setRenameValue={setRenameValue}
-          handleRename={handleRename}
-          onDelete={onDelete}
-        />
-      ))}
-    </>
+      {/* Children */}
+      {isExpanded && hasChildren && (
+        <div style={{ borderLeft: '2px solid #e5e7f0', marginLeft: '22px', paddingLeft: '4px' }}>
+          {folder.children.map(child => (
+            <FolderTreeNode
+              key={child.id}
+              folder={child}
+              path={currentPath}
+              depth={depth + 1}
+              expandedFolders={expandedFolders}
+              toggleFolder={toggleFolder}
+              selectedPath={selectedPath}
+              setSelectedPath={setSelectedPath}
+              renamingId={renamingId}
+              setRenamingId={setRenamingId}
+              renameValue={renameValue}
+              setRenameValue={setRenameValue}
+              handleRename={handleRename}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
-
-// =========================
-// MAIN COMPONENT
-// =========================
 
 export default function FilterForm() {
 
@@ -216,8 +187,15 @@ export default function FilterForm() {
 
   const fetchFolders = async () => {
     try {
-      const res = await axiosInstance.get('/api/folders/tree');
-      setFolders(convertTree(res.data || []));
+      // GET /api/folders/get — returns folders with subFolders already nested
+      const res = await axiosInstance.get('/api/folders/get');
+      const data = Array.isArray(res.data) ? res.data : [];
+      // Map subFolders → children so FolderRow expand works
+      const mapped = data.map(f => ({
+        ...f,
+        children: (f.subFolders || []).map(sf => ({ ...sf, children: [] }))
+      }));
+      setFolders(mapped);
     } catch (err) { console.error('Folders fetch error', err); }
   };
 
@@ -255,10 +233,13 @@ export default function FilterForm() {
     setAddingFolder(true);
     try {
       const parent = selectedPath[selectedPath.length - 1];
-      await axiosInstance.post('/api/folders/create', {
-        name: newFolderName,
-        parentId: parent ? parent.id : null
-      });
+      if (parent) {
+        // Adding a sub-folder: POST /api/subfolders/create/{folderId}
+        await axiosInstance.post(`/api/subfolders/create/${parent.id}`, { name: newFolderName });
+      } else {
+        // Adding a root folder: POST /api/folders/create
+        await axiosInstance.post('/api/folders/create', { name: newFolderName, parentId: null });
+      }
       setNewFolderName('');
       await fetchFolders();
     } catch (err) {
@@ -285,7 +266,17 @@ export default function FilterForm() {
     try {
       if (modalType === 'department') { await axiosInstance.delete(`/api/departments/${selectedItemId}`); fetchDepartments(); }
       if (modalType === 'status') { await axiosInstance.delete(`/api/statuses/${selectedItemId}`); fetchStatuses(); }
-      if (modalType === 'folder') { await axiosInstance.delete(`/api/folders/delete-folder/${selectedItemId}`); fetchFolders(); }
+      if (modalType === 'folder') {
+        // Root folders use DELETE /api/folders/delete-folder/{id}
+        // Subfolders use DELETE /api/subfolders/{id}
+        const isRoot = folders.some(f => f.id === selectedItemId);
+        if (isRoot) {
+          await axiosInstance.delete(`/api/folders/delete-folder/${selectedItemId}`);
+        } else {
+          await axiosInstance.delete(`/api/subfolders/${selectedItemId}`);
+        }
+        fetchFolders();
+      }
       setShowDeleteModal(false);
     } catch (err) {
       const serverMsg = err.response?.data?.message || err.response?.data || null;
@@ -405,65 +396,76 @@ export default function FilterForm() {
         </div>
 
         {/* =====================
-            FOLDERS — Dropdown-style list
+            FOLDERS — Professional Tree UI
         ===================== */}
         <div className={styles.card}>
           <div className={styles.sectionContainer}>
             <h2 className={styles.sectionTitle}>Folders</h2>
 
-            {/* Search */}
-            <div style={{ position: 'relative', marginBottom: '10px' }}>
+            {/* Search Bar */}
+            <div style={{ position: 'relative', marginBottom: '12px' }}>
               <span style={{
-                position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
+                position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
                 color: '#9ca3af', fontSize: '13px', pointerEvents: 'none',
-              }}></span>
+              }}>🔍</span>
               <input
                 placeholder="Search folders..."
                 value={folderSearch}
                 onChange={e => setFolderSearch(e.target.value)}
                 style={{
-                  width: '100%', padding: '8px 12px 8px 30px', borderRadius: '7px',
-                  border: '1.5px solid #e5e7eb', fontSize: '13px', color: '#374151',
-                  background: '#fafafa', outline: 'none', boxSizing: 'border-box',
+                  width: '100%', padding: '9px 12px 9px 34px', borderRadius: '8px',
+                  border: '1.5px solid #e5e7eb', fontSize: '13.5px', color: '#374151',
+                  background: '#fafafa', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s',
                 }}
                 onFocus={e => e.target.style.borderColor = '#6366f1'}
                 onBlur={e => e.target.style.borderColor = '#e5e7eb'}
               />
             </div>
 
-            {/* Folder dropdown list */}
-            <div style={{
-              border: '1.5px solid #e2e4f0',
-              borderRadius: '10px',
-              overflow: 'hidden',
-              maxHeight: '320px',
-              overflowY: 'auto',
-              marginBottom: '12px',
-              background: 'white',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-            }}>
-              {/* Header row */}
+            {/* Breadcrumb */}
+            {selectedPath.length > 0 && (
               <div style={{
-                display: 'flex', alignItems: 'center', padding: '8px 12px',
-                background: 'linear-gradient(135deg,#3b4a7a,#4f5fa3)',
-                color: 'white', fontSize: '12px', fontWeight: 600, letterSpacing: '0.04em',
+                display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px',
+                padding: '6px 10px', background: '#f0f1fd', borderRadius: '7px',
+                marginBottom: '10px', border: '1px solid #dde1f9',
               }}>
-                <span style={{ width: '32px' }} />
-                <span style={{ flex: 1 }}>FOLDER NAME</span>
-                <span style={{ width: '80px', textAlign: 'center' }}></span>
-                <span style={{ width: '80px', textAlign: 'center' }}>ACTION</span>
+                <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: 700, marginRight: '2px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Path:</span>
+                {selectedPath.map((p, i) => (
+                  <React.Fragment key={p.id}>
+                    <span
+                      style={{
+                        fontSize: '12px', color: '#4338ca', cursor: 'pointer', fontWeight: 500,
+                        padding: '2px 6px', borderRadius: '4px', background: 'white', border: '1px solid #c7d2fe',
+                      }}
+                      onClick={() => setSelectedPath(selectedPath.slice(0, i + 1))}
+                    >{p.name}</span>
+                    {i < selectedPath.length - 1 && <span style={{ color: '#9ca3af', fontSize: '11px' }}>›</span>}
+                  </React.Fragment>
+                ))}
+                <button onClick={() => setSelectedPath([])} style={{
+                  marginLeft: 'auto', background: 'none', border: 'none',
+                  color: '#9ca3af', fontSize: '16px', cursor: 'pointer', lineHeight: 1, padding: '0 2px',
+                }} title="Clear selection">×</button>
               </div>
+            )}
 
+            {/* Folder Tree */}
+            <div style={{
+              background: '#ffffff', border: '1.5px solid #e8eaf0', borderRadius: '10px',
+              padding: '8px', maxHeight: '300px', overflowY: 'auto', marginBottom: '12px',
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)',
+            }}>
               {visibleFolders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '28px 16px', color: '#9ca3af', fontSize: '13px' }}>
-                  <div style={{ fontSize: '26px', marginBottom: '6px' }}>📂</div>
+                <div style={{ textAlign: 'center', padding: '32px 16px', color: '#9ca3af', fontSize: '13px' }}>
+                  <div style={{ fontSize: '28px', marginBottom: '8px' }}>📂</div>
                   {folderSearch ? 'No folders match your search' : 'No folders yet. Add one below.'}
                 </div>
               ) : (
                 visibleFolders.map(folder => (
-                  <FolderRow
+                  <FolderTreeNode
                     key={folder.id}
                     folder={folder}
+                    path={[]}
                     depth={0}
                     expandedFolders={expandedFolders}
                     toggleFolder={toggleFolder}
@@ -474,7 +476,6 @@ export default function FilterForm() {
                     renameValue={renameValue}
                     setRenameValue={setRenameValue}
                     handleRename={handleRename}
-                    onDelete={(id, name) => handleDeleteClick('folder', id, name)}
                   />
                 ))
               )}
@@ -484,13 +485,13 @@ export default function FilterForm() {
             <div style={{
               display: 'flex', gap: '8px', alignItems: 'center',
               padding: '10px 12px',
-              background: 'linear-gradient(135deg,#f8f9ff,#f3f4fd)',
+              background: 'linear-gradient(135deg, #f8f9ff 0%, #f3f4fd 100%)',
               borderRadius: '9px', border: '1.5px dashed #c7cff5',
             }}>
               <span style={{ fontSize: '15px', flexShrink: 0 }}>📁</span>
               <input
                 placeholder={selectedPath.length
-                  ? `New sub-folder inside "${selectedPath.at(-1).name}"...`
+                  ? `Sub-folder inside "${selectedPath.at(-1).name}"...`
                   : 'New root folder name...'}
                 value={newFolderName}
                 onChange={e => setNewFolderName(e.target.value)}
@@ -508,11 +509,13 @@ export default function FilterForm() {
                 disabled={addingFolder || !newFolderName.trim()}
                 style={{
                   padding: '8px 16px',
-                  background: newFolderName.trim() ? 'linear-gradient(135deg,#6366f1,#4f46e5)' : '#e5e7eb',
+                  background: newFolderName.trim()
+                    ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+                    : '#e5e7eb',
                   color: newFolderName.trim() ? 'white' : '#9ca3af',
                   border: 'none', borderRadius: '7px', fontSize: '13px', fontWeight: 600,
                   cursor: newFolderName.trim() ? 'pointer' : 'not-allowed',
-                  whiteSpace: 'nowrap',
+                  whiteSpace: 'nowrap', transition: 'all 0.2s',
                   boxShadow: newFolderName.trim() ? '0 2px 8px rgba(99,102,241,0.3)' : 'none',
                 }}
               >
@@ -522,7 +525,7 @@ export default function FilterForm() {
 
             {/* Hint */}
             <p style={{ fontSize: '11.5px', color: '#9ca3af', marginTop: '7px', marginBottom: 0 }}>
-              💡 Click ▶ to expand sub-folders. Click folder name to select. Double-click to rename.
+               Select a folder first to add a sub-folder inside it. Double-click any folder to rename.
             </p>
 
           </div>
