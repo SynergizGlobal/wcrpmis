@@ -1904,7 +1904,7 @@ public class DesignRepository implements IDesignRepo {
 											}
 											return arraySize;
 									}
-							  });
+							  }); */
 							String qryDesignStatus = "INSERT INTO design_status (design_id_fk,stage_fk,submitted_by,submitted_to,submitted_date,"
 									+ "submssion_purpose) VALUES(?,?,?,?,?,?)";
 							
@@ -1960,7 +1960,7 @@ public class DesignRepository implements IDesignRepo {
 											}
 											return arraySize;
 									}
-							  });*/
+							  });
 		    	 
 		    	 
 					String deleteQry = "DELETE from design_revisions where design_id_fk = :design_id";		 

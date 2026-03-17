@@ -70,7 +70,9 @@ export default function DesignDrawingForm() {
 				}
 			],
 			remarks: "",
+			drawingStatusFields: [],
 		},
+	
 	});
 
 	const {
@@ -84,7 +86,19 @@ export default function DesignDrawingForm() {
 	});
 
 
+	const {
+	    fields: drawingStatusFields,
+	    append: appendDrawingStatus,
+	    remove: removeDrawingStatus,
+	    replace: replaceDrawingStatus,
+	} = useFieldArray({
+	    control,
+	    name: "drawingStatusFields",
+	});
 
+	const [stageOptions, setStageOptions] = useState([]);
+	const [submittedOptions, setSubmittedOptions] = useState([]);
+	const [submissionPurposeOptions, setSubmissionPurposeOptions] = useState([]);
 
 
 	useEffect(() => {
@@ -171,6 +185,16 @@ export default function DesignDrawingForm() {
 						value: a.approval_authority_fk,
 						label: a.approval_authority_fk
 					})) || []
+				);
+				
+				setStageOptions(
+				    data.stage?.map(s => ({ value: s.stage_fk, label: s.stage_fk })) || []
+				);
+				setSubmittedOptions(
+				    data.submitted?.map(s => ({ value: s.design_status_submit, label: s.design_status_submit })) || []
+				);
+				setSubmissionPurposeOptions(
+				    data.submssionpurpose?.map(s => ({ value: s.submission_purpose, label: s.submission_purpose })) || []
 				);
 
 			});
@@ -277,7 +301,27 @@ export default function DesignDrawingForm() {
 
 			replace(cleaned);
 		}
-
+		if (Array.isArray(d.designStatusList) && d.designStatusList.length > 0) {
+		    const cleanedStatus = d.designStatusList.map(s => ({
+		        stage_fks: s.stage_fk || "",
+		        submitted_bys: s.submitted_by || "",
+		        submitted_tos: s.submitted_to || "",
+		        submssion_purposes: s.submssion_purpose || "",
+		        submitted_dates: normalizeDate(s.submitted_date),
+		        latest: s.latest === "Yes",
+		    }));
+		    replaceDrawingStatus(cleanedStatus);
+		} else if (isEdit) {
+		    // Ensure at least one empty row exists for edit mode
+		    appendDrawingStatus({
+		        stage_fks: "",
+		        submitted_bys: "",
+		        submitted_tos: "",
+		        submssion_purposes: "",
+		        submitted_dates: "",
+		        latest: false,
+		    });
+		}
 	}, [
 		isEdit,
 		designDetails,
@@ -290,7 +334,8 @@ export default function DesignDrawingForm() {
 		preparedByOptions,
 		contractOptions,
 		reset,
-		replace
+		replace,
+		appendDrawingStatus
 	]);
 
 
@@ -408,7 +453,7 @@ export default function DesignDrawingForm() {
 
 			// Simple fields
 			Object.keys(data).forEach((key) => {
-				if (key !== "revisionDetails" && key !== "revisionDetailsFields") {
+				if (key !== "revisionDetails" && key !== "revisionDetailsFields" &&   key !== "drawingStatusFields") {
 					if (data[key] != null) formData.append(key, data[key]);
 				}
 			});
@@ -443,7 +488,17 @@ export default function DesignDrawingForm() {
 					formData.append("uploadFileNames", item.uploadFileNames || "");
 				}
 
-			});
+				});
+				data.drawingStatusFields.forEach((item) => {
+				    formData.append("stage_fks", item.stage_fks || "");
+				    formData.append("submitted_bys", item.submitted_bys || "");
+				    formData.append("submitted_tos", item.submitted_tos || "");
+				    formData.append("submssion_purposes", item.submssion_purposes || "");
+				    formData.append("submitted_dates", item.submitted_dates || "");
+				    formData.append("latests", item.latest ? "Yes" : "No");
+				});
+				formData.append("statusRowNo", data.drawingStatusFields.length);
+			
 
 
 			// API call
@@ -712,7 +767,7 @@ export default function DesignDrawingForm() {
 									onChange={(e) => setValue("drawing_title", e.target.value)}
 									name="drawing_title"
 									rules={{ required: true }}
-									maxLength={200}
+									maxLength={1000}
 									rows="3"
 								></textarea>
 								<div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
@@ -741,6 +796,174 @@ export default function DesignDrawingForm() {
 							</div>
 
 						</div>
+						{/* ===================== DRAWING STATUS (Edit Only) ===================== */}
+						{isEdit && (
+						    <div className="row mt-1 mb-2">
+						        <div className="d-flex justify-content-center align-items-center gap-3 mt-1 mb-2">
+						            <h6 className="mb-0">Drawing Status</h6>
+						        </div>
+
+						        <div className="table-responsive dataTable">
+						            <table className="table table-bordered align-middle">
+						                <thead className="table-light">
+						                    <tr>
+						                        <th>Stage</th>
+						                        <th>Submitted By</th>
+						                        <th>Submitted To</th>
+						                        <th>Purpose of Submission</th>
+						                        <th style={{ width: "130px" }}>Submitted Date</th>
+						                        <th style={{ width: "80px" }}>Latest</th>
+						                        <th style={{ width: "100px" }}>Action</th>
+						                    </tr>
+						                </thead>
+						                <tbody>
+						                    {drawingStatusFields.length > 0 ? (
+						                        drawingStatusFields.map((item, index) => (
+						                            <tr key={item.id}>
+						                                {/* Stage */}
+						                                <td>
+						                                    <select
+						                                        {...register(`drawingStatusFields.${index}.stage_fks`)}
+						                                        className="form-control"
+						                                        defaultValue={item.stage_fks || ""}
+						                                    >
+						                                        <option value="">Select</option>
+						                                        {stageOptions.map(opt => (
+						                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+						                                        ))}
+						                                    </select>
+						                                </td>
+
+						                                {/* Submitted By */}
+						                                <td>
+						                                    <select
+						                                        {...register(`drawingStatusFields.${index}.submitted_bys`)}
+						                                        className="form-control"
+						                                        defaultValue={item.submitted_bys || ""}
+						                                    >
+						                                        <option value="">Select</option>
+						                                        {submittedOptions.map(opt => (
+						                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+						                                        ))}
+						                                    </select>
+						                                </td>
+
+						                                {/* Submitted To */}
+						                                <td>
+						                                    <select
+						                                        {...register(`drawingStatusFields.${index}.submitted_tos`)}
+						                                        className="form-control"
+						                                        defaultValue={item.submitted_tos || ""}
+						                                    >
+						                                        <option value="">Select</option>
+						                                        {submittedOptions.map(opt => (
+						                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+						                                        ))}
+						                                    </select>
+						                                </td>
+
+						                                {/* Purpose of Submission */}
+						                                <td>
+						                                    <select
+						                                        {...register(`drawingStatusFields.${index}.submssion_purposes`)}
+						                                        className="form-control"
+						                                        defaultValue={item.submssion_purposes || ""}
+						                                    >
+						                                        <option value="">Select</option>
+						                                        {submissionPurposeOptions.map(opt => (
+						                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+						                                        ))}
+						                                    </select>
+						                                </td>
+
+						                                {/* Submitted Date - Reduced size */}
+						                                <td style={{ width: "130px" }}>
+						                                    <input
+						                                        type="date"
+						                                        {...register(`drawingStatusFields.${index}.submitted_dates`)}
+						                                        className="form-control"
+						                                        style={{ padding: "4px 6px", fontSize: "13px" }}
+						                                    />
+						                                </td>
+
+						                                {/* Latest — radio-like: only one can be Yes */}
+						                                <td className="text-center" style={{ width: "80px" }}>
+						                                    <input
+						                                        type="checkbox"
+						                                        checked={!!watch(`drawingStatusFields.${index}.latest`)}
+						                                        onChange={() => {
+						                                            // Uncheck all, then check only this one (mirrors JSP behavior)
+						                                            drawingStatusFields.forEach((_, i) => {
+						                                                setValue(`drawingStatusFields.${i}.latest`, false);
+						                                            });
+						                                            setValue(`drawingStatusFields.${index}.latest`, true);
+						                                        }}
+						                                    />
+						                                </td>
+
+						                                {/* Remove */}
+						                                <td className="text-center" style={{ width: "100px" }}>
+						                                    <button
+						                                        type="button"
+						                                        className="btn btn-outline-danger"
+						                                        style={{ padding: "4px 8px" }}
+						                                        onClick={() => {
+						                                            removeDrawingStatus(index);
+						                                            // Ensure at least one row remains
+						                                            if (drawingStatusFields.length === 1) {
+						                                                appendDrawingStatus({
+						                                                    stage_fks: "",
+						                                                    submitted_bys: "",
+						                                                    submitted_tos: "",
+						                                                    submssion_purposes: "",
+						                                                    submitted_dates: "",
+						                                                    latest: false,
+						                                                });
+						                                            }
+						                                        }}
+						                                    >
+						                                        <MdOutlineDeleteSweep size={18} />
+						                                    </button>
+						                                </td>
+						                            </tr>
+						                        ))
+						                    ) : (
+						                        <tr>
+						                            <td colSpan="7" className="text-center text-muted">
+						                                No Drawing Status rows added yet.
+						                            </td>
+						                        </tr>
+						                    )}
+						                </tbody>
+						            </table>
+						        </div>
+
+						        {/* Add Row Button */}
+						        <div className="d-flex align-center justify-content-center mt-1">
+						            <button
+						                type="button"
+						                className="btn-2 btn-green"
+						                onClick={() =>
+						                    appendDrawingStatus({
+						                        stage_fks: "",
+						                        submitted_bys: "",
+						                        submitted_tos: "",
+						                        submssion_purposes: "",
+						                        submitted_dates: "",
+						                        latest: false,
+						                    })
+						                }
+						            >
+						                <BiListPlus size={20} />
+						            </button>
+						        </div>
+
+						        {/* Validation error (mirrors JSP drawing_status_error) */}
+						        {errors.drawingStatusFields && (
+						            <span className="red">Please fill all required Drawing Status fields.</span>
+						        )}
+						    </div>
+						)}
 
 						{/* Completion Costs */}
 						<div className="row mt-1 mb-2">
@@ -949,11 +1172,11 @@ export default function DesignDrawingForm() {
 									onChange={(e) => setValue("remarks", e.target.value)}
 									name="remarks"
 									rules={{ required: true }}
-									maxLength={200}
+									maxLength={1000}
 									rows="3"
 								></textarea>
 								<div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
-									{watch("remarks")?.length || 0}/200
+									{watch("remarks")?.length || 0}/1000
 									{errors.remarks && <span className="red">Required</span>}
 								</div>
 							</div>

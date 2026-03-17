@@ -1,4 +1,4 @@
- package com.wcr.wcrbackend.dms.repository;
+package com.wcr.wcrbackend.dms.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +37,7 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 		      and d.contract_name in :contracts
 		""", nativeQuery = true)
 	List<Folder> getAllFoldersByProjectsAndContracts(@Param("projects") List<String> projects,@Param("contracts") List<String> contracts,@Param("userId") String userId);
+	
 	@Query("""
 		    select distinct f
 		    from Document d
@@ -53,7 +54,7 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 			FROM Folder f
 			LEFT JOIN FETCH f.subFolders
 		""")
-		List<Folder> findAllWithSubFolders();
+	List<Folder> findAllWithSubFolders();
 
 	@Query("""
 		SELECT DISTINCT f
@@ -70,21 +71,21 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 		@Param("contracts") List<String> contracts
 	);
 
-	// @Query("""
-	// 	SELECT DISTINCT f
-	// 	FROM Folder f
-	// 	LEFT JOIN FETCH f.children
-	// 	WHERE f.parent IS NULL
-	// """)
-	// List<Folder> findRootFoldersWithChildren();
+	// NEW METHOD: Get root folders with their subfolders eagerly fetched
+	@Query("""
+		SELECT DISTINCT f
+		FROM Folder f
+		LEFT JOIN FETCH f.subFolders
+		WHERE f.parentId IS NULL
+	""")
+	List<Folder> findRootFoldersWithSubFolders();
 
-	// List<Folder> findByParentIsNull();
+	// Alternative simpler method if you don't need eager fetching
+	List<Folder> findByParentIdIsNull();
 
 	List<Folder> findByNameContainingIgnoreCase(String name);
 
 	List<Folder> findByParentId(Long parentId);
-
-	List<Folder> findByParentIdIsNull();
 
 	Optional<Folder> findById(Long id);
 
