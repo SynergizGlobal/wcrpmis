@@ -134,8 +134,8 @@ export default function DmsDocuments() {
         revisionDate: doc["Revision Date"]?.split("T")[0] || "",
         projectName: doc["Project Name"] || "",
         contractName: doc["Contract Name"] || "",
-        department: doc["Department"] || "",
-        currentStatus: doc["Status"] || "",
+        department: departments.find(d => d.name === doc["Department"])?.id || "",
+        currentStatus: statuses.find(s => s.name === doc["Status"])?.id || "",
         updateReason: ""
       });
 
@@ -164,6 +164,16 @@ export default function DmsDocuments() {
 
       setShowUpdatePopup(true);
     };
+
+    useEffect(() => {
+      if (selectedDoc && departments.length && statuses.length) {
+        setDocForm(prev => ({
+          ...prev,
+          department: departments.find(d => d.name === selectedDoc["Department"])?.id || "",
+          currentStatus: statuses.find(s => s.name === selectedDoc["Status"])?.id || ""
+        }));
+      }
+    }, [departments, statuses]);
 
     const handleVersions = (doc) => {
       setSelectedDoc(doc);
@@ -700,7 +710,11 @@ const fetchFolders = async () => {
               revisionNo: docForm.revisionNo,
               revisionDate: docForm.revisionDate,
               reasonForUpdate: docForm.updateReason,
-              folderId: lastFolder?.id || null
+              folderId: lastFolder?.id || null,
+              projectName: docForm.projectName || null,
+              contractName: docForm.contractName || null,
+              department: docForm.department || null,
+              currentStatus: docForm.currentStatus || null
             };
 
           fd.append("dto",JSON.stringify(dto));
@@ -1245,7 +1259,7 @@ const fetchFolders = async () => {
         options={departmentOptions}
         value={
           departmentOptions.find(
-          o=>o.label === docForm.department
+          o=>o.value === docForm.department
           ) || null
           }
         onChange={(opt)=>handleSelectChange("department",opt)}
