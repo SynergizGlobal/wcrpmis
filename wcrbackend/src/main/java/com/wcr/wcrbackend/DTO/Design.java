@@ -45,6 +45,8 @@ public class Design {
 	private List<MultipartFile> designFiles;
 	private List<Design> designFilesList;
 	private String[] designFileNames;
+	private String[] statusRemarks;
+	private MultipartFile[] statusFiles;
 	
 	public boolean checkNullOrEmpty() throws IllegalAccessException {
 		boolean flag = true;

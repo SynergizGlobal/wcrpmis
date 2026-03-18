@@ -1,5 +1,6 @@
 package com.wcr.wcrbackend.repo;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -1905,26 +1906,73 @@ public class DesignRepository implements IDesignRepo {
 											return arraySize;
 									}
 							  }); */
-							String qryDesignStatus = "INSERT INTO design_status (design_id_fk,stage_fk,submitted_by,submitted_to,submitted_date,"
-									+ "submssion_purpose) VALUES(?,?,?,?,?,?)";
+							String qryDesignStatus = "INSERT INTO design_status (design_id_fk,stage_fk,submitted_date,"
+									+ "submssion_purpose,remarks,attachment) VALUES(?,?,?,?,?,?)";
 							
 							int[] statusCounts = jdbcTemplate.batchUpdate(qryDesignStatus,
 				        new BatchPreparedStatementSetter() {
-										@Override
-										public void setValues(PreparedStatement ps, int i) throws SQLException {
-											try {
-												int k = 1;
-												ps.setString(k++, obj.getDesign_id());
-												ps.setString(k++,(obj.getStage_fks().length > 0)?obj.getStage_fks()[i]:null);	
-												ps.setString(k++,(obj.getSubmitted_bys().length > 0)?obj.getSubmitted_bys()[i]:null);	
-												ps.setString(k++,(obj.getSubmitted_tos().length > 0)?obj.getSubmitted_tos()[i]:null);	
-												ps.setString(k++,DateParser.parse((obj.getSubmitted_dates().length > 0)?obj.getSubmitted_dates()[i]:null));
-												ps.setString(k++,(obj.getSubmssion_purposes().length > 0)?obj.getSubmssion_purposes()[i]:null);
-											
-											} catch (Exception e) {
-												
-											}
-										}
+								@Override
+								public void setValues(PreparedStatement ps, int i) throws SQLException {
+								    try {
+								        int k = 1;
+
+								        ps.setString(k++, obj.getDesign_id());
+								        ps.setString(k++, (obj.getStage_fks().length > 0) ? obj.getStage_fks()[i] : null);
+								     //   ps.setString(k++, (obj.getSubmitted_bys().length > 0) ? obj.getSubmitted_bys()[i] : null);
+								     //.setString(k++, (obj.getSubmitted_tos().length > 0) ? obj.getSubmitted_tos()[i] : null);
+								        ps.setString(k++, DateParser.parse((obj.getSubmitted_dates().length > 0) ? obj.getSubmitted_dates()[i] : null));
+								        ps.setString(k++, (obj.getSubmssion_purposes().length > 0) ? obj.getSubmssion_purposes()[i] : null);
+
+								        // ✅ NEW FIELD: REMARKS
+								        ps.setString(k++, (obj.getStatusRemarks() != null && obj.getStatusRemarks().length > 0)
+								                ? obj.getStatusRemarks()[i]
+								                : null);
+
+								        // ✅ NEW FIELD: ATTACHMENT
+								        String fileName = null;
+
+								        MultipartFile file = (obj.getStatusFiles() != null && obj.getStatusFiles().length > i)
+								                ? obj.getStatusFiles()[i]
+								                : null;
+
+								        if (file != null && !file.isEmpty()) {
+
+								            String originalName = file.getOriginalFilename();
+
+								            // ✅ Null safety
+								            if (originalName == null) {
+								                originalName = "file";
+								            }
+
+								            // ✅ Safe extension extraction
+								            String extension = "";
+								            int dotIndex = originalName.lastIndexOf(".");
+								            if (dotIndex != -1) {
+								                extension = originalName.substring(dotIndex); // includes dot
+								            }
+
+								            DateFormat df = new SimpleDateFormat("ddMMYY-HHmm-ssSSS");
+								            String newFileName = "Design-Status-" + df.format(new Date()) + extension;
+
+								            String saveDir = CommonConstants.DESIGN_STATUS_FILE_SAVING_PATH;
+
+								            // ✅ Ensure directory exists
+								            File dir = new File(saveDir);
+								            if (!dir.exists()) {
+								                dir.mkdirs();
+								            }
+
+								            // ✅ Save file
+								            FileUploads.singleFileSaving(file, saveDir, newFileName);
+
+								            fileName = newFileName;
+								        }
+
+								        ps.setString(k++, fileName);
+								    } catch (Exception e) {
+								        e.printStackTrace();
+								    }
+								}
 										@Override
 										public int getBatchSize() {
 											int arraySize = 0;
@@ -1934,18 +1982,18 @@ public class DesignRepository implements IDesignRepo {
 													arraySize = obj.getStage_fks().length;
 												}
 											}
-											if(!StringUtils.isEmpty(obj.getSubmitted_bys()) && obj.getSubmitted_bys().length > 0) {
-												obj.setSubmitted_bys(CommonMethods.replaceEmptyByNullInSringArray(obj.getSubmitted_bys()));
-												if(arraySize < obj.getSubmitted_bys().length) {
-													arraySize = obj.getSubmitted_bys().length;
-												}
-											}
-											if(!StringUtils.isEmpty(obj.getSubmitted_tos()) && obj.getSubmitted_tos().length > 0) {
-												obj.setSubmitted_tos(CommonMethods.replaceEmptyByNullInSringArray(obj.getSubmitted_tos()));
-												if(arraySize < obj.getSubmitted_tos().length) {
-													arraySize = obj.getSubmitted_tos().length;
-												}
-											}
+//											if(!StringUtils.isEmpty(obj.getSubmitted_bys()) && obj.getSubmitted_bys().length > 0) {
+//												obj.setSubmitted_bys(CommonMethods.replaceEmptyByNullInSringArray(obj.getSubmitted_bys()));
+//												if(arraySize < obj.getSubmitted_bys().length) {
+//													arraySize = obj.getSubmitted_bys().length;
+//												}
+//											}
+//											if(!StringUtils.isEmpty(obj.getSubmitted_tos()) && obj.getSubmitted_tos().length > 0) {
+//												obj.setSubmitted_tos(CommonMethods.replaceEmptyByNullInSringArray(obj.getSubmitted_tos()));
+//												if(arraySize < obj.getSubmitted_tos().length) {
+//													arraySize = obj.getSubmitted_tos().length;
+//												}
+//											}
 											if(!StringUtils.isEmpty(obj.getSubmitted_dates()) && obj.getSubmitted_dates().length > 0) {
 												obj.setSubmitted_dates(CommonMethods.replaceEmptyByNullInSringArray(obj.getSubmitted_dates()));
 												if(arraySize < obj.getSubmitted_dates().length) {
@@ -1957,6 +2005,18 @@ public class DesignRepository implements IDesignRepo {
 												if(arraySize < obj.getSubmssion_purposes().length) {
 													arraySize = obj.getSubmssion_purposes().length;
 												}
+											}
+											if (!StringUtils.isEmpty(obj.getStatusRemarks()) && obj.getStatusRemarks().length > 0) {
+											    obj.setStatusRemarks(CommonMethods.replaceEmptyByNullInSringArray(obj.getStatusRemarks()));
+											    if (arraySize < obj.getStatusRemarks().length) {
+											        arraySize = obj.getStatusRemarks().length;
+											    }
+											}
+
+											if (!StringUtils.isEmpty(obj.getStatusFiles()) && obj.getStatusFiles().length > 0) {
+											    if (arraySize < obj.getStatusFiles().length) {
+											        arraySize = obj.getStatusFiles().length;
+											    }
 											}
 											return arraySize;
 									}

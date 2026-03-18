@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";  // ✅ useRef added
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import Select from "react-select";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
@@ -72,7 +72,6 @@ export default function DesignDrawingForm() {
 			remarks: "",
 			drawingStatusFields: [],
 		},
-	
 	});
 
 	const {
@@ -85,21 +84,21 @@ export default function DesignDrawingForm() {
 		name: "revisionDetailsFields",
 	});
 
-
 	const {
-	    fields: drawingStatusFields,
-	    append: appendDrawingStatus,
-	    remove: removeDrawingStatus,
-	    replace: replaceDrawingStatus,
+		fields: drawingStatusFields,
+		append: appendDrawingStatus,
+		remove: removeDrawingStatus,
+		replace: replaceDrawingStatus,
 	} = useFieldArray({
-	    control,
-	    name: "drawingStatusFields",
+		control,
+		name: "drawingStatusFields",
 	});
 
 	const [stageOptions, setStageOptions] = useState([]);
-	const [submittedOptions, setSubmittedOptions] = useState([]);
 	const [submissionPurposeOptions, setSubmissionPurposeOptions] = useState([]);
 
+	// ✅ FIX: useRef guard — prevents double row in StrictMode or re-render
+	const didInitDrawingStatus = useRef(false);
 
 	useEffect(() => {
 		fetch(`${API_BASE_URL}/design/ajax/form/add-design-form`, {
@@ -127,8 +126,6 @@ export default function DesignDrawingForm() {
 					})) || []
 				);
 
-
-
 				// Prepared By Dropdown
 				setPreparedByOptions(
 					data.preparedBy?.map(p => ({
@@ -137,14 +134,22 @@ export default function DesignDrawingForm() {
 					})) || []
 				);
 
-
 				// Approving Railway
-				setApprovingRailwayOptions(
+				const railwayOptions =
 					data.approvingRailway?.map(a => ({
 						value: a.railway_id,
 						label: a.railway_id
-					})) || []
-				);
+					})) || [];
+
+				setApprovingRailwayOptions(railwayOptions);
+
+				// AUTO SELECT if only one option
+				if (railwayOptions.length === 1) {
+					setValue("approving_railway", railwayOptions[0], {
+						shouldValidate: true,
+						shouldDirty: true,
+					});
+				}
 
 				// Structure Types
 				setStructureTypeOptions(
@@ -178,7 +183,6 @@ export default function DesignDrawingForm() {
 					})) || []
 				);
 
-
 				// Approval Authorities
 				setApprovalAuthorityOptions(
 					data.approvalAuthority?.map(a => ({
@@ -186,17 +190,13 @@ export default function DesignDrawingForm() {
 						label: a.approval_authority_fk
 					})) || []
 				);
-				
+
 				setStageOptions(
-				    data.stage?.map(s => ({ value: s.stage_fk, label: s.stage_fk })) || []
-				);
-				setSubmittedOptions(
-				    data.submitted?.map(s => ({ value: s.design_status_submit, label: s.design_status_submit })) || []
+					data.stage?.map(s => ({ value: s.stage_fk, label: s.stage_fk })) || []
 				);
 				setSubmissionPurposeOptions(
-				    data.submssionpurpose?.map(s => ({ value: s.submission_purpose, label: s.submission_purpose })) || []
+					data.submssionpurpose?.map(s => ({ value: s.submission_purpose, label: s.submission_purpose })) || []
 				);
-
 			});
 	}, []);
 
@@ -265,14 +265,11 @@ export default function DesignDrawingForm() {
 			mrvc_drawing_no: d.mrvc_drawing_no || "",
 			division_drawing_no: d.division_drawing_no || "",
 			hq_drawing_no: d.hq_drawing_no || "",
-
 			required_date: normalizeDate(d.required_date),
 			gfc_released: normalizeDate(d.gfc_released),
 		};
 
-		// ------------------------
 		// Dropdown Prefill
-		// ------------------------
 		values.project_id_fk = findOption(projectOptions, d.project_id_fk);
 		values.approving_railway = findOption(approvingRailwayOptions, d.approving_railway);
 		values.structure_type_fk = findOption(structureTypeOptions, d.structure_type_fk);
@@ -281,7 +278,6 @@ export default function DesignDrawingForm() {
 		values.approval_authority_fk = findOption(approvalAuthorityOptions, d.approval_authority_fk);
 		values.prepared_by_id_fk = findOption(preparedByOptions, d.prepared_by_id_fk);
 		values.contract_id_fk = findOption(contractOptions, d.contract_id_fk);
-
 
 		reset(values);
 
@@ -301,18 +297,16 @@ export default function DesignDrawingForm() {
 
 			replace(cleaned);
 		}
-		
+
 		// Drawing Status Table
 		if (Array.isArray(d.designStatusList) && d.designStatusList.length > 0) {
-		    const cleanedStatus = d.designStatusList.map(s => ({
-		        stage_fks: s.stage_fk || "",
-		        submitted_bys: s.submitted_by || "",
-		        submitted_tos: s.submitted_to || "",
-		        submssion_purposes: s.submssion_purpose || "",
-		        submitted_dates: normalizeDate(s.submitted_date),
-		        latest: s.latest === "Yes",
-		    }));
-		    replaceDrawingStatus(cleanedStatus);
+			const cleanedStatus = d.designStatusList.map(s => ({
+				stage_fks: s.stage_fk || "",
+				submssion_purposes: s.submssion_purpose || "",
+				submitted_dates: normalizeDate(s.submitted_date),
+				latest: s.latest === "Yes",
+			}));
+			replaceDrawingStatus(cleanedStatus);
 		}
 	}, [
 		isEdit,
@@ -330,19 +324,19 @@ export default function DesignDrawingForm() {
 		replaceDrawingStatus
 	]);
 
-	// Ensure at least one empty row in add mode
+	// ✅ FIXED: useRef guard ensures exactly ONE row is added on mount in add mode.
 	useEffect(() => {
-		if (!isEdit && drawingStatusFields.length === 0) {
+		if (!isEdit && !didInitDrawingStatus.current) {
+			didInitDrawingStatus.current = true;
 			appendDrawingStatus({
 				stage_fks: "",
-				submitted_bys: "",
-				submitted_tos: "",
 				submssion_purposes: "",
 				submitted_dates: "",
 				latest: false,
 			});
 		}
-	}, [isEdit, drawingStatusFields.length, appendDrawingStatus]);
+	}, [isEdit, appendDrawingStatus]);
+
 
 	const normalizeSelectFields = (data, fields) => {
 		fields.forEach((field) => {
@@ -351,7 +345,6 @@ export default function DesignDrawingForm() {
 			}
 		});
 	};
-
 
 
 	const onSubmitSave = async (data) => {
@@ -384,7 +377,7 @@ export default function DesignDrawingForm() {
 				}
 			});
 
-			// REVISION rows (ADD MODE File REQUIRED)
+			// REVISION rows
 			data.revisionDetailsFields.forEach((item) => {
 				formData.append("revisions", item.revisions || "");
 				formData.append("drawing_nos", item.drawing_nos || "");
@@ -401,7 +394,6 @@ export default function DesignDrawingForm() {
 				formData.append("remarkss", item.remarkss || "");
 				formData.append("currents", item.current ? "Y" : "N");
 
-				// Upload file must be present
 				if (!item.uploadFiles?.length) {
 					alert("Please upload a file for each revision row.");
 					throw new Error("Missing file");
@@ -414,12 +406,10 @@ export default function DesignDrawingForm() {
 
 			// Drawing Status rows
 			data.drawingStatusFields.forEach((item) => {
-			    formData.append("stage_fks", item.stage_fks || "");
-			    formData.append("submitted_bys", item.submitted_bys || "");
-			    formData.append("submitted_tos", item.submitted_tos || "");
-			    formData.append("submssion_purposes", item.submssion_purposes || "");
-			    formData.append("submitted_dates", item.submitted_dates || "");
-			    formData.append("latests", item.latest ? "Yes" : "No");
+				formData.append("stage_fks", item.stage_fks || "");
+				formData.append("submssion_purposes", item.submssion_purposes || "");
+				formData.append("submitted_dates", item.submitted_dates || "");
+				formData.append("latests", item.latest ? "Yes" : "No");
 			});
 			formData.append("statusRowNo", data.drawingStatusFields.length);
 
@@ -442,7 +432,6 @@ export default function DesignDrawingForm() {
 			console.error("Save Error:", err);
 		}
 	};
-
 
 
 	const onSubmitUpdate = async (data) => {
@@ -476,7 +465,6 @@ export default function DesignDrawingForm() {
 
 			// Revision rows
 			data.revisionDetailsFields.forEach((item) => {
-
 				formData.append("revisions", item.revisions || "");
 				formData.append("drawing_nos", item.drawing_nos || "");
 				formData.append("correspondence_letter_nos", item.correspondence_letter_nos || "");
@@ -492,32 +480,24 @@ export default function DesignDrawingForm() {
 				formData.append("remarkss", item.remarkss || "");
 				formData.append("currents", item.current ? "Y" : "N");
 
-				// ALWAYS append uploadFiles and uploadFileNames
 				if (item.uploadFiles?.length > 0) {
 					const file = item.uploadFiles[0];
 					formData.append("uploadFiles", file);
 					formData.append("uploadFileNames", file.name);
-				}
-				else {
-					// IMPORTANT — send placeholders to keep arrays aligned
-					formData.append("uploadFiles", new Blob([]), "");  // empty file
+				} else {
+					formData.append("uploadFiles", new Blob([]), "");
 					formData.append("uploadFileNames", item.uploadFileNames || "");
 				}
-
 			});
-			
+
 			// Drawing Status rows
 			data.drawingStatusFields.forEach((item) => {
-			    formData.append("stage_fks", item.stage_fks || "");
-			    formData.append("submitted_bys", item.submitted_bys || "");
-			    formData.append("submitted_tos", item.submitted_tos || "");
-			    formData.append("submssion_purposes", item.submssion_purposes || "");
-			    formData.append("submitted_dates", item.submitted_dates || "");
-			    formData.append("latests", item.latest ? "Yes" : "No");
+				formData.append("stage_fks", item.stage_fks || "");
+				formData.append("submssion_purposes", item.submssion_purposes || "");
+				formData.append("submitted_dates", item.submitted_dates || "");
+				formData.append("latests", item.latest ? "Yes" : "No");
 			});
 			formData.append("statusRowNo", data.drawingStatusFields.length);
-			
-
 
 			// API call
 			const response = await fetch(`${API_BASE_URL}/design/update-design`, {
@@ -539,7 +519,36 @@ export default function DesignDrawingForm() {
 		}
 	};
 
+	const fetchContractsByProject = async (projectId) => {
+		try {
+			const response = await fetch(
+				`${API_BASE_URL}/design/ajax/getContractsListForDesignForm`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						project_id_fk: projectId,
+					}),
+				}
+			);
 
+			const data = await response.json();
+
+			const formattedContracts =
+				data?.map((c) => ({
+					value: c.contract_id,
+					label: `${c.contract_id}${c.contract_short_name ? " - " + c.contract_short_name : ""
+						}`,
+				})) || [];
+
+			setContractOptions(formattedContracts);
+			setValue("contract_id_fk", null);
+		} catch (error) {
+			console.error("Error fetching contracts:", error);
+		}
+	};
 
 	return (
 		<div className={styles.container}>
@@ -557,10 +566,9 @@ export default function DesignDrawingForm() {
 
 						{/* Row 1 */}
 						<div className="form-row">
-							{/* ===================== PROJECT ===================== */}
+							{/* PROJECT */}
 							<div className="form-field">
 								<label>Project <span className="red">*</span></label>
-
 								<Controller
 									name="project_id_fk"
 									control={control}
@@ -574,17 +582,15 @@ export default function DesignDrawingForm() {
 											isSearchable
 											onChange={(selected) => {
 												field.onChange(selected);
+												fetchContractsByProject(selected?.value);
 											}}
 										/>
 									)}
 								/>
-
-
 								{errors.project_id_fk && <span className="red">Required</span>}
 							</div>
 
-
-							{/* ===================== APPROVING RAILWAY ===================== */}
+							{/* APPROVING RAILWAY */}
 							<div className="form-field">
 								<label>Approving Railway <span className="red">*</span></label>
 								<Controller
@@ -604,7 +610,7 @@ export default function DesignDrawingForm() {
 								{errors.approving_railway && <span className="red">Required</span>}
 							</div>
 
-							{/* ===================== STRUCTURE TYPE ===================== */}
+							{/* STRUCTURE TYPE */}
 							<div className="form-field">
 								<label>Structure Type <span className="red">*</span></label>
 								<Controller
@@ -624,7 +630,7 @@ export default function DesignDrawingForm() {
 								{errors.structure_type_fk && <span className="red">Required</span>}
 							</div>
 
-							{/* ===================== STRUCTURE ===================== */}
+							{/* STRUCTURE */}
 							<div className="form-field">
 								<label>Structure <span className="red">*</span></label>
 								<Controller
@@ -644,9 +650,9 @@ export default function DesignDrawingForm() {
 								{errors.structure_id_fk && <span className="red">Required</span>}
 							</div>
 
-							{/* ===================== COMPONENT ===================== */}
+							{/* COMPONENT */}
 							<div className="form-field">
-								<label>Component</label>
+								<label>Component Detail</label>
 								<input
 									{...register("component")}
 									type="text"
@@ -654,8 +660,7 @@ export default function DesignDrawingForm() {
 								/>
 							</div>
 
-
-							{/* ===================== CONTRACT ===================== */}
+							{/* CONTRACT */}
 							<div className="form-field">
 								<label>Contract</label>
 								<Controller
@@ -673,7 +678,7 @@ export default function DesignDrawingForm() {
 								/>
 							</div>
 
-							{/* ===================== PREPARED BY ===================== */}
+							{/* PREPARED BY */}
 							<div className="form-field">
 								<label>Prepared By</label>
 								<Controller
@@ -691,7 +696,7 @@ export default function DesignDrawingForm() {
 								/>
 							</div>
 
-							{/* ===================== CONSULTANT ===================== */}
+							{/* CONSULTANT */}
 							<div className="form-field">
 								<label>Consultant</label>
 								<input
@@ -701,7 +706,7 @@ export default function DesignDrawingForm() {
 								/>
 							</div>
 
-							{/* ===================== PROOF CONSULTANT ===================== */}
+							{/* PROOF CONSULTANT */}
 							<div className="form-field">
 								<label>Proof Consultant</label>
 								<input
@@ -711,7 +716,7 @@ export default function DesignDrawingForm() {
 								/>
 							</div>
 
-							{/* ===================== 3PVC ===================== */}
+							{/* 3PVC */}
 							<div className="form-field">
 								<label>3PVC</label>
 								<input
@@ -721,9 +726,7 @@ export default function DesignDrawingForm() {
 								/>
 							</div>
 
-
-
-							{/* ===================== DRAWING TYPE ===================== */}
+							{/* DRAWING TYPE */}
 							<div className="form-field">
 								<label>Drawing Type <span className="red">*</span></label>
 								<Controller
@@ -743,7 +746,7 @@ export default function DesignDrawingForm() {
 								{errors.drawing_type_fk && <span className="red">Required</span>}
 							</div>
 
-							{/* ===================== APPROVAL AUTHORITY ===================== */}
+							{/* APPROVAL AUTHORITY */}
 							<div className="form-field">
 								<label>Approval Authority <span className="red">*</span></label>
 								<Controller
@@ -762,7 +765,6 @@ export default function DesignDrawingForm() {
 								/>
 								{errors.approval_authority_fk && <span className="red">Required</span>}
 							</div>
-
 
 							<div className="form-field">
 								<label>Required Date</label>
@@ -800,7 +802,7 @@ export default function DesignDrawingForm() {
 								<input {...register("contractor_drawing_no")} type="text" placeholder="Enter Value" />
 							</div>
 							<div className="form-field">
-								<label>MRVC Drawing No</label>
+								<label>WCR Drawing No</label>
 								<input {...register("mrvc_drawing_no")} type="text" placeholder="Enter Value" />
 							</div>
 							<div className="form-field">
@@ -812,173 +814,181 @@ export default function DesignDrawingForm() {
 								<input {...register("hq_drawing_no")} type="text" placeholder="Enter Value" />
 							</div>
 						</div>
-						
-						{/* ===================== DRAWING STATUS ===================== */}
+
+						{/* DRAWING STATUS */}
 						<div className="row mt-1 mb-2">
-						    <div className="d-flex justify-content-center align-items-center gap-3 mt-1 mb-2">
-						        <h6 className="mb-0">Drawing Status</h6>
-						    </div>
+							<div className="d-flex justify-content-center align-items-center gap-3 mt-1 mb-2">
+								<h6 className="mb-0">Drawing Status</h6>
+							</div>
 
-						    <div className="table-responsive dataTable">
-						        <table className="table table-bordered align-middle">
-						            <thead className="table-light">
-						                <tr>
-						                    <th>Stage</th>
-						                    <th>Submitted By</th>
-						                    <th>Submitted To</th>
-						                    <th>Purpose of Submission</th>
-						                    <th style={{ width: "130px" }}>Submitted Date</th>
-						                    <th style={{ width: "80px" }}>Latest</th>
-						                    <th style={{ width: "100px" }}>Action</th>
-						                </tr>
-						            </thead>
-						            <tbody>
-						                {drawingStatusFields.length > 0 ? (
-						                    drawingStatusFields.map((item, index) => (
-						                        <tr key={item.id}>
-						                            {/* Stage */}
-						                            <td>
-						                                <select
-						                                    {...register(`drawingStatusFields.${index}.stage_fks`)}
-						                                    className="form-control"
-						                                    defaultValue={item.stage_fks || ""}
-						                                >
-						                                    <option value="">Select</option>
-						                                    {stageOptions.map(opt => (
-						                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-						                                    ))}
-						                                </select>
-						                            </td>
+							<div className="table-responsive dataTable">
+								<table className="table table-bordered align-middle">
+									<thead className="table-light">
+										<tr>
+											<th style={{ width: "140px" }}>Stage</th>
+											<th style={{ width: "140px" }}>Purpose of Submission</th>
+											<th style={{ width: "100px" }}>Submitted Date</th>
+											<th style={{ width: "150px" }}>Remarks</th>
+											<th style={{ width: "100px" }}>Upload File</th>
+											<th style={{ width: "80px" }}>Latest</th>
+											<th style={{ width: "100px" }}>Action</th>
+										</tr>
+									</thead>
+									<tbody>
+										{drawingStatusFields.length > 0 ? (
+											drawingStatusFields.map((item, index) => (
+												<tr key={item.id}>
+													{/* Stage */}
+													<td>
+														<select
+															{...register(`drawingStatusFields.${index}.stage_fks`)}
+															className="form-control"
+															defaultValue={item.stage_fks || ""}
+														>
+															<option value="">Select</option>
+															{stageOptions.map(opt => (
+																<option key={opt.value} value={opt.value}>{opt.label}</option>
+															))}
+														</select>
+													</td>
 
-						                            {/* Submitted By */}
-						                            <td>
-						                                <select
-						                                    {...register(`drawingStatusFields.${index}.submitted_bys`)}
-						                                    className="form-control"
-						                                    defaultValue={item.submitted_bys || ""}
-						                                >
-						                                    <option value="">Select</option>
-						                                    {submittedOptions.map(opt => (
-						                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-						                                    ))}
-						                                </select>
-						                            </td>
+													{/* Purpose of Submission */}
+													<td>
+														<select
+															{...register(`drawingStatusFields.${index}.submssion_purposes`)}
+															className="form-control"
+															defaultValue={item.submssion_purposes || ""}
+														>
+															<option value="">Select</option>
+															{submissionPurposeOptions.map(opt => (
+																<option key={opt.value} value={opt.value}>{opt.label}</option>
+															))}
+														</select>
+													</td>
 
-						                            {/* Submitted To */}
-						                            <td>
-						                                <select
-						                                    {...register(`drawingStatusFields.${index}.submitted_tos`)}
-						                                    className="form-control"
-						                                    defaultValue={item.submitted_tos || ""}
-						                                >
-						                                    <option value="">Select</option>
-						                                    {submittedOptions.map(opt => (
-						                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-						                                    ))}
-						                                </select>
-						                            </td>
+													{/* Submitted Date */}
+													<td style={{ width: "130px" }}>
+														<input
+															type="date"
+															{...register(`drawingStatusFields.${index}.submitted_dates`)}
+															className="form-control"
+															style={{ padding: "4px 6px", fontSize: "13px" }}
+														/>
+													</td>
 
-						                            {/* Purpose of Submission */}
-						                            <td>
-						                                <select
-						                                    {...register(`drawingStatusFields.${index}.submssion_purposes`)}
-						                                    className="form-control"
-						                                    defaultValue={item.submssion_purposes || ""}
-						                                >
-						                                    <option value="">Select</option>
-						                                    {submissionPurposeOptions.map(opt => (
-						                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-						                                    ))}
-						                                </select>
-						                            </td>
+													{/* Remarks */}
+													<td>
+														<input
+															type="text"
+															{...register(`drawingStatusFields.${index}.remarkss`)}
+															className="form-control"
+														/>
+													</td>
 
-						                            {/* Submitted Date */}
-						                            <td style={{ width: "130px" }}>
-						                                <input
-						                                    type="date"
-						                                    {...register(`drawingStatusFields.${index}.submitted_dates`)}
-						                                    className="form-control"
-						                                    style={{ padding: "4px 6px", fontSize: "13px" }}
-						                                />
-						                            </td>
+													{/* Upload File */}
+													<td>
+														<div className={styles["file-upload-wrapper"]}>
+															<label htmlFor={`status-file-${index}`} className={styles["file-upload-label-icon"]}>
+																<RiAttachment2 size={20} style={{ marginRight: "6px" }} />
+															</label>
 
-						                            {/* Latest — radio-like: only one can be Yes */}
-						                            <td className="text-center" style={{ width: "80px" }}>
-						                                <input
-						                                    type="checkbox"
-						                                    {...register(`drawingStatusFields.${index}.latest`)}
-						                                    checked={!!watch(`drawingStatusFields.${index}.latest`)}
-						                                    onChange={(e) => {
-						                                        // Uncheck all, then check only this one
-						                                        drawingStatusFields.forEach((_, i) => {
-						                                            setValue(`drawingStatusFields.${i}.latest`, false);
-						                                        });
-						                                        setValue(`drawingStatusFields.${index}.latest`, e.target.checked);
-						                                    }}
-						                                />
-						                            </td>
+															<input
+																id={`status-file-${index}`}
+																type="file"
+																{...register(`drawingStatusFields.${index}.uploadFiles`)}
+																className={styles["file-upload-input"]}
+															/>
 
-						                            {/* Remove */}
-						                            <td className="text-center" style={{ width: "100px" }}>
-						                                <button
-						                                    type="button"
-						                                    className="btn btn-outline-danger"
-						                                    style={{ padding: "4px 8px" }}
-						                                    onClick={() => {
-						                                        removeDrawingStatus(index);
-						                                        // Ensure at least one row remains
-						                                        if (drawingStatusFields.length === 1) {
-						                                            appendDrawingStatus({
-						                                                stage_fks: "",
-						                                                submitted_bys: "",
-						                                                submitted_tos: "",
-						                                                submssion_purposes: "",
-						                                                submitted_dates: "",
-						                                                latest: false,
-						                                            });
-						                                        }
-						                                    }}
-						                                >
-						                                    <MdOutlineDeleteSweep size={18} />
-						                                </button>
-						                            </td>
-						                        </tr>
-						                    ))
-						                ) : (
-						                    <tr>
-						                        <td colSpan="7" className="text-center text-muted">
-						                            No Drawing Status rows added yet.
-						                        </td>
-						                    </tr>
-						                )}
-						            </tbody>
-						        </table>
-						    </div>
+															{watch(`drawingStatusFields.${index}.uploadFiles`)?.[0]?.name ? (
+																<p>{watch(`drawingStatusFields.${index}.uploadFiles`)[0].name}</p>
+															) : watch(`drawingStatusFields.${index}.uploadFileNames`) ? (
+																<p>
+																	<a
+																		href={`${API_BASE_URL}/DESIGN_REVISION_FILES/${watch(`drawingStatusFields.${index}.uploadFileNames`)}`}
+																		style={{ color: "blue", textDecoration: "underline" }}
+																		rel="noopener noreferrer"
+																	>
+																		{watch(`drawingStatusFields.${index}.uploadFileNames`)}
+																	</a>
+																</p>
+															) : null}
+														</div>
+													</td>
 
-						    {/* Add Row Button */}
-						    <div className="d-flex align-center justify-content-center mt-1">
-						        <button
-						            type="button"
-						            className="btn-2 btn-green"
-						            onClick={() =>
-						                appendDrawingStatus({
-						                    stage_fks: "",
-						                    submitted_bys: "",
-						                    submitted_tos: "",
-						                    submssion_purposes: "",
-						                    submitted_dates: "",
-						                    latest: false,
-						                })
-						            }
-						        >
-						            <BiListPlus size={20} />
-						        </button>
-						    </div>
+													{/* ✅ FIXED: Latest checkbox — removed conflicting `checked` prop.
+													    Only `register` + custom `onChange` using setValue is used.
+													    Previously, having both `checked={!!watch(...)}` and `{...register(...)}`
+													    caused a controlled/uncontrolled conflict making the checkbox unclickable. */}
+													<td className="text-center" style={{ width: "80px" }}>
+														<input
+															type="checkbox"
+															{...register(`drawingStatusFields.${index}.latest`)}
+															onChange={(e) => {
+																// Uncheck all other rows first (radio-like behavior)
+																drawingStatusFields.forEach((_, i) => {
+																	setValue(`drawingStatusFields.${i}.latest`, false);
+																});
+																// Then set only this row's value
+																setValue(`drawingStatusFields.${index}.latest`, e.target.checked);
+															}}
+														/>
+													</td>
 
-						    {/* Validation error */}
-						    {errors.drawingStatusFields && (
-						        <span className="red">Please fill all required Drawing Status fields.</span>
-						    )}
+													{/* Remove */}
+													<td className="text-center" style={{ width: "100px" }}>
+														<button
+															type="button"
+															className="btn btn-outline-danger"
+															style={{ padding: "4px 8px" }}
+															onClick={() => {
+																removeDrawingStatus(index);
+																if (drawingStatusFields.length === 1) {
+																	appendDrawingStatus({
+																		stage_fks: "",
+																		submssion_purposes: "",
+																		submitted_dates: "",
+																		latest: false,
+																	});
+																}
+															}}
+														>
+															<MdOutlineDeleteSweep size={18} />
+														</button>
+													</td>
+												</tr>
+											))
+										) : (
+											<tr>
+												<td colSpan="7" className="text-center text-muted">
+													No Drawing Status rows added yet.
+												</td>
+											</tr>
+										)}
+									</tbody>
+								</table>
+							</div>
+
+							{/* Add Row Button */}
+							<div className="d-flex align-center justify-content-center mt-1">
+								<button
+									type="button"
+									className="btn-2 btn-green"
+									onClick={() =>
+										appendDrawingStatus({
+											stage_fks: "",
+											submssion_purposes: "",
+											submitted_dates: "",
+											latest: false,
+										})
+									}
+								>
+									<BiListPlus size={20} />
+								</button>
+							</div>
+
+							{errors.drawingStatusFields && (
+								<span className="red">Please fill all required Drawing Status fields.</span>
+							)}
 						</div>
 
 						{/* Revision Details */}
@@ -1005,14 +1015,11 @@ export default function DesignDrawingForm() {
 											revisionDetailsFields.map((item, index) => (
 												<tr key={item.id}>
 													<td>
-														{/* Display Always */}
 														<span className="form-control-static">
 															{isEdit
 																? (watch(`revisionDetailsFields.${index}.revisions`) || item.revisions)
 																: `R${index + 1}`}
 														</span>
-
-														{/* Send value always */}
 														<input
 															type="hidden"
 															{...register(`revisionDetailsFields.${index}.revisions`)}
@@ -1075,7 +1082,6 @@ export default function DesignDrawingForm() {
 																</option>
 															))}
 														</select>
-
 														{errors.revisionDetailsFields?.[index]?.revision_status && (
 															<span className="red">
 																{errors.revisionDetailsFields[index].revision_status.message}
@@ -1103,7 +1109,6 @@ export default function DesignDrawingForm() {
 																className={styles["file-upload-input"]}
 															/>
 
-															{/* Show NEW filename OR EXISTING filename */}
 															{watch(`revisionDetailsFields.${index}.uploadFiles`)?.[0]?.name ? (
 																<p>{watch(`revisionDetailsFields.${index}.uploadFiles`)[0].name}</p>
 															) : watch(`revisionDetailsFields.${index}.uploadFileNames`) ? (
@@ -1155,14 +1160,14 @@ export default function DesignDrawingForm() {
 									className="btn-2 btn-green"
 									onClick={() =>
 										appendRevisionDetails({
-										  revisions: `R${revisionDetailsFields.length + 1}`,
-										  drawing_nos: "",
-										  correspondence_letter_nos: "",
-										  revision_dates: "",
-										  revision_status: "",
-										  remarkss: "",
-										  uploadFileNames: "",
-										  current: "",
+											revisions: `R${revisionDetailsFields.length + 1}`,
+											drawing_nos: "",
+											correspondence_letter_nos: "",
+											revision_dates: "",
+											revision_status: "",
+											remarkss: "",
+											uploadFileNames: "",
+											current: "",
 										})
 									}
 								>
@@ -1187,7 +1192,6 @@ export default function DesignDrawingForm() {
 								</div>
 							</div>
 						</div>
-
 
 						{/* Buttons */}
 						<div className="form-post-buttons">

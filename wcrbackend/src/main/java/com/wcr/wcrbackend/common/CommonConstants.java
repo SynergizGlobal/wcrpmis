@@ -7,7 +7,7 @@ public class CommonConstants {
 	static UrlGenerator ugObj = new UrlGenerator();
 	static String context_path = ugObj.getContextPath();
 	static String base_path = ugObj.getNGINXFilesBasePath();
-
+//	static String base_path ="C:\\Users\\Aman Kumar Thakur\\Pictures\\WCR DOC";
     
 	 
 	public final static String BASE_URL_SYNTRACK = "https://infoviz.syntrackpro.com/trusted/{0}/";  //{1} is the placeholder for tableau trusted token
@@ -74,6 +74,7 @@ public class CommonConstants {
 	public final static String CONTRACT_FILE_SAVING_PATH = base_path+"/CONTRACT_FILES/";
 	public final static String DESIGN_REVISION_FILES = base_path+"/DESIGN_REVISION_FILES/";
 	public final static String DESIGN_FILE_SAVING_PATH = base_path+"/DESIGN_FILES/";
+	public final static String DESIGN_STATUS_FILE_SAVING_PATH = base_path+"/DESIGN_STATUS_FILES/";
 	public final static String SAFETYEQUIPMENT_FILE_SAVING_PATH = base_path+"/SAFETY_EQUIPMENT_FILES/";
 	public final static String BUDGET_FILE_SAVING_PATH = base_path+"/BUDGET_FILES/";
 	public final static String FUND_FILE_SAVING_PATH = base_path+"/FUND_FILES/";
