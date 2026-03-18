@@ -1,3 +1,4 @@
+import DeleteActivities from "./components/Admin/DeleteActivities/DeleteActivities";
 import ActivitiesExportReport from "./components/Reports/ActivitiesExportReport/ActivitiesExportReport";
 import LandAcquisitionReport from "./components/Reports/LandAcquisitionReport/LandAcquisitionReport";
 import ContractReport from "./components/Reports/ContractReport/ContractReport";
@@ -313,6 +314,7 @@ function App() {
 							<Route path="formsform" element={<FormsForm />} />
 						</Route>
 						<Route path="template-upload" element={<TemplateUpload />} />
+						<Route path="delete-activities" element={<DeleteActivities />} />
 						<Route path="access-reports" element={<ReportsAccess />} />
 						<Route path="get-report" element={<ReportsAccessForm />} />
 							<Route path="left-menu" element={<OverviewDashboard />} />

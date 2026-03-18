@@ -31,7 +31,7 @@ export default function Admin() {
           <div className={styles.menuItem}><Link to="access-reports">Reports</Link></div>
           <div className={styles.menuItem}><Link to="web-links">Web Links</Link></div>
           <div className={styles.menuItem}><Link to="template-upload">Template Upload</Link></div>
-          <div className={styles.menuItem}><Link to="user-manuals">WR PMIS Manuals</Link></div>
+          <div className={styles.menuItem} style={{ display: "none" }}><Link to="user-manuals">WR PMIS Manuals</Link></div>
           <div className={styles.menuItem}><Link to="reference-forms">Reference Forms</Link></div>
           <div className={styles.menuItem}><Link to="delete-activities">Delete Activities</Link></div>
         </div>

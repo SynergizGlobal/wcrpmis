@@ -1711,7 +1711,7 @@ public class NewActivitiesUpdateDaoImpl implements NewActivitiesUpdateDao{
 	public List<StripChart> getProjectsList(StripChart obj) throws Exception { 
 		List<StripChart> objsList = null;
 		try {
-			String qry = "select wr.project_id_fk ,p.project_id,p.project_name "
+			String qry = "select p.project_id as project_id_fk ,p.project_id,p.project_name "
 					+ "from project p  "					
 					+ "where p.project_id is not null "
 					+ "AND p.project_id IN ("
@@ -2582,21 +2582,25 @@ public class NewActivitiesUpdateDaoImpl implements NewActivitiesUpdateDao{
 			}
 		}
 		if(obj.getPending().compareTo("3")==0)
-		{		
-			String concat="";
-			for (int i = 0; i < obj.getActivity_ids().length; i++)
-			{
-				if(obj.getIds()[i].compareTo("1")==0)
-				{
-					concat=concat+obj.getActivity_ids()[i]+",";
-				}
-			}
-			concat=concat.substring(0, concat.length() - 1);  
-			
-			cstmt = con.prepareCall("{call dbo.deleteActivities(?, ?)}"); 
-	        cstmt.setString(1, concat);
-	        cstmt.registerOutParameter(2, java.sql.Types.BOOLEAN);  
-	        cstmt.execute(); 
+		{
+		    String concat = "";
+
+		    for (int i = 0; i < obj.getActivity_ids().length; i++)
+		    {
+		        concat = concat + obj.getActivity_ids()[i] + ",";
+		    }
+
+		    if(concat.length() > 0)
+		    {
+		        concat = concat.substring(0, concat.length() - 1);
+		    }
+
+		    System.out.println("Activities to delete: " + concat);
+
+		    cstmt = con.prepareCall("{call dbo.deleteActivities(?, ?)}");
+		    cstmt.setString(1, concat);
+		    cstmt.registerOutParameter(2, java.sql.Types.BOOLEAN);
+		    cstmt.execute();
 		}
 		
 		return true;

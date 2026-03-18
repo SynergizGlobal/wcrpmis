@@ -207,6 +207,41 @@ public class NewActivitiesUpdateController {
 		return projects;
 	}
 	
+	@RequestMapping(value = "/ajax/getDeleteActivitiesProjectsList",
+		    method = {RequestMethod.GET, RequestMethod.POST},
+		    produces = MediaType.APPLICATION_JSON_VALUE)
+		@ResponseBody
+		public List<StripChart> getDeleteActivitiesProjectsList(
+		    @ModelAttribute StripChart obj, HttpSession session) {
+
+		    List<StripChart> projects = new ArrayList<>(); // ← return empty list not null
+		    try {
+		        User uObj = (User) session.getAttribute("user");
+		        if (!StringUtils.isEmpty(uObj)) {
+		            obj.setUser_type_fk(uObj.getUserTypeFk());
+		            obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+		            obj.setUser_id(uObj.getUserId());
+		            obj.setDepartment_fk(uObj.getDepartmentFk());
+		        }
+		        
+		        // Add these logs
+		        logger.info("=== getDeleteActivitiesProjectsList ===");
+		        logger.info("user_id: " + obj.getUser_id());
+		        logger.info("user_role_code: " + obj.getUser_role_code());
+		        logger.info("user_type_fk: " + obj.getUser_type_fk());
+		        logger.info("department_fk: " + obj.getDepartment_fk());
+		        
+		        projects = newActivitiesUpdateService.getProjectsList(obj);
+		        
+		        logger.info("projects size: " + (projects != null ? projects.size() : "NULL"));
+		        
+		    } catch (Exception e) {
+		        logger.error("getDeleteActivitiesProjectsList ERROR: " + e.getMessage(), e); // ← log full stack
+		    }
+		    return projects;
+		}
+	
+	
 	@RequestMapping(value = "/ajax/getLatestRowData", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public List<StripChart> getLatestRowData(@ModelAttribute StripChart obj,HttpSession session){
@@ -281,6 +316,25 @@ public class NewActivitiesUpdateController {
 			works = newActivitiesUpdateService.getNewActivitiesUpdateWorksList(obj);			
 		}catch(Exception e){
 			logger.error("getNewActivitiesUpdateWorksList() : "+e.getMessage());
+		}
+		return works;
+	}
+	
+	@RequestMapping(value = "/ajax/getDeleteActivitiesWorksList", method = {RequestMethod.GET,RequestMethod.POST},produces=MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public List<StripChart> getDeleteActivitiesUpdateWorksList(@ModelAttribute StripChart obj,HttpSession session){
+		List<StripChart> works = null;
+		try{
+			User uObj = (User) session.getAttribute("user");
+			if(!StringUtils.isEmpty(uObj)) {
+				obj.setUser_type_fk(uObj.getUserTypeFk());
+				obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+				obj.setUser_id(uObj.getUserId());
+				obj.setDepartment_fk(uObj.getDepartmentFk());
+			}
+			works = newActivitiesUpdateService.getWorksList(obj);
+		}catch(Exception e){
+			logger.error("getDeleteActivitiesUpdateWorksList() : "+e.getMessage());
 		}
 		return works;
 	}
@@ -834,39 +888,40 @@ public class NewActivitiesUpdateController {
 	}
 	
 	
-	@RequestMapping(value = "/delete-activities-bulk", method = {RequestMethod.POST})
-	public ModelAndView deleteActivitiesBulk(@ModelAttribute StripChart obj,RedirectAttributes attributes,HttpSession session){
-		ModelAndView model = new ModelAndView();
-		try{
-			model.setViewName("redirect:/delete-activities");
-			
-			User uObj = (User) session.getAttribute("user");
-			if(!StringUtils.isEmpty(uObj)) {
-				obj.setUser_type_fk(uObj.getUserTypeFk());
-				obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
-				obj.setUser_id(uObj.getUserId());
-				obj.setDepartment_fk(uObj.getDepartmentFk());
-				obj.setCreated_by_user_id_fk(uObj.getUserId());
-				
-				
-				obj.setUser_name(uObj.getUserName());
-				obj.setDesignation(uObj.getDesignation());
-				
-			}				
-			//obj.setProgress_date(DateParser.parse(obj.getProgress_date()));
-			boolean flag =  newActivitiesUpdateService.deleteAcivitiesBulk(obj);
-			if(flag) {
-				attributes.addFlashAttribute("success", "Acivities Deleted Succesfully.");
-			}
-			else {
-				attributes.addFlashAttribute("error","Deleting Acivities failed.");
-			}
-		}catch (Exception e) {
-			attributes.addFlashAttribute("error","Deleting Acivities failed.");
-			logger.error("deleteActivitiesBulk : " + e.getMessage());
+	@RequestMapping(value = "/delete-activities-bulk", method = {RequestMethod.POST},
+		    produces = MediaType.APPLICATION_JSON_VALUE)
+		@ResponseBody
+		public Map<String, Object> deleteActivitiesBulk(@ModelAttribute StripChart obj, HttpSession session) {
+		    
+		    Map<String, Object> response = new HashMap<>();
+		    try {
+		        User uObj = (User) session.getAttribute("user");
+		        if (!StringUtils.isEmpty(uObj)) {
+		            obj.setUser_type_fk(uObj.getUserTypeFk());
+		            obj.setUser_role_code(userService.getRoleCode(uObj.getUserRoleNameFk()));
+		            obj.setUser_id(uObj.getUserId());
+		            obj.setDepartment_fk(uObj.getDepartmentFk());
+		            obj.setCreated_by_user_id_fk(uObj.getUserId());
+		            obj.setUser_name(uObj.getUserName());
+		            obj.setDesignation(uObj.getDesignation());
+		        }
+
+		        boolean flag = newActivitiesUpdateService.deleteAcivitiesBulk(obj);
+		        
+		        if (flag) {
+		            response.put("success", true);
+		            response.put("message", "Activities Deleted Successfully.");
+		        } else {
+		            response.put("success", false);
+		            response.put("message", "Deleting Activities failed.");
+		        }
+		    } catch (Exception e) {
+		        response.put("success", false);
+		        response.put("message", "Deleting Activities failed.");
+		        logger.error("deleteActivitiesBulk : " + e.getMessage());
+		    }
+		    return response;
 		}
-		return model;
-	}	
 	
 	@RequestMapping(value="/delete-activities",method=RequestMethod.GET)
 	public ModelAndView DeleteActivities(@ModelAttribute  StripChart obj,HttpSession session) throws IOException {
