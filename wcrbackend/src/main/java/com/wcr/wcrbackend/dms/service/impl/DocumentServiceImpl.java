@@ -33,8 +33,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wcr.wcrbackend.dms.constant.Constant;
 import com.wcr.wcrbackend.dms.dto.DocumentDTO;
 import com.wcr.wcrbackend.dms.dto.DocumentGridDTO;
+import com.wcr.wcrbackend.dms.dto.DocumentRevisionDTO;
 import com.wcr.wcrbackend.dms.dto.MetaDataDto;
 import com.wcr.wcrbackend.dms.dto.NotRequiredDTO;
+import com.wcr.wcrbackend.dms.dto.SaveMetaDataDto;
 import com.wcr.wcrbackend.dms.dto.SendDocumentDTO;
 import com.wcr.wcrbackend.dms.entity.Department;
 import com.wcr.wcrbackend.dms.entity.Document;
@@ -179,17 +181,23 @@ public class DocumentServiceImpl implements DocumentService {
             dto.getPath() != null ? dto.getPath().trim() : ""
         );
 
-        if (dto.getDepartment() != null) {
+        if (dto.getDepartment() != null && !dto.getDepartment().trim().isEmpty()) {
+
+            Long deptId = Long.parseLong(dto.getDepartment().trim());
+
             Department department = departmentRepository
-                    .findById(Long.parseLong(dto.getDepartment()))
+                    .findById(deptId)
                     .orElse(null);
 
             document.setDepartment(department);
         }
 
-        if (dto.getCurrentStatus() != null) {
+        if (dto.getCurrentStatus() != null && !dto.getCurrentStatus().trim().isEmpty()) {
+
+            Long statusId = Long.parseLong(dto.getCurrentStatus().trim());
+
             Status status = statusRepository
-                    .findById(Long.parseLong(dto.getCurrentStatus()))
+                    .findById(statusId)
                     .orElse(null);
 
             document.setCurrentStatus(status);
@@ -200,13 +208,11 @@ public class DocumentServiceImpl implements DocumentService {
 
         // document = documentRepository.save(document);
 
-        if (dto.getFolderId() != null) {
+        Folder folder = getOrCreateFolderByPath(dto.getPath());
 
-            Folder folder = folderRepository.findById(dto.getFolderId())
-                    .orElseThrow(() -> new RuntimeException("Folder not found"));
-
-            document.setFolder(folder);
-        }
+            if (folder != null) {
+                document.setFolder(folder);
+            }
 
         document = documentRepository.save(document);
 
@@ -251,16 +257,32 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public ResponseEntity<Resource> downloadDocument(Long id) throws Exception {
 
-        DocumentFile file = documentFileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("File not found"));
+        Document document = documentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        if (document.getDocumentFiles() == null || document.getDocumentFiles().isEmpty()) {
+            throw new RuntimeException("No file attached to this document");
+        }
+
+        DocumentFile file = document.getDocumentFiles().get(0);
 
         Path path = Paths.get(file.getFilePath());
 
         Resource resource = new UrlResource(path.toUri());
 
+        if (!resource.exists()) {
+            throw new RuntimeException("File not found in storage");
+        }
+
+        String contentType = Files.probeContentType(path);
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + file.getFileName() + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, contentType)
                 .body(resource);
     }
 
@@ -283,6 +305,39 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         return String.join("/", parts); 
+    }
+
+    private Folder getOrCreateFolderByPath(String path) {
+
+        if (path == null || path.trim().isEmpty()) return null;
+
+        String[] parts = path.split("/");
+        Folder parent = null;
+
+        for (String name : parts) {
+
+            String trimmed = name.trim();
+            if (trimmed.isEmpty()) continue;
+
+            Long parentId = (parent != null) ? parent.getId() : null;
+
+            Folder existing = folderRepository
+                    .findByNameAndParentId(trimmed, parentId)
+                    .orElse(null);
+
+            if (existing == null) {
+
+                Folder newFolder = new Folder();
+                newFolder.setName(trimmed);
+                newFolder.setParentId(parentId);
+
+                existing = folderRepository.save(newFolder);
+            }
+
+            parent = existing;
+        }
+
+        return parent;
     }
 
     @Override
@@ -567,6 +622,16 @@ public DocumentDTO uploadFileWithMetaData(DocumentDTO documentDto, List<Multipar
         return mapTODto(savedDocument, department, status);
     }
 
+    
+    @Override
+    @Transactional
+    public void saveMultipleDocuments(DocumentDTO dto, List<MultipartFile> files) throws Exception {
+
+        for (MultipartFile file : files) {
+            saveDocument(dto, file);
+        }
+    }
+
     private List<DocumentFile> saveNewFilesToSubFolder(SubFolder subFolder, List<MultipartFile> files)
 			throws IOException {
 		List<DocumentFile> savedFiles = new ArrayList<>();
@@ -678,6 +743,7 @@ public DocumentDTO uploadFileWithMetaData(DocumentDTO documentDto, List<Multipar
 	}
 
     @Override
+    @Transactional
     public void updateDocument(Long id, DocumentDTO dto, MultipartFile file) throws Exception {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Document not found"));
@@ -723,11 +789,24 @@ public DocumentDTO uploadFileWithMetaData(DocumentDTO documentDto, List<Multipar
                     .orElseThrow(() -> new RuntimeException("Folder not found"));
 
             document.setFolder(folder);
+            document.setPath(buildFolderPath(folder));
         }
 
         document = documentRepository.save(document);
 
         if (file != null && !file.isEmpty()) {
+
+            // OPTIONAL: delete old files (recommended)
+            if (document.getDocumentFiles() != null) {
+                for (DocumentFile old : document.getDocumentFiles()) {
+                    try {
+                        Files.deleteIfExists(Paths.get(old.getFilePath()));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                document.getDocumentFiles().clear();
+            }
 
             Path uploadPath = Paths.get(uploadDir);
 
@@ -739,10 +818,9 @@ public DocumentDTO uploadFileWithMetaData(DocumentDTO documentDto, List<Multipar
 
             Path filePath = uploadPath.resolve(storedFileName);
 
-            Files.copy(file.getInputStream(), filePath);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             DocumentFile docFile = new DocumentFile();
-
             docFile.setFileName(storedFileName);
             docFile.setFileType(file.getContentType());
             docFile.setFilePath(filePath.toString());
@@ -762,25 +840,31 @@ public DocumentDTO uploadFileWithMetaData(DocumentDTO documentDto, List<Multipar
         documentRevisionRepository.save(revision);
     }
 
+    // @Override
+    // public List<DocumentRevisionDTO> getDocumentVersions(String fileNumber) {
+
+    //     return documentRevisionRepository.findAllByFileNumberAndFileName(fileNumber, null)
+    //             .stream()
+    //             .peek(rev -> {
+    //                 if (rev.getDocumentFiles() != null && !rev.getDocumentFiles().isEmpty()) {
+    //                     rev.setPath(rev.getDocumentFiles().get(0).getFilePath()); // ADD THIS FIELD
+    //                 }
+    //             })
+    //             .collect(Collectors.toList());
+    // }
+
     @Override
-    public List<DocumentRevision> getDocumentVersions(String fileNumber) {
-        return documentRevisionRepository.findAllByFileNumberAndFileName(fileNumber, null)
-                .stream()
-                .map(dto -> {
-                    DocumentRevision rev = new DocumentRevision();
-                    rev.setFileName(dto.getFileName());
-                    rev.setFileNumber(dto.getFileNumber());
-                    rev.setRevisionNo(dto.getRevisionNo());
-                    rev.setDocument(null); // Not setting the document reference here
-                    return rev;
-                })
-                .collect(Collectors.toList());
+    public List<DocumentRevisionDTO> getDocumentVersions(String fileNumber) {
+
+        return documentRevisionRepository
+                .findAllByFileNumberAndFileName(fileNumber, null);
     }
 
     @Override
     public void sendDocument(SendDocumentDTO dto) {
         
     }
+
 
     @Override
 	public void markNotRequired(NotRequiredDTO dto, String userId) {
@@ -934,52 +1018,7 @@ public DocumentDTO uploadFileWithMetaData(DocumentDTO documentDto, List<Multipar
         return sendDocument;
     }
 
-    @Override
-	public List<Map<String, MetaDataDto>> validateMetadata(List<List<String>> rows, String userId, String userRoleName)
-			throws NoSuchMethodException, SecurityException, IllegalAccessException, InvocationTargetException {
-		List<Map<String, MetaDataDto>> mapList = new ArrayList<>();
 
-		List<String> firstRow = rows.get(0);
-		Map<String, Integer> headerIndexMap = new HashMap<>();
-		for (int i = 0; i < firstRow.size(); i++) {
-			headerIndexMap.put(firstRow.get(i), i);
-		}
-		List<List<String>> rowsWithoutFirst = rows.size() > 1 ? new ArrayList<>(rows.subList(1, rows.size()))
-				: new ArrayList<>();
-
-		for (List<String> row : rowsWithoutFirst) {
-			Map<String, MetaDataDto> map = new HashMap<>();
-			mapList.add(
-					validate(Constant.FILE_NAME, headerIndexMap, row, row.get(headerIndexMap.get(Constant.FILE_NAME)),
-							row.get(headerIndexMap.get(Constant.FILE_NUMBER))));
-			mapList.add(validate(Constant.FILE_NUMBER, headerIndexMap, row,
-					row.get(headerIndexMap.get(Constant.FILE_NUMBER)),
-					row.get(headerIndexMap.get(Constant.FILE_NAME))));
-			mapList.add(validate(Constant.REVISION_NUMBER, headerIndexMap, row,
-					row.get(headerIndexMap.get(Constant.FILE_NAME)), row.get(headerIndexMap.get(Constant.FILE_NUMBER)),
-					row.get(headerIndexMap.get(Constant.REVISION_NUMBER))));
-			mapList.add(validate(Constant.REVISION_DATE, headerIndexMap, row,
-					row.get(headerIndexMap.get(Constant.REVISION_DATE))));
-
-			mapList.add(validate(Constant.PROJECT_NAME, headerIndexMap, row,
-					row.get(headerIndexMap.get(Constant.PROJECT_NAME)), userId, userRoleName));
-			mapList.add(validate(Constant.CONTRACT_NAME, headerIndexMap, row,
-					row.get(headerIndexMap.get(Constant.CONTRACT_NAME)), userId, userRoleName));
-
-			mapList.add(validate(Constant.FOLDER, headerIndexMap, row, row.get(headerIndexMap.get(Constant.FOLDER))));
-			mapList.add(validate(Constant.SUB_FOLDER, headerIndexMap, row, row.get(headerIndexMap.get(Constant.FOLDER)),
-					row.get(headerIndexMap.get(Constant.SUB_FOLDER))));
-			mapList.add(validate(Constant.DEPARTMENT, headerIndexMap, row,
-					row.get(headerIndexMap.get(Constant.DEPARTMENT))));
-			mapList.add(validate(Constant.STATUS, headerIndexMap, row, row.get(headerIndexMap.get(Constant.STATUS))));
-			mapList.add(validate(Constant.UPLOAD_DOCUMENT, headerIndexMap, row,
-					row.get(headerIndexMap.get(Constant.UPLOAD_DOCUMENT))));
-
-			mapList.add(map);
-		}
-
-		return mapList;
-	}
 
     private Map<String, MetaDataDto> validate(String key, Map<String, Integer> headerIndexMap, List<String> row,
 			String... args)
@@ -994,4 +1033,81 @@ public DocumentDTO uploadFileWithMetaData(DocumentDTO documentDto, List<Multipar
 		map.put(key, metadataDtoFileName);
 		return map;
 	}
+
+    @Override
+    public List<Map<String, MetaDataDto>> validateMetadata(List<List<String>> rows, String userId, String userRoleName)
+            throws NoSuchMethodException, SecurityException, IllegalAccessException, InvocationTargetException {
+        List<Map<String, MetaDataDto>> validationResults = new ArrayList<>();
+        Map<String, Integer> headerIndexMap = new HashMap<>();
+        List<String> headers = rows.get(0);
+        for (int i = 0; i < headers.size(); i++) {
+            headerIndexMap.put(headers.get(i), i);
+        }
+        for (int i = 1; i < rows.size(); i++) {
+            List<String> row = rows.get(i);
+            Map<String, MetaDataDto> rowValidationResult = new HashMap<>();
+            for (String key : Constant.METADATA_UPLOAD_VALIDATION_MAP.keySet()) {
+                rowValidationResult.putAll(validate(key, headerIndexMap, row, row.get(headerIndexMap.get(key))));
+            }
+            validationResults.add(rowValidationResult);
+        }
+        return validationResults;
+
+    }
+
+    @Override
+    public void processBulkZip(Long id, MultipartFile zipFile,
+            Map<Long, List<DocumentDTO>> bulkStore) throws Exception {
+
+        List<DocumentDTO> docs = bulkStore.get(id);
+
+        if (docs == null) {
+            throw new RuntimeException("Metadata not found");
+        }
+
+        Path tempDir = Files.createTempDirectory("bulk");
+
+        // unzip
+        java.util.zip.ZipInputStream zis =
+                new java.util.zip.ZipInputStream(zipFile.getInputStream());
+
+        Map<String, Path> fileMap = new HashMap<>();
+
+        java.util.zip.ZipEntry entry;
+
+        while ((entry = zis.getNextEntry()) != null) {
+
+            if (!entry.isDirectory()) {
+
+                Path filePath = tempDir.resolve(entry.getName());
+
+                Files.createDirectories(filePath.getParent());
+                Files.copy(zis, filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                fileMap.put(entry.getName(), filePath);
+            }
+        }
+
+        zis.close();
+
+        // create documents
+        for (DocumentDTO dto : docs) {
+
+            Path filePath = fileMap.get(dto.getFileName());
+
+            if (filePath == null) {
+                throw new RuntimeException(dto.getFileName() + " missing in zip");
+            }
+
+            MultipartFile file =
+                    new org.springframework.mock.web.MockMultipartFile(
+                            dto.getFileName(),
+                            dto.getFileName(),
+                            Files.probeContentType(filePath),
+                            Files.newInputStream(filePath)
+                    );
+
+            saveDocument(dto, file);
+        }
+    }
 }

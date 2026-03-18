@@ -29,6 +29,11 @@ export default function DmsDocuments() {
   const [showVersionsPopup, setShowVersionsPopup] = useState(false);
   const [pendingFolderId, setPendingFolderId] = useState(null);
 
+  const [excelFile, setExcelFile] = useState(null);
+  const [zipFile, setZipFile] = useState(null);
+  const [bulkData, setBulkData] = useState([]);
+  const [uploadId, setUploadId] = useState(null);
+
     const [projects, setProjects] = useState([]);
     const [contracts, setContracts] = useState([]);
     const [departments, setDepartments] = useState([]);
@@ -265,6 +270,31 @@ export default function DmsDocuments() {
       } catch (err) {
         console.error(err);
       }
+    };
+
+    const handlePreview = async () => {
+      const fd = new FormData();
+      fd.append("file", excelFile);
+
+      const res = await api.post("/api/bulk/upload-excel", fd);
+      setBulkData(res.data);
+    };
+
+    const handleDownloadTemplate = () => {
+      window.open(`${API_BASE_URL}/templates/bulk_upload_sample.xlsx`, "_blank");
+    };
+
+    const handleSaveMeta = async () => {
+      const res = await api.post("/api/bulk/save", bulkData);
+      setUploadId(res.data);
+    };
+
+    const handleUploadZip = async () => {
+      const fd = new FormData();
+      fd.append("file", zipFile);
+
+      await api.post(`/api/bulk/upload-zip/${uploadId}`, fd);
+      alert("Bulk upload done");
     };
 
   const fetchDocuments = async () => {
@@ -820,7 +850,7 @@ const fetchFolders = async () => {
                   <div onClick={() => handleVersions(row)}>View old versions</div>
                   <div onClick={() => handleNotRequired(row)}>Not required</div>
                   <div onClick={() =>
-                    window.open(`/api/documents/download/${row.id}`, "_blank")
+                    window.open(`/api/documents/download?path=${encodeURIComponent(row.Path)}`, "_blank")
                   }>
                     Download
                   </div>
@@ -1039,7 +1069,12 @@ const fetchFolders = async () => {
               {activeTab === "bulk" && (
                 <>
                 <div className="form-row">
-                  <button className="btn btn-2 btn-primary">Download Excel Template</button>
+                  <button
+                    className="btn btn-2 btn-primary"
+                    onClick={handleDownloadTemplate}
+                  >
+                    Download Excel Template
+                  </button>
                 </div>
 
                 <div className="form-row">
@@ -1153,7 +1188,10 @@ const fetchFolders = async () => {
               <div className={styles.attachmentsList}>
                 {selectedDoc && (
                   <div className={styles.attachmentItem}>
-                    <a href={`/api/documents/download/${selectedDoc.id}`} target="_blank">
+                    <a
+                        href={`/api/documents/download?path=${encodeURIComponent(selectedDoc.Path)}`}
+                        target="_blank"
+                      >
                       📎 {selectedDoc["File Name"]}
                     </a>
                   </div>
@@ -1397,7 +1435,7 @@ const fetchFolders = async () => {
                         <td>{selectedDoc?.["File Number"]}</td>
                         <td>{selectedDoc?.["Revision No"]}</td>
                         <td>
-                        <a href={`/api/documents/download/${selectedDoc?.id}`}>Download</a>
+                        <a href={`/api/documents/download?path=${encodeURIComponent(selectedDoc?.Path)}`}>Download</a>
                         </td>
                       </tr>
                     </tbody>

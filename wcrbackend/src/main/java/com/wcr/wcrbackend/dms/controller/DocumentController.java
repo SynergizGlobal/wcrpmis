@@ -1,9 +1,15 @@
 package com.wcr.wcrbackend.dms.controller;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wcr.wcrbackend.dms.dto.DocumentDTO;
 import com.wcr.wcrbackend.dms.dto.DocumentGridDTO;
+import com.wcr.wcrbackend.dms.dto.DocumentRevisionDTO;
 import com.wcr.wcrbackend.dms.dto.DraftSendDocumentDTO;
 import com.wcr.wcrbackend.dms.dto.NotRequiredDTO;
 import com.wcr.wcrbackend.dms.dto.SendDocumentDTO;
@@ -28,6 +35,7 @@ import com.wcr.wcrbackend.dms.repository.SendDocumentRepository;
 import com.wcr.wcrbackend.dms.service.DocumentService;
 import com.wcr.wcrbackend.dms.service.SendDocumentService;
 import com.wcr.wcrbackend.entity.User;
+
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -52,14 +60,21 @@ public class DocumentController {
     public ResponseEntity<String> uploadDocument(
             @RequestParam("dto") String dtoJson,
             // @RequestPart("dto") DocumentDTO dto,
-            @RequestParam(value = "file", required = false) MultipartFile file
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files
     ) throws Exception {
 
         // ObjectMapper mapper = new ObjectMapper();
         DocumentDTO dto = objectMapper.readValue(dtoJson, DocumentDTO.class);
 
         // @RequestPart("dto") DocumentDTO dto,
-        documentService.saveDocument(dto, file);
+        if (files != null && !files.isEmpty()) {
+            // BULK UPLOAD
+            documentService.saveMultipleDocuments(dto, files);
+        } else {
+            // SINGLE UPLOAD
+            documentService.saveDocument(dto, file);
+        }
 
         return ResponseEntity.ok("Document uploaded successfully");
     }
@@ -67,6 +82,28 @@ public class DocumentController {
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> downloadDocument(@PathVariable Long id) throws Exception {
         return documentService.downloadDocument(id);
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<Resource> downloadByPath(@RequestParam("path") String path) throws IOException {
+
+        Path filePath = Paths.get(path);
+        Resource resource = new UrlResource(filePath.toUri());
+
+        if (!resource.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String contentType = Files.probeContentType(filePath);
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filePath.getFileName().toString() + "\"")
+                .body(resource);
     }
 
     @PostMapping("/send")
@@ -90,6 +127,8 @@ public class DocumentController {
 
         return ResponseEntity.ok("Document updated successfully");
     }
+
+
 
     @PostMapping("/send-document")
     public ResponseEntity<String> saveOrSendDocument(
@@ -163,8 +202,7 @@ public class DocumentController {
 	}
 
     @GetMapping("/versions/{fileNumber}")
-    public ResponseEntity<List<DocumentRevision>> getVersions(@PathVariable String fileNumber) {
-
+    public ResponseEntity<List<DocumentRevisionDTO>> getVersions(@PathVariable String fileNumber) {
         return ResponseEntity.ok(documentService.getDocumentVersions(fileNumber));
     }
 }

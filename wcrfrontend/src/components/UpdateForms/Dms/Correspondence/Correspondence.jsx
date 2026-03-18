@@ -2,8 +2,11 @@ import React, { useEffect, useState } from "react";
 import api from "../../../../api/axiosInstance";
 import AsyncSelect from "react-select/async";
 import Select from "react-select";
+import Drafts from "./Drafts";
 import DmsTable from "../DmsTable/DmsTable";
 import styles from "./Correspondence.module.css";
+
+import { API_BASE_URL } from "../../../../config";
 
 const formatDate = (v) => {
   if (!v) return "";
@@ -24,9 +27,12 @@ export default function Correspondence() {
   const [loading, setLoading] = useState(false);
   const [toUser, setToUser] = useState(null);
   const [ccUsers, setCcUsers] = useState([]);
+  const [userOptions, setUserOptions] = useState([]);
   const [projects, setProjects] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedLetter, setSelectedLetter] = useState(null);
   const [detailsData, setDetailsData] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [referenceLetters, setReferenceLetters] = useState([]);
@@ -546,22 +552,59 @@ export default function Correspondence() {
 
                 <div className="form-field">
                   <label>Letter Date</label>
-                  <input value={formatDate(detailsData.letterDate)} readOnly />
+                  <input value={formatDate(detailsData.letterDate) || ""} readOnly />
                 </div>
 
                 <div className="form-field">
-                  <label>From</label>
+                  <label>Project Name</label>
+                  <input value={detailsData.projectName || ""} readOnly />
+                </div>
+
+                <div className="form-field">
+                  <label>Contract Name</label>
+                  <input value={detailsData.contractName || ""} readOnly />
+                </div>
+
+                <div className="form-field">
+                  <label>Sender</label>
                   <input value={detailsData.sender || ""} readOnly />
                 </div>
 
                 <div className="form-field">
-                  <label>To</label>
+                  <label>Copied To</label>
                   <input value={detailsData.copiedTo || ""} readOnly />
                 </div>
 
                 <div className="form-field">
                   <label>CC</label>
                   <input value={detailsData.ccRecipient || ""} readOnly />
+                </div>
+
+                <div className="form-field">
+                  <label>Department</label>
+                  <input value={detailsData.department || ""} readOnly />
+                </div>
+
+                
+                <div className="form-field">
+                  <label>Current Status</label>
+                  <input value={detailsData.status || ""} readOnly />
+                </div>
+
+               
+                <div className="form-field full">
+                  <label>Reference Letters</label>
+                  <div className={styles.referenceList}>
+                    {detailsData.referenceLetters?.length > 0 ? (
+                      detailsData.referenceLetters.map((ref, index) => (
+                        <div key={index} className={styles.referenceItem}>
+                          📄 {ref}
+                        </div>
+                      ))
+                    ) : (
+                      <span>No reference letters</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="form-field full">
@@ -571,7 +614,10 @@ export default function Correspondence() {
 
                 <div className="form-field full">
                   <label>Key Information</label>
-                  <textarea value={detailsData.keyInformation || ""} readOnly />
+                  <textarea
+                    value={detailsData.keyInformation || ""}
+                    readOnly
+                  />
                 </div>
 
                 <div className="form-field">
@@ -581,19 +627,39 @@ export default function Correspondence() {
 
                 <div className="form-field">
                   <label>Due Date</label>
-                  <input value={formatDate(detailsData.dueDate)} readOnly />
+                  <input value={formatDate(detailsData.dueDate) || ""} readOnly />
                 </div>
 
-                <div className="form-field">
-                  <label>Department</label>
-                  <input value={detailsData.department || ""} readOnly />
+                
+                <div className="form-field full">
+                  <label>Attachments</label>
+                  <div className={styles.attachmentsList}>
+                    {detailsData.attachments?.length > 0 ? (
+                      detailsData.attachments.map((file, index) => (
+                        <div key={index} className={styles.attachmentItem}>
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            📎 {file.name}
+                          </a>
+                        </div>
+                      ))
+                    ) : (
+                      <span>No attachments</span>
+                    )}
+                  </div>
                 </div>
 
               </div>
             </div>
 
             <div className={styles.footer}>
-              <button className="btn btn-red" onClick={() => setShowDetailsModal(false)}>
+              <button
+                className="btn btn-red"
+                onClick={() => setShowDetailsModal(false)}
+              >
                 Close
               </button>
             </div>

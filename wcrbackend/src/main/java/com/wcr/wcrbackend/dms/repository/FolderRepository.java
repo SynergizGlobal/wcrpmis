@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.wcr.wcrbackend.dms.entity.Department;
 import com.wcr.wcrbackend.dms.entity.Folder;
 
 
@@ -88,5 +89,9 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 	List<Folder> findByParentId(Long parentId);
 
 	Optional<Folder> findById(Long id);
+
+	Optional<Folder> findByNameAndParentId(String name, Long parentId);
+
+	// Optional<Department> findByNameAndParent(String trimmed, Folder parent);
 
 }
