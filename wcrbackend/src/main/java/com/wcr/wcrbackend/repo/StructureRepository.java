@@ -42,7 +42,7 @@ public class StructureRepository implements IStructureRepository {
         return jdbcTemplate.query(sql, new Object[]{projectId}, (rs, rowNum) ->
             new StructureSummaryDto(
                 rs.getString("typeName"),  // maps to structureType
-                rs.getLong("total")        // maps to count
+                rs.getLong("total")       // maps to count
             )
         );
     }
@@ -134,13 +134,13 @@ public class StructureRepository implements IStructureRepository {
     public void insertStructure(String structure, String name, String projectId, String type,
                   String details, BigDecimal fromChainage, BigDecimal toChainage) {
         String sql = """
-            INSERT INTO structure 
-            (structure, structure_name, project_id_fk, structure_type_fk, 
-             structure_details, from_chainage, to_chainage)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO structure
+            (structure, structure_name, project_id_fk, structure_type_fk,
+             structure_details, from_chainage, to_chainage, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
-        jdbcTemplate.update(sql, structure, name, projectId, type, details, fromChainage, toChainage);
+        jdbcTemplate.update(sql, structure, name, projectId, type, details, fromChainage, toChainage, "active");
     }
     
  // UPDATE (structureId required)
