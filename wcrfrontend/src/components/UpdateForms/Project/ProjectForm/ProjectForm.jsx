@@ -121,6 +121,8 @@ export default function ProjectForm() {
 	const [sections, setSections] = useState([]);
 
 	const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+	
+
 
 
 	const projectStatusOptions = [
@@ -144,6 +146,7 @@ export default function ProjectForm() {
 		control,
 		handleSubmit,
 		setValue,
+		getValues,
 		formState: { errors },
 		watch
 	} = useForm({
@@ -186,6 +189,17 @@ export default function ProjectForm() {
 		},
 	});
 
+
+	const benefitsValue = watch("benefits") || "";
+	const remarksValue = watch("remarks") || "";
+	const fromValue = watch("from_chainage");
+	
+	
+//	useEffect(() => {
+//		if (fromValue) {
+//			setValue("to_chainage", (parseFloat(fromValue) + 0.01).toFixed(2));
+//		}
+//	}, [fromValue]);
 
 	/*// pink book fiels	
 		const { fields: pinkBookFields, append: appendPinkBook, remove: removePinkBook } =
@@ -286,8 +300,7 @@ export default function ProjectForm() {
 
 
 
-	const benefitsValue = watch("benefits") || "";
-	const remarksValue = watch("remarks") || "";
+
 
 	const fetchDivisions = async (railwayZone) => {
 
@@ -806,9 +819,22 @@ export default function ProjectForm() {
 											<input
 												type="number"
 												step="0.01"
-												{...register("to_chainage")}
+												{...register("to_chainage", {
+													required: "To Chainage is required",
+													validate: (value) => {
+														const from = parseFloat(fromValue);
+														const to = parseFloat(value);
+
+														if (isNaN(from) || isNaN(to)) return true;
+
+														return to > from || `Must be greater than ${from}`;
+													}
+												})}
 												placeholder="To"
 											/>
+											{errors.to_chainage && (
+												<p className="red">{errors.to_chainage.message}</p>
+											)}
 										</td>
 									</tbody>
 								</table>
